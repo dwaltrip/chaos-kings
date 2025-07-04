@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { useWebSocket } from './services/use-web-socket';
 
 interface ChatMessage {
   user: string;
@@ -10,40 +11,17 @@ function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [username, setUsername] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
+  const { send, isConnected, addMessageListener } = useWebSocket();
 
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8080');
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      setIsConnected(true);
-      console.log('Connected to WebSocket server');
-    };
-
-    ws.onmessage = (event) => {
-      const message: ChatMessage = JSON.parse(event.data);
+    addMessageListener((message: ChatMessage) => {
       setMessages(prev => [...prev, message]);
-    };
-
-    ws.onclose = () => {
-      setIsConnected(false);
-      console.log('Disconnected from WebSocket server');
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-
-    return () => {
-      ws.close();
-    };
-  }, []);
+    });
+  }, [addMessageListener]);
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentMessage.trim() || !username.trim() || !wsRef.current) return;
+    if (!currentMessage.trim() || !username.trim() || !isConnected) return;
 
     const message: ChatMessage = {
       user: username,
@@ -51,7 +29,7 @@ function App() {
       timestamp: Date.now()
     };
 
-    wsRef.current.send(JSON.stringify(message));
+    send(message);
     setCurrentMessage('');
   };
 
