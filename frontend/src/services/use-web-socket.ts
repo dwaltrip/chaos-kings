@@ -6,11 +6,17 @@ interface WsMessage {
   timestamp: number;
 }
 
+interface RoomMessage extends WsMessage {
+  room: string;
+  type: 'chat' | 'join' | 'leave';
+}
+
 interface WebSocketInstance {
   ws: WebSocket;
-  listeners: Set<(message: WsMessage) => void>;
+  listeners: Set<(message: RoomMessage) => void>;
   connectionStateListeners: Set<(isConnected: boolean) => void>;
   isConnected: boolean;
+  currentRoom?: string;
 }
 
 let globalWebSocketInstance: WebSocketInstance | null = null;
@@ -31,7 +37,7 @@ const createWebSocketInstance = (url: string): WebSocketInstance => {
   };
 
   ws.onmessage = (event) => {
-    const message: WsMessage = JSON.parse(event.data);
+    const message: RoomMessage = JSON.parse(event.data);
     instance.listeners.forEach(listener => listener(message));
   };
 
@@ -60,7 +66,7 @@ const createWebSocketInstance = (url: string): WebSocketInstance => {
 
 const useWebSocket = (url: string = 'ws://localhost:8080') => {
   const [isConnected, setIsConnected] = useState(false);
-  const messageListenerRef = useRef<((message: WsMessage) => void) | null>(null);
+  const messageListenerRef = useRef<((message: RoomMessage) => void) | null>(null);
   const connectionListenerRef = useRef<((isConnected: boolean) => void) | null>(null);
 
   useEffect(() => {
@@ -89,13 +95,41 @@ const useWebSocket = (url: string = 'ws://localhost:8080') => {
     };
   }, [url]);
 
-  const send = useCallback((message: WsMessage) => {
+  const send = useCallback((message: RoomMessage) => {
     if (globalWebSocketInstance?.isConnected) {
       globalWebSocketInstance.ws.send(JSON.stringify(message));
     }
   }, []);
 
-  const addMessageListener = useCallback((listener: (message: WsMessage) => void) => {
+  const joinRoom = useCallback((roomId: string) => {
+    if (globalWebSocketInstance?.isConnected) {
+      const joinMessage: RoomMessage = {
+        user: '',
+        message: '',
+        timestamp: Date.now(),
+        room: roomId,
+        type: 'join'
+      };
+      globalWebSocketInstance.ws.send(JSON.stringify(joinMessage));
+      globalWebSocketInstance.currentRoom = roomId;
+    }
+  }, []);
+
+  const leaveRoom = useCallback((roomId: string) => {
+    if (globalWebSocketInstance?.isConnected) {
+      const leaveMessage: RoomMessage = {
+        user: '',
+        message: '',
+        timestamp: Date.now(),
+        room: roomId,
+        type: 'leave'
+      };
+      globalWebSocketInstance.ws.send(JSON.stringify(leaveMessage));
+      globalWebSocketInstance.currentRoom = undefined;
+    }
+  }, []);
+
+  const addMessageListener = useCallback((listener: (message: RoomMessage) => void) => {
     if (globalWebSocketInstance) {
       if (messageListenerRef.current) {
         globalWebSocketInstance.listeners.delete(messageListenerRef.current);
@@ -109,7 +143,10 @@ const useWebSocket = (url: string = 'ws://localhost:8080') => {
     send,
     isConnected,
     addMessageListener,
+    joinRoom,
+    leaveRoom,
+    currentRoom: globalWebSocketInstance?.currentRoom,
   };
 };
 
-export { useWebSocket, type WsMessage };
+export { useWebSocket, type WsMessage, type RoomMessage };
