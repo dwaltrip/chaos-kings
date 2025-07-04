@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
-interface ChatMessage {
+interface WsMessage {
   user: string;
   message: string;
   timestamp: number;
@@ -8,7 +8,7 @@ interface ChatMessage {
 
 interface WebSocketInstance {
   ws: WebSocket;
-  listeners: Set<(message: ChatMessage) => void>;
+  listeners: Set<(message: WsMessage) => void>;
   connectionStateListeners: Set<(isConnected: boolean) => void>;
   isConnected: boolean;
 }
@@ -31,7 +31,7 @@ const createWebSocketInstance = (url: string): WebSocketInstance => {
   };
 
   ws.onmessage = (event) => {
-    const message: ChatMessage = JSON.parse(event.data);
+    const message: WsMessage = JSON.parse(event.data);
     instance.listeners.forEach(listener => listener(message));
   };
 
@@ -60,7 +60,7 @@ const createWebSocketInstance = (url: string): WebSocketInstance => {
 
 const useWebSocket = (url: string = 'ws://localhost:8080') => {
   const [isConnected, setIsConnected] = useState(false);
-  const messageListenerRef = useRef<((message: ChatMessage) => void) | null>(null);
+  const messageListenerRef = useRef<((message: WsMessage) => void) | null>(null);
   const connectionListenerRef = useRef<((isConnected: boolean) => void) | null>(null);
 
   useEffect(() => {
@@ -89,13 +89,13 @@ const useWebSocket = (url: string = 'ws://localhost:8080') => {
     };
   }, [url]);
 
-  const send = useCallback((message: ChatMessage) => {
+  const send = useCallback((message: WsMessage) => {
     if (globalWebSocketInstance?.isConnected) {
       globalWebSocketInstance.ws.send(JSON.stringify(message));
     }
   }, []);
 
-  const addMessageListener = useCallback((listener: (message: ChatMessage) => void) => {
+  const addMessageListener = useCallback((listener: (message: WsMessage) => void) => {
     if (globalWebSocketInstance) {
       if (messageListenerRef.current) {
         globalWebSocketInstance.listeners.delete(messageListenerRef.current);
@@ -112,4 +112,4 @@ const useWebSocket = (url: string = 'ws://localhost:8080') => {
   };
 };
 
-export { useWebSocket };
+export { useWebSocket, type WsMessage };
