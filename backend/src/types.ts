@@ -10,22 +10,22 @@ import {
 } from 'kysely';
 
 interface Database {
-  user: UserTable
+  users: UsersTable
 }
 
-interface UserTable {
+interface UsersTable {
   id: Generated<number>
   username: string
   created_at: ColumnType<Date, string | undefined, never>
 }
 
-type User = Selectable<UserTable>
-type NewUser = Insertable<UserTable>
-type UserUpdate = Updateable<UserTable>
+type User = Selectable<UsersTable>
+type NewUser = Insertable<UsersTable>
+type UserUpdate = Updateable<UsersTable>
 
 export {
   Database,
-  UserTable,
+  UsersTable,
   User,
   NewUser,
   UserUpdate,
