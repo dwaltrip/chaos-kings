@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWebSocket, type RoomMessage } from '../services/use-web-socket';
 
-function WebSocketChatDemo() {
+function ChatDemoPage() {
   const [messages, setMessages] = useState<RoomMessage[]>([]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [username, setUsername] = useState('');
@@ -150,4 +150,4 @@ function WebSocketChatDemo() {
   );
 }
 
-export { WebSocketChatDemo };
+export { ChatDemoPage };

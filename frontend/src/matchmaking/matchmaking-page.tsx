@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWebSocket, type MatchmakingMessage } from '../services/use-web-socket';
 
-function MatchmakingDemo() {
+function MatchmakingPage() {
   const [username, setUsername] = useState('');
   const [level, setLevel] = useState(5);
   const [playerId, setPlayerId] = useState('');
@@ -239,4 +239,4 @@ function MatchmakingDemo() {
   );
 }
 
-export { MatchmakingDemo };
+export { MatchmakingPage };
