@@ -11,9 +11,25 @@ interface RoomMessage extends WsMessage {
   type: 'chat' | 'join' | 'leave';
 }
 
+interface MatchmakingMessage {
+  type: 'join-queue' | 'leave-queue' | 'queue-status' | 'queue-status-update' | 'game-found';
+  playerId: string;
+  playerData?: {
+    username: string;
+    level: number;
+  };
+  queueSize?: number;
+  playersInQueue?: string[];
+  playersNeeded?: number;
+  gameId?: string;
+}
+
+type WebSocketMessage = RoomMessage | MatchmakingMessage;
+
 interface WebSocketInstance {
   ws: WebSocket;
   listeners: Set<(message: RoomMessage) => void>;
+  matchmakingListeners: Set<(message: MatchmakingMessage) => void>;
   connectionStateListeners: Set<(isConnected: boolean) => void>;
   isConnected: boolean;
   currentRoom?: string;
@@ -26,6 +42,7 @@ const createWebSocketInstance = (url: string): WebSocketInstance => {
   const instance: WebSocketInstance = {
     ws,
     listeners: new Set(),
+    matchmakingListeners: new Set(),
     connectionStateListeners: new Set(),
     isConnected: false,
   };
@@ -37,8 +54,22 @@ const createWebSocketInstance = (url: string): WebSocketInstance => {
   };
 
   ws.onmessage = (event) => {
-    const message: RoomMessage = JSON.parse(event.data);
-    instance.listeners.forEach(listener => listener(message));
+    try {
+      const message: WebSocketMessage = JSON.parse(event.data);
+      console.log('Received WebSocket message:', message);
+      
+      if ('room' in message) {
+        console.log('Routing to chat listeners');
+        instance.listeners.forEach(listener => listener(message as RoomMessage));
+      } else if ('type' in message && (message.type === 'queue-status-update' || message.type === 'game-found' || 'playerId' in message)) {
+        console.log('Routing to matchmaking listeners');
+        instance.matchmakingListeners.forEach(listener => listener(message as MatchmakingMessage));
+      } else {
+        console.log('Unknown message format:', message);
+      }
+    } catch (error) {
+      console.error('Error parsing WebSocket message:', error);
+    }
   };
 
   ws.onclose = () => {
@@ -67,6 +98,7 @@ const createWebSocketInstance = (url: string): WebSocketInstance => {
 const useWebSocket = (url: string = 'ws://localhost:8080') => {
   const [isConnected, setIsConnected] = useState(false);
   const messageListenerRef = useRef<((message: RoomMessage) => void) | null>(null);
+  const matchmakingListenerRef = useRef<((message: MatchmakingMessage) => void) | null>(null);
   const connectionListenerRef = useRef<((isConnected: boolean) => void) | null>(null);
 
   useEffect(() => {
@@ -90,6 +122,9 @@ const useWebSocket = (url: string = 'ws://localhost:8080') => {
       }
       if (messageListenerRef.current) {
         instance.listeners.delete(messageListenerRef.current);
+      }
+      if (matchmakingListenerRef.current) {
+        instance.matchmakingListeners.delete(matchmakingListenerRef.current);
       }
       // Keep connection alive for other components that might be using it
     };
@@ -139,14 +174,32 @@ const useWebSocket = (url: string = 'ws://localhost:8080') => {
     }
   }, []);
 
+  const addMatchmakingListener = useCallback((listener: (message: MatchmakingMessage) => void) => {
+    if (globalWebSocketInstance) {
+      if (matchmakingListenerRef.current) {
+        globalWebSocketInstance.matchmakingListeners.delete(matchmakingListenerRef.current);
+      }
+      matchmakingListenerRef.current = listener;
+      globalWebSocketInstance.matchmakingListeners.add(listener);
+    }
+  }, []);
+
+  const sendMatchmakingMessage = useCallback((message: MatchmakingMessage) => {
+    if (globalWebSocketInstance?.isConnected) {
+      globalWebSocketInstance.ws.send(JSON.stringify(message));
+    }
+  }, []);
+
   return {
     send,
     isConnected,
     addMessageListener,
+    addMatchmakingListener,
+    sendMatchmakingMessage,
     joinRoom,
     leaveRoom,
     currentRoom: globalWebSocketInstance?.currentRoom,
   };
 };
 
-export { useWebSocket, type WsMessage, type RoomMessage };
+export { useWebSocket, type WsMessage, type RoomMessage, type MatchmakingMessage };
