@@ -28,6 +28,7 @@ type WebSocketMessage = RoomMessage | MatchmakingMessage;
 interface ClientData {
   ws: WebSocket;
   room?: string;
+  playerId?: string;
 }
 
 export class WebSocketManager {
@@ -54,10 +55,20 @@ export class WebSocketManager {
   }
 
   private setupEventHandlers() {
-    this.wss.on('connection', (ws: WebSocket) => {
+    this.wss.on('connection', async (ws: WebSocket) => {
       console.log('New client connected');
       
       this.clients.set(ws, { ws });
+      
+      // Send initial queue status to new client
+      if (this.matchmakingQueue) {
+        try {
+          const initialStatus = await this.matchmakingQueue.getQueueStatus();
+          ws.send(JSON.stringify({ type: 'queue-status-update', ...initialStatus }));
+        } catch (error) {
+          console.error('Error sending initial queue status:', error);
+        }
+      }
 
       ws.on('message', (data: Buffer) => {
         try {
@@ -82,12 +93,28 @@ export class WebSocketManager {
         }
       });
 
-      ws.on('close', () => {
+      ws.on('close', async () => {
         console.log('Client disconnected');
         const clientData = this.clients.get(ws);
+        
+        // Remove from chat room if in one
         if (clientData?.room) {
           this.leaveRoom(ws, clientData.room);
         }
+        
+        // Remove from matchmaking queue if in one
+        if (clientData?.playerId && this.matchmakingQueue) {
+          console.log(`Removing disconnected player ${clientData.playerId} from queue`);
+          try {
+            await this.matchmakingQueue.removePlayer(clientData.playerId);
+            // Broadcast updated queue status to remaining clients
+            const updatedStatus = await this.matchmakingQueue.getQueueStatus();
+            this.broadcastToAllClients({ type: 'queue-status-update', ...updatedStatus });
+          } catch (error) {
+            console.error('Error removing disconnected player from queue:', error);
+          }
+        }
+        
         this.clients.delete(ws);
       });
 
@@ -164,9 +191,21 @@ export class WebSocketManager {
       switch (message.type) {
         case 'join-queue':
           console.log(`Player ${message.playerId} wants to join queue`);
+          // Track this player for disconnect handling
+          const clientData = this.clients.get(ws);
+          if (clientData) {
+            clientData.playerId = message.playerId;
+          }
+          
           const game = await this.matchmakingQueue.addPlayer(message.playerId, message.playerData);
           if (game) {
             console.log('Game created:', game);
+            // Clear playerIds for all clients that were in the game
+            this.clients.forEach((data, client) => {
+              if (game.players.some(p => p.playerId === data.playerId)) {
+                data.playerId = undefined;
+              }
+            });
             // Broadcast game creation to all clients
             this.broadcastToAllClients({ 
               type: 'game-found', 
@@ -181,6 +220,12 @@ export class WebSocketManager {
           
         case 'leave-queue':
           console.log(`Player ${message.playerId} wants to leave queue`);
+          // Clear playerId tracking
+          const leavingClientData = this.clients.get(ws);
+          if (leavingClientData) {
+            leavingClientData.playerId = undefined;
+          }
+          
           await this.matchmakingQueue.removePlayer(message.playerId);
           // Broadcast updated queue status to all clients
           const updatedStatus = await this.matchmakingQueue.getQueueStatus();
