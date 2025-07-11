@@ -1,5 +1,6 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { MatchmakingQueue } from './src/matchmaking-example';
+import { getClient } from './src/services/redis';
 
 interface ChatMessage {
   user: string;
@@ -33,11 +34,23 @@ export class WebSocketManager {
   private wss: WebSocketServer;
   private rooms = new Map<string, Set<WebSocket>>();
   private clients = new Map<WebSocket, ClientData>();
+  private matchmakingQueue: MatchmakingQueue | null = null;
 
   constructor(port: number) {
     this.wss = new WebSocketServer({ port });
+    this.initializeMatchmaking();
     this.setupEventHandlers();
     console.log(`WebSocket server running on ws://localhost:${port}`);
+  }
+
+  private async initializeMatchmaking() {
+    try {
+      const redis = await getClient();
+      this.matchmakingQueue = new MatchmakingQueue(redis, 4); // 4 players per game
+      console.log('Matchmaking queue initialized');
+    } catch (error) {
+      console.error('Failed to initialize matchmaking queue:', error);
+    }
   }
 
   private setupEventHandlers() {
@@ -131,24 +144,48 @@ export class WebSocketManager {
     });
   }
 
-  private handleMatchmakingMessage(ws: WebSocket, message: MatchmakingMessage) {
+  private async handleMatchmakingMessage(ws: WebSocket, message: MatchmakingMessage) {
     console.log('Handling matchmaking message:', message);
     
-    switch (message.type) {
-      case 'join-queue':
-        console.log(`Player ${message.playerId} wants to join queue`);
-        // TODO: Integrate with MatchmakingQueue
-        break;
-      case 'leave-queue':
-        console.log(`Player ${message.playerId} wants to leave queue`);
-        // TODO: Integrate with MatchmakingQueue
-        break;
-      case 'queue-status':
-        console.log(`Player ${message.playerId} requested queue status`);
-        // TODO: Send queue status back to client
-        break;
-      default:
-        console.log('Unknown matchmaking message type');
+    if (!this.matchmakingQueue) {
+      console.error('Matchmaking queue not initialized');
+      return;
+    }
+    
+    try {
+      switch (message.type) {
+        case 'join-queue':
+          console.log(`Player ${message.playerId} wants to join queue`);
+          const game = await this.matchmakingQueue.addPlayer(message.playerId, message.playerData);
+          if (game) {
+            console.log('Game created:', game);
+            // TODO: Broadcast game creation to all clients
+          }
+          // Send updated queue status back to client
+          const queueStatus = await this.matchmakingQueue.getQueueStatus();
+          ws.send(JSON.stringify({ type: 'queue-status-update', ...queueStatus }));
+          break;
+          
+        case 'leave-queue':
+          console.log(`Player ${message.playerId} wants to leave queue`);
+          await this.matchmakingQueue.removePlayer(message.playerId);
+          // Send updated queue status back to client
+          const updatedStatus = await this.matchmakingQueue.getQueueStatus();
+          ws.send(JSON.stringify({ type: 'queue-status-update', ...updatedStatus }));
+          break;
+          
+        case 'queue-status':
+          console.log(`Player ${message.playerId} requested queue status`);
+          const status = await this.matchmakingQueue.getQueueStatus();
+          ws.send(JSON.stringify({ type: 'queue-status-update', ...status }));
+          break;
+          
+        default:
+          console.log('Unknown matchmaking message type');
+      }
+    } catch (error) {
+      console.error('Error handling matchmaking message:', error);
+      ws.send(JSON.stringify({ type: 'error', message: 'Failed to handle matchmaking request' }));
     }
   }
 }

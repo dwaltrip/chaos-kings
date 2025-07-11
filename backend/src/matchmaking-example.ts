@@ -204,5 +204,10 @@ async function example() {
     console.log('Queue status after game:', await queue.getQueueStatus());
 }
 
+// Export the MatchmakingQueue class for use in other modules
+export { MatchmakingQueue };
+
 // Run the example if this file is executed directly
-example().catch(console.error);
+if (require.main === module) {
+  example().catch(console.error);
+}
