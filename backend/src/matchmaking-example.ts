@@ -35,6 +35,7 @@ class MatchmakingQueue {
     private queueKey: string;
     private playerDataKey: string;
     private gameKey: string;
+    private isCreatingGame: boolean = false;
 
     constructor(redisClient: Redis, playersPerGame: number = 4) {
         this.redis = redisClient;
@@ -46,6 +47,8 @@ class MatchmakingQueue {
 
     // Add a player to the queue
     async addPlayer(playerId: string, playerData: PlayerData = {}): Promise<Game | null> {
+        console.log(`🟡 addPlayer called for ${playerId}, isCreatingGame: ${this.isCreatingGame}`);
+        
         const timestamp = Date.now();
         const queueEntry = {
             playerId,
@@ -62,10 +65,12 @@ class MatchmakingQueue {
             value: playerId
         });
 
-        console.log(`Player ${playerId} added to queue`);
+        console.log(`✅ Player ${playerId} added to queue`);
         
         // Check if we can form a game
-        return await this.checkForMatch();
+        const result = await this.checkForMatch();
+        console.log(`🎯 checkForMatch result for ${playerId}:`, result ? 'GAME CREATED' : 'NO GAME');
+        return result;
     }
 
     // Remove a player from the queue
@@ -81,50 +86,82 @@ class MatchmakingQueue {
 
     // Check if we have enough players to start a game
     async checkForMatch(): Promise<Game | null> {
+        console.log(`🔍 checkForMatch called, isCreatingGame: ${this.isCreatingGame}`);
+        
+        // Prevent concurrent game creation - acquire lock here atomically
+        if (this.isCreatingGame) {
+            console.log(`🚫 Game creation already in progress, skipping`);
+            return null;
+        }
+        
         const queueSize = await this.redis.zCard(this.queueKey);
+        console.log(`📊 Current queue size: ${queueSize}, needed: ${this.playersPerGame}`);
         
         if (queueSize >= this.playersPerGame) {
+            // Set lock immediately before proceeding
+            if (this.isCreatingGame) {
+                console.log(`🚫 Lock acquired by another thread, skipping`);
+                return null;
+            }
+            this.isCreatingGame = true;
+            console.log(`🔒 Lock acquired in checkForMatch`);
+            
+            console.log(`🚀 Enough players! Starting game creation...`);
             return await this.createGame();
         }
         
+        console.log(`⏳ Not enough players yet`);
         return null;
     }
 
     // Create a game with the first N players in queue
+    // NOTE: Lock is already acquired in checkForMatch()
     async createGame(): Promise<Game | null> {
-        // Get the first N players (oldest in queue)
-        const playerIds = await this.redis.zRange(this.queueKey, 0, this.playersPerGame - 1);
+        console.log(`🎮 Starting createGame process (lock already acquired)...`);
         
-        if (playerIds.length < this.playersPerGame) {
-            return null;
+        try {
+            // Get the first N players (oldest in queue)
+            const playerIds = await this.redis.zRange(this.queueKey, 0, this.playersPerGame - 1);
+            console.log(`👥 Found players for game:`, playerIds);
+            
+            if (playerIds.length < this.playersPerGame) {
+                console.log(`❌ Not enough players found: ${playerIds.length} < ${this.playersPerGame}`);
+                return null;
+            }
+
+            // Get player data for all matched players
+            const playerDataArray = await this.redis.hmGet(this.playerDataKey, playerIds);
+            const players = playerIds.map((id: string, index: number) => ({
+                playerId: id,
+                ...JSON.parse(playerDataArray[index] || '{}'),
+            }));
+
+            // Create game
+            const gameId = uuidv4();
+            const game = {
+                gameId,
+                players,
+                createdAt: Date.now(),
+                status: 'starting'
+            };
+
+            console.log(`💾 Storing game ${gameId}...`);
+            // Store game data
+            await this.redis.hSet(this.gameKey, gameId, JSON.stringify(game));
+
+            console.log(`🗑️ Removing players from queue:`, playerIds);
+            // Remove matched players from queue
+            await this.redis.zRem(this.queueKey, playerIds);
+            await this.redis.hDel(this.playerDataKey, playerIds);
+
+            console.log(`✅ Game ${gameId} created with players:`, playerIds);
+            
+            return game;
+        } finally {
+            console.log(`🔓 Clearing game creation lock`);
+            // Always clear the lock
+            this.isCreatingGame = false;
         }
-
-        // Get player data for all matched players
-        const playerDataArray = await this.redis.hmGet(this.playerDataKey, playerIds);
-        const players = playerIds.map((id: string, index: number) => ({
-            playerId: id,
-            ...JSON.parse(playerDataArray[index] || '{}'),
-        }));
-
-        // Create game
-        const gameId = uuidv4();
-        const game = {
-            gameId,
-            players,
-            createdAt: Date.now(),
-            status: 'starting'
-        };
-
-        // Store game data
-        await this.redis.hSet(this.gameKey, gameId, JSON.stringify(game));
-
-        // Remove matched players from queue
-        await this.redis.zRem(this.queueKey, playerIds);
-        await this.redis.hDel(this.playerDataKey, playerIds);
-
-        console.log(`Game ${gameId} created with players:`, playerIds);
-        
-        return game;
     }
 
     // Get current queue status
