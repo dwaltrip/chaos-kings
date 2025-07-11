@@ -1,4 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws';
+import { MatchmakingQueue } from './src/matchmaking-example';
 
 interface ChatMessage {
   user: string;
@@ -10,6 +11,18 @@ interface RoomMessage extends ChatMessage {
   room: string;
   type: 'chat' | 'join' | 'leave';
 }
+
+interface MatchmakingMessage {
+  type: 'join-queue' | 'leave-queue' | 'queue-status';
+  playerId: string;
+  playerData?: {
+    username?: string;
+    level?: number;
+    [key: string]: any;
+  };
+}
+
+type WebSocketMessage = RoomMessage | MatchmakingMessage;
 
 interface ClientData {
   ws: WebSocket;
@@ -35,15 +48,21 @@ export class WebSocketManager {
 
       ws.on('message', (data: Buffer) => {
         try {
-          const message: RoomMessage = JSON.parse(data.toString());
+          const message: WebSocketMessage = JSON.parse(data.toString());
           console.log('Received:', message);
 
-          if (message.type === 'join') {
-            this.joinRoom(ws, message.room);
-          } else if (message.type === 'leave') {
-            this.leaveRoom(ws, message.room);
-          } else if (message.type === 'chat') {
-            this.broadcastToRoom(message.room, message);
+          if ('room' in message) {
+            // Handle room-based messages (chat)
+            if (message.type === 'join') {
+              this.joinRoom(ws, message.room);
+            } else if (message.type === 'leave') {
+              this.leaveRoom(ws, message.room);
+            } else if (message.type === 'chat') {
+              this.broadcastToRoom(message.room, message);
+            }
+          } else {
+            // Handle matchmaking messages
+            this.handleMatchmakingMessage(ws, message as MatchmakingMessage);
           }
         } catch (error) {
           console.error('Error parsing message:', error);
@@ -110,5 +129,26 @@ export class WebSocketManager {
         client.send(JSON.stringify(message));
       }
     });
+  }
+
+  private handleMatchmakingMessage(ws: WebSocket, message: MatchmakingMessage) {
+    console.log('Handling matchmaking message:', message);
+    
+    switch (message.type) {
+      case 'join-queue':
+        console.log(`Player ${message.playerId} wants to join queue`);
+        // TODO: Integrate with MatchmakingQueue
+        break;
+      case 'leave-queue':
+        console.log(`Player ${message.playerId} wants to leave queue`);
+        // TODO: Integrate with MatchmakingQueue
+        break;
+      case 'queue-status':
+        console.log(`Player ${message.playerId} requested queue status`);
+        // TODO: Send queue status back to client
+        break;
+      default:
+        console.log('Unknown matchmaking message type');
+    }
   }
 }
