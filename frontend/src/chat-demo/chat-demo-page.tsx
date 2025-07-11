@@ -1,56 +1,40 @@
-import { useState, useEffect } from 'react';
-import { useWebSocket, type RoomMessage } from '../services/use-web-socket';
+import { useEffect } from 'react';
+import { useChatDemoStore } from './chat-demo-store';
+import { chatDemoActions } from './chat-demo-actions';
 
 function ChatDemoPage() {
-  const [messages, setMessages] = useState<RoomMessage[]>([]);
-  const [currentMessage, setCurrentMessage] = useState('');
-  const [username, setUsername] = useState('');
-  const [currentRoom, setCurrentRoom] = useState('general');
-  const [newRoomName, setNewRoomName] = useState('');
-  const { send, isConnected, addMessageListener, joinRoom } = useWebSocket();
+  const {
+    messages,
+    username,
+    setUsername,
+    currentRoom,
+    isConnected,
+    currentMessage,
+    setCurrentMessage,
+    newRoomName,
+    setNewRoomName,
+  } = useChatDemoStore();
 
   useEffect(() => {
-    addMessageListener((message: RoomMessage) => {
-      if (message.type === 'chat') {
-        setMessages(prev => [...prev, message]);
-      }
-    });
-  }, [addMessageListener]);
-
-  useEffect(() => {
-    if (isConnected) {
-      joinRoom(currentRoom);
-    }
-  }, [isConnected, currentRoom, joinRoom]);
+    chatDemoActions.initialize();
+    
+    return () => {
+      chatDemoActions.cleanup();
+    };
+  }, []);
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentMessage.trim() || !username.trim() || !isConnected) return;
-
-    const message: RoomMessage = {
-      user: username,
-      message: currentMessage,
-      timestamp: Date.now(),
-      room: currentRoom,
-      type: 'chat'
-    };
-
-    send(message);
-    setCurrentMessage('');
+    chatDemoActions.sendMessage(currentMessage, username, currentRoom);
   };
 
   const handleRoomChange = (roomName: string) => {
-    if (roomName !== currentRoom) {
-      setMessages([]);
-      setCurrentRoom(roomName);
-    }
+    chatDemoActions.changeRoom(roomName);
   };
 
   const handleCreateRoom = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newRoomName.trim()) return;
-    handleRoomChange(newRoomName);
-    setNewRoomName('');
+    chatDemoActions.createAndJoinRoom(newRoomName);
   };
 
   return (
