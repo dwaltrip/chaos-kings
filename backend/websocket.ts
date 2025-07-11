@@ -144,6 +144,14 @@ export class WebSocketManager {
     });
   }
 
+  private broadcastToAllClients(message: any) {
+    this.clients.forEach((clientData, ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(message));
+      }
+    });
+  }
+
   private async handleMatchmakingMessage(ws: WebSocket, message: MatchmakingMessage) {
     console.log('Handling matchmaking message:', message);
     
@@ -159,19 +167,24 @@ export class WebSocketManager {
           const game = await this.matchmakingQueue.addPlayer(message.playerId, message.playerData);
           if (game) {
             console.log('Game created:', game);
-            // TODO: Broadcast game creation to all clients
+            // Broadcast game creation to all clients
+            this.broadcastToAllClients({ 
+              type: 'game-found', 
+              gameId: game.gameId,
+              players: game.players.map(p => p.playerId)
+            });
           }
-          // Send updated queue status back to client
+          // Broadcast updated queue status to all clients
           const queueStatus = await this.matchmakingQueue.getQueueStatus();
-          ws.send(JSON.stringify({ type: 'queue-status-update', ...queueStatus }));
+          this.broadcastToAllClients({ type: 'queue-status-update', ...queueStatus });
           break;
           
         case 'leave-queue':
           console.log(`Player ${message.playerId} wants to leave queue`);
           await this.matchmakingQueue.removePlayer(message.playerId);
-          // Send updated queue status back to client
+          // Broadcast updated queue status to all clients
           const updatedStatus = await this.matchmakingQueue.getQueueStatus();
-          ws.send(JSON.stringify({ type: 'queue-status-update', ...updatedStatus }));
+          this.broadcastToAllClients({ type: 'queue-status-update', ...updatedStatus });
           break;
           
         case 'queue-status':
