@@ -1,19 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useWebSocket, type MatchmakingMessage } from '../services/use-web-socket';
+import { matchmakingActions } from './matchmaking-actions';
 
 function MatchmakingPage() {
   const [username, setUsername] = useState('');
   const [level, setLevel] = useState(5);
   const [playerId, setPlayerId] = useState('');
   const [isInQueue, setIsInQueue] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   const [queueStatus, setQueueStatus] = useState<{
     queueSize: number;
     playersInQueue: string[];
     playersNeeded: number;
   }>({ queueSize: 0, playersInQueue: [], playersNeeded: 4 });
   const [gameFound, setGameFound] = useState<string | null>(null);
-  
-  const { isConnected, addMatchmakingListener, sendMatchmakingMessage } = useWebSocket();
 
   useEffect(() => {
     if (!playerId && username) {
@@ -22,59 +21,67 @@ function MatchmakingPage() {
   }, [username, playerId]);
 
   useEffect(() => {
-    addMatchmakingListener((message: MatchmakingMessage) => {
-      if (message.type === 'queue-status-update') {
-        setQueueStatus({
-          queueSize: message.queueSize || 0,
-          playersInQueue: message.playersInQueue || [],
-          playersNeeded: message.playersNeeded || 4
-        });
-      } else if (message.type === 'game-found') {
-        setGameFound(message.gameId || 'unknown');
+    console.log(`[Matchmaking] Initializing matchmaking actions`);
+    
+    matchmakingActions.initialize({
+      onConnectionChange: (connected) => {
+        console.log(`[Matchmaking] Connection state changed: ${connected}`);
+        setIsConnected(connected);
+      },
+      onQueueStatusUpdate: (status) => {
+        console.log(`[Matchmaking] Queue status updated:`, status);
+        setQueueStatus(status);
+      },
+      onGameFound: (gameId) => {
+        console.log(`[Matchmaking] Game found: ${gameId}`);
+        setGameFound(gameId);
         setIsInQueue(false);
       }
     });
-  }, [addMatchmakingListener]);
+
+    // Cleanup function
+    return () => {
+      console.log(`[Matchmaking] Cleaning up matchmaking actions`);
+      matchmakingActions.cleanup();
+    };
+  }, []);
 
 
   const joinQueue = () => {
-    if (!username.trim() || !playerId) return;
+    console.log(`[Matchmaking] Join queue button clicked`);
+    if (!username.trim() || !playerId) {
+      console.error(`[Matchmaking] Cannot join queue: missing username or playerId`);
+      return;
+    }
 
-    const message: MatchmakingMessage = {
-      type: 'join-queue',
-      playerId,
-      playerData: {
-        username: username.trim(),
-        level
-      }
-    };
-
-    sendMatchmakingMessage(message);
-    setIsInQueue(true);
-    setGameFound(null);
+    const success = matchmakingActions.joinQueue(playerId, username, level);
+    if (success) {
+      setIsInQueue(true);
+      setGameFound(null);
+    }
   };
 
   const leaveQueue = () => {
-    if (!playerId) return;
+    console.log(`[Matchmaking] Leave queue button clicked`);
+    if (!playerId) {
+      console.error(`[Matchmaking] Cannot leave queue: missing playerId`);
+      return;
+    }
 
-    const message: MatchmakingMessage = {
-      type: 'leave-queue',
-      playerId
-    };
-
-    sendMatchmakingMessage(message);
-    setIsInQueue(false);
+    const success = matchmakingActions.leaveQueue(playerId);
+    if (success) {
+      setIsInQueue(false);
+    }
   };
 
   const getQueueStatus = () => {
-    if (!playerId) return;
+    console.log(`[Matchmaking] Queue status button clicked`);
+    if (!playerId) {
+      console.error(`[Matchmaking] Cannot get status: missing playerId`);
+      return;
+    }
 
-    const message: MatchmakingMessage = {
-      type: 'queue-status',
-      playerId
-    };
-
-    sendMatchmakingMessage(message);
+    matchmakingActions.requestQueueStatus(playerId);
   };
 
   return (

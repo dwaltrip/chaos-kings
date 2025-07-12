@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
+// DEPRECATED: This file is deprecated in favor of websocket-service.ts
+// Use getWebSocketService() instead of useWebSocket() for new code
+// This maintains the same WebSocket connection across all components
+
 interface WsMessage {
   user: string;
   message: string;

@@ -49,8 +49,9 @@ export const chatDemoActions = {
     
     // If already connected, join the current room immediately
     if (wsService.getConnectionState()) {
-      console.log(`[Chat-Actions] Already connected, immediately joining room: ${store.currentRoom}`);
-      this.joinRoom(store.currentRoom);
+      const currentRoom = useChatDemoStore.getState().currentRoom;
+      console.log(`[Chat-Actions] Already connected, immediately joining room: ${currentRoom}`);
+      this.joinRoom(currentRoom);
     }
     
     console.log(`[Chat-Actions] Initialization complete`);
