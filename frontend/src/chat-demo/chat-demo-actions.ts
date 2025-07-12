@@ -25,12 +25,13 @@ export const chatDemoActions = {
     console.log(`[Chat-Actions] Setting up connection state listener`);
     removeConnectionListener = wsService.addConnectionStateListener((isConnected) => {
       console.log(`[Chat-Actions] Connection state changed: ${isConnected}`);
-      useChatDemoStore.getState().setIsConnected(isConnected);
+      const currentStore = useChatDemoStore.getState();
+      currentStore.setIsConnected(isConnected);
       
       // Auto-join current room when connected
       if (isConnected) {
-        console.log(`[Chat-Actions] Auto-joining room: ${store.currentRoom}`);
-        this.joinRoom(store.currentRoom);
+        console.log(`[Chat-Actions] Auto-joining room: ${currentStore.currentRoom}`);
+        this.joinRoom(currentStore.currentRoom);
       }
     });
 
@@ -45,6 +46,12 @@ export const chatDemoActions = {
         console.log(`[Chat-Actions] Ignoring non-chat room message type: ${message.type}`);
       }
     });
+    
+    // If already connected, join the current room immediately
+    if (wsService.getConnectionState()) {
+      console.log(`[Chat-Actions] Already connected, immediately joining room: ${store.currentRoom}`);
+      this.joinRoom(store.currentRoom);
+    }
     
     console.log(`[Chat-Actions] Initialization complete`);
   },
