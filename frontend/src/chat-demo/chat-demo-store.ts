@@ -27,14 +27,40 @@ export const useChatDemoStore = create<ChatDemoState>((set) => ({
   currentMessage: '',
   newRoomName: '',
   
-  setMessages: (messages) => set({ messages }),
-  addMessage: (message) => set((state) => ({ 
-    messages: [...state.messages, message] 
-  })),
-  setUsername: (username) => set({ username }),
-  setCurrentRoom: (currentRoom) => set({ currentRoom }),
-  setIsConnected: (isConnected) => set({ isConnected }),
-  setCurrentMessage: (currentMessage) => set({ currentMessage }),
-  setNewRoomName: (newRoomName) => set({ newRoomName }),
-  clearMessages: () => set({ messages: [] }),
+  setMessages: (messages) => {
+    console.log(`[Chat-Store] Setting ${messages.length} messages`);
+    set({ messages });
+  },
+  addMessage: (message) => {
+    console.log(`[Chat-Store] Adding message to store:`, message);
+    set((state) => {
+      const newMessages = [...state.messages, message];
+      console.log(`[Chat-Store] Store now has ${newMessages.length} messages`);
+      return { messages: newMessages };
+    });
+  },
+  setUsername: (username) => {
+    console.log(`[Chat-Store] Setting username: ${username}`);
+    set({ username });
+  },
+  setCurrentRoom: (currentRoom) => {
+    console.log(`[Chat-Store] Setting current room: ${currentRoom}`);
+    set({ currentRoom });
+  },
+  setIsConnected: (isConnected) => {
+    console.log(`[Chat-Store] Setting connection state: ${isConnected}`);
+    set({ isConnected });
+  },
+  setCurrentMessage: (currentMessage) => {
+    console.log(`[Chat-Store] Setting current message: "${currentMessage}"`);
+    set({ currentMessage });
+  },
+  setNewRoomName: (newRoomName) => {
+    console.log(`[Chat-Store] Setting new room name: "${newRoomName}"`);
+    set({ newRoomName });
+  },
+  clearMessages: () => {
+    console.log(`[Chat-Store] Clearing all messages`);
+    set({ messages: [] });
+  },
 }));
