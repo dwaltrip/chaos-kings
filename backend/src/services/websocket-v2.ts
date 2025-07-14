@@ -67,7 +67,10 @@ class WebSocketManager {
   private rooms = new Map<string, Set<WsClientId>>();
   clientStore = new ClientStore();
 
-  constructor(port: number) {
+  constructor(
+    port: number,
+    private handleMessage: (client: WsClient, payload: any, manager: WebSocketManager) => void,
+  ) {
     this.wss = new WebSocketServer({ port });
     console.log(`WebSocket server running on ws://localhost:${port}`);
     this.setupHandlers();
@@ -79,16 +82,18 @@ class WebSocketManager {
       const logger = clientLogger(client.id);
       logger.log('New client connected');
       
-      ws.on('message', (data: Buffer) => {
+      ws.on('message', (buffer: Buffer) => {
+        const bufferStr = buffer.toString();
         try {
-          const message = JSON.parse(data.toString());
-          logger.log('[message] raw:', data.toString(), '-- parsed:', message);
+          const data = JSON.parse(bufferStr);
+          logger.log('[message] raw:', bufferStr, '-- parsed:', data);
           /* -----------------------------------------------------
             TODO: Implement message handling / routing logic here
             HANDLE_MESSAGE(client, message, this);
           ----------------------------------------------------- */
+          this.handleMessage(client, data, this);
         } catch (error) {
-          logger.error('Error parsing message:', error, '-- data:', data.toString());
+          logger.error('Error parsing message:', error, '-- data:', bufferStr);
         }
       });
 
