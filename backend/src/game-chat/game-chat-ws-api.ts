@@ -3,18 +3,13 @@ import { WsActions } from '../websocket/types';
 
 const domainAPI = new DomainAPI('game-chat', {
   'chat-message': (payload: any, wsActions) => {
-    // ---------------------------------------------------
-    // wooooooooooooooo
-    // example usage of wsActions:
-    wsActions.broadcastToRoom(payload.room, { message: payload.message });
-    wsActions.sendToSelf({ status: 'ok' });
-    wsActions.sendToClient(payload.senderClientId, { status: 'ok' });
-    // ---------------------------------------------------
-    // ---------------------------------------------------
+    wsActions.broadcastToRoom(payload.room, { ...payload });
   },
-  'join-room': (payload: any) => {
+  'join-room': (payload: any, wsActions) => {
+    wsActions.joinRoom(payload.room);
   },
-  'leave-room': (payload: any) => {
+  'leave-room': (payload: any, wsActions) => {
+    wsActions.leaveRoom(payload.room);
   },
 });
 
