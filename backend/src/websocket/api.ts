@@ -1,3 +1,4 @@
+import { WsActions } from './types';
 
 interface WebSocketMessage {
   domain: string;
@@ -46,7 +47,7 @@ class WebSocketAPI {
 
 const websocketAPI = new WebSocketAPI();
 
-function handleWebSocketMessage(data: WebSocketMessage) {
+function handleWebSocketMessage(data: WebSocketMessage, actions: WsActions) {
   websocketAPI.handleMessage(data);
 } 
 

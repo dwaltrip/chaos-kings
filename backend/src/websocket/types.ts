@@ -8,7 +8,10 @@ interface WsActions {
   broadcastToRoom: (roomId: string, message: any) => void;
 }
 
+type WsMessageHandler = (payload: any, actions: WsActions) => void;
+
 export {
   type WsClientId,
   type WsActions,
+  type WsMessageHandler,
 };

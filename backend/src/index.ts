@@ -1,12 +1,15 @@
-import { WebSocketManager } from './services/websocket-v2';
-import { handleWebSocketMessage } from './websocket-api';
+import {
+  WebSocketManager,
+  handleWebSocketMessage,
+  WsMessageHandler,
+} from './websocket';
 
 const PORT = 8080;
 
-const webSocketManager = new WebSocketManager(
+new WebSocketManager(
   PORT,
-  (client, data, manager) => {
-    handleWebSocketMessage(data);
+  (data, actions) => {
+    handleWebSocketMessage(data, actions);
   }
 );
 
