@@ -109,6 +109,45 @@ class WebSocketManager {
     });
   }
 
+  private actionsForClient(client: WsClient): WsActions {
+    return {
+      joinRoom: (roomId: string) => this.joinRoom(client, roomId),
+      leaveRoom: (roomId: string) => this.leaveRoom(client, roomId),
+      broadcastToRoom: (roomId: string, message: any) => {
+        this.broadcastToRoom(roomId, message, client);
+      },
+      sendToSelf: (message: any) => client.ws.send(message),
+      sendToClient: (clientId: WsClientId, message: any) => {
+        this.clientStore.getById(clientId).ws.send(message);
+      },
+      // broadcastToAllClients: (message: any) => this.broadcastToAllClients(message),
+    };
+  }
+
+  private joinRoom(client: WsClient, roomId: string) {
+    if (client.currentRoom) {
+      this.leaveRoom(client, client.currentRoom);
+    }
+    if (!this.rooms.has(roomId)) {
+      this.rooms.set(roomId, new Set());
+    }
+    this.rooms.get(roomId)!.add(client);
+    client.currentRoom = roomId;
+    console.log(`Client ${client.id} joined room: ${roomId}`);
+  }
+
+  private leaveRoom(client: WsClient, roomId: string) {
+    const room = this.rooms.get(roomId);
+    if (room) {
+      room.delete(client);
+      if (room.size === 0) {
+        this.rooms.delete(roomId);
+      }
+    }
+    client.currentRoom = null;
+    console.log(`Client ${client.id} left room: ${roomId}`);
+  }
+
   private broadcastToRoom(roomId: string, message: any, fromClient: WsClient) {
     const logger = clientLogger(fromClient.id);
     const room  = this.rooms.get(roomId);
