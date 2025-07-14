@@ -1,16 +1,19 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
 
-type WsClientId = string;
+import { WsClientId, WsActions } from './types';
+
+type RoomId = string;
 
 interface WsClient {
   id: WsClientId
   ws: WebSocket;
+  currentRoom: RoomId | null;
 }
 
 function createWsClient(ws: WebSocket): WsClient {
   const id = `client-${uuidv4()}`;
-  return { id, ws };
+  return { id, ws, currentRoom: null };
 }
 
 class ClientStore {
@@ -64,12 +67,12 @@ function clientLogger(clientId: string) {
 
 class WebSocketManager {
   private wss: WebSocketServer;
-  private rooms = new Map<string, Set<WsClientId>>();
+  private rooms = new Map<string, Set<WsClient>>();
   clientStore = new ClientStore();
 
   constructor(
     port: number,
-    private handleMessage: (client: WsClient, payload: any, manager: WebSocketManager) => void,
+    private handleMessage: (payload: any) => void,
   ) {
     this.wss = new WebSocketServer({ port });
     console.log(`WebSocket server running on ws://localhost:${port}`);
@@ -91,7 +94,7 @@ class WebSocketManager {
             TODO: Implement message handling / routing logic here
             HANDLE_MESSAGE(client, message, this);
           ----------------------------------------------------- */
-          this.handleMessage(client, data, this);
+          this.handleMessage(client, data, this.actionsForClient(client));
         } catch (error) {
           logger.error('Error parsing message:', error, '-- data:', bufferStr);
         }
