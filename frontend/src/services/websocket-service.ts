@@ -60,6 +60,14 @@ class WebSocketService {
   get currentRoom(): string | undefined {
     return this._currentRoom;
   }
+
+  cleanup() {
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null as any; // Clear the reference
+    }
+    window.removeEventListener('beforeunload', this.handleUnload);
+  }
 }
 
 let globalWebSocketService: WebSocketService | null = null;

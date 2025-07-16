@@ -1,29 +1,39 @@
 import { useEffect, useRef } from 'react';
-import { useChatDemoStore } from './chat-demo-store';
+import { useChatStore } from './chat-demo-store';
 import {
   websocketConnect,
   sendChatMessage,
+  setCurrentMessage,
+  setUsername,
+  setNewRoomName,
+  joinRoom,
+  createAndJoinRoom,
 } from './chat-demo-actions';
+
+
+type WebSocketService = ReturnType<typeof websocketConnect>;
 
 function ChatDemoPage() {
   const {
     messages,
     username,
-    setUsername,
     currentRoom,
     isConnected,
     currentMessage,
-    setCurrentMessage,
     newRoomName,
-    setNewRoomName,
-  } = useChatDemoStore();
+    // actions: {
+    //   setUsername,
+    //   setCurrentMessage,
+    //   setNewRoomName,
+    // },
+  } = useChatStore();
 
-  const ws = useRef(null);
+  const wsServiceRef = useRef<WebSocketService | null>(null);
 
   useEffect(() => {
-    ws.current = websocketConnect();
+    wsServiceRef.current = websocketConnect();
     return () => {
-      ws.current?.cleanup();
+      wsServiceRef.current?.cleanup();
     };
   }, []);
 
@@ -33,12 +43,12 @@ function ChatDemoPage() {
   };
 
   const handleRoomChange = (roomName: string) => {
-    chatDemoActions.changeRoom(roomName);
+    joinRoom(roomName);
   };
 
   const handleCreateRoom = (e: React.FormEvent) => {
     e.preventDefault();
-    chatDemoActions.createAndJoinRoom(newRoomName);
+    createAndJoinRoom(newRoomName);
   };
 
   return (
