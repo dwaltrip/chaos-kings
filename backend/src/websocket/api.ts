@@ -1,10 +1,4 @@
-import { WsActions, WsMessageHandler } from './types';
-
-interface WebSocketMessage {
-  domain: string;
-  type: string;
-  payload: any;
-}
+import { WsActions, WsMessageHandler, WsMessage } from './types';
 
 // TODO: is "app" a better name than "domain"?
 class DomainAPI {
@@ -22,9 +16,10 @@ class DomainAPI {
 class WebSocketAPI {
   private domains = new Map<string, DomainAPI>();
 
-  handleMessage(data: WebSocketMessage, actions: WsActions) {
-    const domainAPI = this.requireDomainAPI(data.domain);
-    domainAPI.handleMessage(data.type, data.payload, actions);
+  handleMessage(message: WsMessage, actions: WsActions) {
+    const { domain, payload } = message;
+    const domainAPI = this.requireDomainAPI(domain);
+    domainAPI.handleMessage(payload.type, payload, actions);
   }
 
   private requireDomainAPI(appName: string): DomainAPI {
@@ -45,7 +40,7 @@ class WebSocketAPI {
 
 const websocketAPI = new WebSocketAPI();
 
-function handleWebSocketMessage(data: WebSocketMessage, wsActions: WsActions) {
+function handleWebSocketMessage(data: WsMessage, wsActions: WsActions) {
   websocketAPI.handleMessage(data, wsActions);
 } 
 

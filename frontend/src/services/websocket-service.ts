@@ -1,12 +1,5 @@
-interface WsMessage {
-  domain: string;
-  payload: {
-    type: string;
-    data: any;
-  }
-  // user: string;
-  // timestamp: number;
-}
+// TODO: create alias for top-level shared "types" directory
+import { type WsMessage } from '../../../types/websockets';
 
 interface WsMessageHandler {
   handleMessage: (message: WsMessage) => void;

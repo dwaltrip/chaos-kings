@@ -1,3 +1,5 @@
+import { WsMessage } from '../../../types/websockets';
+
 type WsClientId = string;
 
 interface WsActions {
@@ -14,4 +16,5 @@ export {
   type WsClientId,
   type WsActions,
   type WsMessageHandler,
+  type WsMessage,
 };

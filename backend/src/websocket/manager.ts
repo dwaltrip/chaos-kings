@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
 
 import { WsClientId, WsActions, WsMessageHandler } from './types';
+import { WsMessage } from '../../../types/websockets';
 
 type RoomId = string;
 
@@ -88,9 +89,9 @@ class WebSocketManager {
       ws.on('message', (buffer: Buffer) => {
         const bufferStr = buffer.toString();
         try {
-          const data = JSON.parse(bufferStr);
-          logger.log('[message] raw:', bufferStr, '-- parsed:', data);
-          this.handleMessage(data, this.actionsForClient(client));
+          const message = validateMessage(JSON.parse(bufferStr));
+          logger.log('[message] raw:', bufferStr, '-- parsed:', message);
+          this.handleMessage(message, this.actionsForClient(client));
         } catch (error) {
           logger.error('Error parsing message:', error, '-- data:', bufferStr);
         }
@@ -182,6 +183,16 @@ class WebSocketManager {
       }
     });
   }
+}
+
+function validateMessage(message: any): WsMessage {
+  if (!message || typeof message !== 'object') {
+    throw new Error('Invalid message format');
+  }
+  if (!message.domain || !message.payload || !message.payload.type || !message.payload.data) {
+    throw new Error('Message must have domain, payload with type and data');
+  }
+  return message as WsMessage;
 }
 
 export { WebSocketManager};
