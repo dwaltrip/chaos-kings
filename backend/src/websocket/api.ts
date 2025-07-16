@@ -45,8 +45,8 @@ class WebSocketAPI {
 
 const websocketAPI = new WebSocketAPI();
 
-function handleWebSocketMessage(data: WebSocketMessage, actions: WsActions) {
-  websocketAPI.handleMessage(data, actions);
+function handleWebSocketMessage(data: WebSocketMessage, wsActions: WsActions) {
+  websocketAPI.handleMessage(data, wsActions);
 } 
 
 function registerDomainAPI(domainAPI: DomainAPI) {

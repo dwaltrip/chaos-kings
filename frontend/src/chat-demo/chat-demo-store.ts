@@ -1,66 +1,47 @@
-import { create } from 'zustand';
-import { type RoomMessage } from '../services/websocket-service';
 
-interface ChatDemoState {
-  messages: RoomMessage[];
-  username: string;
-  currentRoom: string;
-  isConnected: boolean;
-  currentMessage: string;
-  newRoomName: string;
-  
-  setMessages: (messages: RoomMessage[]) => void;
-  addMessage: (message: RoomMessage) => void;
-  setUsername: (username: string) => void;
-  setCurrentRoom: (room: string) => void;
-  setIsConnected: (connected: boolean) => void;
-  setCurrentMessage: (message: string) => void;
-  setNewRoomName: (name: string) => void;
-  clearMessages: () => void;
+interface ChatMessage {
+  id: string;
+  content: string;
+  sender: string;
+  timestamp: Date;
 }
 
-export const useChatDemoStore = create<ChatDemoState>((set) => ({
-  messages: [],
-  username: '',
-  currentRoom: 'general',
-  isConnected: false,
-  currentMessage: '',
-  newRoomName: '',
+const ChatDemoStore = (function() {
+  let _messages = [] as ChatMessage[];
+  let _username =  '';
+  let _currentRoom = 'general';
+  let _isConnected = false;
+  let _currentMessage = '';
+  let _newRoomName = '';
   
-  setMessages: (messages) => {
-    console.log(`[Chat-Store] Setting ${messages.length} messages`);
-    set({ messages });
-  },
-  addMessage: (message) => {
-    console.log(`[Chat-Store] Adding message to store:`, message);
-    set((state) => {
-      const newMessages = [...state.messages, message];
-      console.log(`[Chat-Store] Store now has ${newMessages.length} messages`);
-      return { messages: newMessages };
-    });
-  },
-  setUsername: (username) => {
-    console.log(`[Chat-Store] Setting username: ${username}`);
-    set({ username });
-  },
-  setCurrentRoom: (currentRoom) => {
-    console.log(`[Chat-Store] Setting current room: ${currentRoom}`);
-    set({ currentRoom });
-  },
-  setIsConnected: (isConnected) => {
-    console.log(`[Chat-Store] Setting connection state: ${isConnected}`);
-    set({ isConnected });
-  },
-  setCurrentMessage: (currentMessage) => {
-    console.log(`[Chat-Store] Setting current message: "${currentMessage}"`);
-    set({ currentMessage });
-  },
-  setNewRoomName: (newRoomName) => {
-    console.log(`[Chat-Store] Setting new room name: "${newRoomName}"`);
-    set({ newRoomName });
-  },
-  clearMessages: () => {
-    console.log(`[Chat-Store] Clearing all messages`);
-    set({ messages: [] });
-  },
-}));
+  return {
+    setMessages: (messages: ChatMessage[]) => {
+      _messages = messages;
+    },
+    addMessage: (message: ChatMessage) => {
+      const newMessages = [..._messages, message];
+      _messages = newMessages;
+    },
+    setUsername: (username: string) => {
+      _username = username;
+    },
+    setCurrentRoom: (currentRoom: string) => {
+      _currentRoom = currentRoom;
+    },
+    setIsConnected: (isConnected: boolean) => {
+      _isConnected = isConnected;
+    },
+    setCurrentMessage: (currentMessage: string) => {
+      _currentMessage = currentMessage;
+    },
+    setNewRoomName: (newRoomName: string) => {
+      _newRoomName = newRoomName;
+    },
+    clearMessages: () => {
+      _messages = [];
+    },
+  };
+})();
+
+export { ChatDemoStore };
+

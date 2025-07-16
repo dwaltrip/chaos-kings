@@ -1,6 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useChatDemoStore } from './chat-demo-store';
-import { chatDemoActions } from './chat-demo-actions';
+import {
+  websocketConnect,
+  sendChatMessage,
+} from './chat-demo-actions';
 
 function ChatDemoPage() {
   const {
@@ -15,17 +18,18 @@ function ChatDemoPage() {
     setNewRoomName,
   } = useChatDemoStore();
 
+  const ws = useRef(null);
+
   useEffect(() => {
-    chatDemoActions.initialize();
-    
+    ws.current = websocketConnect();
     return () => {
-      chatDemoActions.cleanup();
+      ws.current?.cleanup();
     };
   }, []);
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    chatDemoActions.sendMessage(currentMessage, username, currentRoom);
+    sendChatMessage(currentMessage, username, currentRoom);
   };
 
   const handleRoomChange = (roomName: string) => {

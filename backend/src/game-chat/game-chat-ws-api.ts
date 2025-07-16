@@ -14,3 +14,7 @@ const domainAPI = new DomainAPI('game-chat', {
 });
 
 registerDomainAPI(domainAPI);
+
+
+// wsActions.sendToSelf({ status: 'ok' });
+// wsActions.sendToClient(payload.senderClientId, { status: 'ok' });

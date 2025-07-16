@@ -8,8 +8,8 @@ const PORT = 8080;
 
 new WebSocketManager(
   PORT,
-  (data, actions) => {
-    handleWebSocketMessage(data, actions);
+  (data, wsActions) => {
+    handleWebSocketMessage(data, wsActions);
   }
 );
 
