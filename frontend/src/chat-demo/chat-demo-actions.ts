@@ -1,14 +1,14 @@
-import { ChatDemoStore, ChatDemoStore as store  } from './chat-demo-store';
+import { ChatDemoStore as store  } from './chat-demo-store';
 import { getWebSocketService } from '../services/websocket-service';
 
 function websocketConnect(): ReturnType<typeof getWebSocketService> {
-  console.log(`[Chat-Actions] Initializing chat demo`);
+  console.log(`[chat-actions] Initializing chat demo`);
   const wsService = getWebSocketService();
 
   // If already connected, join the current room immediately
   if (wsService.isConnected) {
     const currentRoom = store.getCurrentRoom();
-    console.log(`[Chat-Actions] Already connected, immediately joining room: ${currentRoom}`);
+    console.log(`[chat-actions] Already connected, immediately joining room: ${currentRoom}`);
     joinRoom(currentRoom);
   }
 
@@ -16,19 +16,19 @@ function websocketConnect(): ReturnType<typeof getWebSocketService> {
 }
 
 function sendChatMessage(message: string, username: string, room: string) {
-  console.log(`[Chat-Actions] Attempting to send message: "${message}" from ${username} in room ${room}`);
+  console.log(`[chat-actions] Attempting to send message: "${message}" from ${username} in room ${room}`);
   const wsService = getWebSocketService();
   
   if (!wsService.isConnected) {
-    console.error(`[Chat-Actions] Cannot send message: Not connected`);
+    console.error(`[chat-actions] Cannot send message: Not connected`);
     return;
   }
   if (!message.trim()) {
-    console.error(`[Chat-Actions] Cannot send message: Message is empty`);
+    console.error(`[chat-actions] Cannot send message: Message is empty`);
     return;
   }
   if (!username.trim()) {
-    console.error(`[Chat-Actions] Cannot send message: Username is empty`);
+    console.error(`[chat-actions] Cannot send message: Username is empty`);
     return;
   }
 
@@ -41,7 +41,7 @@ function sendChatMessage(message: string, username: string, room: string) {
   };
 
   wsService.send(roomMessage);
-  ChatDemoStore.setCurrentMessage('');
+  store.setCurrentMessage('');
 }
 
 function setCurrentMessage(message: string) {
@@ -57,13 +57,13 @@ function setNewRoomName(roomName: string) {
 }
 
 function joinRoom(name: string) {
-  console.log(`[Chat-Actions] Joining room: ${name}`);
+  console.log(`[chat-actions] Joining room: ${name}`);
   store.setCurrentRoom(name);
   // Additional logic to handle room change
 }
 
 function createAndJoinRoom(name: string) {
-  console.log(`[Chat-Actions] Creating and joining room: ${name}`);
+  console.log(`[chat-actions] Creating and joining room: ${name}`);
   store.setNewRoomName(name);
   // Additional logic to create and join the room
 }

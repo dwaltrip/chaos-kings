@@ -18,13 +18,11 @@ const ChatDemoStore = (function() {
   let _newRoomName = '';
   let _listeners = new Set<StoreListener>();
   
-  // Helper to notify all listeners
   const notifyListeners = () => {
     _listeners.forEach(listener => listener());
   };
   
   return {
-    // Getters
     getMessages: () => _messages,
     getUsername: () => _username,
     getCurrentRoom: () => _currentRoom,
@@ -73,7 +71,6 @@ const ChatDemoStore = (function() {
       };
     },
     
-    // Get all state at once (useful for components)
     getState: () => ({
       messages: _messages,
       username: _username,

@@ -9,7 +9,7 @@ import {
   joinRoom,
   createAndJoinRoom,
 } from './chat-demo-actions';
-
+import { ChatDemoWsHandler } from './chat-demo-ws-handler';
 
 type WebSocketService = ReturnType<typeof websocketConnect>;
 
@@ -31,7 +31,10 @@ function ChatDemoPage() {
   const wsServiceRef = useRef<WebSocketService | null>(null);
 
   useEffect(() => {
-    wsServiceRef.current = websocketConnect();
+    const wsService = websocketConnect();
+    wsService.addListener('chat-demo', ChatDemoWsHandler);
+    wsServiceRef.current = wsService;
+
     return () => {
       wsServiceRef.current?.cleanup();
     };

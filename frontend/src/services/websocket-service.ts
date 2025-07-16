@@ -1,7 +1,15 @@
 interface WsMessage {
-  user: string;
-  message: string;
-  timestamp: number;
+  domain: string;
+  payload: {
+    type: string;
+    data: any;
+  }
+  // user: string;
+  // timestamp: number;
+}
+
+interface WsMessageHandler {
+  handleMessage: (message: WsMessage) => void;
 }
 
 class WebSocketService {
@@ -9,6 +17,7 @@ class WebSocketService {
   private url: string;
   private _isConnected: boolean = false;
   private _currentRoom?: string;
+  private listeners: Map<string, Array<WsMessageHandler>> = new Map();
 
   constructor(url: string = 'ws://localhost:8080') {
     this.url = url;
@@ -19,7 +28,10 @@ class WebSocketService {
     };
 
     this.ws.onmessage = (event) => {
-      const message: WsMessage = JSON.parse(event.data);
+      const message: WsMessage = JSON.parse(event.data); 
+      this.getListeners(message).forEach(listener => {
+        listener.handleMessage(message);
+      });
     };
 
     this.ws.onclose = (event) => {
@@ -59,6 +71,21 @@ class WebSocketService {
   }
   get currentRoom(): string | undefined {
     return this._currentRoom;
+  }
+
+  private getListeners(message: WsMessage): Array<WsMessageHandler> {
+    const domain = message.domain;
+    if (!this.listeners.has(domain)) {
+      this.listeners.set(domain, []);
+    }
+    return this.listeners.get(domain) || [];
+  }
+
+  addListener(domain: string, handler: WsMessageHandler) {
+    if (!this.listeners.has(domain)) {
+      this.listeners.set(domain, []);
+    }
+    this.listeners.get(domain)?.push(handler);
   }
 
   cleanup() {
