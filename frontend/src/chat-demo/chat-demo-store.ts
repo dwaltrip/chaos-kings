@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { WsStore } from '../services/ws-store';
 
 interface ChatMessage {
   id: string;

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useChatStore } from './chat-demo-store';
+import { useWsStore } from '../services/ws-store';
 import {
   websocketConnect,
   sendChatMessage,
@@ -18,7 +19,6 @@ function ChatDemoPage() {
     messages,
     username,
     currentRoom,
-    isConnected,
     currentMessage,
     newRoomName,
     // actions: {
@@ -27,15 +27,21 @@ function ChatDemoPage() {
     //   setNewRoomName,
     // },
   } = useChatStore();
+  const { isConnected } = useWsStore();
 
   const wsServiceRef = useRef<WebSocketService | null>(null);
 
   useEffect(() => {
+    console.log('==== Setting up WebSocket service');
     const wsService = websocketConnect();
-    wsService.addListener('chat-demo', ChatDemoWsHandler);
+    wsService.addMessageHandler('chat-demo', ChatDemoWsHandler);
+    // wsService.addListener('open', (event) => {
+    //   console.log('[ws-service] WebSocket connection opened:', event);
+    // });
     wsServiceRef.current = wsService;
 
     return () => {
+      console.log('==== Cleaning up WebSocket service');
       wsServiceRef.current?.cleanup();
     };
   }, []);
@@ -117,7 +123,7 @@ function ChatDemoPage() {
       >
         {messages.map((msg, index) => (
           <div key={index} style={{ marginBottom: '10px' }}>
-            <strong>{msg.user}:</strong> {msg.message}
+            <strong>{msg.sender}:</strong> {msg.content}
             <small style={{ color: '#666', marginLeft: '10px' }}>
               {new Date(msg.timestamp).toLocaleTimeString()}
             </small>
