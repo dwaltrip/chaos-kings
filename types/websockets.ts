@@ -6,7 +6,7 @@ interface WsMessage {
     data: any;
   }
   user: string;
-  // timestamp: number;
+  timestamp: number;
 }
 
 export type { WsMessage };

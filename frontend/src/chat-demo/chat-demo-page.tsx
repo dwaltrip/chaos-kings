@@ -123,7 +123,7 @@ function ChatDemoPage() {
       >
         {messages.map((msg, index) => (
           <div key={index} style={{ marginBottom: '10px' }}>
-            <strong>{msg.sender}:</strong> {msg.content}
+            <strong>{msg.user}:</strong> {msg.content}
             <small style={{ color: '#666', marginLeft: '10px' }}>
               {new Date(msg.timestamp).toLocaleTimeString()}
             </small>

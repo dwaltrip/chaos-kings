@@ -4,7 +4,7 @@ import { WsStore } from '../services/ws-store';
 interface ChatMessage {
   id: string;
   content: string;
-  sender: string;
+  user: string;
   timestamp: Date;
 }
 

@@ -7,7 +7,7 @@ const GameChatWsAPI = new DomainAPI('chat-demo', {
     wsActions.broadcastToRoom(payload.data.room, { ...payload });
   },
   'join-room': (payload: any, wsActions) => {
-    wsActions.joinRoom(payload.room);
+    wsActions.joinRoom(payload.data.room);
   },
   'leave-room': (payload: any, wsActions) => {
     wsActions.leaveRoom(payload.room);
@@ -18,4 +18,4 @@ const GameChatWsAPI = new DomainAPI('chat-demo', {
 export { GameChatWsAPI };
 
 // wsActions.sendToSelf({ status: 'ok' });
-// wsActions.sendToClient(payload.senderClientId, { status: 'ok' });
+// wsActions.sendToClient(payload.sendtoClientId, { status: 'ok' });

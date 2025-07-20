@@ -2,11 +2,15 @@ import { ChatDemoStore as store  } from './chat-demo-store';
 
 const ChatDemoWsHandler = {
   handleMessage: (payload: any) => {
-    const { type, data } = payload;
+    const { type, data, user, timestamp } = payload;
+    console.log('-------------------------------------------------------')
+    console.log(`[chat-demo-ws-handler] Received msg (type=${type})`, data);
+    console.log(`[chat-demo-ws-handler] user: ${user}, timestamp: ${timestamp}`);
 
     switch (type) {
-      case 'new-chat-message':
-        store.addMessage(data);
+      case 'chat-message':
+        console.log(`[chat-demo-ws-handler] New chat message:`, data);
+        store.addMessage({ ...data, user, timestamp });
         break;
       // case 'room-change':
       //   store.setCurrentRoom(data.room);

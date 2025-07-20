@@ -9,7 +9,7 @@ function websocketConnect(): ReturnType<typeof getWebSocketService> {
   wsService.addListener('open', () => {
     const currentRoom = store.getCurrentRoom();
     console.log(`[chat-actions] Joining room: ${currentRoom}`);
-    joinRoom(currentRoom);
+    joinRoom(currentRoom, store.getUsername());
   });
   return wsService;
 }
@@ -37,7 +37,7 @@ function sendChatMessage(message: string, username: string, room: string) {
     payload: {
       type: 'chat-message',
       data: {
-        message: message.trim(),
+        content: message.trim(),
         room,
       },
     },
@@ -70,7 +70,7 @@ function joinRoom(room: string, username: string) {
     domain: 'chat-demo',
     payload: {
       type: 'join-room',
-      room,
+      data: { room },
     },
     timestamp: Date.now(),
   });

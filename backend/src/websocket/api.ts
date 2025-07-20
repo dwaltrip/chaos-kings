@@ -1,5 +1,23 @@
 import { WsActions, WsMessageHandler, WsMessage } from './types';
 
+
+// interface WsActions {
+//   joinRoom: (roomId: string) => void;
+//   leaveRoom: (roomId: string) => void;
+//   sendToSelf: (message: any) => void;
+//   sendToClient: (clientId: WsClientId, message: any) => void;
+//   broadcastToRoom: (roomId: string, message: any) => void;
+// }
+
+function injectDomain(domain: string, actions: WsActions): WsActions {
+  return {
+    ...actions,
+    broadcastToRoom: (roomId: string, payload: any) => {
+      actions.broadcastToRoom(roomId, { ...payload, domain });
+    }
+  }
+}
+
 // TODO: is "app" a better name than "domain"?
 class DomainAPI {
   constructor(public name: string, private handlers: Record<string, WsMessageHandler>) {
@@ -9,7 +27,7 @@ class DomainAPI {
     if (!this.handlers[type]) {
       throw new Error(`No handler for message type: ${type} in domain: ${this.name}`);
     }
-    this.handlers[type](payload, actions);
+    this.handlers[type](payload, injectDomain(this.name, actions));
   }
 }
 
@@ -17,9 +35,9 @@ class WebSocketAPI {
   private domains = new Map<string, DomainAPI>();
 
   handleMessage(message: WsMessage, actions: WsActions) {
-    const { domain, payload } = message;
+    const { domain, payload, user, timestamp } = message;
     const domainAPI = this.requireDomainAPI(domain);
-    domainAPI.handleMessage(payload.type, payload, actions);
+    domainAPI.handleMessage(payload.type, { ...payload, user, timestamp }, actions);
   }
 
   private requireDomainAPI(appName: string): DomainAPI {
