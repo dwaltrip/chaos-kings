@@ -1,10 +1,10 @@
-import { DomainAPI, registerDomainAPI } from '../websocket/api';
-import { WsActions } from '../websocket/types';
+import { DomainAPI } from '../websocket/api';
 
-// const domainAPI = new DomainAPI('game-chat', {
-const domainAPI = new DomainAPI('chat-demo', {
+// TODO: define type for `payload`
+const GameChatWsAPI = new DomainAPI('chat-demo', {
   'chat-message': (payload: any, wsActions) => {
-    wsActions.broadcastToRoom(payload.room, { ...payload });
+    console.log(`[game-chat] Received chat message:`, payload);
+    wsActions.broadcastToRoom(payload.data.room, { ...payload });
   },
   'join-room': (payload: any, wsActions) => {
     wsActions.joinRoom(payload.room);
@@ -13,9 +13,9 @@ const domainAPI = new DomainAPI('chat-demo', {
     wsActions.leaveRoom(payload.room);
   },
 });
+// registerDomainAPI(domainAPI);
 
-registerDomainAPI(domainAPI);
-
+export { GameChatWsAPI };
 
 // wsActions.sendToSelf({ status: 'ok' });
 // wsActions.sendToClient(payload.senderClientId, { status: 'ok' });

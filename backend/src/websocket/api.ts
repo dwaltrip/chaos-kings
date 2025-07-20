@@ -25,6 +25,7 @@ class WebSocketAPI {
   private requireDomainAPI(appName: string): DomainAPI {
     const handler = this.domains.get(appName);
     if (!handler) {
+      console.debug('Available domains:', Array.from(this.domains.keys()));
       throw new Error(`No handler registered for app: ${appName}`);
     }
     return handler;
@@ -45,6 +46,7 @@ function handleWebSocketMessage(data: WsMessage, wsActions: WsActions) {
 } 
 
 function registerDomainAPI(domainAPI: DomainAPI) {
+  console.log(`[websocket-api] Registering domain: ${domainAPI.name}`);
   websocketAPI.registerDomain(domainAPI);
 }
 

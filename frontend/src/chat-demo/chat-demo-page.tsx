@@ -52,7 +52,7 @@ function ChatDemoPage() {
   };
 
   const handleRoomChange = (roomName: string) => {
-    joinRoom(roomName);
+    joinRoom(roomName, username);
   };
 
   const handleCreateRoom = (e: React.FormEvent) => {

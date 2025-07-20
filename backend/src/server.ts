@@ -4,6 +4,9 @@ import {
   WsMessageHandler,
 } from './websocket';
 
+import { registerDomainAPI } from './websocket/api';
+import { GameChatWsAPI } from './game-chat/game-chat-ws-api';
+
 const PORT = 8080;
 
 new WebSocketManager(
@@ -13,3 +16,4 @@ new WebSocketManager(
   }
 );
 
+registerDomainAPI(GameChatWsAPI);

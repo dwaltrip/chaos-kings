@@ -5,7 +5,7 @@ interface WsMessage {
     type: string;
     data: any;
   }
-  // user: string;
+  user: string;
   // timestamp: number;
 }
 

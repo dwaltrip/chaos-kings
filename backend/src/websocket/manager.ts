@@ -77,6 +77,8 @@ class WebSocketManager {
   ) {
     this.wss = new WebSocketServer({ port });
     console.log(`WebSocket server running on ws://localhost:${port}`);
+    console.log('----------------------------------')
+    console.log();
     this.setupHandlers();
   }
 
@@ -90,9 +92,10 @@ class WebSocketManager {
         const bufferStr = buffer.toString();
         try {
           const message = validateMessage(JSON.parse(bufferStr));
-          logger.log('[message] raw:', bufferStr, '-- parsed:', message);
+          logger.log('[message]', message);
           this.handleMessage(message, this.actionsForClient(client));
-        } catch (error) {
+        }
+        catch (error) {
           logger.error('Error parsing message:', error, '-- data:', bufferStr);
         }
       });
@@ -148,20 +151,21 @@ class WebSocketManager {
     console.log(`Client ${client.id} left room: ${roomId}`);
   }
 
-  private broadcastToRoom(roomId: string, message: any, fromClient: WsClient) {
+  private broadcastToRoom(roomId: string, data: any, fromClient: WsClient) {
     const logger = clientLogger(fromClient.id);
     const room  = this.rooms.get(roomId);
     if (!room) {
+      console.log('====== rooms:', JSON.stringify(Array.from(this.rooms.keys())));
       logger.log(`Cannot broadcast to room ${roomId}: room does not exist`);
       return;
     }
-    
-    logger.log(`Broadcasting message to room ${roomId} with ${room.size} clients:`, message);
+
+    logger.log(`Broadcasting message to room ${roomId} with ${room.size} clients:`, data);
     room.forEach(client => {
       if (client.ws.readyState === WebSocket.OPEN) {
         try {
-          const messageStr = JSON.stringify(message);
-          client.ws.send(messageStr);
+          const dataStr = JSON.stringify(data);
+          client.ws.send(dataStr);
           logger.log(`Message sent to client in room ${roomId}`);
         } catch (error) {
           logger.error(`Failed to send message to client in room ${roomId}:`, error);
@@ -190,6 +194,8 @@ function validateMessage(message: any): WsMessage {
     throw new Error('Invalid message format');
   }
   if (!message.domain || !message.payload || !message.payload.type || !message.payload.data) {
+     console.error('---- DEBUG ----');
+     console.error('Invalid message structure:', JSON.stringify(message, null, 2));
     throw new Error('Message must have domain, payload with type and data');
   }
   return message as WsMessage;

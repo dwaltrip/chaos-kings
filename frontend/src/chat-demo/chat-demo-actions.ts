@@ -5,13 +5,12 @@ function websocketConnect(): ReturnType<typeof getWebSocketService> {
   console.log(`[chat-actions] Initializing chat demo`);
   const wsService = getWebSocketService();
 
-  // If already connected, join the current room immediately
-  if (wsService.isConnected) {
+  // Join current room after connection is established
+  wsService.addListener('open', () => {
     const currentRoom = store.getCurrentRoom();
-    console.log(`[chat-actions] Already connected, immediately joining room: ${currentRoom}`);
+    console.log(`[chat-actions] Joining room: ${currentRoom}`);
     joinRoom(currentRoom);
-  }
-
+  });
   return wsService;
 }
 
@@ -32,15 +31,18 @@ function sendChatMessage(message: string, username: string, room: string) {
     return;
   }
 
-  const roomMessage = {
+  wsService.send({
     user: username,
-    message: message.trim(),
+    domain: 'chat-demo',
+    payload: {
+      type: 'chat-message',
+      data: {
+        message: message.trim(),
+        room,
+      },
+    },
     timestamp: Date.now(),
-    room,
-    type: 'chat'
-  };
-
-  wsService.send(roomMessage);
+  });
   store.setCurrentMessage('');
 }
 
@@ -56,9 +58,23 @@ function setNewRoomName(roomName: string) {
   store.setNewRoomName(roomName);
 }
 
-function joinRoom(name: string) {
-  console.log(`[chat-actions] Joining room: ${name}`);
-  store.setCurrentRoom(name);
+function joinRoom(room: string, username: string) {
+  console.log(`[chat-actions] Joining room: ${room}`);
+  const wsService = getWebSocketService();
+  if (!wsService.isConnected) {
+    console.error(`[chat-actions] Cannot join room: Not connected`);
+    return;
+  }
+  wsService.send({
+    user: username,
+    domain: 'chat-demo',
+    payload: {
+      type: 'join-room',
+      room,
+    },
+    timestamp: Date.now(),
+  });
+  store.setCurrentRoom(room);
   // Additional logic to handle room change
 }
 
