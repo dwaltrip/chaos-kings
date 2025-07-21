@@ -1,15 +1,19 @@
 import { ChatDemoStore as store  } from './chat-demo-store';
 
+const LOG_PREFIX = '[chat-demo-ws-handler]';
+const logger = (...args: any[]) => console.log(LOG_PREFIX, ...args);
+logger.warn = (...args: any[]) => console.warn(LOG_PREFIX, ...args);
+
 const ChatDemoWsHandler = {
-  handleMessage: (payload: any) => {
+  handleMessage: (payload: any) => { 
     const { type, data, user, timestamp } = payload;
     console.log('-------------------------------------------------------')
-    console.log(`[chat-demo-ws-handler] Received msg (type=${type})`, data);
-    console.log(`[chat-demo-ws-handler] user: ${user}, timestamp: ${timestamp}`);
+    logger(`Received msg (type=${type})`, data);
+    logger(`user: ${user}, timestamp: ${timestamp}`);
 
     switch (type) {
       case 'chat-message':
-        console.log(`[chat-demo-ws-handler] New chat message:`, data);
+        logger(`New chat message:`, data);
         store.addMessage({ ...data, user, timestamp });
         break;
       // case 'room-change':
@@ -19,7 +23,7 @@ const ChatDemoWsHandler = {
       //   store.addUser(data.user);
       //   break;
       default:
-        console.warn(`[ws-message-handler] Unknown message type: ${type}`);
+        logger.warn(`Unknown message type: ${type}`);
     }
   }
 }

@@ -1,33 +1,37 @@
 import { ChatDemoStore as store  } from './chat-demo-store';
 import { getWebSocketService } from '../services/websocket-service';
 
+const LOG_PREFIX = '[chat-actions]';
+const logger = (...args: any[]) => console.log(LOG_PREFIX, ...args);
+logger.error = (...args: any[]) => console.error(LOG_PREFIX, ...args);
+
 function websocketConnect(): ReturnType<typeof getWebSocketService> {
-  console.log(`[chat-actions] Initializing chat demo`);
+  logger(`Initializing chat demo`);
   const wsService = getWebSocketService();
 
   // Join current room after connection is established
   wsService.addListener('open', () => {
     const currentRoom = store.getCurrentRoom();
-    console.log(`[chat-actions] Joining room: ${currentRoom}`);
+    logger(`Joining room: ${currentRoom}`);
     joinRoom(currentRoom, store.getUsername());
   });
   return wsService;
 }
 
 function sendChatMessage(message: string, username: string, room: string) {
-  console.log(`[chat-actions] Attempting to send message: "${message}" from ${username} in room ${room}`);
+  logger(`Sending "${message}" from ${username} in room ${room}`);
   const wsService = getWebSocketService();
   
   if (!wsService.isConnected) {
-    console.error(`[chat-actions] Cannot send message: Not connected`);
+    logger.error(`Cannot send: Not connected`);
     return;
   }
   if (!message.trim()) {
-    console.error(`[chat-actions] Cannot send message: Message is empty`);
+    logger.error(`Cannot send: Message is empty`);
     return;
   }
   if (!username.trim()) {
-    console.error(`[chat-actions] Cannot send message: Username is empty`);
+    logger.error(`Cannot send: Username is empty`);
     return;
   }
 
@@ -71,10 +75,10 @@ function setNewRoomName(roomName: string) {
 }
 
 function joinRoom(room: string, username: string) {
-  console.log(`[chat-actions] Joining room: ${room}`);
+  logger(`Joining room: ${room}`);
   const wsService = getWebSocketService();
   if (!wsService.isConnected) {
-    console.error(`[chat-actions] Cannot join room: Not connected`);
+    logger.error(`Cannot join room: Not connected`);
     return;
   }
   wsService.send({
@@ -87,11 +91,10 @@ function joinRoom(room: string, username: string) {
     timestamp: Date.now(),
   });
   store.setCurrentRoom(room);
-  // Additional logic to handle room change
 }
 
 function createAndJoinRoom(name: string) {
-  console.log(`[chat-actions] Creating and joining room: ${name}`);
+  logger(`Creating and joining room: ${name}`);
   store.setNewRoomName(name);
   // Additional logic to create and join the room
 }

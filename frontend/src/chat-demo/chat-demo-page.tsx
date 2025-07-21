@@ -14,6 +14,14 @@ import { ChatDemoWsHandler } from './chat-demo-ws-handler';
 
 type WebSocketService = ReturnType<typeof websocketConnect>;
 
+function Button({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} style={{ padding: '5px 10px' }}>
+      {children}
+    </button>
+  );
+}
+
 function ChatDemoPage() {
   const {
     messages,
@@ -21,11 +29,6 @@ function ChatDemoPage() {
     currentRoom,
     currentMessage,
     newRoomName,
-    // actions: {
-    //   setUsername,
-    //   setCurrentMessage,
-    //   setNewRoomName,
-    // },
   } = useChatStore();
   const { isConnected } = useWsStore();
   const wsServiceRef = useRef<WebSocketService | null>(null);
@@ -86,15 +89,15 @@ function ChatDemoPage() {
         </div>
         
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
-          <button onClick={() => handleRoomChange('general')} style={{ padding: '5px 10px' }}>
+            <Button onClick={() => handleRoomChange('general')}>
             General
-          </button>
-          <button onClick={() => handleRoomChange('random')} style={{ padding: '5px 10px' }}>
+            </Button>
+            <Button onClick={() => handleRoomChange('random')}>
             Random
-          </button>
-          <button onClick={() => handleRoomChange('tech')} style={{ padding: '5px 10px' }}>
+            </Button>
+            <Button onClick={() => handleRoomChange('tech')}>
             Tech
-          </button>
+            </Button>
         </div>
         
         <form onSubmit={handleCreateRoom} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -121,8 +124,8 @@ function ChatDemoPage() {
           backgroundColor: '#f9f9f9'
         }}
       >
-        {messages.map((msg, index) => (
-          <div key={index} style={{ marginBottom: '10px' }}>
+        {messages.map((msg, i) => (
+          <div key={i} style={{ marginBottom: '10px' }}>
             <strong>{msg.user}:</strong> {msg.content}
             <small style={{ color: '#666', marginLeft: '10px' }}>
               {new Date(msg.timestamp).toLocaleTimeString()}

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { WsStore } from '../services/ws-store';
 
 interface ChatMessage {
   id: string;
@@ -14,7 +13,6 @@ const ChatDemoStore = (function() {
   let _messages = [] as ChatMessage[];
   let _username = '';
   let _currentRoom = 'general';
-  let _isConnected = false;
   let _currentMessage = '';
   let _newRoomName = '';
   let _listeners = new Set<StoreListener>();
@@ -27,7 +25,6 @@ const ChatDemoStore = (function() {
     getMessages: () => _messages,
     getUsername: () => _username,
     getCurrentRoom: () => _currentRoom,
-    getIsConnected: () => _isConnected,
     getCurrentMessage: () => _currentMessage,
     getNewRoomName: () => _newRoomName,
     
@@ -46,10 +43,6 @@ const ChatDemoStore = (function() {
     },
     setCurrentRoom: (currentRoom: string) => {
       _currentRoom = currentRoom;
-      notifyListeners();
-    },
-    setIsConnected: (isConnected: boolean) => {
-      _isConnected = isConnected;
       notifyListeners();
     },
     setCurrentMessage: (currentMessage: string) => {
@@ -76,7 +69,6 @@ const ChatDemoStore = (function() {
       messages: _messages,
       username: _username,
       currentRoom: _currentRoom,
-      isConnected: _isConnected,
       currentMessage: _currentMessage,
       newRoomName: _newRoomName,
     })
@@ -100,7 +92,6 @@ const useChatStore = () => {
       addMessage: ChatDemoStore.addMessage,
       setUsername: ChatDemoStore.setUsername,
       setCurrentRoom: ChatDemoStore.setCurrentRoom,
-      setIsConnected: ChatDemoStore.setIsConnected,
       setCurrentMessage: ChatDemoStore.setCurrentMessage,
       setNewRoomName: ChatDemoStore.setNewRoomName,
       clearMessages: ChatDemoStore.clearMessages,
