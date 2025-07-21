@@ -10,6 +10,7 @@ interface WsClient {
   id: WsClientId
   ws: WebSocket;
   currentRoom: RoomId | null;
+  user?: any;
 }
 
 function createWsClient(ws: WebSocket): WsClient {
@@ -136,7 +137,7 @@ class WebSocketManager {
     }
     this.rooms.get(roomId)!.add(client);
     client.currentRoom = roomId;
-    console.log(`Client ${client.id} joined room: ${roomId}`);
+    console.log(`Client (${client.user}, ${client.id}) joined room: ${roomId}`);
   }
 
   private leaveRoom(client: WsClient, roomId: string) {

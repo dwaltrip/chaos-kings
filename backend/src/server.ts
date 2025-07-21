@@ -1,7 +1,6 @@
 import {
   WebSocketManager,
   handleWebSocketMessage,
-  WsMessageHandler,
 } from './websocket';
 
 import { registerDomainAPI } from './websocket/api';
