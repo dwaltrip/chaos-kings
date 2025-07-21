@@ -1,12 +1,12 @@
 import { DomainAPI } from '../websocket/api';
-import { ChatMessagePayload } from '../../../types/websockets';
+import { ChatDemo } from '../../../types/chat-demo';
 
 const GameChatWsAPI = new DomainAPI('chat-demo', {
-  'chat-message': (payload: ChatMessagePayload, wsActions) => {
+  'chat-message': (payload: ChatDemo.ChatMessagePayload, wsActions) => {
     console.log(`[game-chat] Received chat message:`, payload);
     wsActions.broadcastToRoom(payload.data.room, { ...payload });
   },
-  'join-room': (payload: any, wsActions) => {
+  'join-room': (payload: ChatDemo.JoinRoomPayload, wsActions) => {
     wsActions.joinRoom(payload.data.room);
   },
   'leave-room': (payload: any, wsActions) => {

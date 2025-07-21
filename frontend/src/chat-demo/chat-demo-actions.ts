@@ -1,6 +1,6 @@
 import { ChatDemoStore as store  } from './chat-demo-store';
 import { getWebSocketService } from '../services/websocket-service';
-import { createChatMessage } from '../../../types/websockets';
+import { createChatMessage, createJoinRoomMessage } from '../../../types/chat-demo';
 
 const LOG_PREFIX = '[chat-actions]';
 const logger = (...args: any[]) => console.log(LOG_PREFIX, ...args);
@@ -71,15 +71,7 @@ function joinRoom(room: string, username: string) {
     logger.error(`Cannot join room: Not connected`);
     return;
   }
-  wsService.send({
-    user: username,
-    domain: 'chat-demo',
-    payload: {
-      type: 'join-room',
-      data: { room },
-    },
-    timestamp: Date.now(),
-  });
+  wsService.send(createJoinRoomMessage(room, username));
   store.setCurrentRoom(room);
 }
 
