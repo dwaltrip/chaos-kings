@@ -5,7 +5,9 @@
   "main": "server.ts",
   "scripts": {
     "start": "ts-node src/server.ts",
-    "dev": "ts-node --watch src/server.ts"
+    "dev": "ts-node --watch src/server.ts",
+    "build": "tsc",
+    "prod": "node dist/server.js"
   },
   "dependencies": {
     "kysely": "^0.28.2",
