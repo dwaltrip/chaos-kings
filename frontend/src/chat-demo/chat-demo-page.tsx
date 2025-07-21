@@ -28,21 +28,21 @@ function ChatDemoPage() {
     // },
   } = useChatStore();
   const { isConnected } = useWsStore();
-
   const wsServiceRef = useRef<WebSocketService | null>(null);
 
   useEffect(() => {
     console.log('==== Setting up WebSocket service');
     const wsService = websocketConnect();
     wsService.addMessageHandler('chat-demo', ChatDemoWsHandler);
-    // wsService.addListener('open', (event) => {
-    //   console.log('[ws-service] WebSocket connection opened:', event);
-    // });
     wsServiceRef.current = wsService;
+    //wsService.addListener('open', (event) => {
+    //   console.log('[chat-page] connection opened:', event);
+    // });
 
     return () => {
-      console.log('==== Cleaning up WebSocket service');
+      console.log('==== Cleaning up websocket service');
       wsServiceRef.current?.cleanup();
+      wsService.removeMessageHandler('chat-demo', ChatDemoWsHandler);
     };
   }, []);
 

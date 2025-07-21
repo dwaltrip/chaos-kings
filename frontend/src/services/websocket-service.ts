@@ -106,6 +106,17 @@ class WebSocketService {
     this.messageHandlers.get(domain)?.push(handler);
   }
 
+  removeMessageHandler(domain: string, handler: WsMessageHandler) {
+    const handlers = this.messageHandlers.get(domain);
+    if (handlers) {
+      const index = handlers.indexOf(handler);
+      if (index > -1) {
+        handlers.splice(index, 1);
+        console.log(`[ws-service] Message handler removed for domain: ${domain}`);
+      }
+    }
+  }
+
   cleanup() {
     // TODO: not sure what should go here as this is a singleton service
     console.log('[ws-service] Cleaning up WebSocket service');

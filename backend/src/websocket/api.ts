@@ -24,10 +24,13 @@ class DomainAPI {
   }
 
   handleMessage(type: string, payload: any, actions: WsActions) {
-    if (!this.handlers[type]) {
-      throw new Error(`No handler for message type: ${type} in domain: ${this.name}`);
+    if (this.handlers[type]) {
+      this.handlers[type](payload, injectDomain(this.name, actions));
     }
-    this.handlers[type](payload, injectDomain(this.name, actions));
+    else {
+      // throw new Error(`No handler for message type: ${type} in domain: ${this.name}`);
+      console.warn(`[ws-api] No handler for message type: ${type} in domain: ${this.name}`);
+    }
   }
 }
 
@@ -64,7 +67,7 @@ function handleWebSocketMessage(data: WsMessage, wsActions: WsActions) {
 } 
 
 function registerDomainAPI(domainAPI: DomainAPI) {
-  console.log(`[websocket-api] Registering domain: ${domainAPI.name}`);
+  console.log(`[ws-api] Registering domain: ${domainAPI.name}`);
   websocketAPI.registerDomain(domainAPI);
 }
 

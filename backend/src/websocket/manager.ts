@@ -59,8 +59,9 @@ class ClientStore {
   }
 }
 
-function clientLogger(clientId: string) {
-  const prefix = `[${clientId}]`;
+function clientLogger(client: WsClient) {
+  const userStr = (client.user ? `${client.user}` : '-');
+  const prefix = `[${client.id.slice(0, 20)}..., ${userStr}]`.padEnd(40, ' ');
   return {
     log: (...args: any[]) => console.log(prefix, ...args),
     error: (...args: any[]) => console.error(prefix, ...args),
@@ -78,7 +79,7 @@ class WebSocketManager {
   ) {
     this.wss = new WebSocketServer({ port });
     console.log(`WebSocket server running on ws://localhost:${port}`);
-    console.log('----------------------------------')
+    console.log('='.repeat(80));
     console.log();
     this.setupHandlers();
   }
@@ -86,14 +87,19 @@ class WebSocketManager {
   private setupHandlers() {
     this.wss.on('connection', async (ws: WebSocket) => {
       const client = this.clientStore.addClient(ws);
-      const logger = clientLogger(client.id);
+      const logger = clientLogger(client);
+      console.log('-'.repeat(80));
       logger.log('New client connected');
       
       ws.on('message', (buffer: Buffer) => {
         const bufferStr = buffer.toString();
         try {
           const message = validateMessage(JSON.parse(bufferStr));
-          logger.log('[message]', message);
+          if (message.user) {
+            client.user = message.user;
+            // logger.log(`Client user set to: ${client.user}`);
+          }
+          logger.log('Received:', message);
           this.handleMessage(message, this.actionsForClient(client));
         }
         catch (error) {
@@ -153,7 +159,7 @@ class WebSocketManager {
   }
 
   private broadcastToRoom(roomId: string, data: any, fromClient: WsClient) {
-    const logger = clientLogger(fromClient.id);
+    const logger = clientLogger(fromClient);
     const room  = this.rooms.get(roomId);
     if (!room) {
       console.log('====== rooms:', JSON.stringify(Array.from(this.rooms.keys())));
@@ -162,18 +168,18 @@ class WebSocketManager {
     }
 
     logger.log(`Broadcasting message to room ${roomId} with ${room.size} clients:`, data);
+    const dataStr = JSON.stringify(data);
     room.forEach(client => {
       if (client.ws.readyState === WebSocket.OPEN) {
         try {
-          const dataStr = JSON.stringify(data);
           client.ws.send(dataStr);
-          logger.log(`Message sent to client in room ${roomId}`);
         } catch (error) {
-          logger.error(`Failed to send message to client in room ${roomId}:`, error);
+          logger.error(`Failed to send to "${client.user}" in room ${roomId}:`, error);
         }
       } 
     });
     logger.log(`Broadcast complete for room ${roomId}`);
+    console.log('-'.repeat(80));
   }
 
   private broadcastToAllClients(message: any) {

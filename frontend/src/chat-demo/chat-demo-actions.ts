@@ -52,6 +52,18 @@ function setCurrentMessage(message: string) {
 
 function setUsername(username: string) {
   store.setUsername(username);
+  const wsService = getWebSocketService();
+  if (wsService.isConnected) {
+    wsService.send({
+      user: username,
+      domain: 'chat-demo',
+      payload: {
+        type: 'set-username',
+        data: { user: username },
+      },
+      timestamp: Date.now(),
+    });
+  }
 }
 
 function setNewRoomName(roomName: string) {
