@@ -16,7 +16,6 @@ class WebSocketService {
   private ws: WebSocket;
   private url: string;
   private _store = WsStore;
-  private _isConnected: boolean = false;
   private _currentRoom?: string;
 
   private listeners: EventListeners = {};
@@ -80,11 +79,6 @@ class WebSocketService {
   }
   get currentRoom(): string | undefined {
     return this._currentRoom;
-  }
-
-  // TODO: what about `domain`????
-  private getListeners(type: EventNames): WsEventListener[] {
-    return this.listeners[type] || [];
   }
 
   // TODO: what about `domain`????
