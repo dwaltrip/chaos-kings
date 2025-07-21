@@ -1,8 +1,8 @@
 import { DomainAPI } from '../websocket/api';
+import { ChatMessagePayload } from '../../../types/websockets';
 
-// TODO: define type for `payload`
 const GameChatWsAPI = new DomainAPI('chat-demo', {
-  'chat-message': (payload: any, wsActions) => {
+  'chat-message': (payload: ChatMessagePayload, wsActions) => {
     console.log(`[game-chat] Received chat message:`, payload);
     wsActions.broadcastToRoom(payload.data.room, { ...payload });
   },

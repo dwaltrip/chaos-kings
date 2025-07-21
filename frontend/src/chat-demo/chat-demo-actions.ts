@@ -1,5 +1,6 @@
 import { ChatDemoStore as store  } from './chat-demo-store';
 import { getWebSocketService } from '../services/websocket-service';
+import { createChatMessage } from '../../../types/websockets';
 
 const LOG_PREFIX = '[chat-actions]';
 const logger = (...args: any[]) => console.log(LOG_PREFIX, ...args);
@@ -35,18 +36,7 @@ function sendChatMessage(message: string, username: string, room: string) {
     return;
   }
 
-  wsService.send({
-    user: username,
-    domain: 'chat-demo',
-    payload: {
-      type: 'chat-message',
-      data: {
-        content: message.trim(),
-        room,
-      },
-    },
-    timestamp: Date.now(),
-  });
+  wsService.send(createChatMessage(message.trim(), room, username));
   store.setCurrentMessage('');
 }
 
