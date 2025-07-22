@@ -1,5 +1,4 @@
-// TODO: create alias for top-level shared "types" directory
-import { type WsMessage } from '../../../types/websockets';
+import { type WsMessage } from '#types/websockets';
 import { WsStore } from './ws-store';
 
 interface WsMessageHandler {

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { useChatStore } from './chat-demo-store';
-import { useWsStore } from '../services/ws-store';
+import { useChatStore } from '@/chat-demo/chat-demo-store';
+import { useWsStore } from '@/services/ws-store';
 import {
   websocketConnect,
   sendChatMessage,
@@ -9,8 +9,8 @@ import {
   setNewRoomName,
   joinRoom,
   createAndJoinRoom,
-} from './chat-demo-actions';
-import { ChatDemoWsHandler } from './chat-demo-ws-handler';
+} from '@/chat-demo/chat-demo-actions';
+import { ChatDemoWsHandler } from '@/chat-demo/chat-demo-ws-handler';
 
 type WebSocketService = ReturnType<typeof websocketConnect>;
 

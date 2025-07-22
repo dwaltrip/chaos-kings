@@ -1,4 +1,4 @@
-import { ChatDemoStore as store  } from './chat-demo-store';
+import { ChatDemoStore as store  } from '@/chat-demo/chat-demo-store';
 
 const LOG_PREFIX = '[chat-demo-ws-handler]';
 const logger = (...args: any[]) => console.log(LOG_PREFIX, ...args);

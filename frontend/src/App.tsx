@@ -1,4 +1,4 @@
-import { ChatDemoPage } from './chat-demo/chat-demo-page';
+import { ChatDemoPage } from '@/chat-demo/chat-demo-page';
 // import { MatchmakingPage } from './matchmaking/matchmaking-page';
 
 function App() {
