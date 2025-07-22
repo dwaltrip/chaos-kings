@@ -1,4 +1,4 @@
-import { type WsMessage } from '#types/websockets';
+import { type WsMessage } from '@common/types/websockets';
 import { WsStore } from './ws-store';
 
 interface WsMessageHandler {

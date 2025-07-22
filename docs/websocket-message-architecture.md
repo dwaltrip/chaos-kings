@@ -5,7 +5,7 @@ This document outlines the type-safe WebSocket message architecture implemented 
 
 ## Core Components
 
-### 1. Shared Types (`types/websockets.ts`)
+### 1. Shared Types (`common/types/websockets.ts`)
 Contains generic WebSocket message interface shared across all domains.
 
 #### Base Message Structure
@@ -21,7 +21,7 @@ interface WsMessage {
 }
 ```
 
-### 2. Domain-Specific Types (`types/chat-demo.ts`)
+### 2. Domain-Specific Types (`common/types/chat-demo.ts`)
 Contains all types, constants, and factory functions specific to the chat-demo domain.
 
 #### Domain Organization
@@ -79,7 +79,7 @@ function createJoinRoomMessage(room: string, user: string): WsMessage
 ## Adding New Message Types
 
 ### 1. Define Types
-Add to `ChatDemo` namespace in `types/chat-demo.ts`:
+Add to `ChatDemo` namespace in `common/types/chat-demo.ts`:
 ```typescript
 export interface NewMessageData { /* properties */ }
 export interface NewMessagePayload { 
@@ -91,7 +91,7 @@ export interface NewMessagePayload {
 ```
 
 ### 2. Create Factory Function
-Add factory function in `types/chat-demo.ts`:
+Add factory function in `common/types/chat-demo.ts`:
 ```typescript
 function createNewMessage(/* params */): WsMessage {
   return {
@@ -120,8 +120,8 @@ Add typed handler:
 ## File Locations
 
 ### Core Files
-- `types/websockets.ts` - Generic WebSocket message interface
-- `types/chat-demo.ts` - Chat-demo domain types and factory functions
+- `common/types/websockets.ts` - Generic WebSocket message interface
+- `common/types/chat-demo.ts` - Chat-demo domain types and factory functions
 - `frontend/src/chat-demo/chat-demo-actions.ts` - Frontend message sending
 - `backend/src/game-chat/game-chat-ws-api.ts` - Backend message handling
 

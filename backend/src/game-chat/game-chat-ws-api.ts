@@ -1,5 +1,5 @@
 import { DomainAPI } from '../websocket/api';
-import { ChatDemo } from '../../../types/chat-demo';
+import { ChatDemo } from '../../../common/types/chat-demo';
 
 const GameChatWsAPI = new DomainAPI('chat-demo', {
   'chat-message': (payload: ChatDemo.ChatMessagePayload, wsActions) => {

@@ -1,6 +1,6 @@
 import { ChatDemoStore as store  } from '@/chat-demo/chat-demo-store';
 import { getWebSocketService } from '@/services/websocket-service';
-import { createChatMessage, createJoinRoomMessage } from '#types/chat-demo';
+import { createChatMessage, createJoinRoomMessage } from '@common/types/chat-demo';
 
 const LOG_PREFIX = '[chat-actions]';
 const logger = (...args: any[]) => console.log(LOG_PREFIX, ...args);
