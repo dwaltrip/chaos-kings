@@ -1,6 +1,8 @@
-import { ChatDemoStore as store  } from '@/chat-demo/chat-demo-store';
+import { chatStore } from '@/chat-demo/chat-demo-store';
 import type { WsMessage } from '@common/types/websockets';
 import type { ChatMessage } from '@/chat-demo/types';
+
+const { actions } = chatStore.getState();
 
 const LOG_PREFIX = '[chat-demo-ws-handler]';
 const logger = (...args: any[]) => console.log(LOG_PREFIX, ...args);
@@ -18,7 +20,7 @@ const ChatDemoWsHandler = {
     switch (type) {
       case 'new-message':
         logger(`New chat message:`, data);
-        store.addMessage(data.payload as ChatMessage);
+        actions.addMessage(data.payload as ChatMessage);
         break;
       // case 'room-change':
       //   store.setCurrentRoom(data.room);

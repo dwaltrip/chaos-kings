@@ -1,96 +1,36 @@
-import { useState, useEffect } from 'react';
-import { type ChatMessage  } from '@/chat-demo/types';
+import { create } from 'zustand';
+import { type ChatMessage } from '@/chat-demo/types';
 
-type StoreListener = () => void;
-
-const ChatDemoStore = (function() {
-  let _messages = [] as ChatMessage[];
-  let _username = '';
-  let _currentRoom = 'general';
-  let _currentMessage = '';
-  let _newRoomName = '';
-  let _listeners = new Set<StoreListener>();
-  
-  const notifyListeners = () => {
-    _listeners.forEach(listener => listener());
+interface ChatState {
+  messages: ChatMessage[];
+  username: string;
+  currentRoom: string;
+  currentMessage: string;
+  newRoomName: string;
+  actions: {
+    setMessages: (messages: ChatMessage[]) => void;
+    addMessage: (message: ChatMessage) => void;
+    setUsername: (username: string) => void;
+    setCurrentRoom: (currentRoom: string) => void;
+    setCurrentMessage: (currentMessage: string) => void;
+    setNewRoomName: (newRoomName: string) => void;
+    clearMessages: () => void;
   };
-  
-  return {
-    getMessages: () => _messages,
-    getUsername: () => _username,
-    getCurrentRoom: () => _currentRoom,
-    getCurrentMessage: () => _currentMessage,
-    getNewRoomName: () => _newRoomName,
-    
-    setMessages: (messages: ChatMessage[]) => {
-      _messages = messages;
-      notifyListeners();
-    },
-    addMessage: (message: ChatMessage) => {
-      const newMessages = [..._messages, message];
-      _messages = newMessages;
-      notifyListeners();
-    },
-    setUsername: (username: string) => {
-      _username = username;
-      notifyListeners();
-    },
-    setCurrentRoom: (currentRoom: string) => {
-      _currentRoom = currentRoom;
-      notifyListeners();
-    },
-    setCurrentMessage: (currentMessage: string) => {
-      _currentMessage = currentMessage;
-      notifyListeners();
-    },
-    setNewRoomName: (newRoomName: string) => {
-      _newRoomName = newRoomName;
-      notifyListeners();
-    },
-    clearMessages: () => {
-      _messages = [];
-      notifyListeners();
-    },
-    
-    subscribe: (listener: StoreListener) => {
-      _listeners.add(listener);
-      return () => {
-        _listeners.delete(listener);
-      };
-    },
-    
-    getState: () => ({
-      messages: _messages,
-      username: _username,
-      currentRoom: _currentRoom,
-      currentMessage: _currentMessage,
-      newRoomName: _newRoomName,
-    })
-  };
-})();
+}
 
-const useChatStore = () => {
-  const [state, setState] = useState(ChatDemoStore.getState());
-  
-  useEffect(() => {
-    const unsubscribe = ChatDemoStore.subscribe(() => {
-      setState(ChatDemoStore.getState());
-    });
-    return unsubscribe;
-  }, []);
-  
-  return {
-    ...state,
-    actions: {
-      setMessages: ChatDemoStore.setMessages,
-      addMessage: ChatDemoStore.addMessage,
-      setUsername: ChatDemoStore.setUsername,
-      setCurrentRoom: ChatDemoStore.setCurrentRoom,
-      setCurrentMessage: ChatDemoStore.setCurrentMessage,
-      setNewRoomName: ChatDemoStore.setNewRoomName,
-      clearMessages: ChatDemoStore.clearMessages,
-    }
-  };
-};
-
-export { ChatDemoStore, useChatStore };
+export const chatStore = create<ChatState>((set) => ({
+  messages: [],
+  username: '',
+  currentRoom: 'general',
+  currentMessage: '',
+  newRoomName: '',
+  actions: {
+    setMessages: (messages) => set({ messages }),
+    addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
+    setUsername: (username) => set({ username }),
+    setCurrentRoom: (currentRoom) => set({ currentRoom }),
+    setCurrentMessage: (currentMessage) => set({ currentMessage }),
+    setNewRoomName: (newRoomName) => set({ newRoomName }),
+    clearMessages: () => set({ messages: [] }),
+  }
+}));

@@ -1,4 +1,6 @@
-import { ChatDemoStore as store  } from '@/chat-demo/chat-demo-store';
+import { chatStore } from '@/chat-demo/chat-demo-store';
+
+const { actions } = chatStore.getState();
 import { getWebSocketService } from '@/services/websocket-service';
 import { createNewChatMessage, createJoinRoomMessage } from '@common/types/chat-demo';
 
@@ -12,9 +14,9 @@ function websocketConnect(): ReturnType<typeof getWebSocketService> {
 
   // Join current room after connection is established
   wsService.addListener('open', () => {
-    const currentRoom = store.getCurrentRoom();
+    const currentRoom = chatStore.getState().currentRoom;
     logger(`Joining room: ${currentRoom}`);
-    joinRoom(currentRoom, store.getUsername());
+    joinRoom(currentRoom, chatStore.getState().username);
   });
   return wsService;
 }
@@ -37,15 +39,15 @@ function sendChatMessage(message: string, username: string, room: string) {
   }
 
   wsService.send(createNewChatMessage(message.trim(), room, username));
-  store.setCurrentMessage('');
+  actions.setCurrentMessage('');
 }
 
 function setCurrentMessage(message: string) {
-  store.setCurrentMessage(message);
+  actions.setCurrentMessage(message);
 }
 
 function setUsername(username: string) {
-  store.setUsername(username);
+  actions.setUsername(username);
   const wsService = getWebSocketService();
   if (wsService.isConnected) {
     wsService.send({
@@ -59,7 +61,7 @@ function setUsername(username: string) {
 }
 
 function setNewRoomName(roomName: string) {
-  store.setNewRoomName(roomName);
+  actions.setNewRoomName(roomName);
 }
 
 function joinRoom(room: string, username: string) {
@@ -70,12 +72,12 @@ function joinRoom(room: string, username: string) {
     return;
   }
   wsService.send(createJoinRoomMessage(room, username));
-  store.setCurrentRoom(room);
+  actions.setCurrentRoom(room);
 }
 
 function createAndJoinRoom(name: string) {
   logger(`Creating and joining room: ${name}`);
-  store.setNewRoomName(name);
+  actions.setNewRoomName(name);
   // Additional logic to create and join the room
 }
 

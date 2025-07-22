@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useChatStore } from '@/chat-demo/chat-demo-store';
+import { chatStore } from '@/chat-demo/chat-demo-store';
 import { useWsStore } from '@/services/ws-store';
 import {
   websocketConnect,
@@ -23,13 +23,11 @@ function Button({ onClick, children }: { onClick: () => void; children: React.Re
 }
 
 function ChatDemoPage() {
-  const {
-    messages,
-    username,
-    currentRoom,
-    currentMessage,
-    newRoomName,
-  } = useChatStore();
+  const messages = chatStore(state => state.messages);
+  const username = chatStore(state => state.username);
+  const currentRoom = chatStore(state => state.currentRoom);
+  const currentMessage = chatStore(state => state.currentMessage);
+  const newRoomName = chatStore(state => state.newRoomName);
   const { isConnected } = useWsStore();
   const wsServiceRef = useRef<WebSocketService | null>(null);
 
