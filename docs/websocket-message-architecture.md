@@ -12,12 +12,8 @@ Contains generic WebSocket message interface shared across all domains.
 ```typescript
 interface WsMessage {
   domain: string;
-  payload: {
-    type: string;
-    data: any;
-  }
-  user: string;
-  timestamp: number;
+  type: string;
+  payload: any;
 }
 ```
 
@@ -27,37 +23,46 @@ Contains all types, constants, and factory functions specific to the chat-demo d
 #### Domain Organization
 - **Domain Constant**: `CHAT_DEMO_DOMAIN = 'chat-demo'` eliminates hardcoded strings
 - **Namespace Pattern**: `ChatDemo` namespace groups related message types
-- **Type Safety**: Each message type has specific `Data` and `Payload` interfaces
+- **Direct Extension**: Message interfaces extend `WsMessage` with specific payload structures
 
 #### Current Message Types
 ```typescript
 namespace ChatDemo {
-  // Chat message types
-  export interface ChatMessageData { content: string; room: string; }
-  export interface ChatMessagePayload { type: 'chat-message'; data: ChatMessageData; user: string; timestamp: number; }
-  
-  // Room management types  
-  export interface JoinRoomData { room: string; }
-  export interface JoinRoomPayload { type: 'join-room'; data: JoinRoomData; user: string; timestamp: number; }
+  export interface ChatMessage extends WsMessage {
+    payload: {
+      content: string;
+      room: string;
+      user: string;
+      timestamp: number;
+    }
+  }
+
+  export interface JoinRoomMessage extends WsMessage {
+    payload: {
+      room: string;
+      user: string;
+      timestamp: number;
+    }
+  }
 }
 ```
 
 #### Factory Functions
 Type-safe message constructors ensure consistent structure:
 ```typescript
-function createChatMessage(content: string, room: string, user: string): WsMessage
+function createNewChatMessage(content: string, room: string, user: string): ChatDemo.ChatMessage
 function createJoinRoomMessage(room: string, user: string): WsMessage
 ```
 
 ### 3. Frontend Implementation (`frontend/src/chat-demo/chat-demo-actions.ts`)
 - **Type-Safe Sending**: Uses factory functions instead of manual object construction
-- **Clean API**: `wsService.send(createChatMessage(message, room, username))`
+- **Clean API**: `wsService.send(createNewChatMessage(message, room, username))`
 - **Consistent Structure**: All messages follow the same pattern
 
 ### 4. Backend Implementation (`backend/src/game-chat/game-chat-ws-api.ts`)
-- **Typed Handlers**: Each handler receives strongly typed payload
+- **Typed Handlers**: Each handler receives strongly typed message
 - **Domain Registration**: Uses `DomainAPI` pattern for message routing
-- **Type Safety**: `(payload: ChatDemo.ChatMessagePayload, wsActions) => {}`
+- **Type Safety**: Handlers work with specific message interfaces like `ChatDemo.ChatMessage`
 
 ## Architecture Benefits
 
@@ -81,24 +86,27 @@ function createJoinRoomMessage(room: string, user: string): WsMessage
 ### 1. Define Types
 Add to `ChatDemo` namespace in `common/types/chat-demo.ts`:
 ```typescript
-export interface NewMessageData { /* properties */ }
-export interface NewMessagePayload { 
-  type: 'new-message'; 
-  data: NewMessageData; 
-  user: string; 
-  timestamp: number; 
+export interface NewMessage extends WsMessage {
+  payload: {
+    /* your properties here */
+    user: string;
+    timestamp: number;
+  }
 }
 ```
 
 ### 2. Create Factory Function
 Add factory function in `common/types/chat-demo.ts`:
 ```typescript
-function createNewMessage(/* params */): WsMessage {
+function createNewMessage(/* params */): ChatDemo.NewMessage {
   return {
-    user,
     domain: CHAT_DEMO_DOMAIN,
-    payload: { type: 'new-message', data: { /* data */ } },
-    timestamp: Date.now()
+    type: 'new-message',
+    payload: {
+      /* your data here */
+      user,
+      timestamp: Date.now(),
+    },
   };
 }
 ```
@@ -112,8 +120,8 @@ wsService.send(createNewMessage(/* params */));
 ### 4. Update Backend
 Add typed handler:
 ```typescript
-'new-message': (payload: ChatDemo.NewMessagePayload, wsActions) => {
-  // Handle message
+'new-message': (message: ChatDemo.NewMessage, wsActions) => {
+  // Handle message with message.payload.* properties
 }
 ```
 
