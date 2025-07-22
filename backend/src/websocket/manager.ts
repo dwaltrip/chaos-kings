@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
 
-import { WsClientId, WsActions, WsMessageHandler, WsMessage } from './types';
+import { WsClientId, WsActions, WsMessageHandler, WsMessage } from '@/websocket/types';
 
 type RoomId = string;
 

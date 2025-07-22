@@ -1,4 +1,4 @@
-import { WsMessage } from '../../../common/types/websockets';
+import { WsMessage } from '@common/types/websockets';
 
 type WsClientId = string;
 

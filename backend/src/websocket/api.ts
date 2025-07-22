@@ -1,4 +1,4 @@
-import { WsActions, WsMessageHandler, WsMessage } from './types';
+import { WsActions, WsMessageHandler, WsMessage } from '@/websocket/types';
 
 
 // interface WsActions {

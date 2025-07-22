@@ -1,6 +1,6 @@
-import { WebSocketManager } from './manager';
-import { handleWebSocketMessage } from './api';
-import { WsMessageHandler } from './types';
+import { WebSocketManager } from '@/websocket/manager';
+import { handleWebSocketMessage } from '@/websocket/api';
+import { WsMessageHandler } from '@/websocket/types';
 
 export {
   WebSocketManager,

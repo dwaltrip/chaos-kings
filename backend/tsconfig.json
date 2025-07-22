@@ -4,12 +4,20 @@
     "module": "commonjs",
     "lib": ["ES2020"],
     "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@common/*": ["../common/*"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts", "../types/**/*.ts"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  },
+  "include": ["src/**/*.ts", "../common/**/*.ts"],
   "exclude": ["node_modules", "dist", "client"]
 }
