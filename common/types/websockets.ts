@@ -1,11 +1,7 @@
 interface WsMessage {
   domain: string;
-  payload: {
-    type: string;
-    data: any;
-  }
-  user: string;
-  timestamp: number;
+  type: string;
+  payload: any;
 }
 
 export type { WsMessage };

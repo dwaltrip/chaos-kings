@@ -93,13 +93,13 @@ class WebSocketManager {
       ws.on('message', (buffer: Buffer) => {
         const bufferStr = buffer.toString();
         try {
-          const message = validateMessage(JSON.parse(bufferStr));
-          if (message.user) {
-            client.user = message.user;
+          const data: WsMessage = validateMessage(JSON.parse(bufferStr));
+          if (data.payload.user) {
+            client.user = data.payload.user;
             // logger.log(`Client user set to: ${client.user}`);
           }
-          logger.log('Received:', message);
-          this.handleMessage(message, this.actionsForClient(client));
+          logger.log('Received:', data);
+          this.handleMessage(data, this.actionsForClient(client));
         }
         catch (error) {
           logger.error('Error parsing message:', error, '-- data:', bufferStr);
@@ -122,8 +122,8 @@ class WebSocketManager {
     return {
       joinRoom: (roomId: string) => this.joinRoom(client, roomId),
       leaveRoom: (roomId: string) => this.leaveRoom(client, roomId),
-      broadcastToRoom: (roomId: string, message: any) => {
-        this.broadcastToRoom(roomId, message, client);
+      broadcastToRoom: (roomId: string, data: WsMessage) => {
+        this.broadcastToRoom(roomId, data, client);
       },
       sendToSelf: (message: any) => client.ws.send(message),
       sendToClient: (clientId: WsClientId, message: any) => {
@@ -157,7 +157,7 @@ class WebSocketManager {
     console.log(`Client ${client.id} left room: ${roomId}`);
   }
 
-  private broadcastToRoom(roomId: string, data: any, fromClient: WsClient) {
+  private broadcastToRoom(roomId: string, data: WsMessage, fromClient: WsClient) {
     const logger = clientLogger(fromClient);
     const room  = this.rooms.get(roomId);
     if (!room) {
@@ -195,16 +195,15 @@ class WebSocketManager {
   }
 }
 
-function validateMessage(message: any): WsMessage {
-  if (!message || typeof message !== 'object') {
-    throw new Error('Invalid message format');
+function validateMessage(data: any): WsMessage {
+  if (!data || typeof data !== 'object') {
+    throw new Error('Invalid data format');
   }
-  if (!message.domain || !message.payload || !message.payload.type || !message.payload.data) {
-     console.error('---- DEBUG ----');
-     console.error('Invalid message structure:', JSON.stringify(message, null, 2));
-    throw new Error('Message must have domain, payload with type and data');
+  if (!data.domain || !data.type || !data.payload) {
+    console.error('Invalid message structure:', JSON.stringify(data, null, 2));
+    // throw new Error('Message must have domain, payload with type and data');
   }
-  return message as WsMessage;
+  return data as WsMessage;
 }
 
 export { WebSocketManager};

@@ -1,6 +1,6 @@
 import { ChatDemoStore as store  } from '@/chat-demo/chat-demo-store';
 import { getWebSocketService } from '@/services/websocket-service';
-import { createChatMessage, createJoinRoomMessage } from '@common/types/chat-demo';
+import { createNewChatMessage, createJoinRoomMessage } from '@common/types/chat-demo';
 
 const LOG_PREFIX = '[chat-actions]';
 const logger = (...args: any[]) => console.log(LOG_PREFIX, ...args);
@@ -36,7 +36,7 @@ function sendChatMessage(message: string, username: string, room: string) {
     return;
   }
 
-  wsService.send(createChatMessage(message.trim(), room, username));
+  wsService.send(createNewChatMessage(message.trim(), room, username));
   store.setCurrentMessage('');
 }
 
@@ -49,13 +49,11 @@ function setUsername(username: string) {
   const wsService = getWebSocketService();
   if (wsService.isConnected) {
     wsService.send({
-      user: username,
       domain: 'chat-demo',
+      type: 'set-username',
       payload: {
-        type: 'set-username',
-        data: { user: username },
+        user: username,
       },
-      timestamp: Date.now(),
     });
   }
 }

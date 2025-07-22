@@ -58,7 +58,7 @@ class WebSocketService {
     }
   };
 
-  send(message: any) {
+  send(message: WsMessage) {
     // TODO: queue messages if not connected
     if (!this.isConnected) {
       console.error(`[ws-service] cannot send message: Not connected`, message);

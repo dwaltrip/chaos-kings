@@ -12,8 +12,8 @@ import { WsActions, WsMessageHandler, WsMessage } from '@/websocket/types';
 function injectDomain(domain: string, actions: WsActions): WsActions {
   return {
     ...actions,
-    broadcastToRoom: (roomId: string, payload: any) => {
-      actions.broadcastToRoom(roomId, { ...payload, domain });
+    broadcastToRoom: (roomId, data) => {
+      actions.broadcastToRoom(roomId, { ...data, domain });
     }
   }
 }
@@ -23,9 +23,9 @@ class DomainAPI {
   constructor(public name: string, private handlers: Record<string, WsMessageHandler>) {
   }
 
-  handleMessage(type: string, payload: any, actions: WsActions) {
+  handleMessage(type: string, data: WsMessage, actions: WsActions) {
     if (this.handlers[type]) {
-      this.handlers[type](payload, injectDomain(this.name, actions));
+      this.handlers[type](data, injectDomain(this.name, actions));
     }
     else {
       // throw new Error(`No handler for message type: ${type} in domain: ${this.name}`);
@@ -37,10 +37,10 @@ class DomainAPI {
 class WebSocketAPI {
   private domains = new Map<string, DomainAPI>();
 
-  handleMessage(message: WsMessage, actions: WsActions) {
-    const { domain, payload, user, timestamp } = message;
+  handleMessage(data: WsMessage, actions: WsActions) {
+    const { domain, type } = data;
     const domainAPI = this.requireDomainAPI(domain);
-    domainAPI.handleMessage(payload.type, { ...payload, user, timestamp }, actions);
+    domainAPI.handleMessage(type, data, actions);
   }
 
   private requireDomainAPI(appName: string): DomainAPI {

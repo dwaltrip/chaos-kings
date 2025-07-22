@@ -1,11 +1,5 @@
 import { useState, useEffect } from 'react';
-
-interface ChatMessage {
-  id: string;
-  content: string;
-  user: string;
-  timestamp: Date;
-}
+import { type ChatMessage  } from '@/chat-demo/types';
 
 type StoreListener = () => void;
 

@@ -1,20 +1,24 @@
 import { ChatDemoStore as store  } from '@/chat-demo/chat-demo-store';
+import type { WsMessage } from '@common/types/websockets';
+import type { ChatMessage } from '@/chat-demo/types';
 
 const LOG_PREFIX = '[chat-demo-ws-handler]';
 const logger = (...args: any[]) => console.log(LOG_PREFIX, ...args);
 logger.warn = (...args: any[]) => console.warn(LOG_PREFIX, ...args);
 
 const ChatDemoWsHandler = {
-  handleMessage: (payload: any) => { 
-    const { type, data, user, timestamp } = payload;
+  handleMessage: (data: WsMessage) => { 
+    const { type, payload } = data;
+    const user = payload.user || '??';
+    const date = payload.timestamp ? new Date(payload.timestamp) : '-'
     console.log('-------------------------------------------------------')
     logger(`Received msg (type=${type})`, data);
-    logger(`user: ${user}, timestamp: ${timestamp}`);
+    logger(`user: ${user}, time: ${date}`);
 
     switch (type) {
-      case 'chat-message':
+      case 'new-message':
         logger(`New chat message:`, data);
-        store.addMessage({ ...data, user, timestamp });
+        store.addMessage(data.payload as ChatMessage);
         break;
       // case 'room-change':
       //   store.setCurrentRoom(data.room);

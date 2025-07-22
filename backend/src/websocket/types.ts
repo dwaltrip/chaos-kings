@@ -5,12 +5,12 @@ type WsClientId = string;
 interface WsActions {
   joinRoom: (roomId: string) => void;
   leaveRoom: (roomId: string) => void;
-  sendToSelf: (message: any) => void;
+  sendToSelf: (data: WsMessage) => void;
   sendToClient: (clientId: WsClientId, message: any) => void;
-  broadcastToRoom: (roomId: string, message: any) => void;
+  broadcastToRoom: (roomId: string, data: WsMessage) => void;
 }
 
-type WsMessageHandler = (payload: any, actions: WsActions) => void;
+type WsMessageHandler = (data: WsMessage, actions: WsActions) => void;
 
 export {
   type WsClientId,
