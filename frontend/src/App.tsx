@@ -1,14 +1,20 @@
-import { ChatDemoPage } from '@/chat-demo/chat-demo-page';
-// import { MatchmakingPage } from './matchmaking/matchmaking-page';
+import { Routes, Route, NavLink } from "react-router";
+import { HomePage } from '@/pages/HomePage';
+import { AboutPage } from '@/pages/AboutPage';
 
 function App() {
   return (
     <div className="app">
-      <div style={{ display: 'flex', gap: '40px' }}>
-        <div style={{ flex: 1 }}>
-          {/* <MatchmakingPage /> */}
-          <ChatDemoPage />
-        </div>
+      <nav style={{ padding: '20px', borderBottom: '1px solid #ccc', marginBottom: '20px' }}>
+        <NavLink to="/" style={{ marginRight: '20px' }}>Home</NavLink>
+        <NavLink to="/about">About</NavLink>
+      </nav>
+      
+      <div style={{ padding: '20px' }}>
+        <Routes>
+          <Route index element={<HomePage />} />
+          <Route path="about" element={<AboutPage />} />
+        </Routes>
       </div>
     </div>
   );
