@@ -1,7 +1,6 @@
 {
-  "name": "websockets-chat-backend",
+  "name": "generals-v2-backend",
   "version": "1.0.0",
-  "description": "Minimal WebSocket chat backend",
   "main": "server.ts",
   "scripts": {
     "start": "ts-node src/server.ts",
