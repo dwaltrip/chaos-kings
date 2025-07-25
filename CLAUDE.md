@@ -1,6 +1,10 @@
 # Generals v2 - Project Overview
 
-This project is in early prototype phase.
+Hey Claude! My name is Daniel and I'm excited to build with you :)
+
+## Background / Current Status
+* Multiplayer web game w/ soft realtime gampelay (a few moves a second)
+* This project is in early prototype phase.
 
 ## Architecture
 
