@@ -26,8 +26,8 @@
 - **Validation rules**: 2-20 chars, alphanumeric + hyphens/underscores only (prevents display issues, reasonable limits)
 - **Auto-load on init**: Username loads immediately when store is created, avoiding loading states in components
 
-### 🔄 User Story #2: Game Room Routing  
-**Status:** PLANNED  
+### ✅ User Story #2: Game Room Routing  
+**Status:** COMPLETED  
 **Target Files:** `game-page.tsx`, update `App.tsx` routing
 
 **Requirements:**

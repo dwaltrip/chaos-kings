@@ -11,7 +11,7 @@ interface UsernameState {
   };
 }
 
-export const usernameStore = create<UsernameState>((set, get) => ({
+export const usernameStore = create<UsernameState>((set) => ({
   username: '',
   isLoading: false,
   actions: {
