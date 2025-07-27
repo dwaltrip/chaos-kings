@@ -1,10 +1,11 @@
 import { db } from '@/db';
 import { UsersTable } from '@/users/user.tables';
-import { Selectable } from 'kysely';
+import { Selectable, Kysely } from 'kysely';
+import { Database } from '@/types';
 
 type User = Selectable<UsersTable>;
 
-export async function updateUsername(userId: number, newUsername: string): Promise<User> {
+export async function updateUsername(userId: number, newUsername: string, dbInstance: Kysely<Database> = db): Promise<User> {
   if (!newUsername || newUsername.trim().length === 0) {
     throw new Error('Username is required');
   }
@@ -18,7 +19,7 @@ export async function updateUsername(userId: number, newUsername: string): Promi
   }
 
   try {
-    const updatedUser = await db
+    const updatedUser = await dbInstance
       .updateTable('users')
       .set({ username: newUsername.trim() })
       .where('id', '=', userId)

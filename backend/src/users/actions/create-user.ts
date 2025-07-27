@@ -1,11 +1,12 @@
 import { db } from '@/db';
 import { UsersTable } from '@/users/user.tables';
-import { Selectable, Insertable } from 'kysely';
+import { Selectable, Insertable, Kysely } from 'kysely';
+import { Database } from '@/types';
 
 type User = Selectable<UsersTable>;
 type NewUser = Insertable<UsersTable>;
 
-export async function createUser(username: string): Promise<User> {
+export async function createUser(username: string, dbInstance: Kysely<Database> = db): Promise<User> {
   if (!username || username.trim().length === 0) {
     throw new Error('Username is required');
   }
@@ -23,7 +24,7 @@ export async function createUser(username: string): Promise<User> {
       username: username.trim(),
     };
 
-    const user = await db
+    const user = await dbInstance
       .insertInto('users')
       .values(newUser)
       .returningAll()
