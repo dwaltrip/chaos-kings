@@ -1,7 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import databasePlugin from '@/plugins/database';
-import healthRoutes from '@/routes/health';
+import { databasePlugin } from '@/plugins/database';
+import { systemRoutes } from '@/system/routes';
 
 const PORT = 3000;
 
@@ -14,7 +14,7 @@ fastify.register(cors, {
 });
 
 fastify.register(databasePlugin);
-fastify.register(healthRoutes);
+fastify.register(systemRoutes);
 
 const start = async () => {
   try {

@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 
-export default async function healthRoutes(fastify: FastifyInstance) {
+async function systemRoutes(fastify: FastifyInstance) {
   fastify.get('/health', async (request, reply) => {
     return { 
       status: 'ok', 
@@ -9,3 +9,5 @@ export default async function healthRoutes(fastify: FastifyInstance) {
     };
   });
 }
+
+export { systemRoutes };
