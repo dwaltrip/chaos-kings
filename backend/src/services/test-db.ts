@@ -4,7 +4,7 @@ import { Kysely, PostgresDialect } from 'kysely';
 
 const testDialect = new PostgresDialect({
   pool: new Pool({
-    database: process.env.NODE_ENV === 'test' ? 'fullstack_ws_demo_game_test' : 'fullstack_ws_demo_game',
+    database: 'generals_v2_test',
     host: 'localhost',
     user: 'postgres',
     port: 5432,

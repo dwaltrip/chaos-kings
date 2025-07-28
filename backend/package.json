@@ -9,7 +9,10 @@
     "build": "tsc",
     "prod": "node dist/server.js",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "migrate:latest": "kysely migrate latest",
+    "migrate:up": "kysely migrate up",
+    "migrate:down": "kysely migrate down"
   },
   "dependencies": {
     "@fastify/cors": "^11.0.1",

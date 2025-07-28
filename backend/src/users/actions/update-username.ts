@@ -1,4 +1,4 @@
-import { db } from '@/db';
+import { db } from '@/services/db';
 import { UsersTable } from '@/users/user.tables';
 import { Selectable, Kysely } from 'kysely';
 import { Database } from '@/types';
@@ -10,18 +10,20 @@ export async function updateUsername(userId: number, newUsername: string, dbInst
     throw new Error('Username is required');
   }
 
-  if (newUsername.length > 50) {
+  const trimmedUsername = newUsername.trim();
+
+  if (trimmedUsername.length > 50) {
     throw new Error('Username must be 50 characters or less');
   }
 
-  if (!/^[a-zA-Z0-9_-]+$/.test(newUsername)) {
+  if (!/^[a-zA-Z0-9_-]+$/.test(trimmedUsername)) {
     throw new Error('Username can only contain letters, numbers, underscores, and hyphens');
   }
 
   try {
     const updatedUser = await dbInstance
       .updateTable('users')
-      .set({ username: newUsername.trim() })
+      .set({ username: trimmedUsername })
       .where('id', '=', userId)
       .returningAll()
       .executeTakeFirst();

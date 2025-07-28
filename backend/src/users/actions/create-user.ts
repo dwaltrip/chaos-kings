@@ -1,4 +1,4 @@
-import { db } from '@/db';
+import { db } from '@/services/db';
 import { UsersTable } from '@/users/user.tables';
 import { Selectable, Insertable, Kysely } from 'kysely';
 import { Database } from '@/types';
@@ -11,17 +11,19 @@ export async function createUser(username: string, dbInstance: Kysely<Database> 
     throw new Error('Username is required');
   }
 
-  if (username.length > 50) {
+  const trimmedUsername = username.trim();
+
+  if (trimmedUsername.length > 50) {
     throw new Error('Username must be 50 characters or less');
   }
 
-  if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+  if (!/^[a-zA-Z0-9_-]+$/.test(trimmedUsername)) {
     throw new Error('Username can only contain letters, numbers, underscores, and hyphens');
   }
 
   try {
     const newUser: NewUser = {
-      username: username.trim(),
+      username: trimmedUsername,
     };
 
     const user = await dbInstance

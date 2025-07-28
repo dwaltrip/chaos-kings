@@ -12,7 +12,7 @@
 ### 1. Create Test Database
 ```bash
 # Connect to PostgreSQL and create test database
-psql -h localhost -U postgres -c "CREATE DATABASE fullstack_ws_demo_game_test;"
+psql -h localhost -U postgres -c "CREATE DATABASE generals_v2_test;"
 ```
 
 ### 2. Run Migrations on Test Database

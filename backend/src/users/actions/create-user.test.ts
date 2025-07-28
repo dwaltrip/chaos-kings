@@ -1,5 +1,5 @@
 import { createUser } from '@/users/actions/create-user';
-import { setupTestDb, cleanupTestDb, teardownTestDb, testDb } from './test-helpers';
+import { setupTestDb, cleanupTestDb, teardownTestDb, testDb } from '@/tests/test-helpers';
 
 describe('createUser', () => {
   beforeAll(async () => {

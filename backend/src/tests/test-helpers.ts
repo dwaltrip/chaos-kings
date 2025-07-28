@@ -1,6 +1,6 @@
-import { testDb } from '@/test-db';
+import { testDb } from '@/services/test-db';
 import { promises as fs } from 'fs';
-import { Migrator, FileMigrationProvider } from 'kysely';
+import { Migrator, FileMigrationProvider, sql } from 'kysely';
 import * as path from 'path';
 
 export const setupTestDb = async () => {
@@ -36,8 +36,9 @@ export const setupTestDb = async () => {
 };
 
 export const cleanupTestDb = async () => {
-  // Clear all users between tests
+  // Clear all users between tests and reset sequence
   await testDb.deleteFrom('users').execute();
+  await sql`ALTER SEQUENCE users_id_seq RESTART WITH 1;`.execute(testDb);
 };
 
 export const teardownTestDb = async () => {

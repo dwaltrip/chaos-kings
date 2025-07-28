@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import { db } from '@/db';
+import { db } from '@/services/db';
 import { getClient } from '@/services/redis';
 
 const databasePlugin = fp(function(fastify: FastifyInstance) {
