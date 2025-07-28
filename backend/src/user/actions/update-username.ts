@@ -1,11 +1,11 @@
-import { db } from '@/services/db';
+import { UserRepository } from '@/user/user-repository';
 import { UsersTable } from '@/user/user.db';
 import { Selectable, Kysely } from 'kysely';
 import { Database } from '@/types';
 
 type User = Selectable<UsersTable>;
 
-export async function updateUsername(userId: number, newUsername: string, dbInstance: Kysely<Database> = db): Promise<User> {
+export async function updateUsername(userId: number, newUsername: string, dbInstance?: Kysely<Database>): Promise<User> {
   if (!newUsername || newUsername.trim().length === 0) {
     throw new Error('Username is required');
   }
@@ -21,12 +21,8 @@ export async function updateUsername(userId: number, newUsername: string, dbInst
   }
 
   try {
-    const updatedUser = await dbInstance
-      .updateTable('users')
-      .set({ username: trimmedUsername })
-      .where('id', '=', userId)
-      .returningAll()
-      .executeTakeFirst();
+    const userRepository = new UserRepository(dbInstance);
+    const updatedUser = await userRepository.updateUsername(userId, trimmedUsername);
 
     if (!updatedUser) {
       throw new Error('User not found');

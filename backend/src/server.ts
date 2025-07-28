@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { databasePlugin } from '@/plugins/database';
 import { systemRoutes } from '@/system/system-routes';
+import { userRoutes } from '@/user/user-routes';
 
 const PORT = 3000;
 
@@ -15,6 +16,7 @@ fastify.register(cors, {
 
 fastify.register(databasePlugin);
 fastify.register(systemRoutes);
+fastify.register(userRoutes);
 
 const start = async () => {
   try {
