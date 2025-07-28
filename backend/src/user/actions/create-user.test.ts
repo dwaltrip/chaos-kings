@@ -1,4 +1,4 @@
-import { createUser } from '@/users/actions/create-user';
+import { createUser } from '@/user/actions/create-user';
 import { setupTestDb, cleanupTestDb, teardownTestDb, testDb } from '@/tests/test-helpers';
 
 describe('createUser', () => {

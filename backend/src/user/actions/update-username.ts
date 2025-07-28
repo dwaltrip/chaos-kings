@@ -1,17 +1,16 @@
 import { db } from '@/services/db';
-import { UsersTable } from '@/users/user.tables';
-import { Selectable, Insertable, Kysely } from 'kysely';
+import { UsersTable } from '@/user/user.db';
+import { Selectable, Kysely } from 'kysely';
 import { Database } from '@/types';
 
 type User = Selectable<UsersTable>;
-type NewUser = Insertable<UsersTable>;
 
-export async function createUser(username: string, dbInstance: Kysely<Database> = db): Promise<User> {
-  if (!username || username.trim().length === 0) {
+export async function updateUsername(userId: number, newUsername: string, dbInstance: Kysely<Database> = db): Promise<User> {
+  if (!newUsername || newUsername.trim().length === 0) {
     throw new Error('Username is required');
   }
 
-  const trimmedUsername = username.trim();
+  const trimmedUsername = newUsername.trim();
 
   if (trimmedUsername.length > 50) {
     throw new Error('Username must be 50 characters or less');
@@ -22,17 +21,18 @@ export async function createUser(username: string, dbInstance: Kysely<Database> 
   }
 
   try {
-    const newUser: NewUser = {
-      username: trimmedUsername,
-    };
-
-    const user = await dbInstance
-      .insertInto('users')
-      .values(newUser)
+    const updatedUser = await dbInstance
+      .updateTable('users')
+      .set({ username: trimmedUsername })
+      .where('id', '=', userId)
       .returningAll()
-      .executeTakeFirstOrThrow();
+      .executeTakeFirst();
 
-    return user;
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+
+    return updatedUser;
   } catch (error) {
     if (error instanceof Error && error.message.includes('duplicate')) {
       throw new Error('Username already exists');

@@ -1,7 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { databasePlugin } from '@/plugins/database';
-import { systemRoutes } from '@/system/routes';
+import { systemRoutes } from '@/system/system-routes';
 
 const PORT = 3000;
 

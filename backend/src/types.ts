@@ -1,6 +1,6 @@
 // https://kysely.dev/docs/getting-started#types
 
-import { UsersTable } from '@/users/user.tables';
+import { UsersTable } from '@/user/user.db';
 
 interface Database {
   users: UsersTable
