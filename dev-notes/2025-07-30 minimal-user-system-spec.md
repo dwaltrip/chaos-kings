@@ -22,6 +22,7 @@ This document outlines the implementation of a minimal user system for prototypi
 - Cookie-based user key system for persistent sessions
 - Auto-creation of users on first visit
 - Connection between frontend username and backend user records
+- Enhanced user store in frontend that replaces the "username" store
 
 ## Implementation Plan
 
@@ -110,19 +111,21 @@ const COOKIE_NAME = 'general_v2:user_key';
 - Check database for uniqueness during creation
 - Retry with new random number if collision occurs
 
-#### Username Validation (Backend Authoritative)
+#### Username Validation (Shared Implementation)
+- **Location:** `common/validation/username.ts` - shared between frontend and backend
 - **Length:** 1-25 characters (updated from current 50)
 - **Pattern:** `^[a-zA-Z0-9_-]+$` (letters, numbers, underscore, hyphen)
 - **Required:** Non-empty after trimming
-- Frontend displays validation errors but backend enforces rules
+- Frontend and backend use same validation function for consistency
 
 ### 3. Frontend Implementation
 
 #### Update localStorage Utility
 ```typescript
 // In local-storage.ts
+const LOCALSTORAGE_PREFIX = 'generals-v2'
 const STORAGE_KEYS = {
-  USERNAME: 'general_v2:game-username', // Updated prefix
+  USERNAME: `${LOCALSTORAGE_PREFIX}:game-username`, // Updated prefix
 } as const;
 ```
 
@@ -182,9 +185,9 @@ class UserService {
 export const userService = new UserService();
 ```
 
-#### Enhanced Username Store
+#### Enhanced User Store (renamed from username-store)
 ```typescript
-// stores/username-store.ts
+// stores/user-store.ts (renamed from username-store.ts)
 interface UserState {
   user: User | null;
   isLoading: boolean;
@@ -279,10 +282,11 @@ const handleSubmit = async (e: React.FormEvent) => {
 2. **Backend Cookie Setup** - Add Fastify cookie middleware 
 3. **Backend Endpoints** - Implement auto-create and me endpoints
 4. **Backend Auth** - Add cookie-based auth to username update
-5. **Frontend Service** - Create user service with backend integration
-6. **Frontend Store** - Update username store to use service instead of localStorage
-7. **Frontend Integration** - Initialize user on app startup
-8. **Manual Testing** - Test full user creation and username editing flow
+5. **Shared Validation** - Create shared validation function in common/validation/username.ts
+6. **Frontend Service** - Create user service with backend integration
+7. **Frontend Store** - Rename and update username store to user store, use service instead of localStorage
+8. **Frontend Integration** - Initialize user on app startup
+9. **Manual Testing** - Test full user creation and username editing flow
 
 ### 5. User Flows
 
@@ -336,12 +340,12 @@ const handleSubmit = async (e: React.FormEvent) => {
 #### Backend Dependencies
 - Add `@fastify/cookie` for cookie handling
 - Use Node.js built-in `crypto.randomUUID()` for user keys
-- Update existing validation in create-user.ts for new character limit
+- Import shared validation from `common/validation/username.ts`
 
 #### Frontend Dependencies  
 - No new dependencies required
 - Remove localStorage dependency from username management
-- Keep existing validation in username form as first-line defense
+- Import shared validation from `common/validation/username.ts`
 
 #### Database Considerations
 - Migration will need to populate user_key for existing users (if any)
@@ -377,6 +381,48 @@ const handleSubmit = async (e: React.FormEvent) => {
 - Admin user management interface
 - Rate limiting on user creation
 - User blocking/reporting system
+
+### 10. Prototype-First Approach: What We're Intentionally Skipping
+
+This implementation deliberately omits many "production-ready" features to focus on rapid prototyping:
+
+**Authentication & Security**
+- No passwords, email verification, or OAuth integration
+- No session expiration or refresh tokens
+- No rate limiting on endpoints
+- No CAPTCHA or bot protection
+
+**Data Integrity & Edge Cases**
+- No handling of corrupted cookies or malicious user keys
+- No cleanup of orphaned user records
+- No handling of database conflicts during high-concurrency user creation
+- No validation of cookie tampering
+
+**User Experience Polish**
+- No "remember me" toggles or session preferences
+- No user onboarding flow or welcome messages
+- No username suggestions when conflicts occur
+- No undo/redo for username changes
+
+**Monitoring & Operations**
+- No logging of user creation events
+- No metrics on user retention or activity
+- No admin tools for user management
+- No backup/restore procedures for user data
+
+**Scalability Concerns**
+- No database connection pooling considerations
+- No CDN or caching strategies for user data
+- No horizontal scaling patterns
+- No performance optimization for user lookups
+
+**Compliance & Legal**
+- No GDPR/privacy policy integration
+- No terms of service acceptance tracking
+- No data export/deletion capabilities
+- No audit trails for user actions
+
+These omissions are intentional - we can add them later if/when the prototype proves valuable and needs to scale. For now, the focus is on getting a working multiplayer game experience.
 
 ---
 
