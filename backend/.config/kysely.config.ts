@@ -5,7 +5,7 @@
 // 	PostgresQueryCompiler,
 // } from 'kysely'
 import { defineConfig } from 'kysely-ctl';
-import { db } from '../src/db.ts';
+import { db } from '../src/services/db.ts';
 
 export default defineConfig({
   kysely: db,

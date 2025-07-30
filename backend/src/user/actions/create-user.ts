@@ -2,28 +2,23 @@ import { UserRepository } from '@/user/user-repository';
 import { UsersTable } from '@/user/user.db';
 import { Selectable, Insertable, Kysely } from 'kysely';
 import { Database } from '@/types';
+import { validateUsername } from '@common/validation/username';
 
 type User = Selectable<UsersTable>;
 type NewUser = Insertable<UsersTable>;
 
 export async function createUser(username: string, dbInstance?: Kysely<Database>): Promise<User> {
-  if (!username || username.trim().length === 0) {
-    throw new Error('Username is required');
+  const validation = validateUsername(username);
+  if (!validation.isValid) {
+    throw new Error(validation.error);
   }
 
   const trimmedUsername = username.trim();
 
-  if (trimmedUsername.length > 50) {
-    throw new Error('Username must be 50 characters or less');
-  }
-
-  if (!/^[a-zA-Z0-9_-]+$/.test(trimmedUsername)) {
-    throw new Error('Username can only contain letters, numbers, underscores, and hyphens');
-  }
-
   try {
     const newUser: NewUser = {
       username: trimmedUsername,
+      user_key: crypto.randomUUID(),
     };
 
     const userRepository = new UserRepository(dbInstance);

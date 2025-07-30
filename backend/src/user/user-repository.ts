@@ -19,6 +19,16 @@ export class UserRepository {
     return user || null;
   }
 
+  async findByUserKey(userKey: string): Promise<User | null> {
+    const user = await this.dbInstance
+      .selectFrom('users')
+      .selectAll()
+      .where('user_key', '=', userKey)
+      .executeTakeFirst();
+
+    return user || null;
+  }
+
   async create(userData: NewUser): Promise<User> {
     const user = await this.dbInstance
       .insertInto('users')
