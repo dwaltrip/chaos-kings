@@ -2,70 +2,39 @@ import { FastifyInstance } from 'fastify';
 import { findUser } from '@/user/actions/find-user';
 import { createUser } from '@/user/actions/create-user';
 import { updateUsername } from '@/user/actions/update-username';
+import { asyncHandler, parseUserId } from '@/utils/route-handler';
 
 async function userRoutes(fastify: FastifyInstance) {
-  fastify.get('/users/:id', async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const userId = parseInt(id, 10);
+  fastify.get('/users/:id', asyncHandler(async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const userId = parseUserId(id);
 
-      if (isNaN(userId)) {
-        return reply.status(400).send({ error: 'Invalid user ID' });
-      }
+    const user = await findUser(userId);
 
-      const user = await findUser(userId);
-
-      if (!user) {
-        return reply.status(404).send({ error: 'User not found' });
-      }
-
-      return reply.send(user);
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.status(500).send({ error: 'Internal server error' });
+    if (!user) {
+      return reply.status(404).send({ error: 'User not found' });
     }
-  });
 
-  fastify.post('/users', async (request, reply) => {
-    try {
-      const { username } = request.body as { username: string };
+    return reply.send(user);
+  }));
 
-      const user = await createUser(username);
+  fastify.post('/users', asyncHandler(async (request, reply) => {
+    const { username } = request.body as { username: string };
 
-      return reply.status(201).send(user);
-    } catch (error) {
-      if (error instanceof Error) {
-        return reply.status(400).send({ error: error.message });
-      }
-      fastify.log.error(error);
-      return reply.status(500).send({ error: 'Internal server error' });
-    }
-  });
+    const user = await createUser(username);
 
-  fastify.put('/users/:id/username', async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const { username } = request.body as { username: string };
-      const userId = parseInt(id, 10);
+    return reply.status(201).send(user);
+  }));
 
-      if (isNaN(userId)) {
-        return reply.status(400).send({ error: 'Invalid user ID' });
-      }
+  fastify.put('/users/:id/username', asyncHandler(async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { username } = request.body as { username: string };
+    const userId = parseUserId(id);
 
-      const user = await updateUsername(userId, username);
+    const user = await updateUsername(userId, username);
 
-      return reply.send(user);
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.message === 'User not found') {
-          return reply.status(404).send({ error: error.message });
-        }
-        return reply.status(400).send({ error: error.message });
-      }
-      fastify.log.error(error);
-      return reply.status(500).send({ error: 'Internal server error' });
-    }
-  });
+    return reply.send(user);
+  }));
 }
 
 export { userRoutes };
