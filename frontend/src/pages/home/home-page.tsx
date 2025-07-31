@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { userStore } from '@/stores/user-store';
 import { UsernameForm } from './username-form';
 
 export function HomePage() {
-  const { user, isLoading, actions } = userStore();
+  // TODO: user should never be null, we auto-create a user on first visit
+  const { user, isLoading } = userStore();
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleChangeUsername = () => {
-    actions.clearUser();
+    setIsEditing(true);
   };
 
   if (isLoading) {
@@ -21,8 +24,8 @@ export function HomePage() {
       <h1 className="text-3xl font-bold text-gray-800 text-center">
         Welcome to Game Rooms
       </h1>
-      
-      {user ? (
+
+      {(user && !isEditing) ? (
         <div className="bg-green-50 p-6 rounded-lg border border-green-200">
           <h2 className="text-lg font-semibold text-green-800 mb-2">
             Hello, {user.username}!
@@ -38,7 +41,7 @@ export function HomePage() {
           </button>
         </div>
       ) : (
-        <UsernameForm />
+        <UsernameForm onUsernameSet={() => setIsEditing(false)} />
       )}
     </div>
   );
