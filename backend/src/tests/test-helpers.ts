@@ -3,11 +3,28 @@ import { promises as fs } from 'fs';
 import { Migrator, FileMigrationProvider, sql, NO_MIGRATIONS } from 'kysely';
 import * as path from 'path';
 
+let isDbSetup = false;
+
 export const setupTestDb = async () => {
+  // Only run migrations once across all test files
+  if (isDbSetup) {
+    return;
+  }
+  
   // Ensure we're in test environment
   process.env.NODE_ENV = 'test';
   
-  // Run migrations on test database
+  // First, clean up any existing schema from previous test runs
+  try {
+    // Drop all tables and the kysely migration table
+    await sql`DROP SCHEMA IF EXISTS public CASCADE`.execute(testDb);
+    await sql`CREATE SCHEMA public`.execute(testDb);
+    await sql`GRANT ALL ON SCHEMA public TO postgres`.execute(testDb);
+    await sql`GRANT ALL ON SCHEMA public TO public`.execute(testDb);
+  } catch (error) {
+    // Ignore errors - database might not exist yet
+  }
+
   const migrator = new Migrator({
     db: testDb,
     provider: new FileMigrationProvider({
@@ -16,7 +33,8 @@ export const setupTestDb = async () => {
       migrationFolder: path.join(__dirname, '../../migrations'),
     }),
   });
-
+  
+  // Now run migrations to latest
   const { error, results } = await migrator.migrateToLatest();
 
   if (error) {
@@ -24,41 +42,33 @@ export const setupTestDb = async () => {
     throw error;
   }
 
-  if (results) {
-    results.forEach((it) => {
-      if (it.status === 'Success') {
-        console.log(`migration "${it.migrationName}" was executed successfully`);
-      } else if (it.status === 'Error') {
-        console.error(`failed to execute migration "${it.migrationName}"`);
-      }
-    });
+  // Only log if we actually ran migrations (not if they were already up to date)
+  if (results && results.length > 0) {
+    console.log(`Test database setup: executed ${results.length} migration(s) successfully`);
   }
+  
+  isDbSetup = true;
 };
 
 export const cleanupTestDb = async () => {
-  // Clear all users between tests and reset sequence
-  await testDb.deleteFrom('users').execute();
-  await sql`ALTER SEQUENCE users_id_seq RESTART WITH 1;`.execute(testDb);
+  // Get all user-defined tables and truncate them
+  const result = await sql<{ table_name: string }>`
+    SELECT table_name 
+    FROM information_schema.tables 
+    WHERE table_schema = 'public' 
+    AND table_type = 'BASE TABLE'
+  `.execute(testDb);
+    
+  // Truncate all tables with CASCADE to handle foreign keys
+  // RESTART IDENTITY resets sequences
+  for (const row of result.rows) {
+    await sql`TRUNCATE TABLE ${sql.id(row.table_name)} RESTART IDENTITY CASCADE`.execute(testDb);
+  }
 };
 
 export const teardownTestDb = async () => {
-  // Run down migrations to clean up test database completely
-  const migrator = new Migrator({
-    db: testDb,
-    provider: new FileMigrationProvider({
-      fs,
-      path,
-      migrationFolder: path.join(__dirname, '../../migrations'),
-    }),
-  });
-
-  // Migrate down all migrations to reset schema completely
-  const { error } = await migrator.migrateTo(NO_MIGRATIONS);
-  
-  if (error) {
-    console.error('Failed to migrate down test database:', error);
-  }
-  
+  // Clean up any remaining data and close database connection
+  await cleanupTestDb();
   await testDb.destroy();
 };
 
