@@ -1,5 +1,5 @@
 import { createUser } from '@/user/actions/create-user';
-import { setupTestDb, cleanupTestDb, teardownTestDb, testDb } from '@/tests/test-helpers';
+import { setupTestDb, cleanupTestDb, teardownTestDb, testDb, expectUniqueConstraintViolation } from '@/tests/test-helpers';
 
 describe('createUser', () => {
   beforeAll(async () => {
@@ -70,8 +70,13 @@ describe('createUser', () => {
       // Create first user
       await createUser(username, testDb);
       
-      // Attempt to create duplicate
-      await expect(createUser(username, testDb)).rejects.toThrow('Username already exists');
+      // Attempt to create duplicate - should trigger unique constraint violation
+      try {
+        await createUser(username, testDb);
+        fail('Should have thrown unique constraint violation');
+      } catch (error) {
+        expectUniqueConstraintViolation(error, 'users_username_key', 'users');
+      }
     });
   });
 
