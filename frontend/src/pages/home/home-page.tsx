@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { userStore } from '@/stores/user-store';
 import { UsernameForm } from './username-form';
 
-export function HomePage() {
+function HomePage() {
   // TODO: user should never be null, we auto-create a user on first visit
   const { user, isLoading } = userStore();
   const [isEditing, setIsEditing] = useState(false);
@@ -46,3 +46,5 @@ export function HomePage() {
     </div>
   );
 }
+
+export { HomePage };

@@ -1,4 +1,4 @@
-export function AboutPage() {
+function AboutPage() {
   return (
     <div>
       <h1 className="text-3xl font-bold underline text-gray-800">
@@ -8,3 +8,5 @@ export function AboutPage() {
     </div>
   );
 }
+
+export { AboutPage };

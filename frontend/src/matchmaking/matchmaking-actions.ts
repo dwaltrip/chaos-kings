@@ -1,9 +1,10 @@
-import { getWebSocketService, type MatchmakingMessage } from '../services/websocket-service';
+import { getWebSocketService } from '../services/websocket-service';
+import { type MatchmakingMessage } from '../services/use-web-socket';
 
 let removeConnectionListener: (() => void) | null = null;
 let removeMatchmakingListener: (() => void) | null = null;
 
-export const matchmakingActions = {
+const matchmakingActions = {
   initialize(callbacks: {
     onConnectionChange: (isConnected: boolean) => void;
     onQueueStatusUpdate: (status: { queueSize: number; playersInQueue: string[]; playersNeeded: number }) => void;
@@ -141,3 +142,5 @@ export const matchmakingActions = {
     console.log(`[Matchmaking-Actions] Cleanup complete`);
   }
 };
+
+export { matchmakingActions };

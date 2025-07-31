@@ -2,7 +2,7 @@ const STORAGE_KEYS = {
   USERNAME: 'game-username',
 } as const;
 
-export function saveToLocalStorage<T>(key: string, value: T): void {
+function saveToLocalStorage<T>(key: string, value: T): void {
   try {
     const serialized = JSON.stringify(value);
     localStorage.setItem(key, serialized);
@@ -11,7 +11,7 @@ export function saveToLocalStorage<T>(key: string, value: T): void {
   }
 }
 
-export function loadFromLocalStorage<T>(key: string): T | null {
+function loadFromLocalStorage<T>(key: string): T | null {
   try {
     const item = localStorage.getItem(key);
     if (item === null) {
@@ -24,7 +24,7 @@ export function loadFromLocalStorage<T>(key: string): T | null {
   }
 }
 
-export function removeFromLocalStorage(key: string): void {
+function removeFromLocalStorage(key: string): void {
   try {
     localStorage.removeItem(key);
   } catch (error) {
@@ -32,4 +32,6 @@ export function removeFromLocalStorage(key: string): void {
   }
 }
 
-export const storageKeys = STORAGE_KEYS;
+const storageKeys = STORAGE_KEYS;
+
+export { saveToLocalStorage, loadFromLocalStorage, removeFromLocalStorage, storageKeys };

@@ -1,7 +1,7 @@
 import { useParams, Navigate } from 'react-router';
 import { userStore } from '@/stores/user-store';
 
-export function GamePage() {
+function GamePage() {
   const { gameId } = useParams();
   const user = userStore((state) => state.user);
 
@@ -25,3 +25,5 @@ export function GamePage() {
     </div>
   );
 }
+
+export { GamePage };

@@ -2,7 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 
 type RouteHandler = (request: FastifyRequest, reply: FastifyReply) => Promise<any>;
 
-export function asyncHandler(handler: RouteHandler) {
+function asyncHandler(handler: RouteHandler) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       return await handler(request, reply);
@@ -23,10 +23,12 @@ export function asyncHandler(handler: RouteHandler) {
   };
 }
 
-export function parseUserId(id: string): number {
+function parseUserId(id: string): number {
   const userId = parseInt(id, 10);
   if (isNaN(userId)) {
     throw new Error('Invalid user ID');
   }
   return userId;
 }
+
+export { asyncHandler, parseUserId };

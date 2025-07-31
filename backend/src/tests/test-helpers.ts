@@ -5,7 +5,7 @@ import * as path from 'path';
 
 let isDbSetup = false;
 
-export const setupTestDb = async () => {
+const setupTestDb = async () => {
   // Only run migrations once across all test files
   if (isDbSetup) {
     return;
@@ -51,7 +51,7 @@ export const setupTestDb = async () => {
   isDbSetup = true;
 };
 
-export const cleanupTestDb = async () => {
+const cleanupTestDb = async () => {
   // Get all user-defined tables and truncate them
   const result = await sql<{ table_name: string }>`
     SELECT table_name 
@@ -67,7 +67,7 @@ export const cleanupTestDb = async () => {
   }
 };
 
-export const teardownTestDb = async () => {
+const teardownTestDb = async () => {
   // Clean up any remaining data and close database connection
   await cleanupTestDb();
   await testDb.destroy();
@@ -93,7 +93,7 @@ interface PostgresUniqueConstraintError {
   routine: string;
 }
 
-export const expectUniqueConstraintViolation = (
+const expectUniqueConstraintViolation = (
   error: unknown,
   expectedConstraint?: string,
   expectedTable?: string,
@@ -126,4 +126,4 @@ export const expectUniqueConstraintViolation = (
   }
 };
 
-export { testDb };
+export { setupTestDb, cleanupTestDb, teardownTestDb, expectUniqueConstraintViolation, testDb };

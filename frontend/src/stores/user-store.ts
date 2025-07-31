@@ -12,7 +12,7 @@ interface UserState {
   };
 }
 
-export const userStore = create<UserState>((set) => ({
+const userStore = create<UserState>((set) => ({
   user: null,
   isLoading: false,
   isInitialized: false,
@@ -44,3 +44,5 @@ export const userStore = create<UserState>((set) => ({
     }
   }
 }));
+
+export { userStore };

@@ -6,7 +6,7 @@ interface UsernameFormProps {
   onUsernameSet?: () => void;
 }
 
-export function UsernameForm({ onUsernameSet }: UsernameFormProps) {
+function UsernameForm({ onUsernameSet }: UsernameFormProps) {
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
   const { actions } = userStore();
@@ -62,3 +62,5 @@ export function UsernameForm({ onUsernameSet }: UsernameFormProps) {
     </div>
   );
 }
+
+export { UsernameForm };

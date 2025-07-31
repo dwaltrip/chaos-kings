@@ -18,7 +18,7 @@ interface ChatState {
   };
 }
 
-export const chatStore = create<ChatState>((set) => ({
+const chatStore = create<ChatState>((set) => ({
   messages: [],
   username: '',
   currentRoom: 'general',
@@ -34,3 +34,5 @@ export const chatStore = create<ChatState>((set) => ({
     clearMessages: () => set({ messages: [] }),
   }
 }));
+
+export { chatStore };

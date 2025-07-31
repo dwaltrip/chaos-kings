@@ -6,7 +6,7 @@ import { Database } from '@/types';
 type User = Selectable<UsersTable>;
 type NewUser = Insertable<UsersTable>;
 
-export class UserRepository {
+class UserRepository {
   constructor(private dbInstance: Kysely<Database> = db) {}
 
   async findById(id: number): Promise<User | null> {
@@ -60,3 +60,5 @@ export class UserRepository {
     return updatedUser || null;
   }
 }
+
+export { UserRepository };

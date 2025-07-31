@@ -46,5 +46,4 @@ function createJoinRoomMessage(room: string, user: string): WsMessage {
   };
 }
 
-export type { ChatDemo };
-export { CHAT_DEMO_DOMAIN, createNewChatMessage, createJoinRoomMessage };
+export { CHAT_DEMO_DOMAIN, createNewChatMessage, createJoinRoomMessage, type ChatDemo };

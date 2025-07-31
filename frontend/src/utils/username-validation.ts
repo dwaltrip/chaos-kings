@@ -1,9 +1,9 @@
-export interface UsernameValidationResult {
+interface UsernameValidationResult {
   isValid: boolean;
   error?: string;
 }
 
-export function validateUsername(username: string): UsernameValidationResult {
+function validateUsername(username: string): UsernameValidationResult {
   const trimmed = username.trim();
   
   if (!trimmed) {
@@ -24,3 +24,5 @@ export function validateUsername(username: string): UsernameValidationResult {
   
   return { isValid: true };
 }
+
+export { validateUsername, type UsernameValidationResult };
