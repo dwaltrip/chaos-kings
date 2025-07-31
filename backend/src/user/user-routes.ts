@@ -11,21 +11,17 @@ async function userRoutes(fastify: FastifyInstance) {
   fastify.get('/users/:id', asyncHandler(async (request, reply) => {
     const { id } = request.params as { id: string };
     const userId = parseUserId(id);
-
+  
     const user = await findUser(userId);
-
     if (!user) {
       return reply.status(404).send({ error: 'User not found' });
     }
-
     return reply.send(user);
   }));
 
   fastify.post('/users', asyncHandler(async (request, reply) => {
     const { username } = request.body as { username: string };
-
     const user = await createUser(username);
-
     return reply.status(201).send(user);
   }));
 
@@ -33,9 +29,8 @@ async function userRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
     const { username } = request.body as { username: string };
     const userId = parseUserId(id);
-
+    
     const user = await updateUsername(userId, username);
-
     return reply.send(user);
   }));
 
@@ -43,8 +38,6 @@ async function userRoutes(fastify: FastifyInstance) {
   fastify.post('/users/auto-create', asyncHandler(async (request, reply) => {
     try {
       const result = await autoCreateUser();
-      
-      // Set cookie
       reply.setCookie(COOKIE_NAME, result.user.user_key, COOKIE_OPTIONS);
       
       return reply.status(201).send(result);
