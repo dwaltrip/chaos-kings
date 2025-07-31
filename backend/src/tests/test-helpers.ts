@@ -1,6 +1,6 @@
 import { testDb } from '@/services/test-db';
 import { promises as fs } from 'fs';
-import { Migrator, FileMigrationProvider, sql } from 'kysely';
+import { Migrator, FileMigrationProvider, sql, NO_MIGRATIONS } from 'kysely';
 import * as path from 'path';
 
 export const setupTestDb = async () => {
@@ -42,7 +42,7 @@ export const cleanupTestDb = async () => {
 };
 
 export const teardownTestDb = async () => {
-  // Run down migrations to clean up test database
+  // Run down migrations to clean up test database completely
   const migrator = new Migrator({
     db: testDb,
     provider: new FileMigrationProvider({
@@ -52,7 +52,13 @@ export const teardownTestDb = async () => {
     }),
   });
 
-  await migrator.migrateDown();
+  // Migrate down all migrations to reset schema completely
+  const { error } = await migrator.migrateTo(NO_MIGRATIONS);
+  
+  if (error) {
+    console.error('Failed to migrate down test database:', error);
+  }
+  
   await testDb.destroy();
 };
 

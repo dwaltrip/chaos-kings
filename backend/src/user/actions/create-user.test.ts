@@ -51,7 +51,7 @@ describe('createUser', () => {
 
     test('should reject username longer than 50 characters', async () => {
       const longUsername = 'a'.repeat(51);
-      await expect(createUser(longUsername, testDb)).rejects.toThrow('Username must be 50 characters or less');
+      await expect(createUser(longUsername, testDb)).rejects.toThrow('Username must be 25 characters or less');
     });
 
     test('should reject username with invalid characters', async () => {

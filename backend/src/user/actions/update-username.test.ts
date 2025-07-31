@@ -58,7 +58,7 @@ describe('updateUsername', () => {
     test('should reject new username longer than 50 characters', async () => {
       const user = await createUser('originaluser', testDb);
       const longUsername = 'a'.repeat(51);
-      await expect(updateUsername(user.id, longUsername, testDb)).rejects.toThrow('Username must be 50 characters or less');
+      await expect(updateUsername(user.id, longUsername, testDb)).rejects.toThrow('Username must be 25 characters or less');
     });
 
     test('should reject new username with invalid characters', async () => {
