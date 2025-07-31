@@ -23,6 +23,7 @@ export const setupTestDb = async () => {
     await sql`GRANT ALL ON SCHEMA public TO public`.execute(testDb);
   } catch (error) {
     // Ignore errors - database might not exist yet
+    console.warn('Failed to drop existing schema (continuing with migrations). Error:', error);
   }
 
   const migrator = new Migrator({
