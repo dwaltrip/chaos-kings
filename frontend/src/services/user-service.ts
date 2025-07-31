@@ -9,24 +9,21 @@ interface User {
 
 class UserService {
   async initializeUser(): Promise<User> {
-    try {
-      // Try to get existing user
-      const response = await apiService.get('/api/users/me');
-      if (response.ok) {
-        return await response.json();
+    const meResponse = await apiService.get('/api/users/me');
+    if (meResponse.ok) {
+      const data = await meResponse.json();
+      if (data.user) {
+        return data.user;
       }
-    } catch (error) {
-      console.warn('Failed to get existing user:', error);
     }
 
-    // Auto-create new user
-    const response = await apiService.post('/api/users/auto-create');
-    
-    if (!response.ok) {
+    // If user from "me" API is null, we need to auto-create new user
+    const createResponse = await apiService.post('/api/users/auto-create');
+    if (!createResponse.ok) {
       throw new Error('Failed to create user');
     }
     
-    const data = await response.json();
+    const data = await createResponse.json();
     return data.user;
   }
   

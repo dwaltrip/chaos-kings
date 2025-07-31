@@ -18,12 +18,12 @@ fastify.register(cors, {
 
 fastify.register(fastifyCookie);
 fastify.register(databasePlugin);
-fastify.register(systemRoutes);
-fastify.register(userRoutes);
+fastify.register(systemRoutes, { prefix: '/api' });
+fastify.register(userRoutes, { prefix: '/api' });
 
 const start = async () => {
   try {
-    await fastify.listen({ port: PORT, host: '0.0.0.0' });
+    await fastify.listen({ port: PORT, host: 'localhost' });
     console.log(`🚀 Fastify server running on http://localhost:${PORT}`);
   } catch (err) {
     fastify.log.error(err);

@@ -64,17 +64,17 @@ async function userRoutes(fastify: FastifyInstance) {
     const userKey = request.cookies[COOKIE_NAME];
     
     if (!userKey) {
-      return reply.status(404).send({ error: 'No user session found' });
+      return reply.status(200).send({ user: null });
     }
     
     const userRepository = new UserRepository();
     const user = await userRepository.findByUserKey(userKey);
     
     if (!user) {
-      return reply.status(404).send({ error: 'User not found' });
+      return reply.status(200).send({ user: null });
     }
     
-    return reply.send(user);
+    return reply.send({ user });
   }));
 
   // PUT /users/me/username

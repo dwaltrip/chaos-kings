@@ -16,7 +16,7 @@ class ApiService {
         ...options?.headers
       },
       credentials: 'include',
-      body: data ? JSON.stringify(data) : undefined,
+      body: JSON.stringify(data || {}),
       ...options
     });
   }
