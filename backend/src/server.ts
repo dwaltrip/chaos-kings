@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import fastifyCookie from '@fastify/cookie';
 import { databasePlugin } from '@/plugins/database';
 import { systemRoutes } from '@/system/system-routes';
 import { userRoutes } from '@/user/user-routes';
@@ -14,6 +15,7 @@ fastify.register(cors, {
   origin: ['http://localhost:5173', 'http://localhost:3000']
 });
 
+fastify.register(fastifyCookie);
 fastify.register(databasePlugin);
 fastify.register(systemRoutes);
 fastify.register(userRoutes);
