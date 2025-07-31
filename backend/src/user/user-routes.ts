@@ -41,12 +41,29 @@ async function userRoutes(fastify: FastifyInstance) {
 
   // POST /users/auto-create
   fastify.post('/users/auto-create', asyncHandler(async (request, reply) => {
-    const result = await autoCreateUser();
-    
-    // Set cookie
-    reply.setCookie(COOKIE_NAME, result.user.user_key, COOKIE_OPTIONS);
-    
-    return reply.status(201).send(result);
+    try {
+      const result = await autoCreateUser();
+      
+      // Set cookie
+      reply.setCookie(COOKIE_NAME, result.user.user_key, COOKIE_OPTIONS);
+      
+      return reply.status(201).send(result);
+      
+    } catch (error) {
+      console.error('Auto-create user endpoint error:', error);
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Username conflict')) {
+          return reply.status(409).send({ error: 'Unable to generate unique username' });
+        }
+        
+        if (error.message.includes('Database connection')) {
+          return reply.status(503).send({ error: 'Service temporarily unavailable' });
+        }
+      }
+      
+      return reply.status(500).send({ error: 'Failed to create user account' });
+    }
   }));
 
   // GET /users/me

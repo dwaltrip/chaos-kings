@@ -26,6 +26,7 @@ describe('updateUsername', () => {
       expect(updatedUser.id).toBe(user.id);
       expect(updatedUser.username).toBe('newusername');
       expect(updatedUser.created_at).toEqual(user.created_at);
+      expect(updatedUser.user_key).toBe(user.user_key);
     });
 
     test('should trim whitespace from new username', async () => {
@@ -93,6 +94,7 @@ describe('updateUsername', () => {
 
       expect(updatedUser.username).toBe('sameuser');
       expect(updatedUser.id).toBe(user.id);
+      expect(updatedUser.user_key).toBe(user.user_key);
     });
   });
 

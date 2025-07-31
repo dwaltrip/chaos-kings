@@ -22,7 +22,9 @@ describe('createUser', () => {
       expect(user.username).toBe(username);
       expect(user.id).toBeDefined();
       expect(user.created_at).toBeDefined();
+      expect(user.user_key).toBeDefined();
       expect(typeof user.id).toBe('number');
+      expect(typeof user.user_key).toBe('string');
     });
 
     test('should trim whitespace from username', async () => {
@@ -76,12 +78,21 @@ describe('createUser', () => {
   describe('database verification', () => {
     test('should actually save user to database', async () => {
       const username = 'verifyuser';
-      await createUser(username, testDb);
+      const user = await createUser(username, testDb);
 
       // Verify user exists in database
       const users = await testDb.selectFrom('users').selectAll().execute();
       expect(users).toHaveLength(1);
       expect(users[0].username).toBe(username);
+      expect(users[0].user_key).toBe(user.user_key);
+      expect(users[0].id).toBe(user.id);
+    });
+
+    test('should generate valid UUID for user_key', async () => {
+      const user = await createUser('testuser', testDb);
+      
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      expect(user.user_key).toMatch(uuidRegex);
     });
   });
 });
