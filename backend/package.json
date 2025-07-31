@@ -6,7 +6,7 @@
     "start": "ts-node src/server.ts",
     "dev": "ts-node --watch src/server.ts",
     "dev:ws": "ts-node --watch src/websocket-server.ts",
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "prod": "node dist/server.js",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -34,6 +34,7 @@
     "kysely-ctl": "^0.13.1",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.1",
+    "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3"
   }
