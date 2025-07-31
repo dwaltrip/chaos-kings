@@ -4,7 +4,7 @@ import { createUser } from '@/user/actions/create-user';
 import { updateUsername } from '@/user/actions/update-username';
 import { autoCreateUser } from '@/user/actions/auto-create-user';
 import { UserRepository } from '@/user/user-repository';
-import { COOKIE_NAME, COOKIE_OPTIONS } from '@/user/cookie-config';
+import { COOKIE_NAME, COOKIE_OPTIONS } from '@/user/user-key-cookie';
 import { asyncHandler, parseUserId } from '@/utils/route-handler';
 
 async function userRoutes(fastify: FastifyInstance) {
@@ -36,65 +36,38 @@ async function userRoutes(fastify: FastifyInstance) {
 
   // POST /users/auto-create
   fastify.post('/users/auto-create', asyncHandler(async (request, reply) => {
-    try {
-      const result = await autoCreateUser();
-      reply.setCookie(COOKIE_NAME, result.user.user_key, COOKIE_OPTIONS);
-      
-      return reply.status(201).send(result);
-      
-    } catch (error) {
-      console.error('Auto-create user endpoint error:', error);
-      
-      if (error instanceof Error) {
-        if (error.message.includes('Username conflict')) {
-          return reply.status(409).send({ error: 'Unable to generate unique username' });
-        }
-        
-        if (error.message.includes('Database connection')) {
-          return reply.status(503).send({ error: 'Service temporarily unavailable' });
-        }
-      }
-      
-      return reply.status(500).send({ error: 'Failed to create user account' });
-    }
+    const result = await autoCreateUser();
+    reply.setCookie(COOKIE_NAME, result.user.user_key, COOKIE_OPTIONS);
+    return reply.status(201).send(result);
   }));
 
   // GET /users/me
   fastify.get('/users/me', asyncHandler(async (request, reply) => {
     const userKey = request.cookies[COOKIE_NAME];
-    
     if (!userKey) {
       return reply.status(200).send({ user: null });
     }
     
     const userRepository = new UserRepository();
     const user = await userRepository.findByUserKey(userKey);
-    
-    if (!user) {
-      return reply.status(200).send({ user: null });
-    }
-    
-    return reply.send({ user });
+    return reply.send({ user: user || null });
   }));
 
   // PUT /users/me/username
   fastify.put('/users/me/username', asyncHandler(async (request, reply) => {
     const userKey = request.cookies[COOKIE_NAME];
     const { username } = request.body as { username: string };
-    
     if (!userKey) {
       return reply.status(401).send({ error: 'No user session found' });
     }
     
     const userRepository = new UserRepository();
     const user = await userRepository.findByUserKey(userKey);
-    
     if (!user) {
       return reply.status(404).send({ error: 'User not found' });
     }
     
     const updatedUser = await updateUsername(user.id, username);
-    
     return reply.send(updatedUser);
   }));
 }
