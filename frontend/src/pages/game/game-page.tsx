@@ -1,11 +1,11 @@
 import { useParams, Navigate } from 'react-router';
-import { usernameStore } from '@/stores/username-store';
+import { userStore } from '@/stores/user-store';
 
 export function GamePage() {
   const { gameId } = useParams();
-  const username = usernameStore((state) => state.username);
+  const user = userStore((state) => state.user);
 
-  if (!username) {
+  if (!user) {
     return <Navigate to="/" replace />;
   }
 
@@ -21,7 +21,7 @@ export function GamePage() {
   return (
     <div>
       <h1>Game Room</h1>
-      <p>You are in game room {gameId} as {username}</p>
+      <p>You are in game room {gameId} as {user.username}</p>
     </div>
   );
 }

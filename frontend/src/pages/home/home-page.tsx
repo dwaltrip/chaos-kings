@@ -1,11 +1,11 @@
-import { usernameStore } from '@/stores/username-store';
+import { userStore } from '@/stores/user-store';
 import { UsernameForm } from './username-form';
 
 export function HomePage() {
-  const { username, isLoading, actions } = usernameStore();
+  const { user, isLoading, actions } = userStore();
 
   const handleChangeUsername = () => {
-    actions.clearUsername();
+    actions.clearUser();
   };
 
   if (isLoading) {
@@ -22,10 +22,10 @@ export function HomePage() {
         Welcome to Game Rooms
       </h1>
       
-      {username ? (
+      {user ? (
         <div className="bg-green-50 p-6 rounded-lg border border-green-200">
           <h2 className="text-lg font-semibold text-green-800 mb-2">
-            Hello, {username}!
+            Hello, {user.username}!
           </h2>
           <p className="text-green-700 mb-4">
             You're all set to join game rooms.

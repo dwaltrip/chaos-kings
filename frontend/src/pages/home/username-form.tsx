@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { usernameStore } from '@/stores/username-store';
+import { userStore } from '@/stores/user-store';
+import { validateUsername } from '@/utils/username-validation';
 
 interface UsernameFormProps {
   onUsernameSet?: () => void;
@@ -8,38 +9,25 @@ interface UsernameFormProps {
 export function UsernameForm({ onUsernameSet }: UsernameFormProps) {
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
-  const { actions } = usernameStore();
+  const { actions } = userStore();
 
-  const validateUsername = (username: string): string | null => {
-    const trimmed = username.trim();
-    if (!trimmed) {
-      return 'Username is required';
-    }
-    if (trimmed.length < 2) {
-      return 'Username must be at least 2 characters';
-    }
-    if (trimmed.length > 20) {
-      return 'Username must be 20 characters or less';
-    }
-    if (!/^[a-zA-Z0-9_-]+$/.test(trimmed)) {
-      return 'Username can only contain letters, numbers, hyphens, and underscores';
-    }
-    return null;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validationError = validateUsername(inputValue);
-    if (validationError) {
-      setError(validationError);
+    const validationResult = validateUsername(inputValue);
+    if (!validationResult.isValid) {
+      setError(validationResult.error || '');
       return;
     }
 
-    setError('');
-    actions.setUsername(inputValue);
-    setInputValue('');
-    onUsernameSet?.();
+    try {
+      setError('');
+      await actions.updateUsername(inputValue);
+      setInputValue('');
+      onUsernameSet?.();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to update username');
+    }
   };
 
   return (
@@ -57,7 +45,7 @@ export function UsernameForm({ onUsernameSet }: UsernameFormProps) {
             }}
             placeholder="Enter your username"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            maxLength={20}
+            maxLength={25}
           />
           {error && (
             <p className="mt-1 text-sm text-red-600">{error}</p>
