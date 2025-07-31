@@ -1,3 +1,5 @@
+import { apiService } from '@/services/api-service';
+
 interface User {
   id: number;
   username: string;
@@ -9,9 +11,7 @@ class UserService {
   async initializeUser(): Promise<User> {
     try {
       // Try to get existing user
-      const response = await fetch('/api/users/me', {
-        credentials: 'include'
-      });
+      const response = await apiService.get('/api/users/me');
       if (response.ok) {
         return await response.json();
       }
@@ -20,10 +20,7 @@ class UserService {
     }
 
     // Auto-create new user
-    const response = await fetch('/api/users/auto-create', {
-      method: 'POST',
-      credentials: 'include'
-    });
+    const response = await apiService.post('/api/users/auto-create');
     
     if (!response.ok) {
       throw new Error('Failed to create user');
@@ -34,12 +31,7 @@ class UserService {
   }
   
   async updateUsername(username: string): Promise<User> {
-    const response = await fetch('/api/users/me/username', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ username })
-    });
+    const response = await apiService.put('/api/users/me/username', { username });
     
     if (!response.ok) {
       const error = await response.json();

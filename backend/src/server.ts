@@ -5,14 +5,15 @@ import { databasePlugin } from '@/plugins/database';
 import { systemRoutes } from '@/system/system-routes';
 import { userRoutes } from '@/user/user-routes';
 
-const PORT = 3000;
+const PORT = 3131;
 
 const fastify = Fastify({
   logger: true
 });
 
 fastify.register(cors, {
-  origin: ['http://localhost:5173', 'http://localhost:3000']
+  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true
 });
 
 fastify.register(fastifyCookie);
