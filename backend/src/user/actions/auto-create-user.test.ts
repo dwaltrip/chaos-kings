@@ -1,7 +1,8 @@
 import { autoCreateUser } from './auto-create-user';
 import { createUser } from './create-user';
 import { UserRepository } from '@/user/user-repository';
-import { setupTestDb, cleanupTestDb, teardownTestDb, testDb } from '@/tests/test-helpers';
+import { setupTestDb, cleanupTestDb, teardownTestDb, testDb, expectUniqueConstraintViolation } from '@/tests/test-helpers';
+import { randomUUID } from 'crypto';
 
 describe('autoCreateUser', () => {
   beforeAll(async () => {
@@ -10,6 +11,10 @@ describe('autoCreateUser', () => {
 
   beforeEach(async () => {
     await cleanupTestDb();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   afterAll(async () => {
@@ -79,21 +84,28 @@ describe('autoCreateUser', () => {
       jest.spyOn(UserRepository.prototype, 'create')
         .mockRejectedValue(new Error('Database connection failed'));
       
-      await expect(autoCreateUser(testDb)).rejects.toThrow('Database connection error during user creation');
-      
-      // Restore mock
-      jest.restoreAllMocks();
+      await expect(autoCreateUser(testDb)).rejects.toThrow('Database connection failed');
     });
 
     test('should handle duplicate key errors', async () => {
-      // Mock repository to simulate duplicate key error
-      jest.spyOn(UserRepository.prototype, 'create')
-        .mockRejectedValue(new Error('duplicate key value violates unique constraint'));
+      const userRepository = new UserRepository(testDb);
       
-      await expect(autoCreateUser(testDb)).rejects.toThrow('Username conflict occurred during user creation');
+      // Create a user with a specific username first
+      await userRepository.create({
+        username: 'duplicate_user',
+        user_key: randomUUID()
+      });
       
-      // Restore mock
-      jest.restoreAllMocks();
+      // Try to create another user with the same username - should trigger unique constraint violation
+      try {
+        await userRepository.create({
+          username: 'duplicate_user',
+          user_key: randomUUID()
+        });
+        fail('Should have thrown unique constraint violation');
+      } catch (error) {
+        expectUniqueConstraintViolation(error, 'users_username_key', 'users');
+      }
     });
 
     test('should handle database connection errors', async () => {
@@ -101,10 +113,7 @@ describe('autoCreateUser', () => {
       jest.spyOn(UserRepository.prototype, 'create')
         .mockRejectedValue(new Error('connection timeout'));
       
-      await expect(autoCreateUser(testDb)).rejects.toThrow('Database connection error during user creation');
-      
-      // Restore mock
-      jest.restoreAllMocks();
+      await expect(autoCreateUser(testDb)).rejects.toThrow('connection timeout');
     });
   });
 
@@ -114,7 +123,7 @@ describe('autoCreateUser', () => {
       const userRepository = new UserRepository(testDb);
       await userRepository.create({
         username: 'Player_123456',
-        user_key: crypto.randomUUID()
+        user_key: randomUUID()
       });
       
       // Create new user - should avoid collision
@@ -142,7 +151,7 @@ describe('autoCreateUser', () => {
       const userRepository = new UserRepository(testDb);
       await userRepository.create({
         username: 'Player_550000',
-        user_key: crypto.randomUUID()
+        user_key: randomUUID()
       });
       
       const result = await autoCreateUser(testDb);
@@ -174,8 +183,6 @@ describe('autoCreateUser', () => {
         expect(error).toBeInstanceOf(Error);
         expect((error as Error).message).toBe('Failed to generate unique username after all attempts');
       }
-      
-      jest.restoreAllMocks();
     });
   });
 

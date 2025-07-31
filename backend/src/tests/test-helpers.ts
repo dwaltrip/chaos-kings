@@ -73,4 +73,57 @@ export const teardownTestDb = async () => {
   await testDb.destroy();
 };
 
+interface PostgresUniqueConstraintError {
+  length: number;
+  severity: 'ERROR';
+  code: '23505';
+  detail: string;
+  hint?: string;
+  position?: string;
+  internalPosition?: string;
+  internalQuery?: string;
+  where?: string;
+  schema: string;
+  table: string;
+  column?: string;
+  dataType?: string;
+  constraint: string;
+  file: string;
+  line: string;
+  routine: string;
+}
+
+export const expectUniqueConstraintViolation = (
+  error: unknown,
+  expectedConstraint?: string,
+  expectedTable?: string,
+  expectedColumn?: string
+): void => {
+  expect(error).toBeInstanceOf(Error);
+  
+  const err = error as any;
+  
+  // Check basic PostgreSQL unique constraint violation structure
+  expect(err.code).toBe('23505');
+  expect(err.severity).toBe('ERROR');
+  expect(err.schema).toBe('public');
+  expect(err.routine).toBe('_bt_check_unique');
+  
+  // Check detail message contains "already exists"
+  expect(err.detail).toMatch(/already exists/);
+  
+  // Verify optional specific expectations
+  if (expectedConstraint) {
+    expect(err.constraint).toBe(expectedConstraint);
+  }
+  
+  if (expectedTable) {
+    expect(err.table).toBe(expectedTable);
+  }
+  
+  if (expectedColumn) {
+    expect(err.column).toBe(expectedColumn);
+  }
+};
+
 export { testDb };
