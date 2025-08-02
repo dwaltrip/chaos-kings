@@ -23,7 +23,7 @@ class WebSocketService {
   private connectionStateListeners: Set<(isConnected: boolean) => void> = new Set();
   private matchmakingListeners: Set<(message: MatchmakingMessage) => void> = new Set();
 
-  constructor(url: string = 'ws://localhost:8080') {
+  constructor(url: string = 'ws://localhost:3131/ws') {
     this.url = url;
     this.ws = new WebSocket(this.url);
 

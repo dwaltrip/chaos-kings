@@ -1,10 +1,17 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import fastifyCookie from '@fastify/cookie';
+import websocket from '@fastify/websocket';
 import { databasePlugin } from '@/plugins/database';
 import { systemRoutes } from '@/system/system-routes';
 import { userRoutes } from '@/user/user-routes';
 import { gameRoutes } from '@/game/game-routes';
+import { 
+  WebSocketManager,
+  handleWebSocketMessage,
+} from '@/websocket';
+import { registerDomainAPI } from '@/websocket/api';
+import { GameChatWsAPI } from '@/game-chat/game-chat-ws-api';
 
 const PORT = 3131;
 
@@ -19,10 +26,22 @@ fastify.register(cors, {
 });
 
 fastify.register(fastifyCookie);
+fastify.register(websocket);
 fastify.register(databasePlugin);
 fastify.register(systemRoutes, { prefix: '/api' });
 fastify.register(userRoutes, { prefix: '/api' });
 fastify.register(gameRoutes, { prefix: '/api' });
+
+// Initialize WebSocket manager and register domain APIs
+const wsManager = new WebSocketManager();
+registerDomainAPI(GameChatWsAPI);
+
+// WebSocket route
+fastify.register(async function (fastify) {
+  fastify.get('/ws', { websocket: true }, (connection, req) => {
+    wsManager.handleConnection(connection, req);
+  });
+});
 
 const start = async () => {
   try {

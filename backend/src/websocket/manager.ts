@@ -1,7 +1,10 @@
-import { WebSocketServer, WebSocket } from 'ws';
+import { WebSocket } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
+import { FastifyRequest } from 'fastify';
+import type { WebSocket as FastifyWebSocket } from '@fastify/websocket';
 
 import { WsClientId, WsActions, WsMessageHandler, WsMessage } from '@/websocket/types';
+import { handleWebSocketMessage } from '@/websocket/api';
 
 type RoomId = string;
 
@@ -68,53 +71,46 @@ function clientLogger(client: WsClient) {
 }
 
 class WebSocketManager {
-  private wss: WebSocketServer;
   private rooms = new Map<string, Set<WsClient>>();
   clientStore = new ClientStore();
 
-  constructor(
-    port: number,
-    private handleMessage: WsMessageHandler,
-  ) {
-    this.wss = new WebSocketServer({ port });
-    console.log(`WebSocket server running on ws://localhost:${port}`);
+  constructor() {
+    console.log('WebSocket manager initialized for Fastify integration');
     console.log('='.repeat(80));
     console.log();
-    this.setupHandlers();
   }
 
-  private setupHandlers() {
-    this.wss.on('connection', async (ws: WebSocket) => {
-      const client = this.clientStore.addClient(ws);
-      const logger = clientLogger(client);
-      console.log('-'.repeat(80));
-      logger.log('New client connected');
-      
-      ws.on('message', (buffer: Buffer) => {
-        const bufferStr = buffer.toString();
-        try {
-          const data: WsMessage = validateMessage(JSON.parse(bufferStr));
-          if (data.payload.user) {
-            client.user = data.payload.user;
-            // logger.log(`Client user set to: ${client.user}`);
-          }
-          logger.log('Received:', data);
-          this.handleMessage(data, this.actionsForClient(client));
+  handleConnection(connection: FastifyWebSocket, req: FastifyRequest) {
+    const ws = connection;
+    const client = this.clientStore.addClient(ws);
+    const logger = clientLogger(client);
+    console.log('-'.repeat(80));
+    logger.log('New client connected');
+    
+    ws.on('message', (buffer: Buffer) => {
+      const bufferStr = buffer.toString();
+      try {
+        const data: WsMessage = validateMessage(JSON.parse(bufferStr));
+        if (data.payload.user) {
+          client.user = data.payload.user;
+          // logger.log(`Client user set to: ${client.user}`);
         }
-        catch (error) {
-          logger.error('Error parsing message:', error, '-- data:', bufferStr);
-        }
-      });
+        logger.log('Received:', data);
+        handleWebSocketMessage(data, this.actionsForClient(client));
+      }
+      catch (error) {
+        logger.error('Error parsing message:', error, '-- data:', bufferStr);
+      }
+    });
 
-      ws.on('close', async () => {
-        logger.log('Client disconnected');
-        this.clientStore.removeClient(client);
-        logger.log('Client cleanup completed');
-      });
+    ws.on('close', async () => {
+      logger.log('Client disconnected');
+      this.clientStore.removeClient(client);
+      logger.log('Client cleanup completed');
+    });
 
-      ws.on('error', (error) => {
-        logger.error('WebSocket error:', error);
-      });
+    ws.on('error', (error: Error) => {
+      logger.error('WebSocket error:', error);
     });
   }
 
