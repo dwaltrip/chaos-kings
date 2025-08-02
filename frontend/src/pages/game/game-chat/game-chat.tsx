@@ -1,21 +1,22 @@
 import { useEffect, useRef } from 'react';
-import { chatStore } from '@/chat-demo/chat-demo-store';
+
+import type { Game } from '@common/types/games';
 import { useWsStore } from '@/services/ws-store';
+import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
 import {
   websocketConnect,
   sendChatMessage,
   setCurrentMessage,
   joinRoom,
-} from '@/chat-demo/chat-demo-actions';
+} from '@/pages/game/game-chat/game-chat-actions';
 import { ChatDemoWsHandler } from '@/chat-demo/chat-demo-ws-handler';
 
 type WebSocketService = ReturnType<typeof websocketConnect>;
 
-function GameChat() {
-  const messages = chatStore(state => state.messages);
-  const username = chatStore(state => state.username);
-  const currentRoom = chatStore(state => state.currentRoom);
-  const currentMessage = chatStore(state => state.currentMessage);
+function GameChat({ game }: { game: Game }) {
+  const messages = gameChatStore(state => state.messages);
+  // const currentRoom = gameChatStore(state => state.currentRoom);
+  const currentMessage = gameChatStore(state => state.currentMessage);
   const { isConnected } = useWsStore();
   const wsServiceRef = useRef<WebSocketService | null>(null);
 
