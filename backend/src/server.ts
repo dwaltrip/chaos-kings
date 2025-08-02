@@ -4,6 +4,7 @@ import fastifyCookie from '@fastify/cookie';
 import { databasePlugin } from '@/plugins/database';
 import { systemRoutes } from '@/system/system-routes';
 import { userRoutes } from '@/user/user-routes';
+import { gameRoutes } from '@/game/game-routes';
 
 const PORT = 3131;
 
@@ -21,6 +22,7 @@ fastify.register(fastifyCookie);
 fastify.register(databasePlugin);
 fastify.register(systemRoutes, { prefix: '/api' });
 fastify.register(userRoutes, { prefix: '/api' });
+fastify.register(gameRoutes, { prefix: '/api' });
 
 const start = async () => {
   try {
