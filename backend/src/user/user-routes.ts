@@ -5,12 +5,12 @@ import { updateUsername } from '@/user/actions/update-username';
 import { autoCreateUser } from '@/user/actions/auto-create-user';
 import { UserRepository } from '@/user/user-repository';
 import { COOKIE_NAME, COOKIE_OPTIONS } from '@/user/user-key-cookie';
-import { asyncHandler, parseUserId } from '@/utils/route-handler';
+import { asyncHandler, parseId } from '@/utils/route-handler';
 
 async function userRoutes(fastify: FastifyInstance) {
   fastify.get('/users/:id', asyncHandler(async (request, reply) => {
     const { id } = request.params as { id: string };
-    const userId = parseUserId(id);
+    const userId = parseId(id);
   
     const user = await findUser(userId);
     if (!user) {
@@ -28,7 +28,7 @@ async function userRoutes(fastify: FastifyInstance) {
   fastify.put('/users/:id/username', asyncHandler(async (request, reply) => {
     const { id } = request.params as { id: string };
     const { username } = request.body as { username: string };
-    const userId = parseUserId(id);
+    const userId = parseId(id);
     
     const user = await updateUsername(userId, username);
     return reply.send(user);

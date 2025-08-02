@@ -23,12 +23,12 @@ function asyncHandler(handler: RouteHandler) {
   };
 }
 
-function parseUserId(id: string): number {
+function parseId(id: string): number {
   const userId = parseInt(id, 10);
   if (isNaN(userId)) {
-    throw new Error('Invalid user ID');
+    throw new Error('Invalid ID');
   }
   return userId;
 }
 
-export { asyncHandler, parseUserId };
+export { asyncHandler, parseId };
