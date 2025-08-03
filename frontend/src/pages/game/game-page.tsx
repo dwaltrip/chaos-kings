@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router';
-import { userStore } from '@/stores/user-store';
-import { apiService } from '@/services/api-service';
+
 import type { Game, GetGameResponse } from '@common/types/games';
+import { apiService } from '@/services/api-service';
+import { userStore } from '@/stores/user-store';
+import { GameChat } from '@/pages/game/game-chat/game-chat';
 
 function GamePage() {
   const { gameId } = useParams();
@@ -99,6 +101,10 @@ function GamePage() {
           <h3 className="font-semibold mb-2">Game State</h3>
           <pre className="text-sm">{JSON.stringify(game.game_state, null, 2)}</pre>
         </div>
+      </div>
+
+      <div className="mt-8">
+        <GameChat game={game} />
       </div>
     </div>
   );

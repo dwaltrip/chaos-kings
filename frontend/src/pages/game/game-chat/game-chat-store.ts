@@ -4,22 +4,22 @@ import { type ChatMessage } from '@/chat-demo/types';
 interface GameChatState {
   messages: ChatMessage[];
   username: string;
-  currentMessage: string;
+  newMessage: string;
   actions: {
     setMessages: (messages: ChatMessage[]) => void;
     addMessage: (message: ChatMessage) => void;
-    setCurrentMessage: (currentMessage: string) => void;
+    setNewMessage: (newMessage: string) => void;
   };
 }
 
 const gameChatStore = create<GameChatState>((set) => ({
   messages: [],
   username: '',
-  currentMessage: '',
+  newMessage: '',
   actions: {
     setMessages: (messages) => set({ messages }),
     addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
-    setCurrentMessage: (currentMessage) => set({ currentMessage }),
+    setNewMessage: (newMessage) => set({ newMessage }),
   }
 }));
 

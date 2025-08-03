@@ -3,77 +3,71 @@ import { useEffect, useRef } from 'react';
 import type { Game } from '@common/types/games';
 import { useWsStore } from '@/services/ws-store';
 import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
+// import { userStore } from '@/stores/user-store';
 import {
   websocketConnect,
   sendChatMessage,
-  setCurrentMessage,
-  joinRoom,
+  setNewMessage,
+  // joinRoom,
 } from '@/pages/game/game-chat/game-chat-actions';
-import { ChatDemoWsHandler } from '@/chat-demo/chat-demo-ws-handler';
+import { GameChatWsHandler } from '@/pages/game/game-chat/game-chat-ws-handler';
 
 type WebSocketService = ReturnType<typeof websocketConnect>;
 
 function GameChat({ game }: { game: Game }) {
   const messages = gameChatStore(state => state.messages);
   // const currentRoom = gameChatStore(state => state.currentRoom);
-  const currentMessage = gameChatStore(state => state.currentMessage);
+  const newMessage = gameChatStore(state => state.newMessage);
   const { isConnected } = useWsStore();
   const wsServiceRef = useRef<WebSocketService | null>(null);
+  // const user = userStore(state => state.user);
 
   useEffect(() => {
     console.log('==== Setting up WebSocket service');
-    const wsService = websocketConnect();
-    wsService.addMessageHandler('chat-demo', ChatDemoWsHandler);
+    const wsService = websocketConnect({ game });
+    wsService.addMessageHandler('chat-demo', GameChatWsHandler);
     wsServiceRef.current = wsService;
 
     return () => {
       console.log('==== Cleaning up websocket service');
       wsServiceRef.current?.cleanup();
-      wsService.removeMessageHandler('chat-demo', ChatDemoWsHandler);
+      wsService.removeMessageHandler('chat-demo', GameChatWsHandler);
     };
   }, []);
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    sendChatMessage(currentMessage, username, currentRoom);
+    sendChatMessage(newMessage, game);
   };
 
-  const handleRoomChange = (roomName: string) => {
-    joinRoom(roomName, username);
-  };
+  // const handleRoomChange = (roomName: string) => {
+  //   joinRoom(roomName, username);
+  // };
 
   return (
     <div>
       <span>{isConnected ? '🟢 Connected' : '🔴 Disconnected'}</span>
       <div>
         {messages.map((msg, i) => (
-          <div key={i} style={{ marginBottom: '10px' }}>
+          <div key={i}>
             <strong>{msg.user}:</strong> {msg.content}
-            <small style={{ color: '#666', marginLeft: '10px' }}>
-              {new Date(msg.timestamp).toLocaleTimeString()}
-            </small>
+            <small>{new Date(msg.timestamp).toLocaleTimeString()}</small>
           </div>
         ))}
-        {messages.length === 0 && (
-          <div style={{ color: '#999', fontStyle: 'italic' }}>
-            No messages yet.
-          </div>
-        )}
+        {messages.length === 0 && <div>No messages yet.</div>}
       </div>
 
       <form onSubmit={sendMessage}>
         <input
           type="text"
-          value={currentMessage}
-          onChange={(e) => setCurrentMessage(e.target.value)}
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Type your message..."
-          style={{ flex: 1, padding: '10px' }}
-          disabled={!isConnected || !username.trim()}
+          disabled={!isConnected}
         />
         <button 
           type="submit" 
-          disabled={!isConnected || !username.trim() || !currentMessage.trim()}
-          style={{ padding: '10px 20px' }}
+          disabled={!isConnected || !newMessage.trim()}
         >
           Send
         </button>
