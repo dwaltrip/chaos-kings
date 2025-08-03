@@ -91,10 +91,6 @@ class WebSocketManager {
       const bufferStr = buffer.toString();
       try {
         const data: WsMessage = validateMessage(JSON.parse(bufferStr));
-        if (data.payload.user) {
-          client.user = data.payload.user;
-          // logger.log(`Client user set to: ${client.user}`);
-        }
         logger.log('Received:', data);
         handleWebSocketMessage(data, this.actionsForClient(client));
       }

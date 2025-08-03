@@ -4,6 +4,9 @@ const GameStatus = {
   COMPLETE: 'complete'
 } as const;
 
+// -----------------------------------------------------------
+// TODO: this is duplicate w/ GamesTable interface in backend.
+// -----------------------------------------------------------
 interface Game {
   id: number;
   game_state: object;

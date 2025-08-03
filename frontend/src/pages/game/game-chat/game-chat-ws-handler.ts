@@ -1,6 +1,6 @@
-import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
 import type { WsMessage } from '@common/types/websockets';
-import type { ChatMessage } from '@/chat-demo/types';
+import type { ChatMessage } from '@/pages/game/game-chat/types';
+import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
 
 const { actions } = gameChatStore.getState();
 
