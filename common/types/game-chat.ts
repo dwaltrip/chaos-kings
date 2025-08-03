@@ -1,4 +1,5 @@
 import type { WsMessage } from './websockets';
+import type { User } from './user';
 
 const GAME_CHAT_DOMAIN = 'game-chat';
 
@@ -8,6 +9,7 @@ namespace GameChat {
       content: string;
       room: string;
       timestamp: number;
+      user?: User;
     }
   }
 
