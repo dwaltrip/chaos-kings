@@ -1,14 +1,13 @@
 import { useEffect, useRef } from 'react';
 
 import type { Game } from '@common/types/games';
+import { GAME_CHAT_DOMAIN } from '@common/types/game-chat';
 import { useWsStore } from '@/services/ws-store';
 import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
-// import { userStore } from '@/stores/user-store';
 import {
   websocketConnect,
   sendChatMessage,
   setNewMessage,
-  // joinRoom,
 } from '@/pages/game/game-chat/game-chat-actions';
 import { GameChatWsHandler } from '@/pages/game/game-chat/game-chat-ws-handler';
 
@@ -16,22 +15,20 @@ type WebSocketService = ReturnType<typeof websocketConnect>;
 
 function GameChat({ game }: { game: Game }) {
   const messages = gameChatStore(state => state.messages);
-  // const currentRoom = gameChatStore(state => state.currentRoom);
   const newMessage = gameChatStore(state => state.newMessage);
   const { isConnected } = useWsStore();
   const wsServiceRef = useRef<WebSocketService | null>(null);
-  // const user = userStore(state => state.user);
 
   useEffect(() => {
     console.log('==== Setting up WebSocket service');
     const wsService = websocketConnect({ game });
-    wsService.addMessageHandler('chat-demo', GameChatWsHandler);
+    wsService.addMessageHandler(GAME_CHAT_DOMAIN, GameChatWsHandler);
     wsServiceRef.current = wsService;
 
     return () => {
       console.log('==== Cleaning up websocket service');
       wsServiceRef.current?.cleanup();
-      wsService.removeMessageHandler('chat-demo', GameChatWsHandler);
+      wsService.removeMessageHandler(GAME_CHAT_DOMAIN, GameChatWsHandler);
     };
   }, []);
 
@@ -39,10 +36,6 @@ function GameChat({ game }: { game: Game }) {
     e.preventDefault();
     sendChatMessage(newMessage, game);
   };
-
-  // const handleRoomChange = (roomName: string) => {
-  //   joinRoom(roomName, username);
-  // };
 
   return (
     <div>

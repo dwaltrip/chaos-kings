@@ -1,6 +1,6 @@
 import { type WsMessage } from '@common/types/websockets';
-import { WsStore } from './ws-store';
-import { type MatchmakingMessage } from './use-web-socket';
+import { invariant } from '@/utils/invariant';
+import { WsStore } from '@/services/ws-store';
 
 interface WsMessageHandler {
   handleMessage: (message: WsMessage) => void;
@@ -20,9 +20,8 @@ class WebSocketService {
 
   private listeners: EventListeners = {};
   private messageHandlers: Map<string, WsMessageHandler[]> = new Map();
-  private connectionStateListeners: Set<(isConnected: boolean) => void> = new Set();
-  private matchmakingListeners: Set<(message: MatchmakingMessage) => void> = new Set();
 
+  // TODO: move URL to config
   constructor(url: string = 'ws://localhost:3131/ws') {
     this.url = url;
     this.ws = new WebSocket(this.url);
@@ -30,7 +29,6 @@ class WebSocketService {
     this.ws.onopen = (event) => {
       console.log(`[ws-service] WebSocket connection established to ${this.url}`);
       this._store.setIsConnected(true);
-      this.connectionStateListeners.forEach(listener => listener(true));
       this.listeners.open?.forEach(listener => listener(event));
     };
 
@@ -38,18 +36,12 @@ class WebSocketService {
       console.log(`[ws-service] WebSocket message received:`, event.data);
       try {
         const message = JSON.parse(event.data);
-        
-        // Handle matchmaking messages
-        if ('type' in message && ('playerId' in message || message.type === 'queue-status-update' || message.type === 'game-found')) {
-          this.matchmakingListeners.forEach(listener => listener(message as MatchmakingMessage));
-        }
-        // Handle domain-based messages
-        else if ('domain' in message) {
-          const wsMessage = message as WsMessage;
-          this.getMessageHandlers(wsMessage.domain).forEach(listener => {
-            listener.handleMessage(wsMessage);
-          });
-        }
+        const wsMessage = message as WsMessage;
+        invariant('domain' in message, 'WebSocket message must have a domain property');
+
+        this.getMessageHandlers(wsMessage.domain).forEach(listener => {
+          listener.handleMessage(wsMessage);
+        });
       } catch (error) {
         console.error('[ws-service] Error parsing WebSocket message:', error);
       }
@@ -58,7 +50,6 @@ class WebSocketService {
     this.ws.onclose = (event) => {
       console.log(`[ws-service] WebSocket connection closed:`, event);
       this._store.setIsConnected(false);
-      this.connectionStateListeners.forEach(listener => listener(false));
       this.listeners.close?.forEach(listener => listener(event));
     };
 
@@ -76,7 +67,19 @@ class WebSocketService {
     }
   };
 
-  send(message: WsMessage | MatchmakingMessage) {
+  async onReadyOrNow(): Promise<void> {
+    return new Promise((resolve) => {
+      if (this.isConnected) {
+        resolve();
+      } else {
+        this.addListener('open', () => {
+          resolve();
+        });
+      }
+    });
+  }
+
+  send(message: WsMessage) {
     // TODO: queue messages if not connected
     if (!this.isConnected) {
       console.error(`[ws-service] cannot send message: Not connected`, message);
@@ -100,20 +103,6 @@ class WebSocketService {
 
   getConnectionState(): boolean {
     return this.isConnected;
-  }
-
-  addConnectionStateListener(listener: (isConnected: boolean) => void): () => void {
-    this.connectionStateListeners.add(listener);
-    return () => {
-      this.connectionStateListeners.delete(listener);
-    };
-  }
-
-  addMatchmakingMessageListener(listener: (message: MatchmakingMessage) => void): () => void {
-    this.matchmakingListeners.add(listener);
-    return () => {
-      this.matchmakingListeners.delete(listener);
-    };
   }
 
   // TODO: what about `domain`????

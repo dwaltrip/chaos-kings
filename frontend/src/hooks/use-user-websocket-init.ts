@@ -17,8 +17,10 @@ function useUserWebSocketInit() {
   useEffect(() => {
     if (isInitialized && !wsReady) {
       // User is ready, now initialize WebSocket
-      getWebSocketService(); // This triggers connection
-      setWsReady(true);
+      const ws = getWebSocketService();
+      ws.onReadyOrNow().then(() => {
+        setWsReady(true);
+      });
     }
   }, [isInitialized, wsReady]);
   

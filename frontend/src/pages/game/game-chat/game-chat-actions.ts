@@ -10,7 +10,7 @@ function websocketConnect({ game }: { game: Game }): ReturnType<typeof getWebSoc
   const wsService = getWebSocketService();
 
   // Join current room after connection is established
-  wsService.addListener('open', () => {
+  wsService.onReadyOrNow().then(() => {
     joinRoom(roomNameForGameChat(game));
   });
   return wsService;
