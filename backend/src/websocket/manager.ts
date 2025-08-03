@@ -12,7 +12,12 @@ interface WsClient {
   id: WsClientId
   ws: WebSocket;
   currentRoom: RoomId | null;
-  user?: any;
+  user?: {
+    id: string;
+    username?: string;
+    sessionId: string;
+    userKey: string;
+  };
 }
 
 function createWsClient(ws: WebSocket): WsClient {
@@ -62,7 +67,7 @@ class ClientStore {
 }
 
 function clientLogger(client: WsClient) {
-  const userStr = (client.user ? `${client.user}` : '-');
+  const userStr = client.user ? `${client.user.username || client.user.id}` : '-';
   const prefix = `[${client.id.slice(0, 20)}..., ${userStr}]`.padEnd(40, ' ');
   return {
     log: (...args: any[]) => console.log(prefix, ...args),
@@ -83,6 +88,12 @@ class WebSocketManager {
   handleConnection(connection: FastifyWebSocket, req: FastifyRequest) {
     const ws = connection;
     const client = this.clientStore.addClient(ws);
+    
+    // Link WebSocket to authenticated user from request
+    if (req.currentUser) {
+      client.user = req.currentUser;
+    }
+    
     const logger = clientLogger(client);
     console.log('-'.repeat(80));
     logger.log('New client connected');
@@ -134,7 +145,8 @@ class WebSocketManager {
     }
     this.rooms.get(roomId)!.add(client);
     client.currentRoom = roomId;
-    console.log(`Client (${client.user}, ${client.id}) joined room: ${roomId}`);
+    const userStr = client.user ? `${client.user.username || client.user.id}` : 'anonymous';
+    console.log(`Client (${userStr}, ${client.id}) joined room: ${roomId}`);
   }
 
   private leaveRoom(client: WsClient, roomId: string) {
@@ -165,7 +177,8 @@ class WebSocketManager {
         try {
           client.ws.send(dataStr);
         } catch (error) {
-          logger.error(`Failed to send to "${client.user}" in room ${roomId}:`, error);
+          const userStr = client.user ? `${client.user.username || client.user.id}` : 'anonymous';
+          logger.error(`Failed to send to "${userStr}" in room ${roomId}:`, error);
         }
       } 
     });

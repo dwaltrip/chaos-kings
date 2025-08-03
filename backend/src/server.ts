@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import fastifyCookie from '@fastify/cookie';
 import websocket from '@fastify/websocket';
 import { databasePlugin } from '@/plugins/database';
+import authPlugin from '@/plugins/auth';
 import { systemRoutes } from '@/system/system-routes';
 import { userRoutes } from '@/user/user-routes';
 import { gameRoutes } from '@/game/game-routes';
@@ -28,6 +29,7 @@ fastify.register(cors, {
 fastify.register(fastifyCookie);
 fastify.register(websocket);
 fastify.register(databasePlugin);
+fastify.register(authPlugin);
 fastify.register(systemRoutes, { prefix: '/api' });
 fastify.register(userRoutes, { prefix: '/api' });
 fastify.register(gameRoutes, { prefix: '/api' });

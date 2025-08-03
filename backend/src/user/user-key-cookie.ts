@@ -1,4 +1,4 @@
-const COOKIE_OPTIONS = {
+const USER_KEY_COOKIE_OPTIONS = {
   httpOnly: true,           // Prevent JS access for security
   secure: false,            // Set to true in production (HTTPS)
   sameSite: 'lax' as const, // CSRF protection
@@ -6,6 +6,6 @@ const COOKIE_OPTIONS = {
   path: '/'
 };
 
-const COOKIE_NAME = 'general_v2:user_key';
+const USER_KEY_COOKIE_NAME = 'general_v2:user_key';
 
-export { COOKIE_OPTIONS, COOKIE_NAME };
+export { USER_KEY_COOKIE_OPTIONS, USER_KEY_COOKIE_NAME };
