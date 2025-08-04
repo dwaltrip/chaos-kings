@@ -23,31 +23,20 @@ function createWsClient(ws: WebSocket): WsClient {
 }
 
 class ClientStore {
-  private clientsById = new Map<WsClientId, WsClient>();
-  private clientsBySocket = new Map<WebSocket, WsClient>();
+  private clients = new Map<WebSocket, WsClient>();
 
   addClient(ws: WebSocket): WsClient {
     const client = createWsClient(ws);
-    this.clientsById.set(client.id, client);
-    this.clientsBySocket.set(ws, client);
+    this.clients.set(ws, client);
     return client;
   }
 
   removeClient(client: WsClient) {
-    this.clientsBySocket.delete(client.ws);
-    this.clientsById.delete(client.id);
-  }
-
-  getById(id: WsClientId): WsClient {
-    const client = this.clientsById.get(id);
-    if (!client) {
-      throw new Error(`Client with ID ${id} not found`);
-    }
-    return client;
+    this.clients.delete(client.ws);
   }
 
   getBySocket(ws: WebSocket): WsClient {
-    const client = this.clientsBySocket.get(ws);
+    const client = this.clients.get(ws);
     if (!client) {
       throw new Error(`Client with given WebSocket not found`);
     }
@@ -55,17 +44,17 @@ class ClientStore {
   }
 
   forEach(callback: (client: WsClient) => void) {
-    this.clientsById.forEach(callback);
+    this.clients.forEach(callback);
   }
 
   get size(): number {
-    return this.clientsById.size;
+    return this.clients.size;
   }
 }
 
 function clientLogger(client: WsClient) {
-  const userStr = client.user ? `${client.user.username || client.user.id}` : '-';
-  const prefix = `[${client.id.slice(0, 20)}..., ${userStr}]`.padEnd(40, ' ');
+  const userStr = client.user ? `${client.user.username}` : 'anonymous';
+  const prefix = `[manage:${userStr}-${client.id.slice(0,5)}..]`;
   return {
     log: (...args: any[]) => console.log(prefix, ...args),
     error: (...args: any[]) => console.error(prefix, ...args),
@@ -125,11 +114,7 @@ class WebSocketManager {
       broadcastToRoom: (roomId: string, data: WsMessage) => {
         this.broadcastToRoom(roomId, data, client);
       },
-      sendToSelf: (message: any) => client.ws.send(message),
-      sendToClient: (clientId: WsClientId, message: any) => {
-        this.clientStore.getById(clientId).ws.send(message);
-      },
-      // broadcastToAllClients: (message: any) => this.broadcastToAllClients(message),
+      sendToSelf: (data: WsMessage) => client.ws.send(JSON.stringify(data)),
     };
   }
 
@@ -142,8 +127,7 @@ class WebSocketManager {
     }
     this.rooms.get(roomId)!.add(client);
     client.currentRoom = roomId;
-    const userStr = client.user ? `${client.user.username || client.user.id}` : 'anonymous';
-    console.log(`Client (${userStr}, ${client.id}) joined room: ${roomId}`);
+    clientLogger(client).log(`Joined room: ${roomId}`);
   }
 
   private leaveRoom(client: WsClient, roomId: string) {
@@ -155,7 +139,7 @@ class WebSocketManager {
       }
     }
     client.currentRoom = null;
-    console.log(`Client ${client.id} left room: ${roomId}`);
+    clientLogger(client).log(`Left room: ${roomId}`);
   }
 
   private broadcastToRoom(roomId: string, data: WsMessage, fromClient: WsClient) {
@@ -167,7 +151,7 @@ class WebSocketManager {
       return;
     }
 
-    logger.log(`Broadcasting message to room ${roomId} with ${room.size} clients:`, data);
+    logger.log(`Broadcasting to room ${roomId} with ${room.size} clients:`, data);
     const dataStr = JSON.stringify(data);
     room.forEach(client => {
       if (client.ws.readyState === WebSocket.OPEN) {
@@ -197,11 +181,12 @@ class WebSocketManager {
   }
 }
 
-function validateMessage(data: any): WsMessage {
+function validateMessage(data: unknown): WsMessage {
   if (!data || typeof data !== 'object') {
     throw new Error('Invalid data format');
   }
-  if (!data.domain || !data.type || !data.payload) {
+  const obj = data as Record<string, unknown>;
+  if (!obj.domain || !obj.type || !obj.payload) {
     console.error('Invalid message structure:', JSON.stringify(data, null, 2));
     // throw new Error('Message must have domain, payload with type and data');
   }

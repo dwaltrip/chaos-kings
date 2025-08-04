@@ -138,11 +138,6 @@ class WebSocketService {
   cleanup() {
     // TODO: not sure what should go here as this is a singleton service
     console.log('[ws-service] Cleaning up WebSocket service');
-    // if (this.ws) {
-    //   this.ws.close();
-    //   this.ws = null as any; // Clear the reference
-    // }
-    // window.removeEventListener('beforeunload', this.handleUnload);
   }
 }
 

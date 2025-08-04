@@ -1,13 +1,6 @@
 import { WsActions, WsMessageHandler, WsMessage } from '@/websocket/types';
 
 
-// interface WsActions {
-//   joinRoom: (roomId: string) => void;
-//   leaveRoom: (roomId: string) => void;
-//   sendToSelf: (message: any) => void;
-//   sendToClient: (clientId: WsClientId, message: any) => void;
-//   broadcastToRoom: (roomId: string, message: any) => void;
-// }
 
 function injectDomain(domain: string, actions: WsActions): WsActions {
   return {

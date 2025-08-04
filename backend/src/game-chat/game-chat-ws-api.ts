@@ -15,6 +15,3 @@ const GameChatWsAPI = new DomainAPI('game-chat', {
 });
 
 export { GameChatWsAPI };
-
-// wsActions.sendToSelf({ status: 'ok' });
-// wsActions.sendToClient(payload.sendtoClientId, { status: 'ok' });

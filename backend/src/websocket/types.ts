@@ -6,7 +6,6 @@ interface WsActions {
   joinRoom: (roomId: string) => void;
   leaveRoom: (roomId: string) => void;
   sendToSelf: (data: WsMessage) => void;
-  sendToClient: (clientId: WsClientId, message: any) => void;
   broadcastToRoom: (roomId: string, data: WsMessage) => void;
 }
 

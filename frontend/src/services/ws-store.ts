@@ -1,52 +1,26 @@
-import { useState, useEffect } from 'react';
+import { create } from 'zustand';
 
-type StoreListener = () => void;
+interface WsState {
+  isConnected: boolean;
+  actions: {
+    setIsConnected: (isConnected: boolean) => void;
+  };
+}
 
-const WsStore = (function() {
-  let _isConnected = false;
-  let _listeners = new Set<StoreListener>();
-  
-  const notifyListeners = () => {
-    _listeners.forEach(listener => listener());
-  };
-  
-  return {
-    getIsConnected: () => _isConnected,
-    
-    setIsConnected: (isConnected: boolean) => {
-      _isConnected = isConnected;
-      notifyListeners();
-    },
-    
-    subscribe: (listener: StoreListener) => {
-      _listeners.add(listener);
-      return () => {
-        _listeners.delete(listener);
-      };
-    },
-    
-    getState: () => ({
-      isConnected: _isConnected,
-    })
-  };
-})();
+const wsStore = create<WsState>((set) => ({
+  isConnected: false,
+  actions: {
+    setIsConnected: (isConnected: boolean) => set({ isConnected })
+  }
+}));
 
-const useWsStore = () => {
-  const [state, setState] = useState(WsStore.getState());
-  
-  useEffect(() => {
-    const unsubscribe = WsStore.subscribe(() => {
-      setState(WsStore.getState());
-    });
-    return unsubscribe;
-  }, []);
-  
-  return {
-    ...state,
-    actions: {
-      setIsConnected: WsStore.setIsConnected,
-    }
-  };
+const useWsStore = () => wsStore();
+
+// Legacy compatibility - can be removed after updating websocket-service.ts
+const WsStore = {
+  getIsConnected: () => wsStore.getState().isConnected,
+  setIsConnected: (isConnected: boolean) => wsStore.getState().actions.setIsConnected(isConnected),
+  getState: () => ({ isConnected: wsStore.getState().isConnected })
 };
 
-export { WsStore, useWsStore };
+export { WsStore, useWsStore, wsStore };
