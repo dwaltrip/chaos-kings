@@ -10,12 +10,15 @@ function injectDomain(domain: string, actions: WsActions): WsActions {
 }
 
 // TODO: is "app" a better name than "domain"?
-class DomainAPI { 
-  constructor(public name: string, private handlers: Record<string, WsMessageHandler>) {}
+class DomainAPI<TMessageType extends string = string> { 
+  constructor(
+    public name: string,
+    private handlers: Record<TMessageType, WsMessageHandler>
+  ) {}
 
   handleMessage(type: string, data: WsMessage, actions: WsActions) {
-    if (this.handlers[type]) {
-      this.handlers[type](data, injectDomain(this.name, actions));
+    if (type in this.handlers) {
+      this.handlers[type as TMessageType](data, injectDomain(this.name, actions));
     }
     else {
       // throw new Error(`No handler for message type: ${type} in domain: ${this.name}`);

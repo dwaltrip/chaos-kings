@@ -1,7 +1,7 @@
 import { DomainAPI } from '@/websocket/api';
-import { GameChat } from '@common/types/game-chat';
+import { GameChat, GameChatMessageType } from '@common/types/game-chat';
 
-const GameChatWsAPI = new DomainAPI('game-chat', {
+const GameChatWsAPI = new DomainAPI<GameChatMessageType>('game-chat', {
   'new-message': (data: GameChat.ChatMessage, wsActions) => {
     console.log(`[game-chat] Received chat message:`, data);
     wsActions.broadcastToRoom(data.payload.room, data);

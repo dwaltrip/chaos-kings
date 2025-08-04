@@ -1,4 +1,5 @@
 import type { WsMessage } from '@common/types/websockets';
+import type { GameChatMessageType } from '@common/types/game-chat';
 import type { ChatMessage } from '@/pages/game/game-chat/types';
 import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
 
@@ -11,7 +12,7 @@ const GameChatWsHandler = {
     // const user = payload.user || '??';
     // const date = payload.timestamp ? new Date(payload.timestamp) : '-'
 
-    switch (type) {
+    switch (type as GameChatMessageType) {
       case 'new-message':
         const payload = {
           ...data.payload,

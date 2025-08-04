@@ -3,6 +3,8 @@ import type { User } from './user';
 
 const GAME_CHAT_DOMAIN = 'game-chat';
 
+type GameChatMessageType = 'new-message' | 'join-room' | 'leave-room';
+
 namespace GameChat {
   export interface ChatMessage extends WsMessage {
     payload: {
@@ -48,5 +50,6 @@ export {
   GAME_CHAT_DOMAIN,
   createNewChatMessage,
   createJoinRoomMessage,
-  type GameChat
+  type GameChat,
+  type GameChatMessageType
 };
