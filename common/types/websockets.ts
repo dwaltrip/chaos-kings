@@ -1,4 +1,4 @@
-import type { User } from "./user";
+import type { User } from "@common/types/user";
 
 interface WsMessage {
   domain: string;

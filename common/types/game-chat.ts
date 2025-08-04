@@ -1,5 +1,5 @@
-import type { WsMessage } from './websockets';
-import type { User } from './user';
+import type { WsMessage } from '@common/types/websockets';
+import type { User } from '@common/types/user';
 
 const GAME_CHAT_DOMAIN = 'game-chat';
 

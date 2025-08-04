@@ -19,7 +19,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@common/*": ["../common/*"]
+      "@common/*": ["../common/*"],
+      "@core/*": ["../core/src/*"]
     },
 
     /* Linting */
