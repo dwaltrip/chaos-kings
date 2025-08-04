@@ -1,7 +1,5 @@
 import { WsActions, WsMessageHandler, WsMessage } from '@/websocket/types';
 
-
-
 function injectDomain(domain: string, actions: WsActions): WsActions {
   return {
     ...actions,
@@ -12,9 +10,8 @@ function injectDomain(domain: string, actions: WsActions): WsActions {
 }
 
 // TODO: is "app" a better name than "domain"?
-class DomainAPI {
-  constructor(public name: string, private handlers: Record<string, WsMessageHandler>) {
-  }
+class DomainAPI { 
+  constructor(public name: string, private handlers: Record<string, WsMessageHandler>) {}
 
   handleMessage(type: string, data: WsMessage, actions: WsActions) {
     if (this.handlers[type]) {
