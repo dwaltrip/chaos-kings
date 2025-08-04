@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { FastifyRequest } from 'fastify';
 import type { WebSocket as FastifyWebSocket } from '@fastify/websocket';
 
+import { invariant } from '@common/utils/invariant';
+import { User } from '@common/types/user';
 import { WsClientId, WsActions, WsMessageHandler, WsMessage } from '@/websocket/types';
 import { handleWebSocketMessage } from '@/websocket/api';
 
@@ -12,12 +14,7 @@ interface WsClient {
   id: WsClientId
   ws: WebSocket;
   currentRoom: RoomId | null;
-  user?: {
-    id: string;
-    username?: string;
-    sessionId: string;
-    userKey: string;
-  };
+  user?: User;
 }
 
 function createWsClient(ws: WebSocket): WsClient {
@@ -88,11 +85,10 @@ class WebSocketManager {
   handleConnection(connection: FastifyWebSocket, req: FastifyRequest) {
     const ws = connection;
     const client = this.clientStore.addClient(ws);
-    
+  
+    invariant(!!req.currentUser, 'Request must have currentUser set');
     // Link WebSocket to authenticated user from request
-    if (req.currentUser) {
-      client.user = req.currentUser;
-    }
+    client.user = req.currentUser;
     
     const logger = clientLogger(client);
     console.log('-'.repeat(80));
@@ -103,6 +99,7 @@ class WebSocketManager {
       try {
         const data: WsMessage = validateMessage(JSON.parse(bufferStr));
         logger.log('Received:', data);
+        data.user = client.user; // Attach user info to message
         handleWebSocketMessage(data, this.actionsForClient(client));
       }
       catch (error) {

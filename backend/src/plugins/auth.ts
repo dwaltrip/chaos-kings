@@ -37,18 +37,19 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
         await sessionStore.create(sessionId, user.id, userKey);
         reply.setCookie(SESSION_COOKIE_NAME, sessionId, SESSION_COOKIE_OPTIONS);
       } else {
-        // Update last active time
         await sessionStore.updateLastActive(sessionId!);
       }
       
-      // Populate currentUser
+      console.log('[auth-plugin] User authenticated:', user.id, 'Session ID:', sessionId);
       request.currentUser = {
         id: user.id.toString(),
-        username: user.username || undefined,
-        sessionId: sessionId!,
-        userKey: userKey!
+        username: user.username,
+        session_id: sessionId!,
+        user_key: userKey!,
+        created_at: user.created_at.toISOString(),
       };
     } catch (error) {
+      console.warn('Failed to authenticate user:', error);
       fastify.log.warn('Failed to authenticate user:', error);
     }
   });

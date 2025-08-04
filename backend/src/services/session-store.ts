@@ -20,7 +20,7 @@ class SessionStore {
     };
 
     const redisClient = await getClient();
-    await redisClient.setex(
+    await redisClient.setEx(
       `${this.PREFIX}${sessionId}`,
       this.TTL,
       JSON.stringify(sessionData)
@@ -44,7 +44,7 @@ class SessionStore {
     if (sessionData) {
       sessionData.lastActive = Date.now();
       const redisClient = await getClient();
-      await redisClient.setex(
+      await redisClient.setEx(
         `${this.PREFIX}${sessionId}`,
         this.TTL,
         JSON.stringify(sessionData)

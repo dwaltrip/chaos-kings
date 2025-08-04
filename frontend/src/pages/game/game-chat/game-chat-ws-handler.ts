@@ -13,7 +13,11 @@ const GameChatWsHandler = {
 
     switch (type) {
       case 'new-message':
-        actions.addMessage(data.payload as ChatMessage);
+        const payload = {
+          ...data.payload,
+          user: data.user || undefined
+        };
+        actions.addMessage(payload as ChatMessage);
         break;
       // case 'user-joined':
       //   store.addUser(data.user);

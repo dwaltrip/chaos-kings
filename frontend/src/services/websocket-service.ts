@@ -1,5 +1,5 @@
 import { type WsMessage } from '@common/types/websockets';
-import { invariant } from '@/utils/invariant';
+import { invariant } from '@common/utils/invariant';
 import { WsStore } from '@/services/ws-store';
 
 interface WsMessageHandler {
