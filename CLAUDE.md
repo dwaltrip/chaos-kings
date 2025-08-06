@@ -38,6 +38,9 @@ Hey Claude! My name is Daniel and I'm excited to build with you :)
 
 ## Code Conventions and Style
 
+### General
+- All Javascript and Typescript should use 2-space indentation.
+
 ### Frontend Pages
 - Each page gets own directory: `frontend/src/pages/$page_name/`
 - Page-specific components and CSS stored in page directory
