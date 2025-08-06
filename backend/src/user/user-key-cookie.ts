@@ -6,6 +6,6 @@ const USER_KEY_COOKIE_OPTIONS = {
   path: '/'
 };
 
-const USER_KEY_COOKIE_NAME = 'general_v2:user_key';
+const USER_KEY_COOKIE_NAME = 'general-v2:user-key';
 
 export { USER_KEY_COOKIE_OPTIONS, USER_KEY_COOKIE_NAME };

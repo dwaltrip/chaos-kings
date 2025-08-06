@@ -8,7 +8,7 @@ const SESSION_COOKIE_OPTIONS = {
   path: '/'
 };
 
-const SESSION_COOKIE_NAME = 'general_v2:session_id';
+const SESSION_COOKIE_NAME = 'general-v2:session-id';
 
 function generateSessionId(): string {
   return `sess_${uuidv4()}`;
