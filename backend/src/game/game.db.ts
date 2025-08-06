@@ -6,6 +6,8 @@ import {
 interface GamesTable {
   id: Generated<number>
   game_state: object
+  config: object | null
+  move_history: object | null
   // TODO: use an enum for status
   status: string
   created_at: ColumnType<Date, string | undefined, never>

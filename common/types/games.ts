@@ -10,6 +10,8 @@ const GameStatus = {
 interface Game {
   id: number;
   game_state: object;
+  config: object | null;
+  move_history: object | null;
   status: string;
   created_at: string;
   updated_at: string;
