@@ -9,8 +9,8 @@ const GameChatWsAPI = new DomainAPI<GameChatMessageType>('game-chat', {
   'join-room': (data: GameChat.JoinRoomMessage, wsActions) => {
     wsActions.joinRoom(data.payload.room);
   },
-  'leave-room': (payload: any, wsActions) => {
-    wsActions.leaveRoom(payload.room);
+  'leave-room': (data: GameChat.LeaveRoomMessage, wsActions) => {
+    wsActions.leaveRoom(data.payload.room);
   },
 });
 

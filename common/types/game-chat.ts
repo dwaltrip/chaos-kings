@@ -21,6 +21,13 @@ namespace GameChat {
       timestamp: number;
     }
   }
+
+  export interface LeaveRoomMessage extends WsMessage {
+    payload: {
+      room: string;
+      timestamp: number;
+    }
+  }
 }
 
 function createNewChatMessage(content: string, room: string): GameChat.ChatMessage {
