@@ -51,9 +51,9 @@ function applyDirection(coord: Coord, direction: Movement): Coord {
   }
 }
 
-function *iterPlayerSquares(board: BoardState, playerId: number): IterableIterator<PlayerSquare> {
+function *iterPlayerSquares(board: BoardState, playerIndex: number): IterableIterator<PlayerSquare> {
   for (let square of board.grid.flat()) {
-    if (isPlayerSquare(square) && square.playerId === playerId) {
+    if (isPlayerSquare(square) && square.playerIndex === playerIndex) {
       yield square;
     }
   }

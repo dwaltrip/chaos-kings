@@ -48,7 +48,7 @@ function applyMovement(board: BoardState, sourceCoord: Coord, movement: Movement
     const newDest = {
       ...dest,
       type: SquareType.ARMY,
-      playerId: source.playerId,
+      playerIndex: source.playerIndex,
       units: source.units - 1,
     };
     source.units = 1;
@@ -60,13 +60,13 @@ function applyMovement(board: BoardState, sourceCoord: Coord, movement: Movement
   }
 
   // Case 2: dest is friendly
-  if (dest.playerId === source.playerId) {
+  if (dest.playerIndex === source.playerIndex) {
     dest.units += source.units - 1;
     source.units = 1;
   }
 
   // Case 3: dest is enemy
-  else if (dest.playerId !== source.playerId) {
+  else if (dest.playerIndex !== source.playerIndex) {
 
     // Case 3a: Enemy defends successfully
     if (source.units <= dest.units) {
@@ -78,14 +78,14 @@ function applyMovement(board: BoardState, sourceCoord: Coord, movement: Movement
       const surivingUnits = source.units - dest.units;
       dest.units = surivingUnits - 1;
       source.units = 1;
-      dest.playerId = source.playerId;
+      dest.playerIndex = source.playerIndex;
 
       // Case 3c: Enemy general is captured
       if (dest.type === PlayerSquareType.GENERAL) {
         dest.type = PlayerSquareType.PLAYER_CITY;
 
-        for (let square of Board.iterPlayerSquares(board, dest.playerId)) {
-          square.playerId = source.playerId;
+        for (let square of Board.iterPlayerSquares(board, dest.playerIndex)) {
+          square.playerIndex = source.playerIndex;
           if (square != dest) {
             square.units = Math.ceil(square.units / 2);
           }
