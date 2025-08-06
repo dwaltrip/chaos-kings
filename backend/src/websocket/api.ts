@@ -9,7 +9,11 @@ function injectDomain(domain: string, actions: WsActions): WsActions {
   }
 }
 
-// TODO: is "app" a better name than "domain"?
+// -----------------------------------------------------------------------
+// TODO: Message types can be client -> server and / or server -> client.
+// The current architecture doens't reflect the "or" part.
+// The "...MessagType" type defs should be split into two.
+// -----------------------------------------------------------------------
 class DomainAPI<TMessageType extends string = string> { 
   constructor(
     public name: string,
