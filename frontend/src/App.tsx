@@ -2,6 +2,7 @@ import { Routes, Route, NavLink } from "react-router";
 import { HomePage } from "@/pages/home/home-page";
 import { GamePage } from '@/pages/game/game-page';
 import { GameListPage } from '@/pages/games/game-list-page';
+import { JoinGamePage } from '@/pages/join-game/join-game-page';
 import { useUserWebSocketInit } from '@/hooks/use-user-websocket-init';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
       <nav className="p-5 border-b border-gray-300 mb-5">
         <NavLink to="/" className="mr-5">Home</NavLink>
         <NavLink to="/games" className="mr-5">Games</NavLink>
+        <NavLink to="/join-game" className="mr-5">Find Game</NavLink>
       </nav>
 
       <div className="p-5">
@@ -23,6 +25,7 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="games" element={<GameListPage />} />
           <Route path="games/:gameId" element={<GamePage />} />
+          <Route path="join-game" element={<JoinGamePage />} />
         </Routes>
       </div>
     </div>
