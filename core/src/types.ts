@@ -42,7 +42,7 @@ interface NeutralSquare extends _BaseSquare {
 
 interface PlayerSquare extends _BaseSquare {
   type: PlayerSquareType;
-  playerId: number;
+  playerIndex: number;
   units: number;
 }
 
