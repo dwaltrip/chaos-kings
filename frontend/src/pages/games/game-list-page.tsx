@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { apiService } from '@/services/api-service';
-import type { Game, ListGamesResponse, CreateGameResponse } from '@common/types/games';
+import type { Game, ListGamesResponse } from '@common/types/games';
 
 function GameListPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,23 +30,6 @@ function GameListPage() {
     }
   };
 
-  const createGame = async () => {
-    try {
-      setCreating(true);
-      const response = await apiService.post('/api/games');
-      if (!response.ok) {
-        throw new Error('Failed to create game');
-      }
-      const data: CreateGameResponse = await response.json();
-      setGames(prev => [data.game, ...prev]);
-      navigate(`/games/${data.game.id}`);
-    } catch (err) {
-      setError('Failed to create game');
-      console.error('Error creating game:', err);
-    } finally {
-      setCreating(false);
-    }
-  };
 
   if (loading) {
     return <div className="text-center">Loading games...</div>;
@@ -71,17 +53,11 @@ function GameListPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Games</h1>
-        <button 
-          onClick={createGame}
-          disabled={creating}
-          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
-        >
-          {creating ? 'Creating...' : 'Create Game'}
-        </button>
+        <p className="text-sm text-gray-600">Games are created through matchmaking. Visit the Join Game page to find a match!</p>
       </div>
 
       {!games || games.length === 0 ? (
-        <p className="text-gray-600">No games yet. Create your first game!</p>
+        <p className="text-gray-600">No games yet. Join the matchmaking queue to start playing!</p>
       ) : (
         <div className="space-y-4">
           {games.map(game => (

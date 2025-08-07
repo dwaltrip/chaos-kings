@@ -1,3 +1,5 @@
+import { type GameConfig } from '@core/game-config';
+
 const GameStatus = {
   NOT_STARTED: 'not_started',
   IN_PROGRESS: 'in_progress',
@@ -10,7 +12,7 @@ const GameStatus = {
 interface Game {
   id: number;
   game_state: object;
-  config: object | null;
+  config: GameConfig | null;
   move_history: object | null;
   status: string;
   created_at: string;

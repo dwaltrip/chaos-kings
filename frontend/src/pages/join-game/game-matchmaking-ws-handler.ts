@@ -4,6 +4,8 @@ import { gameMatchmakingStore } from '@/pages/join-game/join-game-store';
 
 const { actions } = gameMatchmakingStore.getState();
 
+let countdownInterval: NodeJS.Timeout | null = null;
+
 const GameMatchmakingWsHandler = {
   handleMessage: (data: WsMessage) => { 
     const { type, payload } = data;
@@ -27,7 +29,35 @@ const GameMatchmakingWsHandler = {
       case 'game-ready':
         console.log('game-ready message received:', payload);
         if (payload && typeof payload === 'object' && 'gameId' in payload) {
-          console.log('Game ready! GameId:', payload.gameId);
+          const gameId = payload.gameId as number;
+          console.log('Game ready! GameId:', gameId);
+          
+          // Set game ready state and start countdown
+          actions.setGameReady(gameId);
+          
+          // Clear any existing countdown
+          if (countdownInterval) {
+            clearInterval(countdownInterval);
+          }
+          
+          // Start 5-second countdown
+          countdownInterval = setInterval(() => {
+            const currentState = gameMatchmakingStore.getState();
+            const newCountdown = currentState.countdown - 1;
+            
+            if (newCountdown <= 0) {
+              // Navigate to game page
+              if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+              }
+              
+              // Navigate to game
+              window.location.href = `/games/${gameId}`;
+            } else {
+              actions.setCountdown(newCountdown);
+            }
+          }, 1000);
         }
         break;
       default:

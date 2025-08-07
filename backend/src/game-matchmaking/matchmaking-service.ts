@@ -2,6 +2,7 @@ import { getClient } from '@/services/redis';
 import { v4 as uuidv4 } from 'uuid';
 import { createClient } from 'redis';
 import { PLAYERS_PER_GAME } from '@common/constants/matchmaking';
+import { createGame } from '@/game/actions/create-game';
 
 type Redis = ReturnType<typeof createClient>;
 
@@ -17,8 +18,8 @@ interface QueueEntry {
   [key: string]: any;
 }
 
-interface Game {
-  gameId: string;
+interface MatchmakingGame {
+  gameId: number;
   players: QueueEntry[];
   createdAt: number;
   status: string;
@@ -46,7 +47,7 @@ class MatchmakingService {
     this.gameKey = 'matchmaking:games';
   }
 
-  async addPlayer(playerId: string, playerData: PlayerData = {}): Promise<Game | null> {
+  async addPlayer(playerId: string, playerData: PlayerData = {}): Promise<MatchmakingGame | null> {
     const timestamp = Date.now();
     const queueEntry = {
       playerId,
@@ -68,7 +69,9 @@ class MatchmakingService {
     await this.redis.hDel(this.playerDataKey, playerId);
   }
 
-  async checkForMatch(): Promise<Game | null> {
+  // TODO: This is not robust. If enough people join at the same time,
+  // we need to carefully create multiple games.
+  async checkForMatch(): Promise<MatchmakingGame | null> {
     if (this.isCreatingGame) {
       return null;
     }
@@ -86,7 +89,7 @@ class MatchmakingService {
     return null;
   }
 
-  async createGame(): Promise<Game | null> {
+  async createGame(): Promise<MatchmakingGame | null> {
     try {
       const playerIds = await this.redis.zRange(this.queueKey, 0, this.playersPerGame - 1);
       
@@ -100,19 +103,25 @@ class MatchmakingService {
         ...JSON.parse(playerDataArray[index] || '{}'),
       }));
 
-      const gameId = uuidv4();
-      const game = {
-        gameId,
+      // Convert string playerIds to numbers for database
+      const userIds = playerIds.map(id => parseInt(id, 10));
+      
+      // Create actual game in database
+      const dbGame = await createGame({ playerIds: userIds });
+
+      const matchmakingGame: MatchmakingGame = {
+        gameId: dbGame.id,
         players,
         createdAt: Date.now(),
         status: 'starting'
       };
 
-      await this.redis.hSet(this.gameKey, gameId, JSON.stringify(game));
+      // Store in Redis for quick lookup (optional)
+      await this.redis.hSet(this.gameKey, dbGame.id.toString(), JSON.stringify(matchmakingGame));
       await this.redis.zRem(this.queueKey, playerIds);
       await this.redis.hDel(this.playerDataKey, playerIds);
       
-      return game;
+      return matchmakingGame;
     } finally {
       this.isCreatingGame = false;
     }
@@ -129,7 +138,7 @@ class MatchmakingService {
     };
   }
 
-  async getGame(gameId: string): Promise<Game | null> {
+  async getGame(gameId: string): Promise<MatchmakingGame | null> {
     const gameData = await this.redis.hGet(this.gameKey, gameId);
     return gameData ? JSON.parse(gameData) : null;
   }
@@ -148,4 +157,4 @@ async function getMatchmakingService(): Promise<MatchmakingService> {
 }
 
 export { MatchmakingService, getMatchmakingService };
-export type { QueueStatus, Game };
+export type { QueueStatus, MatchmakingGame };

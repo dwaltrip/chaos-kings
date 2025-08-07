@@ -11,7 +11,8 @@ interface GamePlayersTable {
   player_id: number
   joined_at: ColumnType<Date, string | undefined, never>
   status: GamePlayerStatus
-  color: string | null
+  player_index: number
+  data: object | null
 }
 
 export {

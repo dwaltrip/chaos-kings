@@ -4,6 +4,12 @@ import { SquareType, Square, GameGrid, Coord, Size2d, PlayerSquare } from '@core
 
 type PlayerIndex = number;
 
+function generateRandomMap(size: Size2d, numPlayers: number): { grid: GameGrid; generals: PlayerSquare[] } {
+  const grid = generateGridWithRandomMountains(size);
+  const generals = addRandomGenerals(grid, numPlayers);
+  return { grid, generals };
+}
+
 // ----------------------------------------------------------------------------
 
 function generateBlankGrid(size: Size2d): GameGrid {
@@ -131,6 +137,7 @@ function convertToGeneral(square: Square, playerIndex: PlayerIndex): PlayerSquar
 // ----------------------------------------------------------------------------
 
 export {
+  generateRandomMap,
   generateBlankGrid,
   generateGridWithRandomMountains,
   createBlankCell,

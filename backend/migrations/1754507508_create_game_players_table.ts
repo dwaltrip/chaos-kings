@@ -11,7 +11,8 @@ export async function up(db: Kysely<any>): Promise<void> {
       col.defaultTo(sql`now()`).notNull(),
     )
     .addColumn('status', 'varchar(50)', (col) => col.notNull())
-    .addColumn('color', 'varchar')
+    .addColumn('player_index', 'integer', (col) => col.notNull())
+    .addColumn('data', 'json')
     .addUniqueConstraint('game_players_game_id_player_id_unique', ['game_id', 'player_id'])
     .execute();
 
