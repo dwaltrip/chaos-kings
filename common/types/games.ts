@@ -1,4 +1,5 @@
 import { type GameConfig } from '@core/game-config';
+import { Player } from '@common/types/player';
 
 const GameStatus = {
   NOT_STARTED: 'not_started',
@@ -19,6 +20,10 @@ interface Game {
   updated_at: string;
 }
 
+interface GameWithPlayers extends Game {
+  players: Player[];
+}
+
 interface CreateGameRequest {
   // Empty for now, may add game options later
 }
@@ -32,7 +37,7 @@ interface ListGamesResponse {
 }
 
 interface GetGameResponse {
-  game: Game;
+  game: GameWithPlayers;
 }
 
 export {
@@ -41,6 +46,7 @@ export {
 
 export type {
   Game,
+  GameWithPlayers,
   CreateGameRequest,
   CreateGameResponse,
   ListGamesResponse,

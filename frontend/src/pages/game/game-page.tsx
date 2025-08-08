@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router';
 
-import type { Game, GetGameResponse } from '@common/types/games';
+import type { GameWithPlayers, GetGameResponse } from '@common/types/games';
 import { apiService } from '@/services/api-service';
 import { userStore } from '@/stores/user-store';
 import { GameChat } from '@/pages/game/game-chat/game-chat';
+import { GameUI } from '@/game-ui/game-ui';
 
 function GamePage() {
   const { gameId } = useParams();
   const user = userStore((state) => state.user);
-  const [game, setGame] = useState<Game | null>(null);
+  const [game, setGame] = useState<GameWithPlayers | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,12 +67,6 @@ function GamePage() {
       <div className="text-center text-red-600">
         <h1>Error</h1>
         <p>{error}</p>
-        <button 
-          onClick={() => loadGame(gameId)}
-          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Retry
-        </button>
       </div>
     );
   }
@@ -101,6 +96,10 @@ function GamePage() {
           <h3 className="font-semibold mb-2">Game State</h3>
           <pre className="text-sm">{JSON.stringify(game.game_state, null, 2)}</pre>
         </div>
+      </div>
+
+      <div className="mt-8">
+        <GameUI game={game} />
       </div>
 
       <div className="mt-8">
