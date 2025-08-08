@@ -1,11 +1,15 @@
 import { Kysely } from 'kysely';
 
+import { PLAYER_COLORS, PlayerColor } from '@core/colors';
+import { PlayerIndex } from '@common/types/player';
 import { generateRandomMap } from '@core/map/generate-grid';
+
 import { GameRepository } from '@/game/game-repository';
 import { GamePlayersRepository } from '@/game-players/game-players-repository';
 import { GameStatus, Game, NewGame } from '@/game/types';
 import { Database } from '@/types';
-import { PLAYER_COLORS } from '@core/colors';
+import { invariant } from '@common/utils/invariant';
+import { GameConfig } from '@core/game-config';
 
 const DEFAULT_SIZE = { width: 40, height: 40 };
 
@@ -17,15 +21,14 @@ interface CreateGameOptions {
 export async function createGame(options: CreateGameOptions = {}): Promise<Game> {
   const { playerIds = [], dbInstance } = options;
   const playerCount = Math.max(playerIds.length, 2);
+  invariant(playerCount <= PLAYER_COLORS.length, `Not enough colors for ${playerCount} players`);
   
   const { grid, generals } = generateRandomMap(DEFAULT_SIZE, playerCount);
-  
-  // Create player color mapping (1-based indices)
-  const playerColors: Record<string, string> = {};
+
+  const playerIndexToColor: GameConfig['playerIndexToColor'] = {};
   for (let i = 0; i < playerCount; i++) {
-    const playerIndex = i + 1;
-    const colorIndex = i % PLAYER_COLORS.length;
-    playerColors[playerIndex.toString()] = PLAYER_COLORS[colorIndex];
+    // Map player indices (1-based) to colors
+    playerIndexToColor[(i + 1).toString()] = PLAYER_COLORS[i];
   }
   
   const newGame: NewGame = {
@@ -33,7 +36,8 @@ export async function createGame(options: CreateGameOptions = {}): Promise<Game>
     config: {
       size: DEFAULT_SIZE,
       startingGrid: grid,
-      playerColors,
+      numPlayers: playerCount,
+      playerIndexToColor,
     },
     status: GameStatus.NOT_STARTED,
   };

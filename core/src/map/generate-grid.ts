@@ -1,8 +1,8 @@
 import { Board } from '@core/board';
 import { isBlankSquare, isNeutralSquare } from '@core/square';
 import { SquareType, Square, GameGrid, Coord, Size2d, PlayerSquare } from '@core/types';
+import { PlayerIndex } from '@common/types/player';
 
-type PlayerIndex = number;
 
 function generateRandomMap(size: Size2d, numPlayers: number): { grid: GameGrid; generals: PlayerSquare[] } {
   const grid = generateGridWithRandomMountains(size);

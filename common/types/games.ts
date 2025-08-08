@@ -1,5 +1,5 @@
-import { type GameConfig } from '@core/game-config';
-import { Player } from '@common/types/player';
+import type { Player } from '@common/types/player';
+import type { GameConfig } from '@core/game-config';
 
 const GameStatus = {
   NOT_STARTED: 'not_started',
@@ -13,11 +13,12 @@ const GameStatus = {
 interface Game {
   id: number;
   game_state: object;
-  config: GameConfig | null;
+  config: GameConfig;
   move_history: object | null;
   status: string;
-  created_at: string;
-  updated_at: string;
+  // TODO: I don't like having these as possibly Date or string
+  created_at: Date | string;
+  updated_at: Date | string;
 }
 
 interface GameWithPlayers extends Game {

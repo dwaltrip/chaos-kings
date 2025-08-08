@@ -1,34 +1,22 @@
-const PlayerColor = {
-  RED: 'RED',
-  BLUE: 'BLUE',
-  GREEN: 'GREEN',
-  YELLOW: 'YELLOW',
-  ORANGE: 'ORANGE',
-  PURPLE: 'PURPLE',
-  PINK: 'PINK',
-  SILVER: 'SILVER',
-};
-type PlayerColor = keyof typeof PlayerColor;
+// import { GameConfig } from '@core/game-config';
 
-const ColorMap = new Map([
-  [PlayerColor.RED, '#e33030'],
-  [PlayerColor.BLUE, '#308ee3'],
-]);
+type PlayerIndex = number;
 
-class Player {
-  id: number;
-  username: string;
-  color: PlayerColor;
+type GamePlayerStatus = 'active' | 'captured' | 'inactive';
 
-  constructor(id: number, username: string, color: PlayerColor) {
-    this.id = id;
-    this.username = username;
-    this.color = color;
-  }
+interface Player {
+  id: number
+  game_id: number
+  player_id: number
+  joined_at: Date | string | undefined
+  status: GamePlayerStatus
+  player_index: PlayerIndex
+  data: object | null
 }
 
-function getPlayerColorInHex(player: Player): string {
-  return ColorMap.get(player.color) || '#ddd';
-}
+// function getPlayerColorInHex(player: Player, gameConfig: GameConfig): string {
+//   return ColorMap.get(player.color) || '#ddd';
+// }
 
-export { Player, PlayerColor, getPlayerColorInHex };
+// export { Player, PlayerColor, getPlayerColorInHex };
+export type { Player, GamePlayerStatus, PlayerIndex };

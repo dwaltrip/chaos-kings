@@ -1,5 +1,4 @@
 
-
 const PlayerColor = {
   RED: 'RED',
   BLUE: 'BLUE',
@@ -14,5 +13,10 @@ const PlayerColor = {
 type PlayerColor = keyof typeof PlayerColor;
 const PLAYER_COLORS = Object.keys(PlayerColor) as PlayerColor[];
 
-export { PlayerColor, PLAYER_COLORS };
+const ColorMap: Map<PlayerColor, string> = new Map([
+  ['RED', '#e33030'],
+  ['BLUE', '#308ee3'],
+]);
+
+export { PlayerColor, PLAYER_COLORS, ColorMap };
 

@@ -1,3 +1,4 @@
+import { GameConfig } from '@core/game-config';
 import {
   ColumnType,
   Generated,
@@ -6,7 +7,7 @@ import {
 interface GamesTable {
   id: Generated<number>
   game_state: object
-  config: object | null
+  config: GameConfig
   move_history: object | null
   // TODO: use an enum for status
   status: string

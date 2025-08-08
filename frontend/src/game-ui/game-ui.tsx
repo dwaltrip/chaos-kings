@@ -8,8 +8,9 @@ import {
   PlayerSquareType,
   type GameGrid,
 } from '@core/types';
-import { Player, getPlayerColorInHex } from '@common/types/player';
-import type { GameWithPlayers } from '@common/types/games';
+import { type Player } from '@common/types/player';
+import type { Game, GameWithPlayers } from '@common/types/games';
+import { ColorMap } from '@core/colors';
 import { isPlayerSquare, } from '@core/square';
 
 import '@/game-ui/game-ui.css';
@@ -27,7 +28,7 @@ function playerIndexToPlayer(game: GameWithPlayers, playerIndex: number): Player
 }
 
 function GameBoard({ game }: { game: GameWithPlayers }) {
-  const grid = (game.game_state as any).grid as GameGrid;
+  const grid = game.config?.startingGrid as GameGrid;
   return (
     <div className='game-grid-container'>
       <table className='game-grid'>
@@ -39,6 +40,7 @@ function GameBoard({ game }: { game: GameWithPlayers }) {
                   <PlayerSquareView
                     square={square}
                     player={playerIndexToPlayer(game, square.playerIndex)}
+                    game={game}
                     key={x}
                   />
                 ) : (
@@ -57,20 +59,20 @@ function ArmyCount({ count } : { count: number }){
   return <span className='army-count'>{count}</span>;
 }
 
-type PlayerSquareProps = { square: PlayerSquare, player: Player };
+type PlayerSquareProps = { square: PlayerSquare, player: Player, game: Game };
 
-function General({ square, player } : PlayerSquareProps) {
+function General({ square, player, game } : PlayerSquareProps) {
   return (
-    <PlayerSquareLayout className='general-icon' player={player}>
+    <PlayerSquareLayout className='general-icon' player={player} game={game}>
       <img className='general-img' src={generalIcon} /> 
       <ArmyCount count={square.units} />
     </PlayerSquareLayout>
   );
 }
 
-function ArmySquare({ square, player } : PlayerSquareProps) {
+function ArmySquare({ square, player, game } : PlayerSquareProps) {
   return (
-    <PlayerSquareLayout className='army-square' player={player}>
+    <PlayerSquareLayout className='army-square' player={player} game={game}>
       <ArmyCount count={square.units} />
     </PlayerSquareLayout>
   );
@@ -88,7 +90,7 @@ function SquareView({ square } : { square: Square }) {
   );
 }
 
-function PlayerSquareView({ square, player } : { square: PlayerSquare, player: Player }) {
+function PlayerSquareView({ square, player, game } : PlayerSquareProps) {
   const className = `square ${square && square.type.toString().toLowerCase()}`;
   if (!square) {
     throw new Error('Square is null');
@@ -96,14 +98,14 @@ function PlayerSquareView({ square, player } : { square: PlayerSquare, player: P
   return (
     <td className={className}>
       {square.type === PlayerSquareType.GENERAL && 
-        <General square={square} player={player}/>
+        <General square={square} player={player} game={game}/>
       }
       {square.type === PlayerSquareType.ARMY &&
-        <ArmySquare square={square} player={player}/>
+        <ArmySquare square={square} player={player} game={game}/>
       }
       {/* TODO: Implement view for PLAYER_CITY */}
       {square.type === PlayerSquareType.PLAYER_CITY &&
-        <ArmySquare square={square} player={player}/>
+        <ArmySquare square={square} player={player} game={game}/>
       }
     </td>
   );
@@ -113,10 +115,10 @@ function PlayerSquareView({ square, player } : { square: PlayerSquare, player: P
 // TODO: consolidate with PlayerSquareView
 // ---------------------------------------
 function PlayerSquareLayout(
-  { player, children, className } :
-  { player: Player, children: any, className?: string }
+  { game, player, children, className } :
+  { game: Game, player: Player, children: any, className?: string }
 ) {
-  const colorStyle = { backgroundColor: getPlayerColorInHex(player) };
+  const colorStyle = { backgroundColor: getPlayerColorInHex(game, player) };
   return (
     <div className={`player-square ${className || ''}`} style={colorStyle}>
       {children}
@@ -124,5 +126,14 @@ function PlayerSquareLayout(
   );
 }
 
+function getPlayerColorInHex(game: Game, player: Player): string {
+  const color = game.config?.playerIndexToColor[player.player_index.toString()];
+  const hexColor = color ?  ColorMap.get(color) : null;
+  if (!hexColor) {
+    console.warn(`No hex value found for color: ${color}`);
+    return '#777';
+  }
+  return hexColor;
+}
 
 export { GameUI };
