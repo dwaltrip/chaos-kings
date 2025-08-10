@@ -42,6 +42,8 @@ interface NeutralSquare extends _BaseSquare {
 
 interface PlayerSquare extends _BaseSquare {
   type: PlayerSquareType;
+  // 1-based index of the player owning this square
+  // TODO: switch to 0-based, so it matches array indices
   playerIndex: number;
   units: number;
 }

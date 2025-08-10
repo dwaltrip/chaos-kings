@@ -6,10 +6,10 @@ import { asyncHandler, parseId } from '@/utils/route-handler';
 
 async function gameRoutes(fastify: FastifyInstance) {
   // POST /api/games - Create new game
-  fastify.post('/games', asyncHandler(async (request, reply) => {
-    const game = await createGame();
-    return reply.status(201).send({ game });
-  }));
+  // fastify.post('/games', asyncHandler(async (request, reply) => {
+  //   const game = await createGame();
+  //   return reply.status(201).send({ game });
+  // }));
 
   // GET /api/games - List all games
   fastify.get('/games', asyncHandler(async (request, reply) => {
