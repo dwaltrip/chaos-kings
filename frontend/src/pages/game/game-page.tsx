@@ -81,30 +81,24 @@ function GamePage() {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Game #{game.id}</h1>
-      
-      <div className="space-y-4">
-        <div>
-          <p><strong>Player:</strong> {user.username}</p>
-          <p><strong>Status:</strong> {game.status}</p>
-          <p><strong>Created:</strong> {new Date(game.created_at).toLocaleString()}</p>
-          <p><strong>Last Updated:</strong> {new Date(game.updated_at).toLocaleString()}</p>
+    <div className="game-page game-layout">
+      <header className="game-header">
+        <div className="flex gap-6 text-sm items-center">
+          <span className="font-bold">Game #{game.id}</span>
+          <span><strong>Player:</strong> {user.username}</span>
+          <span><strong>Status:</strong> {game.status}</span>
+          <span><strong>Created:</strong> {new Date(game.created_at).toLocaleString()}</span>
+          <span><strong>Updated:</strong> {new Date(game.updated_at).toLocaleString()}</span>
         </div>
-        
-        <div className="bg-gray-100 p-4 rounded">
-          <h3 className="font-semibold mb-2">Game State</h3>
-          <pre className="text-sm">{JSON.stringify(game.game_state, null, 2)}</pre>
-        </div>
-      </div>
+      </header>
 
-      <div className="mt-8">
-        <GameUI game={game} />
-      </div>
-
-      <div className="mt-8">
+      <aside className="game-sidebar">
         <GameChat game={game} />
-      </div>
+      </aside>
+
+      <main className="game-main">
+        <GameUI game={game} />
+      </main>
     </div>
   );
 }

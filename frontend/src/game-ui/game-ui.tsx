@@ -16,41 +16,37 @@ import { isPlayerSquare, } from '@core/square';
 import '@/game-ui/game-ui.css';
 
 function GameUI({ game }: { game: GameWithPlayers }) {
-  return (
-    <div className='game-container'>
-      <GameBoard game={game}/>
-    </div>
-  );
+  console.log('==================================================')
+  console.log('Rendering GameUI')
+  return <GameBoard game={game} />;
 }
 
 function playerIndexToPlayer(game: GameWithPlayers, playerIndex: number): Player {
-  return game.players[playerIndex];
+  return game.players[playerIndex - 1];
 }
 
 function GameBoard({ game }: { game: GameWithPlayers }) {
   const grid = game.config?.startingGrid as GameGrid;
+  const gridRows = grid.length;
+  const gridCols = grid[0]?.length || 0;
+  
   return (
-    <div className='game-grid-container'>
-      <table className='game-grid'>
-        <tbody>
-          {grid.map((row, y) => (
-            <tr key={y}>
-              {row.map((square, x) => (
-                isPlayerSquare(square) ? (
-                  <PlayerSquareView
-                    square={square}
-                    player={playerIndexToPlayer(game, square.playerIndex)}
-                    game={game}
-                    key={x}
-                  />
-                ) : (
-                  <SquareView square={square} key={x}/>
-                )
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div
+      className="grid"
+      style={{ "--rows": gridRows, "--cols": gridCols } as React.CSSProperties}
+    >
+      {grid.flat().map((square, i) => {
+        return isPlayerSquare(square) ? (
+          <PlayerSquareView
+            key={i}
+            square={square}
+            player={playerIndexToPlayer(game, square.playerIndex)}
+            game={game}
+          />
+        ) : (
+          <SquareView key={i} square={square} />
+        );
+      })}
     </div>
   );
 }
@@ -79,24 +75,24 @@ function ArmySquare({ square, player, game } : PlayerSquareProps) {
 }
 
 function SquareView({ square } : { square: Square }) {
-  const className = `square ${square && square.type.toString().toLowerCase()}`;
+  const className = `cell ${square && square.type.toString().toLowerCase()}`;
   if (!square) {
     throw new Error('Square is null');
   }
   return (
-    <td className={className}>
+    <div className={className}>
       {square.type === SquareType.MOUNTAIN && <img src={mountainIcon} />}
-    </td>
+    </div>
   );
 }
 
 function PlayerSquareView({ square, player, game } : PlayerSquareProps) {
-  const className = `square ${square && square.type.toString().toLowerCase()}`;
+  const className = `cell ${square && square.type.toString().toLowerCase()}`;
   if (!square) {
     throw new Error('Square is null');
   }
   return (
-    <td className={className}>
+    <div className={className}>
       {square.type === PlayerSquareType.GENERAL && 
         <General square={square} player={player} game={game}/>
       }
@@ -107,7 +103,7 @@ function PlayerSquareView({ square, player, game } : PlayerSquareProps) {
       {square.type === PlayerSquareType.PLAYER_CITY &&
         <ArmySquare square={square} player={player} game={game}/>
       }
-    </td>
+    </div>
   );
 }
 

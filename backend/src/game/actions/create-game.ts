@@ -10,7 +10,7 @@ import { GamePlayersRepository } from '@/game-players/game-players-repository';
 import { GameStatus, Game, NewGame } from '@/game/types';
 import { Database } from '@/types';
 
-const DEFAULT_SIZE = { width: 40, height: 40 };
+const DEFAULT_SIZE = { width: 30, height: 30 };
 
 interface CreateGameOptions {
   playerIds: number[];
