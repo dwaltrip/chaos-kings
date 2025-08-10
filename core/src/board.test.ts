@@ -17,6 +17,26 @@ function p1(x: number, y: number, units: number) {
   return player(x, y, { playerIndex: 1, units });
 }
 
+function p2(x: number, y: number, units: number) {
+  return player(x, y, { playerIndex: 2, units });
+}
+
+function general(
+  x: number,
+  y: number,
+  { playerIndex, units }: { playerIndex: number; units: number; }
+) {
+  return { coord: { x, y }, type: PlayerSquareType.GENERAL, playerIndex, units };
+}
+
+function g1(x: number, y: number, units: number) {
+  return general(x, y, { playerIndex: 1, units });
+}
+
+function g2(x: number, y: number, units: number) {
+  return general(x, y, { playerIndex: 2, units });
+}
+
 describe('Board.getVisibleSquares', () => {
   it('should return all 8 neighboring squares for a single player square in center', () => {
     const grid: GameGrid = [
@@ -48,14 +68,8 @@ describe('Board.getVisibleSquares', () => {
 
   it('should return empty set when player has no squares', () => {
     const grid: GameGrid = [
-      [
-        { coord: { x: 0, y: 0 }, type: NeutralSquareType.BLANK },
-        { coord: { x: 1, y: 0 }, type: NeutralSquareType.BLANK },
-      ],
-      [
-        { coord: { x: 0, y: 1 }, type: NeutralSquareType.BLANK },
-        { coord: { x: 1, y: 1 }, type: NeutralSquareType.BLANK },
-      ],
+      [blank(0, 0), blank(1, 0)],
+      [blank(0, 1), blank(1, 1)],
     ];
 
     const board: BoardState = {
@@ -70,14 +84,8 @@ describe('Board.getVisibleSquares', () => {
 
   it('should handle edge cases where player square is at board boundary', () => {
     const grid: GameGrid = [
-      [
-        { coord: { x: 0, y: 0 }, type: PlayerSquareType.GENERAL, playerIndex: 1, units: 1 },
-        { coord: { x: 1, y: 0 }, type: NeutralSquareType.BLANK },
-      ],
-      [
-        { coord: { x: 0, y: 1 }, type: NeutralSquareType.BLANK },
-        { coord: { x: 1, y: 1 }, type: NeutralSquareType.BLANK },
-      ],
+      [g1(0, 0, 1), blank(1, 0)],
+      [blank(0, 1), blank(1, 1)],
     ];
 
     const board: BoardState = {
@@ -99,16 +107,8 @@ describe('Board.getVisibleSquares', () => {
 
   it('should deduplicate overlapping visibility areas from multiple player squares', () => {
     const grid: GameGrid = [
-      [
-        { coord: { x: 0, y: 0 }, type: PlayerSquareType.ARMY, playerIndex: 1, units: 2 },
-        { coord: { x: 1, y: 0 }, type: PlayerSquareType.ARMY, playerIndex: 1, units: 3 },
-        { coord: { x: 2, y: 0 }, type: NeutralSquareType.BLANK },
-      ],
-      [
-        { coord: { x: 0, y: 1 }, type: NeutralSquareType.BLANK },
-        { coord: { x: 1, y: 1 }, type: NeutralSquareType.BLANK },
-        { coord: { x: 2, y: 1 }, type: NeutralSquareType.BLANK },
-      ],
+      [p1(0, 0, 2), p1(1, 0, 3), blank(2, 0)],
+      [blank(0, 1), blank(1, 1), blank(2, 1)],
     ];
 
     const board: BoardState = {
@@ -130,16 +130,8 @@ describe('Board.getVisibleSquares', () => {
 
   it('should only return squares for the specified player', () => {
     const grid: GameGrid = [
-      [
-        { coord: { x: 0, y: 0 }, type: PlayerSquareType.ARMY, playerIndex: 1, units: 2 },
-        { coord: { x: 1, y: 0 }, type: PlayerSquareType.ARMY, playerIndex: 2, units: 3 },
-        { coord: { x: 2, y: 0 }, type: NeutralSquareType.BLANK },
-      ],
-      [
-        { coord: { x: 0, y: 1 }, type: NeutralSquareType.BLANK },
-        { coord: { x: 1, y: 1 }, type: NeutralSquareType.BLANK },
-        { coord: { x: 2, y: 1 }, type: NeutralSquareType.BLANK },
-      ],
+      [p1(0, 0, 2), p2(1, 0, 3), blank(2, 0)],
+      [blank(0, 1), blank(1, 1), blank(2, 1)],
     ];
 
     const board: BoardState = {
