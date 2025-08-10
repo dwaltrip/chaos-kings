@@ -1,0 +1,164 @@
+import { Board } from '@core/board';
+import { BoardState, GameGrid, PlayerSquareType, NeutralSquareType } from '@core/types';
+
+describe('Board.getVisibleSquares', () => {
+  it('should return all 8 neighboring squares for a single player square in center', () => {
+    const grid: GameGrid = [
+      [
+        { coord: { x: 0, y: 0 }, type: NeutralSquareType.BLANK },
+        { coord: { x: 1, y: 0 }, type: NeutralSquareType.BLANK },
+        { coord: { x: 2, y: 0 }, type: NeutralSquareType.BLANK },
+      ],
+      [
+        { coord: { x: 0, y: 1 }, type: NeutralSquareType.BLANK },
+        { coord: { x: 1, y: 1 }, type: PlayerSquareType.ARMY, playerIndex: 1, units: 5 },
+        { coord: { x: 2, y: 1 }, type: NeutralSquareType.BLANK },
+      ],
+      [
+        { coord: { x: 0, y: 2 }, type: NeutralSquareType.BLANK },
+        { coord: { x: 1, y: 2 }, type: NeutralSquareType.BLANK },
+        { coord: { x: 2, y: 2 }, type: NeutralSquareType.BLANK },
+      ],
+    ];
+
+    const board: BoardState = {
+      grid,
+      size: { width: 3, height: 3 }
+    };
+
+    const visibleSquares = Board.getVisibleSquares(board, 1);
+    
+    expect(visibleSquares.size).toBe(8);
+    
+    const coordsArray = Array.from(visibleSquares);
+    const coordStrings = coordsArray.map(coord => `${coord.x},${coord.y}`);
+    
+    expect(coordStrings).toContain('0,0'); // NW
+    expect(coordStrings).toContain('1,0'); // N
+    expect(coordStrings).toContain('2,0'); // NE
+    expect(coordStrings).toContain('0,1'); // W
+    expect(coordStrings).toContain('2,1'); // E
+    expect(coordStrings).toContain('0,2'); // SW
+    expect(coordStrings).toContain('1,2'); // S
+    expect(coordStrings).toContain('2,2'); // SE
+  });
+
+  it('should return empty set when player has no squares', () => {
+    const grid: GameGrid = [
+      [
+        { coord: { x: 0, y: 0 }, type: NeutralSquareType.BLANK },
+        { coord: { x: 1, y: 0 }, type: NeutralSquareType.BLANK },
+      ],
+      [
+        { coord: { x: 0, y: 1 }, type: NeutralSquareType.BLANK },
+        { coord: { x: 1, y: 1 }, type: NeutralSquareType.BLANK },
+      ],
+    ];
+
+    const board: BoardState = {
+      grid,
+      size: { width: 2, height: 2 }
+    };
+
+    const visibleSquares = Board.getVisibleSquares(board, 1);
+    
+    expect(visibleSquares.size).toBe(0);
+  });
+
+  it('should handle edge cases where player square is at board boundary', () => {
+    const grid: GameGrid = [
+      [
+        { coord: { x: 0, y: 0 }, type: PlayerSquareType.GENERAL, playerIndex: 1, units: 1 },
+        { coord: { x: 1, y: 0 }, type: NeutralSquareType.BLANK },
+      ],
+      [
+        { coord: { x: 0, y: 1 }, type: NeutralSquareType.BLANK },
+        { coord: { x: 1, y: 1 }, type: NeutralSquareType.BLANK },
+      ],
+    ];
+
+    const board: BoardState = {
+      grid,
+      size: { width: 2, height: 2 }
+    };
+
+    const visibleSquares = Board.getVisibleSquares(board, 1);
+    
+    expect(visibleSquares.size).toBe(3);
+    
+    const coordsArray = Array.from(visibleSquares);
+    const coordStrings = coordsArray.map(coord => `${coord.x},${coord.y}`);
+    
+    expect(coordStrings).toContain('1,0'); // E
+    expect(coordStrings).toContain('0,1'); // S
+    expect(coordStrings).toContain('1,1'); // SE
+  });
+
+  it('should deduplicate overlapping visibility areas from multiple player squares', () => {
+    const grid: GameGrid = [
+      [
+        { coord: { x: 0, y: 0 }, type: PlayerSquareType.ARMY, playerIndex: 1, units: 2 },
+        { coord: { x: 1, y: 0 }, type: PlayerSquareType.ARMY, playerIndex: 1, units: 3 },
+        { coord: { x: 2, y: 0 }, type: NeutralSquareType.BLANK },
+      ],
+      [
+        { coord: { x: 0, y: 1 }, type: NeutralSquareType.BLANK },
+        { coord: { x: 1, y: 1 }, type: NeutralSquareType.BLANK },
+        { coord: { x: 2, y: 1 }, type: NeutralSquareType.BLANK },
+      ],
+    ];
+
+    const board: BoardState = {
+      grid,
+      size: { width: 3, height: 2 }
+    };
+
+    const visibleSquares = Board.getVisibleSquares(board, 1);
+    
+    // Both player squares can see (1,1), but it should only be counted once
+    const coordsArray = Array.from(visibleSquares);
+    const coordStrings = coordsArray.map(coord => `${coord.x},${coord.y}`);
+    
+    expect(coordStrings).toContain('1,1');
+    // Count how many times (1,1) appears - should be exactly once
+    const count = coordStrings.filter(coord => coord === '1,1').length;
+    expect(count).toBe(1);
+  });
+
+  it('should only return squares for the specified player', () => {
+    const grid: GameGrid = [
+      [
+        { coord: { x: 0, y: 0 }, type: PlayerSquareType.ARMY, playerIndex: 1, units: 2 },
+        { coord: { x: 1, y: 0 }, type: PlayerSquareType.ARMY, playerIndex: 2, units: 3 },
+        { coord: { x: 2, y: 0 }, type: NeutralSquareType.BLANK },
+      ],
+      [
+        { coord: { x: 0, y: 1 }, type: NeutralSquareType.BLANK },
+        { coord: { x: 1, y: 1 }, type: NeutralSquareType.BLANK },
+        { coord: { x: 2, y: 1 }, type: NeutralSquareType.BLANK },
+      ],
+    ];
+
+    const board: BoardState = {
+      grid,
+      size: { width: 3, height: 2 }
+    };
+
+    const player1Visible = Board.getVisibleSquares(board, 1);
+    const player2Visible = Board.getVisibleSquares(board, 2);
+    
+    // Player 1 can see around (0,0)
+    const player1Coords = Array.from(player1Visible).map(coord => `${coord.x},${coord.y}`);
+    expect(player1Coords).toContain('1,0');
+    expect(player1Coords).toContain('0,1');
+    expect(player1Coords).toContain('1,1');
+    
+    // Player 2 can see around (1,0)  
+    const player2Coords = Array.from(player2Visible).map(coord => `${coord.x},${coord.y}`);
+    expect(player2Coords).toContain('0,0');
+    expect(player2Coords).toContain('2,0');
+    expect(player2Coords).toContain('0,1');
+    expect(player2Coords).toContain('1,1');
+    expect(player2Coords).toContain('2,1');
+  });
+});
