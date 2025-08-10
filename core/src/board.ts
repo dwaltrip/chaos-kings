@@ -59,6 +59,47 @@ function *iterPlayerSquares(board: BoardState, playerIndex: number): IterableIte
   }
 }
 
+function getVisibleSquares(board: BoardState, playerIndex: number): Set<Coord> {
+  const visibleCoords = new Set<string>();
+  
+  // Get all 8 neighboring directions (including diagonals)
+  const directions = [
+    { x: -1, y: -1 }, // NW
+    { x:  0, y: -1 }, // N
+    { x:  1, y: -1 }, // NE
+    { x: -1, y:  0 }, // W
+    { x:  1, y:  0 }, // E
+    { x: -1, y:  1 }, // SW
+    { x:  0, y:  1 }, // S
+    { x:  1, y:  1 }, // SE
+  ];
+
+  // For each square owned by the player
+  for (const playerSquare of iterPlayerSquares(board, playerIndex)) {
+    // Check all 8 neighboring squares
+    for (const direction of directions) {
+      const neighborCoord: Coord = {
+        x: playerSquare.coord.x + direction.x,
+        y: playerSquare.coord.y + direction.y,
+      };
+      
+      // Only add if the coordinate is valid (within board bounds)
+      if (isCoordValid(board, neighborCoord)) {
+        visibleCoords.add(`${neighborCoord.x},${neighborCoord.y}`);
+      }
+    }
+  }
+  
+  // Convert back to Set of Coord objects
+  const result = new Set<Coord>();
+  for (const coordString of visibleCoords) {
+    const [x, y] = coordString.split(',').map(Number);
+    result.add({ x, y });
+  }
+  
+  return result;
+}
+
 const Board = {
   canMove,
   getSquare,
@@ -67,6 +108,7 @@ const Board = {
   applyDirection,
   isPlayerSquare,
   iterPlayerSquares,
+  getVisibleSquares,
 };
 
 export { Board };
