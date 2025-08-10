@@ -1,26 +1,29 @@
 import { Board } from '@core/board';
 import { BoardState, GameGrid, PlayerSquareType, NeutralSquareType } from '@core/types';
 
+function blank(x: number, y: number) {
+  return { coord: { x, y }, type: NeutralSquareType.BLANK };
+}
+
+function player(
+  x: number,
+  y: number,
+  { playerIndex, units }: { playerIndex: number; units: number; }
+) {
+  return { coord: { x, y }, type: PlayerSquareType.ARMY, playerIndex, units };
+}
+
+function p1(x: number, y: number, units: number) {
+  return player(x, y, { playerIndex: 1, units });
+}
+
 describe('Board.getVisibleSquares', () => {
   it('should return all 8 neighboring squares for a single player square in center', () => {
     const grid: GameGrid = [
-      [
-        { coord: { x: 0, y: 0 }, type: NeutralSquareType.BLANK },
-        { coord: { x: 1, y: 0 }, type: NeutralSquareType.BLANK },
-        { coord: { x: 2, y: 0 }, type: NeutralSquareType.BLANK },
-      ],
-      [
-        { coord: { x: 0, y: 1 }, type: NeutralSquareType.BLANK },
-        { coord: { x: 1, y: 1 }, type: PlayerSquareType.ARMY, playerIndex: 1, units: 5 },
-        { coord: { x: 2, y: 1 }, type: NeutralSquareType.BLANK },
-      ],
-      [
-        { coord: { x: 0, y: 2 }, type: NeutralSquareType.BLANK },
-        { coord: { x: 1, y: 2 }, type: NeutralSquareType.BLANK },
-        { coord: { x: 2, y: 2 }, type: NeutralSquareType.BLANK },
-      ],
+      [blank(0, 0), blank(1, 0), blank(2, 0)],
+      [blank(0, 1), p1(1, 1, 5), blank(2, 1)],
+      [blank(0, 2), blank(1, 2), blank(2, 2)],
     ];
-
     const board: BoardState = {
       grid,
       size: { width: 3, height: 3 }
