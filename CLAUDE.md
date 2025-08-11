@@ -22,8 +22,14 @@ Hey Claude! My name is Daniel and I'm excited to build with you :)
 - **State**: Zustand (see game-chat store structure)
 - **WebSockets**: `WebSocketService` abstraction working in chat demo
 
-### Shared (`/common`)
-- Shared TypeScript types between frontend/backend
+### Core (`/core`)
+- Pure game domain logic (board state, game rules, etc.)
+- Separate from shared utilities and types
+- Has its own Jest test suite for game logic validation
+
+### Shared (`/common`)  
+- Shared TypeScript types and utilities between frontend/backend
+- Validation, constants, and cross-cutting concerns
 
 ## Development Commands
 
@@ -31,16 +37,23 @@ Hey Claude! My name is Daniel and I'm excited to build with you :)
 - `npm run dev` - Start development server with hot reload
 - `npm run build` - Build TypeScript to JS (Use this to check for TS errors)
 - `npm run start` - Run built JS server
+- `npm test` / `npm run test:watch` - Run Jest tests
+- `npm run migrate:latest` - Run database migrations
 
 ### Frontend  
 - `npm run dev` - Start Vite dev server
 - `npm run build` - Build for production (Use this to check for TS errors)
 
+### Core
+- `npm test` / `npm run test:watch` - Run Jest tests for game logic
+- `npm run build` - Build TypeScript to JS
+
 ## Code Conventions and Style
 
 ### General
 - All Javascript and Typescript should use 2-space indentation.
-- Files should always have a blank line at the end.
+- **ALWAYS** use kebab-case for filenames (e.g., `game-page.tsx`, not `GamePage.tsx`)
+- Files should **ALWAYS** have a single blank line at the end.
 
 ### Frontend Pages
 - Each page gets own directory: `frontend/src/pages/$page_name/`
@@ -49,8 +62,7 @@ Hey Claude! My name is Daniel and I'm excited to build with you :)
 
 ### Import/Export Patterns
 - Use `@/path/to/file` for all local imports (both FE and BE)
-- Prefer kebab-casing for filenames
-- Place all exports at the end of files using named export syntax: `export { ... }`
+- **ALWAYS** place all exports at the end of files using named export syntax: `export { ... }`
 
 ## Comments
 
