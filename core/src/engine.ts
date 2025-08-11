@@ -3,8 +3,33 @@ import { Board } from '@core/board';
 import { isPlayerSquare } from '@core/square';
 
 
-function tick(board: BoardState, ): void {
+function tick(board: BoardState, tickNumber: number): { gameEnded: boolean; winnerPlayerIndex?: number } {
+  // General production: +1 unit every 4 ticks (1 per second at 250ms)
+  if (tickNumber % 4 === 0) {
+    applyCityProduction(board);
+  }
   
+  // Army production: +1 unit every 100 ticks (25 seconds at 250ms)  
+  if (tickNumber % 100 === 0) {
+    applyTroopProduction(board);
+  }
+  
+  // Check for victory condition (no generals remaining for a player)
+  const playersWithGenerals = new Set<number>();
+  for (let row of board.grid) {
+    for (let square of row) {
+      if (square.type === 'GENERAL') {
+        playersWithGenerals.add(square.playerIndex);
+      }
+    }
+  }
+  
+  if (playersWithGenerals.size === 1) {
+    const winnerPlayerIndex = Array.from(playersWithGenerals)[0];
+    return { gameEnded: true, winnerPlayerIndex };
+  }
+  
+  return { gameEnded: false };
 }
 
 // ----------------------------------------------------------------------------
@@ -95,5 +120,5 @@ function applyMovement(board: BoardState, sourceCoord: Coord, movement: Movement
   }
 }
 
-export { tick }
+export { tick, applyMovement }
 
