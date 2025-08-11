@@ -14,26 +14,24 @@ After reviewing existing specs and codebase, we have strong foundational infrast
 - **Core Game Engine**: Board utilities, movement validation, game state types
 - **Authentication**: Full user system with session management
 
-### Game Design Confirmed
-**DECISION MADE**: We are building a **Generals.io-style game** with:
+### Game Design
+We are building a **Generals.io-style game** with:
 - Territory control with armies and unit counts
 - Capturing enemy generals converts all their territory
 - Turn-based movement with army splitting
-- Current `/core` package is already built for this
-
-*Note: The Grid Collection Game spec (`grid-game-spec-v3.md`) was for a different simpler game prototype and is not relevant to this project.*
+- Current `/core` package is already built for this. This is where all code relate dto core game logic and mechanics should live.
 
 ## Minimal Implementation Plan
 
 ### Phase 1: Game Loop Foundation (2-3 hours)
 **Backend Components:**
-- Create `GameServer` class implementing the tick-based architecture from spec
+- Create `GameServer` class implementing the tick-based architecture
 - Build `GameCoordinator` integration with existing matchmaking
 - Add WebSocket domain handler for `gameplay` messages
 - Implement basic game state broadcasting
 
 **Core Tasks:**
-1. Create `game-server.ts` with simplified tick loop (100ms intervals)
+1. Create `game-server.ts` with simplified tick loop (250ms intervals)
 2. Create `gameplay-ws-api.ts` domain handler
 3. Wire matchmaking to spawn game instances
 4. Basic game state synchronization (no game logic yet)
@@ -71,25 +69,33 @@ After reviewing existing specs and codebase, we have strong foundational infrast
 // Client → Server
 {
   domain: 'gameplay',
-  type: 'move',
-  payload: { from: Coord, direction: Movement }
+  type: 'move_request',
+  payload: { direction: Movement }
 }
 
 // Server → Client  
 {
   domain: 'gameplay',
-  type: 'game_state',
+  type: 'game_state_update',
   payload: { tick: number, board: BoardState, players: PlayerInfo[] }
+}
+
+// Server → Client (game start)
+{
+  domain: 'gameplay', 
+  type: 'game_started',
+  payload: { gameId: string, playerMapping: {playerId: string, playerIndex: number}[] }
 }
 ```
 
 ### Minimal Game Flow
 1. **Matchmaking**: Use existing service to match 2 players
-2. **Game Start**: Create `GameServer` instance, broadcast initial state
-3. **Game Loop**: 100ms ticks processing queued moves
-4. **Move Processing**: Validate → Apply → Broadcast new state
-5. **Win Detection**: Check for general capture after each move
-6. **Game End**: Broadcast winner, cleanup resources
+2. **Game Creation**: Create `GameServer` instance, send players to gameplay page
+3. **Game Start**: Brief delay (few seconds), then start tick loop
+4. **Game Loop**: 250ms ticks processing queued moves
+5. **Move Processing**: Queue moves → Process on tick → Broadcast state
+6. **Win Detection**: Immediate game stop when general captured
+7. **Game End**: Broadcast winner, cleanup resources
 
 ### Integration Points
 
@@ -111,18 +117,25 @@ After reviewing existing specs and codebase, we have strong foundational infrast
 
 1. **Server-Authoritative**: Full state sent each tick (< 10KB for 2 players)
 2. **No Client Prediction**: Display last received state only
-3. **Tick Rate**: 100ms (10 ticks/second) for responsive feel
+3. **Tick Rate**: 250ms (4 ticks/second) for move rate and production timing
 4. **Game Type**: Generals-style leveraging existing core engine
 5. **Player Count**: Start with 2 players (already configured)
 6. **Board Size**: Start small (10x10) for easier debugging
+7. **Move System**: Queued moves with high cap (~few hundred per player)
+8. **Global Timer**: One timer for all games to maintain consistency
 
-## Major Decisions Still Needed
+## ✅ Major Decisions Resolved
 
-1. **Game Initialization**: How are starting positions assigned?
-2. **Board Generation**: Random vs fixed starting layouts?
-3. **Move Timing**: All moves processed simultaneously per tick?
-4. **Reconnection**: Handle or ignore disconnected players?
-5. **Game Persistence**: Save game history or just final results?
+1. **Game Initialization**: Random general placement on blank squares using existing `generateRandomMap()`
+2. **Board Generation**: `generateRandomMap` also generates random mountain tiles
+3. **Move Timing**: Queued moves processed once per 250ms tick (4 moves/sec max)
+4. **Reconnection**: Ignore for MVP (happy path only) 
+5. **Game Persistence**: Final results only for MVP
+6. **Move Queue**: High cap (~few hundred) to prevent hitting limits in practice
+7. **Invalid Moves**: Skip silently, no error messages to client
+8. **Game Start**: Few second delay after matchmaking before tick loop begins
+9. **Victory Condition**: Immediate game stop when general captured
+10. **WebSocket Typing**: Use naming conventions (MoveRequest vs GameStateUpdate) to distinguish direction
 
 ## Key Context for Next Implementation Session
 
@@ -137,13 +150,18 @@ After reviewing existing specs and codebase, we have strong foundational infrast
 - WebSocket domain system uses `{ domain: 'X', type: 'Y', payload: {...} }` structure  
 - Game state needs to bridge between database persistence and realtime sync
 - Frontend uses Zustand stores for state management
+- Map generation exists at `core/src/map/generate-grid.ts` with `generateRandomMap()`
+- Core engine has movement/combat logic but empty `tick()` function to implement
+- Player indices currently 1-based in map generation (minor fix needed)
 
-### Generals.io Game Rules to Implement
-- Each player starts with 1 general (25 units) on random square
-- Cities spawn 1 unit every 2 ticks, armies spawn 1 every 2 ticks  
+### Generals.io Game Rules for MVP
+- Each player starts with 1 general (1 unit initially) on random blank square
+- **NO CITIES in MVP** - only generals, armies, blank squares, and mountains
+- Generals produce 1 unit every 4 ticks (1 per second at 250ms tick rate)
+- All player land produces 1 unit every 100 ticks (25 seconds at 250ms tick rate)
 - Move splits army: leave 1 unit, move rest to adjacent square
 - Combat: attacking army must have more units than defending square
-- Capture enemy general → convert all their territory to yours
+- Capture enemy general → convert all their territory to yours → immediate win
 - Fog of war: only see squares adjacent to your territory
 
 ### Quick Start Development Order
@@ -171,16 +189,54 @@ After reviewing existing specs and codebase, we have strong foundational infrast
 
 ## Next Steps
 
-1. **Clarify Game Choice**: Confirm Generals-style vs Grid Collection
-2. **Start Phase 1**: Build game server foundation
-3. **Iterate Rapidly**: Get basic version working end-to-end
-4. **Test with 2 Browser Windows**: Validate multiplayer sync
+1. **✅ Game design confirmed**: Generals.io-style game (the other game was spec removed)
+2. **Create Gameplay WebSocket Messages**: Define types in `common/types/gameplay.ts` following existing patterns
+3. **Start Phase 1**: Build game server foundation with 250ms tick loop
+4. **Iterate Rapidly**: Get basic version working end-to-end
+5. **Test with 2 Browser Windows**: Validate multiplayer sync
 
-## Effort Estimate
+## Detailed Technical Specifications
 
-**Total: 7-10 hours for fully working 2-player prototype**
-- Phase 1: 2-3 hours
-- Phase 2: 3-4 hours  
-- Phase 3: 2-3 hours
+### Timing System
+- **Movement rate**: 4 moves per second or at most 1 move per 250 ms. Move rate should be configurable.
+- **Global tick rate**: For 4 moves/second, the global tick would need to be at most 250ms.
+- **General production**: Once per second (for 250 ms tick, once every 4 ticks)
+- **Land production**: Every 25 seconds (for 250 ms tick, once every 100 ticks)
+- **Game start delay**: ~3 seconds after player matching
 
-This represents a minimal but complete implementation that can be expanded incrementally once the core loop is working.
+### Initital Board Composition (MVP)
+- **Size**: small 10x10 grid to start (configurable via settings / config)
+- **Elements**: Generals (1 per player), blank squares, mountains only
+- **No cities, neutral cities, or other structures**
+- **Generals start with 1 unit each**
+- **Army / player-owned land tiles**: As players move on the map, they will accumulate tiles.
+
+### Movement System
+- **Queue-based**: Moves queued immediately, processed on tick boundary
+- **Rate limiting**: Natural limit of 4 moves/second due to tick rate
+- **Queue capacity**: High limit (~few hundred moves) to avoid practical limits
+- **Invalid move handling**: Skip silently, continue processing queue
+
+### Victory Conditions
+- **Win condition**: Capture enemy general
+- **Territory conversion**: All enemy land becomes yours when general captured
+- **Game end**: Immediate stop when victory achieved
+
+### WebSocket Architecture
+- **Domain**: `gameplay` following existing chat-demo pattern
+- **Message types**: Use directional naming (Request vs Update suffixes)
+- **Player identification**: Server sends full player mapping (playerId → playerIndex)
+- **State synchronization**: Full board state broadcast each tick
+
+---
+
+## Things we are **NOT** implementing for initial MVP
+- Fog of war
+- Client reconnection
+- Neutral cities
+- Optimistic rendering of player's own moves (only render game state that the server sends up)
+- Automated testing
+- Thorough error handling
+- Logging
+- Perf monitoring
+- Other similar infrastructure important for a robust production-ready game
