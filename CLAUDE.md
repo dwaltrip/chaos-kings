@@ -6,6 +6,14 @@ Hey Claude! My name is Daniel and I'm excited to build with you :)
 * Multiplayer web game w/ soft realtime gampelay (a few moves a second)
 * This project is in early prototype phase.
 
+### Game Design - (Generals.io Style Game)
+* **Territory Expansion**: Players start with a general and expand by capturing neutral tiles and enemy territory
+* **Army Movement**: Move armies between adjacent tiles to attack/defend; larger armies defeat smaller ones
+* **Fog of War**: Players only see tiles they own or are adjacent to; enemy movements hidden until revealed
+* **Army Growth**: Cities and the general produce additional troops over time (every ~0.5-1 seconds)
+* **Victory**: Win by capturing the enemy general or controlling the most territory when time runs out
+* **Gameplay Flow**: Real-time with moves executed at regular intervals; currently targeting 1v1 matches
+
 ## Architecture
 
 ### Backend (`/backend`)
