@@ -85,3 +85,4 @@ const GameMatchmakingWsAPI = new DomainAPI<GameMatchmakingMessageType>(GAME_MATC
 });
 
 export { GameMatchmakingWsAPI };
+

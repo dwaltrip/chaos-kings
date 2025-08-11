@@ -73,3 +73,4 @@ async function userRoutes(fastify: FastifyInstance) {
 }
 
 export { userRoutes };
+

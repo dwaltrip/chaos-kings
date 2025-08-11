@@ -70,3 +70,4 @@ function GameChat({ game }: { game: Game }) {
 }
 
 export { GameChat };
+

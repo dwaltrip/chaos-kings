@@ -39,5 +39,8 @@ class UserService {
   }
 }
 
-export const userService = new UserService();
+const userService = new UserService();
+
+export { userService };
 export type { User };
+

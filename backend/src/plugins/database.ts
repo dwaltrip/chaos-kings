@@ -9,3 +9,4 @@ const databasePlugin = fp(function(fastify: FastifyInstance) {
 });
 
 export { databasePlugin };
+

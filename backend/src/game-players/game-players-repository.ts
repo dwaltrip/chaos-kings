@@ -66,3 +66,4 @@ class GamePlayersRepository {
 }
 
 export { GamePlayersRepository, GamePlayer, NewGamePlayer, CreateGamePlayerData };
+

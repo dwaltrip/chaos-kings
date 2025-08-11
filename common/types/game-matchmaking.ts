@@ -47,3 +47,4 @@ export {
   type GameMatchmaking,
   type GameMatchmakingMessageType
 };
+

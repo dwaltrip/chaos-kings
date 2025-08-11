@@ -18,3 +18,4 @@ interface GamesTable {
 export {
   GamesTable,
 };
+

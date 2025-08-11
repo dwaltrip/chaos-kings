@@ -35,3 +35,4 @@ function removeFromLocalStorage(key: string): void {
 const storageKeys = STORAGE_KEYS;
 
 export { saveToLocalStorage, loadFromLocalStorage, removeFromLocalStorage, storageKeys };
+

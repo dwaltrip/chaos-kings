@@ -36,7 +36,7 @@ async function generateUniqueUsername(repository: UserRepository): Promise<strin
   return fallbackUsername;
 }
 
-export async function autoCreateUser(dbInstance?: Kysely<Database>): Promise<AutoCreateResult> {
+async function autoCreateUser(dbInstance?: Kysely<Database>): Promise<AutoCreateResult> {
   const userRepository = new UserRepository(dbInstance);
   const username = await generateUniqueUsername(userRepository);
   const userKey = crypto.randomUUID();
@@ -52,3 +52,6 @@ export async function autoCreateUser(dbInstance?: Kysely<Database>): Promise<Aut
     isNewUser: true
   };
 }
+
+export { autoCreateUser };
+

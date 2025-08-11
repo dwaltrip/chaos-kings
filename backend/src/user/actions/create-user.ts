@@ -7,7 +7,7 @@ import { validateUsername } from '@common/validation/username';
 type User = Selectable<UsersTable>;
 type NewUser = Insertable<UsersTable>;
 
-export async function createUser(username: string, dbInstance?: Kysely<Database>): Promise<User> {
+async function createUser(username: string, dbInstance?: Kysely<Database>): Promise<User> {
   const validation = validateUsername(username);
   if (!validation.isValid) {
     throw new Error(validation.error);
@@ -22,3 +22,6 @@ export async function createUser(username: string, dbInstance?: Kysely<Database>
   const userRepository = new UserRepository(dbInstance);
   return await userRepository.create(newUser);
 }
+
+export { createUser };
+

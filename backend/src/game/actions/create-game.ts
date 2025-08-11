@@ -16,7 +16,7 @@ interface CreateGameOptions {
   playerIds: number[];
 }
 
-export async function createGame(options: CreateGameOptions): Promise<Game> {
+async function createGame(options: CreateGameOptions): Promise<Game> {
   const { playerIds = [] } = options;
   const playerCount = Math.max(playerIds.length, 2);
   invariant(playerCount <= PLAYER_COLORS.length, `Not enough colors for ${playerCount} players`);
@@ -57,3 +57,6 @@ export async function createGame(options: CreateGameOptions): Promise<Game> {
   await gamePlayersRepository.bulkCreate(gamePlayersData);
   return game;
 }
+
+export { createGame };
+

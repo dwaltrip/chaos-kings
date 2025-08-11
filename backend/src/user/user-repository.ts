@@ -62,3 +62,4 @@ class UserRepository {
 }
 
 export { UserRepository };
+

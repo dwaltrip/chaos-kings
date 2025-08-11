@@ -79,3 +79,4 @@ class SessionStore {
 }
 
 export { SessionStore, type SessionData };
+

@@ -11,3 +11,4 @@ async function systemRoutes(fastify: FastifyInstance) {
 }
 
 export { systemRoutes };
+

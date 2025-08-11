@@ -16,3 +16,4 @@ export {
   GamesTable,
   GamePlayersTable,
 };
+

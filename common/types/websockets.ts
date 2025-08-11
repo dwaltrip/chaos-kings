@@ -8,3 +8,4 @@ interface WsMessage {
 }
 
 export type { WsMessage };
+

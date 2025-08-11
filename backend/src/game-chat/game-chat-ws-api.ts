@@ -15,3 +15,4 @@ const GameChatWsAPI = new DomainAPI<GameChatMessageType>('game-chat', {
 });
 
 export { GameChatWsAPI };
+

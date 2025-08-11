@@ -17,3 +17,4 @@ const db = new Kysely<Database>({
 });
 
 export { db };
+

@@ -6,7 +6,7 @@ import { validateUsername } from '@common/validation/username';
 
 type User = Selectable<UsersTable>;
 
-export async function updateUsername(userId: number, newUsername: string, dbInstance?: Kysely<Database>): Promise<User> {
+async function updateUsername(userId: number, newUsername: string, dbInstance?: Kysely<Database>): Promise<User> {
   const validation = validateUsername(newUsername);
   if (!validation.isValid) {
     throw new Error(validation.error);
@@ -30,3 +30,6 @@ export async function updateUsername(userId: number, newUsername: string, dbInst
     throw error;
   }
 }
+
+export { updateUsername };
+

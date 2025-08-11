@@ -96,3 +96,4 @@ function applyMovement(board: BoardState, sourceCoord: Coord, movement: Movement
 }
 
 export { tick }
+

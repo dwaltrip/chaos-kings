@@ -103,3 +103,4 @@ function formatTime(seconds: number) {
 };
 
 export { JoinGamePage };
+

@@ -31,3 +31,4 @@ async function gameRoutes(fastify: FastifyInstance) {
 }
 
 export { gameRoutes };
+

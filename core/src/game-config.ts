@@ -9,3 +9,4 @@ interface GameConfig {
 }
 
 export { type GameConfig};
+

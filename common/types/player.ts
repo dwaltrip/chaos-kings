@@ -20,3 +20,4 @@ interface Player {
 
 // export { Player, PlayerColor, getPlayerColorInHex };
 export type { Player, GamePlayerStatus, PlayerIndex };
+

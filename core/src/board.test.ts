@@ -157,3 +157,4 @@ describe('Board.getVisibleSquares', () => {
     expect(player2Coords).toContain('2,1');
   });
 });
+

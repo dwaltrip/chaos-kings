@@ -15,3 +15,4 @@ function generateSessionId(): string {
 }
 
 export { SESSION_COOKIE_OPTIONS, SESSION_COOKIE_NAME, generateSessionId };
+

@@ -6,3 +6,4 @@ declare module 'fastify' {
     currentUser?: User;
   }
 }
+

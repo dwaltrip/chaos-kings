@@ -26,3 +26,4 @@ function destroyClient() {
 }
 
 export { getClient, destroyClient };
+
