@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router';
 
-import type { GameWithPlayers, GetGameResponse } from '@common/types/games';
-import { apiService } from '@/services/api-service';
+import type { GameWithPlayers } from '@common/types/games';
 import { userStore } from '@/stores/user-store';
+import { loadGame as apiLoadGame, GameNotFoundError } from '@/pages/game/games-api';
 import { GameChat } from '@/pages/game/game-chat/game-chat';
 import { GameUI } from '@/game-ui/game-ui';
 
@@ -24,21 +24,15 @@ function GamePage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiService.get(`/api/games/${id}`);
-      
-      if (response.status === 404) {
+      const game = await apiLoadGame(id);
+      setGame(game);
+    }
+    catch (err) {
+      if (err instanceof GameNotFoundError) {
         setError('Game not found');
-        return;
+      } else {
+        setError('Failed to load game');
       }
-      
-      if (!response.ok) {
-        throw new Error('Failed to load game');
-      }
-      
-      const data: GetGameResponse = await response.json();
-      setGame(data.game);
-    } catch (err) {
-      setError('Failed to load game');
       console.error('Error loading game:', err);
     } finally {
       setLoading(false);
@@ -48,20 +42,9 @@ function GamePage() {
   if (!user) {
     return <Navigate to="/" replace />;
   }
-
-  if (!gameId) {
-    return (
-      <div>
-        <h1>Error</h1>
-        <p>Invalid game room. Please check the URL.</p>
-      </div>
-    );
-  }
-
   if (loading) {
     return <div className="text-center">Loading game...</div>;
   }
-
   if (error) {
     return (
       <div className="text-center text-red-600">
@@ -70,7 +53,6 @@ function GamePage() {
       </div>
     );
   }
-
   if (!game) {
     return (
       <div className="text-center">
