@@ -19,7 +19,7 @@ Hey Claude! My name is Daniel and I'm excited to build with you :)
 - React 19 + TypeScript + Vite
 - **Styling**: Tailwind CSS v4
 - **Routing**: React Router v7
-- **State**: Zustand (see chat demo store structure)
+- **State**: Zustand (see game-chat store structure)
 - **WebSockets**: `WebSocketService` abstraction working in chat demo
 
 ### Shared (`/common`)
@@ -40,15 +40,17 @@ Hey Claude! My name is Daniel and I'm excited to build with you :)
 
 ### General
 - All Javascript and Typescript should use 2-space indentation.
+- Files should always have a blank line at the end.
 
 ### Frontend Pages
 - Each page gets own directory: `frontend/src/pages/$page_name/`
 - Page-specific components and CSS stored in page directory
 - Reusable components in shared UI components dir outside `/pages`
 
-### Import Patterns
+### Import/Export Patterns
 - Use `@/path/to/file` for all local imports (both FE and BE)
 - Prefer kebab-casing for filenames
+- Place all exports at the end of files using named export syntax: `export { ... }`
 
 ## Comments
 
