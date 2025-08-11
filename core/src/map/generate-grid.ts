@@ -114,7 +114,7 @@ function addRandomGenerals(grid: GameGrid, count: number): PlayerSquare[] {
     }
 
     const square = grid[coord.y][coord.x];
-    const generalSquare = convertToGeneral(square, i+1);
+    const generalSquare = convertToGeneral(square, i);
     grid[coord.y][coord.x] = generalSquare;
     generals.push(generalSquare);
   }

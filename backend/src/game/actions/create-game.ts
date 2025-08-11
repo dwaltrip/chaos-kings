@@ -25,8 +25,8 @@ async function createGame(options: CreateGameOptions): Promise<Game> {
 
   const playerIndexToColor: GameConfig['playerIndexToColor'] = {};
   for (let i = 0; i < playerCount; i++) {
-    // Map player indices (1-based) to colors
-    playerIndexToColor[(i + 1).toString()] = PLAYER_COLORS[i];
+    // Map player indices (0-based) to colors
+    playerIndexToColor[i.toString()] = PLAYER_COLORS[i];
   }
   
   const newGame: NewGame = {
@@ -51,7 +51,7 @@ async function createGame(options: CreateGameOptions): Promise<Game> {
   const gamePlayersData = playerIds.map((playerId, index) => ({
     game_id: game.id,
     player_id: playerId,
-    player_index: index + 1, // 1-based indexing
+    player_index: index, // 0-based indexing
   }));
   
   await gamePlayersRepository.bulkCreate(gamePlayersData);
