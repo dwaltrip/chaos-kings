@@ -6,6 +6,11 @@ import {
 } from '@common/types/game-matchmaking';
 import { getMatchmakingService } from '@/game-matchmaking/matchmaking-service';
 import { MATCHMAKING_ROOM_NAME } from '@common/constants/matchmaking';
+import { getGameCoordinator } from '@/gameplay/game-coordinator';
+import { addUserToGame } from '@/gameplay/gameplay-ws-api';
+import { getGame } from '@/game/actions/get-game';
+import { getGlobalWebSocketManager } from '@/websocket/global-manager';
+import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
 
 // -----------------------------------------------------------------------
 // TODO: Message types can be client -> server and / or server -> client.
@@ -32,6 +37,15 @@ const GameMatchmakingWsAPI = new DomainAPI<GameMatchmakingMessageType>(GAME_MATC
         type: 'game-ready',
         payload: { gameId: game.gameId }
       });
+
+      // Spawn game instance after 3-second delay
+      setTimeout(async () => {
+        try {
+          await spawnGameInstance(game.gameId);
+        } catch (error) {
+          console.error(`Failed to spawn game instance for game ${game.gameId}:`, error);
+        }
+      }, 3000);
     }
     
     const queueStatus = await matchmakingService.getQueueStatus();
@@ -83,6 +97,42 @@ const GameMatchmakingWsAPI = new DomainAPI<GameMatchmakingMessageType>(GAME_MATC
     // See the TODO at the top of this file.
   },
 });
+
+async function spawnGameInstance(gameId: number): Promise<void> {
+  console.log(`[MatchmakingWsAPI] Spawning game instance for game ${gameId}`);
+  
+  // Get game data with players
+  const gameData = await getGame(gameId);
+  if (!gameData) {
+    throw new Error(`Game ${gameId} not found when spawning instance`);
+  }
+
+  // Add game to coordinator (this creates the GameServer instance)
+  const gameCoordinator = getGameCoordinator();
+  gameCoordinator.addGame(gameId);
+
+  // Set up user-game mappings for WebSocket API
+  gameData.players.forEach((player) => {
+    addUserToGame(player.player_id.toString(), gameId);
+  });
+
+  // Transition players from matchmaking room to game room
+  const wsManager = getGlobalWebSocketManager();
+  const roomName = `gameplay-${gameId}`;
+  
+  // TODO: Need to transition players from matchmaking room to game room
+  // For now, we'll just let GameServer handle the game-started broadcast
+  // The client will need to join the new room when it receives the game-started message
+
+  // Get the GameServer instance and start the game
+  const gameServer = gameCoordinator.getGame(gameId);
+  if (gameServer) {
+    gameServer.startGame();
+    console.log(`[MatchmakingWsAPI] Game ${gameId} started successfully`);
+  } else {
+    console.error(`[MatchmakingWsAPI] GameServer not found after adding game ${gameId}`);
+  }
+}
 
 export { GameMatchmakingWsAPI };
 

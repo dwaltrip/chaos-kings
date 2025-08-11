@@ -179,6 +179,29 @@ class WebSocketManager {
       }
     });
   }
+
+  public serverBroadcastToRoom(roomId: string, data: WsMessage) {
+    const room = this.rooms.get(roomId);
+    if (!room) {
+      console.log(`[WebSocketManager] Cannot broadcast to room ${roomId}: room does not exist`);
+      console.log(`[WebSocketManager] Available rooms:`, Array.from(this.rooms.keys()));
+      return;
+    }
+
+    console.log(`[WebSocketManager] Broadcasting to room ${roomId} with ${room.size} clients:`, data);
+    const dataStr = JSON.stringify(data);
+    room.forEach(client => {
+      if (client.ws.readyState === WebSocket.OPEN) {
+        try {
+          client.ws.send(dataStr);
+        } catch (error) {
+          const userStr = client.user ? `${client.user.username || client.user.id}` : 'anonymous';
+          console.error(`[WebSocketManager] Failed to send to "${userStr}" in room ${roomId}:`, error);
+        }
+      } 
+    });
+    console.log(`[WebSocketManager] Broadcast complete for room ${roomId}`);
+  }
 }
 
 function validateMessage(data: unknown): WsMessage {

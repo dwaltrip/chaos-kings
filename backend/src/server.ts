@@ -14,6 +14,9 @@ import {
 import { registerDomainAPI } from '@/websocket/api';
 import { GameChatWsAPI } from '@/game-chat/game-chat-ws-api';
 import { GameMatchmakingWsAPI } from '@/game-matchmaking/game-matchmaking-ws-api';
+import { GameplayWsAPI } from '@/gameplay/gameplay-ws-api';
+import { initializeGameCoordinator } from '@/gameplay/game-coordinator';
+import { setGlobalWebSocketManager } from '@/websocket/global-manager';
 
 const PORT = 3131;
 
@@ -37,8 +40,13 @@ fastify.register(gameRoutes, { prefix: '/api' });
 
 // Initialize WebSocket manager and register domain APIs
 const wsManager = new WebSocketManager();
+setGlobalWebSocketManager(wsManager);
 registerDomainAPI(GameChatWsAPI);
 registerDomainAPI(GameMatchmakingWsAPI);
+registerDomainAPI(GameplayWsAPI);
+
+// Initialize game coordinator
+initializeGameCoordinator();
 
 // WebSocket route
 fastify.register(async function (fastify) {
