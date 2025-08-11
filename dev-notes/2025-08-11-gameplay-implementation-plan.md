@@ -412,3 +412,40 @@ GameEnded { winner: number, reason: string }
 ## Reminder
 
 Assume the 95% happy path! This is a prototype :) Don't over-engineer things.
+
+---
+
+## 🎯 Implementation Progress Log
+
+### ✅ **Phase 0 + 1 Complete** (2025-08-11)
+
+**Foundation Fixes:**
+- Fixed player index inconsistency: converted entire codebase to 0-based indexing
+- Updated `addRandomGenerals()` in `core/src/map/generate-grid.ts:117` 
+- Fixed `gamePlayersData` mapping and `playerIndexToColor` in `create-game.ts`
+- Added tests confirming map generation produces playerIndex 0,1 instead of 1,2
+- **Committed:** Fix player index inconsistency - convert to 0-based indexing
+
+**Core Game Engine:**
+- Implemented `tick()` function in `core/src/engine.ts` with production logic:
+  - General production: +1 unit every 4 ticks (1 per second at 250ms)
+  - Army production: +1 unit every 100 ticks (25 seconds)
+  - Victory condition detection when only one general remains
+- Added comprehensive unit tests for production timing and victory detection
+- Exported `applyMovement` function for server integration
+- **Committed:** Implement core game engine tick function with production logic
+
+### 🚨 **Issues to Address in Next Phases:**
+
+1. **Combat Logic Bug**: Failed attacks set `source.units = 0` in `applyMovement()` - might leave empty army squares
+2. **Victory Logic Gap**: Current detection counts generals, but doesn't verify territory conversion completed correctly
+3. **Color Mapping**: `playerIndexToColor` uses string keys but playerIndex is numeric - verify frontend compatibility
+4. **Game State Serialization**: Need strategy for BoardState ↔ database persistence
+5. **Move Queue Design**: Clarify per-player vs global queues, invalid move handling
+
+### 📋 **Next: Phase 2 - Game Server & WebSocket Integration**
+- Create `GameServer` class with tick management
+- Add `gameplay` WebSocket domain handler  
+- Create message types in `common/types/gameplay.ts`
+- Wire matchmaking completion to spawn game instances
+- Add global 250ms tick timer to main server process
