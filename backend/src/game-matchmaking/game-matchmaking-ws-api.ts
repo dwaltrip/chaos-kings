@@ -116,13 +116,11 @@ async function spawnGameInstance(gameId: number): Promise<void> {
     addUserToGame(player.player_id.toString(), gameId);
   });
 
-  // Transition players from matchmaking room to game room
+  // Remove players from matchmaking room (they'll join gameplay room from frontend)
   const wsManager = getGlobalWebSocketManager();
-  const roomName = `gameplay-${gameId}`;
-  
-  // TODO: Need to transition players from matchmaking room to game room
-  // For now, we'll just let GameServer handle the game-started broadcast
-  // The client will need to join the new room when it receives the game-started message
+  gameData.players.forEach((player) => {
+    wsManager.removeUserFromRoom(player.player_id.toString(), 'matchmaking');
+  });
 
   // Get the GameServer instance and start the game
   const gameServer = gameCoordinator.getGame(gameId);

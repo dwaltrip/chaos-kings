@@ -202,6 +202,15 @@ class WebSocketManager {
     });
     console.log(`[WebSocketManager] Broadcast complete for room ${roomId}`);
   }
+
+  public removeUserFromRoom(userId: string, roomId: string): void {
+    this.clientStore.forEach(client => {
+      if (client.user && client.user.id.toString() === userId && client.currentRoom === roomId) {
+        this.leaveRoom(client, roomId);
+        console.log(`[WebSocketManager] Removed user ${userId} from room ${roomId}`);
+      }
+    });
+  }
 }
 
 function validateMessage(data: unknown): WsMessage {

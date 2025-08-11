@@ -5,6 +5,7 @@ import { getGame } from '@/game/actions/get-game';
 import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
 import type { GameWithPlayers } from '@common/types/games';
 import { getGlobalWebSocketManager } from '@/websocket/global-manager';
+import { removeUserFromGame } from './gameplay-ws-api';
 
 export class GameServer {
   private gameId: number;
@@ -14,6 +15,7 @@ export class GameServer {
   private playerMapping: Map<string, number> = new Map(); // userId -> playerIndex
   private gameStarted: boolean = false;
   private gameEnded: boolean = false;
+  private initialized: boolean = false;
   
   constructor(gameId: number) {
     this.gameId = gameId;
@@ -32,6 +34,7 @@ export class GameServer {
       this.initializeGameState(gameData);
       this.setupPlayerMappings(gameData);
       this.initializePlayerQueues();
+      this.initialized = true;
       
       console.log(`[GameServer] Game ${this.gameId} initialized with ${gameData.players.length} players`);
     } catch (error) {
@@ -71,7 +74,7 @@ export class GameServer {
   }
 
   tick(): boolean {
-    if (!this.gameState || this.gameEnded) {
+    if (!this.initialized || !this.gameState || this.gameEnded) {
       return this.gameEnded;
     }
 
@@ -198,7 +201,7 @@ export class GameServer {
   }
 
   startGame(): void {
-    if (this.gameStarted || !this.gameState) {
+    if (this.gameStarted || !this.initialized || !this.gameState) {
       return;
     }
 
@@ -245,6 +248,12 @@ export class GameServer {
 
   cleanup(): void {
     console.log(`[GameServer] Cleaning up game ${this.gameId}`);
+    
+    // Clean up user-game mappings
+    for (const userId of this.playerMapping.keys()) {
+      removeUserFromGame(userId);
+    }
+    
     this.playerQueues.clear();
     this.gameEnded = true;
   }

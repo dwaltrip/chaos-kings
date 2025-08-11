@@ -34,17 +34,18 @@ Hey Claude! My name is Daniel and I'm excited to build with you :)
 - Pure game domain logic (board state, game rules, etc.)
 - Separate from shared utilities and types
 - Has its own Jest test suite for game logic validation
+- Isn't built directly, just included in BE + FE builds
 
 ### Shared (`/common`)  
 - Shared TypeScript types and utilities between frontend/backend
 - Validation, constants, and cross-cutting concerns
+- Isn't built directly, just included in BE + FE builds
 
 ## Development Commands
 
 ### Backend
-- `npm run dev` - Start development server with hot reload
+- `npm run start` - Start development server with hot reload
 - `npm run build` - Build TypeScript to JS (Use this to check for TS errors)
-- `npm run start` - Run built JS server
 - `npm test` / `npm run test:watch` - Run Jest tests
 - `npm run migrate:latest` - Run database migrations
 
@@ -54,7 +55,6 @@ Hey Claude! My name is Daniel and I'm excited to build with you :)
 
 ### Core
 - `npm test` / `npm run test:watch` - Run Jest tests for game logic
-- `npm run build` - Build TypeScript to JS
 
 ## Code Conventions and Style
 
