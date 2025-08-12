@@ -12,6 +12,7 @@ import { GameplayWsHandler } from '@/pages/game/gameplay/gameplay-ws-handler';
 import { getWebSocketService } from '@/services/websocket-service';
 import { GAMEPLAY_DOMAIN, createJoinRoomMessage, createLeaveRoomMessage } from '@common/types/gameplay';
 import { roomNameForGameplay } from '@common/domains/game/utils';
+import { PlayerColors } from '@/pages/game/player-colors';
 
 function GamePage() {
   const { gameId } = useParams();
@@ -23,6 +24,7 @@ function GamePage() {
   // Gameplay state from store (avoid unstable object selector)
   const boardState = gameplayStore((state) => state.boardState);
   const selectedTile = gameplayStore((state) => state.selectedTile);
+  const playerMapping = gameplayStore((state) => state.playerMapping);
   const { actions } = gameplayStore.getState();
 
   useEffect(() => {
@@ -132,6 +134,7 @@ function GamePage() {
           <span className="font-bold">Game #{game.id}</span>
           <span><strong>Player:</strong> {user.username}</span>
           <span><strong>Status:</strong> {game.status}</span>
+          <PlayerColors game={game} playerMapping={playerMapping} currentUserId={user.id} />
           <span><strong>Created:</strong> {new Date(game.created_at).toLocaleString()}</span>
           <span><strong>Updated:</strong> {new Date(game.updated_at).toLocaleString()}</span>
         </div>
