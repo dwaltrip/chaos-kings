@@ -34,7 +34,7 @@ interface CreateGameResponse {
 }
 
 interface ListGamesResponse {
-  games: Game[];
+  games: GameWithPlayers[];
 }
 
 interface GetGameResponse {

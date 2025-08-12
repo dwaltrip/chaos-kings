@@ -33,7 +33,7 @@ class WebSocketService {
     };
 
     this.ws.onmessage = (event) => {
-      console.log(`[ws-service] WebSocket message received:`, event.data);
+      // console.log(`[ws-service] WebSocket message received:`, event.data);
       try {
         const message = JSON.parse(event.data);
         const wsMessage = message as WsMessage;

@@ -8,14 +8,40 @@ import { Database } from '@/types';
 class GameRepository {
   constructor(private dbInstance: Kysely<Database> = db) {}
 
-  async findAll(): Promise<Game[]> {
+  async findAll(): Promise<(Game & { players: GamePlayer[] })[]> {
     const games = await this.dbInstance
       .selectFrom('games')
       .selectAll()
       .orderBy('created_at', 'desc')
       .execute();
 
-    return games;
+    const gamesWithPlayers = await Promise.all(
+      games.map(async (game) => {
+        const players = await this.dbInstance
+          .selectFrom('game_players')
+          .innerJoin('users', 'users.id', 'game_players.player_id')
+          .select([
+            'game_players.id',
+            'game_players.game_id',
+            'game_players.player_id',
+            'game_players.joined_at',
+            'game_players.status',
+            'game_players.player_index',
+            'game_players.data',
+            'users.username',
+          ])
+          .where('game_players.game_id', '=', game.id)
+          .orderBy('game_players.player_index', 'asc')
+          .execute();
+
+        return {
+          ...game,
+          players: players as GamePlayer[],
+        };
+      })
+    );
+
+    return gamesWithPlayers;
   }
 
   async findById(id: number): Promise<Game | null> {
@@ -73,5 +99,5 @@ class GameRepository {
   }
 }
 
-export { GameRepository };
+export { GameRepository, GamePlayer };
 

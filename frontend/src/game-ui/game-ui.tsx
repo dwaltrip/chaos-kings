@@ -138,11 +138,17 @@ function SquareView({ square, coord, isSelected, onTileSelect } : {
   onTileSelect: (coord: Coord) => void; 
 }) {
   const className = `cell ${square && square.type.toString().toLowerCase()} ${isSelected ? 'selected' : ''}`;
+  
+  const handleClick = () => {
+    console.log(`[DEBUG_TILE_SELECT] Clicked tile at (${coord.x}, ${coord.y})`);
+    onTileSelect(coord);
+  };
+  
   if (!square) {
     throw new Error('Square is null');
   }
   return (
-    <div className={className} onClick={() => onTileSelect(coord)}>
+    <div className={className} onClick={handleClick}>
       {square.type === SquareType.MOUNTAIN && <img src={mountainIcon} />}
     </div>
   );
@@ -178,11 +184,17 @@ function PlayerSquareLayout(
 ) {
   const colorStyle = { backgroundColor: playerIndexToColor(playerIndex) };
   const selectedClass = isSelected ? 'selected' : '';
+  
+  const handleClick = () => {
+    console.log(`[DEBUG_TILE_SELECT] Clicked player square, isSelected: ${isSelected}`);
+    onClick();
+  };
+  
   return (
     <div 
       className={`player-square ${className || ''} ${selectedClass}`} 
       style={colorStyle}
-      onClick={onClick}
+      onClick={handleClick}
     >
       {children}
     </div>

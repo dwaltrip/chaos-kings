@@ -1,14 +1,10 @@
 import type { GameWithPlayers } from '@common/types/games';
+import { getPlayerColor } from '@/utils/player-colors';
 
 interface PlayerColorsProps {
   game: GameWithPlayers;
   playerMapping: { playerId: string; playerIndex: number }[] | null;
   currentUserId: number;
-}
-
-function playerIndexToColor(playerIndex: number): string {
-  const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24'];
-  return colors[playerIndex] || '#777';
 }
 
 function PlayerColors({ game, playerMapping, currentUserId }: PlayerColorsProps) {
@@ -23,7 +19,7 @@ function PlayerColors({ game, playerMapping, currentUserId }: PlayerColorsProps)
         {game.players.map((player) => {
           const mapping = playerMapping?.find(m => m.playerId === player.player_id.toString());
           const playerIndex = mapping?.playerIndex ?? player.player_index;
-          const color = playerIndexToColor(playerIndex);
+          const color = getPlayerColor(playerIndex);
           const isCurrentUser = player.player_id === currentUserId;
           
           return (

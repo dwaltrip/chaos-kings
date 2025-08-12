@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { apiService } from '@/services/api-service';
-import type { Game, ListGamesResponse } from '@common/types/games';
+import type { GameWithPlayers, ListGamesResponse } from '@common/types/games';
+import { GameListPlayerInfo } from '@/pages/games/game-list-player-info';
 
 function GameListPage() {
-  const [games, setGames] = useState<Game[]>([]);
+  const [games, setGames] = useState<GameWithPlayers[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -70,6 +71,7 @@ function GameListPage() {
                 <div>
                   <h3 className="font-semibold">Game #{game.id}</h3>
                   <p className="text-sm text-gray-600">Status: {game.status}</p>
+                  <GameListPlayerInfo players={game.players} />
                 </div>
                 <div className="text-sm text-gray-500">
                   <p>Created: {new Date(game.created_at).toLocaleString()}</p>
