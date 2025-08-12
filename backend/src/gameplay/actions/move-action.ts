@@ -24,5 +24,5 @@ export async function handleMoveRequest(data: Gameplay.MoveRequest): Promise<voi
     return;
   }
 
-  gameServer.queueMove(userId, data.payload.direction, data.payload.fromCoord);
+  gameServer.queueMove(userId, data.payload.sourceCoord, data.payload.direction);
 }

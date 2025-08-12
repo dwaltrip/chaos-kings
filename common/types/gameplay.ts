@@ -14,14 +14,15 @@ type GameplayMessageType = (
 namespace Gameplay {
   export interface MoveRequest extends WsMessage {
     payload: {
+      sourceCoord: Coord;
       direction: Movement;
-      fromCoord?: Coord;
     };
   }
 
   export interface CancelMovesRequest extends WsMessage {
     payload: null;
   }
+
 
   export interface GameStateUpdate extends WsMessage {
     payload: {

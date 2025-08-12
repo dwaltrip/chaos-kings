@@ -6,11 +6,18 @@ import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
 import type { GameWithPlayers } from '@common/types/games';
 import { getGlobalWebSocketManager } from '@/websocket/global-manager';
 import { removeUserFromGame } from './gameplay-ws-api';
+import { Board } from '@core/board';
+import { isPlayerSquare } from '@core/square';
+
+interface QueuedMove {
+  sourceCoord: Coord;
+  movement: Movement;
+}
 
 export class GameServer {
   private gameId: number;
   private gameState: GameState | null = null;
-  private playerQueues: Map<number, Movement[]> = new Map();
+  private playerQueues: Map<number, QueuedMove[]> = new Map();
   private roomName: string;
   private playerMapping: Map<string, number> = new Map(); // userId -> playerIndex
   private gameStarted: boolean = false;
@@ -104,22 +111,37 @@ export class GameServer {
     for (const [playerIndex, moveQueue] of this.playerQueues) {
       if (moveQueue.length === 0) continue;
 
-      const movement = moveQueue.shift()!;
+      const queuedMove = moveQueue.shift()!;
+      const { sourceCoord, movement } = queuedMove;
       
-      // TODO: Implement proper movement logic with source coordinates
-      // For MVP Phase 2, we're just testing the tick system
-      // Phase 3 will implement actual movement with fromCoord selection
-      console.log(`[GameServer] Processing move ${movement} for player ${playerIndex} in game ${this.gameId} (movement not yet implemented)`);
-      
-      /*
       try {
-        // Need to determine source coordinate from current selected tile or army
-        const sourceCoord = { x: 0, y: 0 }; // TODO: implement tile selection
+        // Validate at tick time - deferred validation allows queuing moves from future conquests
+        if (!Board.isCoordValid(this.gameState.board, sourceCoord)) {
+          console.log(`[GameServer] Invalid source coordinate ${sourceCoord.x},${sourceCoord.y} for player ${playerIndex} in game ${this.gameId}`);
+          continue;
+        }
+
+        const sourceSquare = Board.getSquare(this.gameState.board, sourceCoord);
+        
+        // Check if player owns this tile (deferred validation)
+        if (!isPlayerSquare(sourceSquare) || sourceSquare.playerIndex !== playerIndex) {
+          console.log(`[GameServer] Player ${playerIndex} cannot move from ${sourceCoord.x},${sourceCoord.y} - not owned in game ${this.gameId}`);
+          continue;
+        }
+
+        // Check if tile has enough units to move
+        if (sourceSquare.units <= 1) {
+          console.log(`[GameServer] Player ${playerIndex} cannot move from ${sourceCoord.x},${sourceCoord.y} - insufficient units (${sourceSquare.units}) in game ${this.gameId}`);
+          continue;
+        }
+
+        // Apply the movement
+        console.log(`[GameServer] Processing move ${movement} from ${sourceCoord.x},${sourceCoord.y} for player ${playerIndex} in game ${this.gameId}`);
         applyMovement(this.gameState.board, sourceCoord, movement);
+        
       } catch (error) {
-        console.log(`[GameServer] Invalid move for player ${playerIndex} in game ${this.gameId}:`, error);
+        console.log(`[GameServer] Invalid move ${movement} from ${sourceCoord.x},${sourceCoord.y} for player ${playerIndex} in game ${this.gameId}:`, error);
       }
-      */
     }
   }
 
@@ -167,7 +189,7 @@ export class GameServer {
     }
   }
 
-  queueMove(userId: string, movement: Movement, fromCoord?: Coord): void {
+  queueMove(userId: string, sourceCoord: Coord, movement: Movement): void {
     const playerIndex = this.playerMapping.get(userId);
     if (playerIndex === undefined) {
       console.log(`[GameServer] Move request from unknown user ${userId} in game ${this.gameId}`);
@@ -180,10 +202,16 @@ export class GameServer {
       return;
     }
 
-    // TODO: Implement fromCoord selection logic if needed
-    // For MVP, we'll just queue the movement direction
-    queue.push(movement);
-    console.log(`[GameServer] Queued move ${movement} for player ${playerIndex} in game ${this.gameId}, queue length: ${queue.length}`);
+    // Basic validation at queue time - only check bounds, not ownership
+    if (!this.gameState || !Board.isCoordValid(this.gameState.board, sourceCoord)) {
+      console.log(`[GameServer] Invalid coordinates ${sourceCoord.x},${sourceCoord.y} for move request from user ${userId} in game ${this.gameId}`);
+      return;
+    }
+
+    const queuedMove: QueuedMove = { sourceCoord, movement };
+    queue.push(queuedMove);
+    
+    console.log(`[GameServer] Queued move ${movement} from ${sourceCoord.x},${sourceCoord.y} for player ${playerIndex} in game ${this.gameId}, queue length: ${queue.length}`);
   }
 
   clearMoves(userId: string): void {
@@ -199,6 +227,7 @@ export class GameServer {
       console.log(`[GameServer] Cleared move queue for player ${playerIndex} in game ${this.gameId}`);
     }
   }
+
 
   startGame(): void {
     if (this.gameStarted || !this.initialized || !this.gameState) {
