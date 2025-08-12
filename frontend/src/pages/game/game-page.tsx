@@ -2,10 +2,15 @@ import { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router';
 
 import type { GameWithPlayers } from '@common/types/games';
+import type { Coord, Movement } from '@core/types';
 import { userStore } from '@/stores/user-store';
 import { loadGame as apiLoadGame, GameNotFoundError } from '@/pages/game/games-api';
 import { GameChat } from '@/pages/game/game-chat/game-chat';
 import { GameUI } from '@/game-ui/game-ui';
+import { gameplayStore } from '@/pages/game/gameplay/gameplay-store';
+import { GameplayWsHandler } from '@/pages/game/gameplay/gameplay-ws-handler';
+import { getWebSocketService } from '@/services/websocket-service';
+import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
 
 function GamePage() {
   const { gameId } = useParams();
@@ -13,12 +18,61 @@ function GamePage() {
   const [game, setGame] = useState<GameWithPlayers | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Gameplay state from store
+  const { boardState, selectedTile } = gameplayStore((state) => ({
+    boardState: state.boardState,
+    selectedTile: state.selectedTile
+  }));
+  const { actions } = gameplayStore.getState();
 
   useEffect(() => {
     if (gameId) {
       loadGame(gameId);
     }
   }, [gameId]);
+  
+  // Setup gameplay WebSocket integration
+  useEffect(() => {
+    const wsService = getWebSocketService();
+    wsService.addMessageHandler(GAMEPLAY_DOMAIN, GameplayWsHandler);
+    
+    return () => {
+      wsService.removeMessageHandler(GAMEPLAY_DOMAIN, GameplayWsHandler);
+      actions.reset();
+    };
+  }, [actions]);
+  
+  // Input handlers for gameplay
+  const handleTileSelect = (coord: Coord) => {
+    actions.setSelectedTile(coord);
+  };
+  
+  const handleMoveRequest = (direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
+    if (!selectedTile) {
+      console.warn('Cannot move: no tile selected');
+      return;
+    }
+    
+    const wsService = getWebSocketService();
+    wsService.send({
+      domain: GAMEPLAY_DOMAIN,
+      type: 'move-request',
+      payload: {
+        sourceCoord: selectedTile,
+        direction: direction as Movement
+      }
+    });
+  };
+  
+  const handleCancelMoves = () => {
+    const wsService = getWebSocketService();
+    wsService.send({
+      domain: GAMEPLAY_DOMAIN,
+      type: 'cancel-moves-request',
+      payload: null
+    });
+  };
 
   const loadGame = async (id: string) => {
     try {
@@ -79,7 +133,26 @@ function GamePage() {
       </aside>
 
       <main className="game-main">
-        <GameUI game={game} />
+        {boardState ? (
+          <GameUI 
+            boardState={boardState}
+            selectedTile={selectedTile}
+            onTileSelect={handleTileSelect}
+            onMoveRequest={handleMoveRequest}
+            onCancelMoves={handleCancelMoves}
+          />
+        ) : (
+          <GameUI 
+            boardState={{
+              grid: game.config?.startingGrid || [],
+              size: { width: 10, height: 10 }
+            }}
+            selectedTile={null}
+            onTileSelect={() => console.log('No live gameplay yet')}
+            onMoveRequest={() => console.log('No live gameplay yet')}
+            onCancelMoves={() => console.log('No live gameplay yet')}
+          />
+        )}
       </main>
     </div>
   );

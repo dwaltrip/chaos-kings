@@ -57,6 +57,12 @@
   place-items: center;
   background: #fafafa;
   font: 12px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.cell.selected {
+  background: #ffeb3b !important;
+  border: 2px solid #ff9800 !important;
 }
 
 .cell img {
@@ -74,6 +80,12 @@
   width: 100%;
   border: 1px solid #555;
   position: relative;
+  cursor: pointer;
+}
+
+.player-square.selected {
+  border: 3px solid #ff9800 !important;
+  box-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
 }
 
 .square .general-icon .general-img {
