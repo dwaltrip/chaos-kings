@@ -51,8 +51,8 @@ function getGitStats() {
 
 function getCodeStats() {
   try {
-    const tsFiles = execSync('find . -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" | grep -v node_modules | wc -l', { encoding: 'utf8' }).trim();
-    const totalLines = execSync('find . -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" | grep -v node_modules | xargs wc -l | tail -1 | awk "{print \\$1}"', { encoding: 'utf8' }).trim();
+    const tsFiles = execSync('find . -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" | grep -v node_modules | grep -v package-lock.json | wc -l', { encoding: 'utf8' }).trim();
+    const totalLines = execSync('find . -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" | grep -v node_modules | grep -v package-lock.json | xargs wc -l | tail -1 | awk "{print \\$1}"', { encoding: 'utf8' }).trim();
     const testFiles = execSync('find . -name "*.test.ts" -o -name "*.test.tsx" | grep -v node_modules | wc -l', { encoding: 'utf8' }).trim();
     
     return {
@@ -82,6 +82,58 @@ function createProgressBar(value, max, width = 30) {
   return `${colorize(bar, colors.green)} ${Math.round(percentage * 100)}%`;
 }
 
+function getLinesOfCodeOverTime() {
+  try {
+    // Get commits from the past 2 weeks, sampling every 2-3 days
+    const commits = execSync('git log --since="2 weeks ago" --format="%H %cd" --date=short | awk \'NR%3==1\'', { encoding: 'utf8' }).trim();
+    
+    if (!commits) return [];
+    
+    const commitLines = commits.split('\n').slice(0, 7); // Max 7 data points
+    const locData = [];
+    
+    for (const line of commitLines) {
+      const [hash, date] = line.split(' ');
+      try {
+        // Count lines at this specific commit
+        const linesCmd = `git show ${hash} --name-only --format="" | grep -E "\\.(ts|tsx|js|jsx)$" | grep -v node_modules | grep -v package-lock.json | xargs -I {} git show ${hash}:{} 2>/dev/null | wc -l`;
+        const lines = execSync(linesCmd, { encoding: 'utf8' }).trim();
+        locData.push({ date, lines: parseInt(lines) || 0 });
+      } catch (err) {
+        // Skip commits where we can't count lines
+        continue;
+      }
+    }
+    
+    return locData.reverse(); // Chronological order
+  } catch (error) {
+    return [];
+  }
+}
+
+function createSparkline(data, width = 20) {
+  if (data.length < 2) return '━'.repeat(width);
+  
+  const values = data.map(d => d.lines);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  
+  // Unicode block elements for sparkline
+  const chars = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+  
+  let sparkline = '';
+  for (let i = 0; i < width; i++) {
+    const index = Math.floor((i / width) * data.length);
+    const value = values[index] || values[values.length - 1];
+    const normalized = (value - min) / range;
+    const charIndex = Math.floor(normalized * (chars.length - 1));
+    sparkline += chars[charIndex];
+  }
+  
+  return sparkline;
+}
+
 console.log();
 console.log(colorize('╔══════════════════════════════════════════════════════════════╗', colors.bright + colors.cyan));
 console.log(colorize('║              🚀 GENERALS V2 PROGRESS REPORT 🚀              ║', colors.bright + colors.yellow));
@@ -92,6 +144,7 @@ console.log();
 const gitStats = getGitStats();
 const codeStats = getCodeStats();
 const recentCommits = getRecentCommits();
+const locOverTime = getLinesOfCodeOverTime();
 
 // Git Velocity Section
 console.log(colorize('📊 DEVELOPMENT VELOCITY', colors.bright + colors.blue));
@@ -120,6 +173,22 @@ console.log(`📏 Lines of code:         ${colorize(codeStats.lines.toLocaleStri
 console.log(`🧪 Test files:            ${colorize(codeStats.tests.toString(), colors.bright + colors.white)}`);
 console.log(`📊 Productivity:          ${createProgressBar(gitStats.commits2weeks, 120)}`);
 console.log();
+
+// LOC Trend
+if (locOverTime.length > 1) {
+  console.log(colorize('📈 LINES OF CODE TREND (2 weeks)', colors.bright + colors.cyan));
+  console.log('━'.repeat(50));
+  const sparkline = createSparkline(locOverTime, 30);
+  const startLoc = locOverTime[0]?.lines || 0;
+  const endLoc = locOverTime[locOverTime.length - 1]?.lines || 0;
+  const change = endLoc - startLoc;
+  const changeStr = change >= 0 ? `+${change}` : change.toString();
+  const changeColor = change >= 0 ? colors.green : colors.red;
+  
+  console.log(`📊 Trend:                 ${colorize(sparkline, colors.bright + colors.green)}`);
+  console.log(`📈 Growth:                ${colorize(changeStr, colors.bright + changeColor)} lines (${startLoc.toLocaleString()} → ${endLoc.toLocaleString()})`);
+  console.log();
+}
 
 // Features Implemented
 console.log(colorize('🎮 MAJOR FEATURES IMPLEMENTED', colors.bright + colors.yellow));
