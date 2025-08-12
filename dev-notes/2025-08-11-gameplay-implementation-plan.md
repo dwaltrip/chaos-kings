@@ -333,31 +333,51 @@ GameEnded { winner: number, reason: string }
 
 ---
 
-### **Phase 4: Frontend Game Board (2-3 hours)**
-**Goal**: Visual game interface that players can interact with
-- Create game board component using CSS Grid (configurable size, 10x10 for MVP)
-- Add player input system:
-  - Click to select owned tiles
-  - WASD keys to queue moves from selected tile
-  - 'Q' key to cancel all queued moves
-  - Selected tile follows army movement across the map
-- Connect to `gameplay` WebSocket domain 
-- Display current game state, player colors, unit counts, selected tile
-- Handle game start/end states
+### **Phase 4: Frontend Live Integration (2-3 hours)**
+**Goal**: Connect existing GameUI to live gameplay with WebSocket integration and player input
 
-**Key Files**:
-- `frontend/src/pages/game/game-board.tsx` - New game board component
-- `frontend/src/pages/game/gameplay-ws-handler.ts` - New WebSocket handler
-- Extend `frontend/src/pages/game/game-page-store.ts` with actual game state + UI state
-- Update `frontend/src/pages/game/game-page.tsx` to render game board
+**Phase 4 Implementation Tasks:**
 
-**Input System Details**:
-- Click selection: Only allow clicking on player's own tiles
-- Move queuing: WASD from selected tile, validation happens server-side
-- Selected tile tracking: When army moves, update selected tile to destination
-- Queue cancellation: 'Q' key sends cancel_moves message to server
+1. **Adapt GameUI for Live Data** (`frontend/src/game-ui/game-ui.tsx`)
+   - Change props from `GameWithPlayers` to `BoardState` + player info
+   - Fix player indexing bug in `playerIndexToPlayer()` function (line 25)
+   - Add input callbacks for move requests
 
-**Verification**: Full end-to-end gameplay - matchmaking → game → movement → victory
+2. **WebSocket Integration** (game page level - stay board-agnostic)
+   - Create `gameplay-ws-handler.ts` for WebSocket domain connection
+   - Handle `game-started` message → join gameplay room, pass data to GameUI
+   - Process `game-state-update` messages → pass BoardState to GameUI
+   - Send `move-request` and `cancel-moves-request` messages
+   - Handle `game-ended` message → show victory/defeat screen
+
+3. **Game Page State Management** (`game-page-store.ts`)
+   - Replace placeholder with minimal game state (stay board-agnostic)
+   - Store: current BoardState (pass-through), player mapping, game status
+   - Actions: WebSocket message handlers, input forwarding
+
+4. **Player Input System** (add to GameUI)
+   - Click selection: Allow clicking on player's own tiles
+   - WASD keyboard controls: Queue moves from selected tile
+   - 'Q' key: Cancel all queued moves  
+   - Selected tile tracking: Update selection when army moves
+
+**Success Criteria for Phase 4:**
+- ✅ Two browser windows can complete full gameplay flow
+- ✅ Visual game board displays and updates in real-time
+- ✅ Players can select tiles and queue moves with WASD
+- ✅ Room transitions work (matchmaking → gameplay)
+- ✅ Game ends properly with victory/defeat display
+
+**Testing Approach:**
+1. Start backend server (with Phase 3 movement logic working)
+2. Open two browser tabs
+3. Both join matchmaking queue  
+4. Verify game spawns and board displays correctly
+5. Test tile selection and movement controls
+6. Verify real-time board updates
+7. Test complete gameplay flow to victory
+
+**Estimated Time:** 2-3 hours for frontend integration
 
 ---
 
@@ -470,88 +490,77 @@ Assume the 95% happy path! This is a prototype :) Don't over-engineer things.
 4. **Victory Logic**: Territory conversion verification on general capture
 5. **Frontend Integration**: Game board rendering and input system needed
 
-### 📋 **Next: Phase 3 - Frontend Integration & Movement**
+### 📋 **Next: Phase 3 - Complete Backend Movement Logic**
 
-**Goal**: Complete end-to-end gameplay experience with visual game board and player input
+**Goal**: Implement actual army movement, combat, and victory detection in GameServer
 
 **Phase 3 Implementation Tasks:**
 
-1. **Frontend Game Board Component** (`frontend/src/pages/game/game-board.tsx`)
-   - CSS Grid-based board rendering (configurable size, 10x10 for MVP)
-   - Square visualization: generals, armies, blank tiles, mountains
-   - Player color differentiation
-   - Unit count display on squares
+1. **Complete Movement Processing** (`backend/src/gameplay/game-server.ts`)
+   - Uncomment and implement movement logic (lines 109-123)
+   - Integrate `applyMovement()` from core engine
+   - Add source coordinate selection system for moves
+   - Handle move validation and error cases
 
-2. **Player Input System**
-   - Click selection: Allow clicking on player's own tiles
-   - WASD keyboard controls: Queue moves from selected tile
-   - 'Q' key: Cancel all queued moves
-   - Selected tile tracking: Update selection when army moves
+2. **Player Selection State**
+   - Add selected tile tracking per player in GameServer
+   - Implement tile selection logic for move origins
+   - Handle edge cases (no selection, invalid selection)
 
-3. **WebSocket Frontend Integration**
-   - Connect to `gameplay` domain in game page
-   - Handle `game-started` message → join gameplay room, display board
-   - Process `game-state-update` messages → update board rendering
-   - Send `move-request` and `cancel-moves-request` messages
-   - Handle `game-ended` message → show victory/defeat screen
+3. **Combat & Victory Integration**
+   - Test that combat logic works correctly
+   - Verify territory conversion on general capture
+   - Ensure game ends properly with correct winner
 
-4. **Game Page State Management** (extend `game-page-store.ts`)
-   - Replace placeholder with actual game state
-   - Store: current board state, selected tile, player info, game status
-   - Actions: select tile, queue move, cancel moves, update from server
-
-5. **Backend Movement Logic Integration**
-   - Implement source coordinate selection in `GameServer`
-   - Integrate `applyMovement()` with proper fromCoord logic
-   - Add tile selection state to move processing
-   - Test combat and territory capture mechanics
+4. **Movement Testing**
+   - Test army movement between adjacent tiles
+   - Test combat between armies of different sizes
+   - Test general capture and immediate victory
+   - Verify tick-based processing works
 
 **Success Criteria for Phase 3:**
-- ✅ Two browser windows can complete full gameplay flow
-- ✅ Visual game board displays and updates in real-time
-- ✅ Players can select tiles and queue moves with WASD
-- ✅ Movement, combat, and victory conditions work correctly
-- ✅ Game ends properly when general is captured
+- ✅ Armies actually move on the board during ticks
+- ✅ Combat logic works (larger army defeats smaller)
+- ✅ General capture converts all territory and ends game
+- ✅ Move queues process correctly at 250ms intervals
+- ✅ Invalid moves are handled gracefully
 
 **Testing Approach:**
-1. Start backend server
-2. Open two browser tabs
-3. Both join matchmaking queue
-4. Verify game spawns and board displays
-5. Test tile selection and movement
-6. Verify real-time board updates
-7. Test game completion flow
+1. Use server logs to verify move processing
+2. Check board state changes in GameCoordinator
+3. Test with mock move queue data
+4. Verify victory detection triggers game end
 
-**Estimated Time:** 3-4 hours for full Phase 3 implementation
+**Estimated Time:** 2-3 hours for backend movement completion
 
-**Architecture Context for Phase 3:**
+**Architecture Context for Phase 4:**
 
-**Backend (Ready):**
-- `GameCoordinator` - Global tick system (250ms intervals)
-- `GameServer` - Per-game instance management with move queues
+**Backend (Ready after Phase 3):**
+- `GameCoordinator` - Global tick system with working movement processing
+- `GameServer` - Complete game instance management with functional move logic
 - `GameplayWsAPI` - WebSocket message handling
-- WebSocket message flow: `gameplay` domain with established message types
+- Core movement and combat logic fully operational
 
 **Frontend (To Implement):**
-- `game-board.tsx` - Visual board component with CSS Grid
+- `game-ui.tsx` - Adapt existing component for live BoardState data
 - `gameplay-ws-handler.ts` - WebSocket domain connection
-- `game-page-store.ts` - Zustand state management
-- `game-page.tsx` - Main game page integration
+- `game-page-store.ts` - Minimal state management (board-agnostic)
+- `game-page.tsx` - WebSocket integration (data pass-through)
 
 **Data Flow:**
 ```
-User Input (WASD/Click) 
-  → Frontend State Update
-  → WebSocket move-request 
-  → GameServer Move Queue
-  → Engine Tick Processing
-  → Board State Update
+User Input (WASD/Click in GameUI) 
+  → GameUI callback to Game Page
+  → Game Page WebSocket move-request 
+  → GameServer Move Queue (Phase 3 working)
+  → Engine Tick Processing (Phase 3 working)
+  → Board State Update (Phase 3 working)
   → WebSocket game-state-update
-  → Frontend Board Re-render
+  → Game Page passes BoardState to GameUI
+  → GameUI Re-render
 ```
 
-**Files Ready for Next Session:**
-- All backend infrastructure operational
-- WebSocket message types defined
-- Server running and tested
-- Planning documentation complete
+**Architecture Principles:**
+- GameUI: Handles rendering + input, agnostic to WebSocket/networking
+- Game Page: WebSocket integration, passes data through without interpretation
+- Clear separation: visual logic vs networking logic
