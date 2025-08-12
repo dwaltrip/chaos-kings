@@ -10,7 +10,8 @@ import { GameUI } from '@/game-ui/game-ui';
 import { gameplayStore } from '@/pages/game/gameplay/gameplay-store';
 import { GameplayWsHandler } from '@/pages/game/gameplay/gameplay-ws-handler';
 import { getWebSocketService } from '@/services/websocket-service';
-import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
+import { GAMEPLAY_DOMAIN, createJoinRoomMessage, createLeaveRoomMessage } from '@common/types/gameplay';
+import { roomNameForGameplay } from '@common/domains/game/utils';
 
 function GamePage() {
   const { gameId } = useParams();
@@ -32,14 +33,24 @@ function GamePage() {
   
   // Setup gameplay WebSocket integration
   useEffect(() => {
+    if (!game) return;
+
     const wsService = getWebSocketService();
     wsService.addMessageHandler(GAMEPLAY_DOMAIN, GameplayWsHandler);
     
+    // Join gameplay room after connection is established
+    const gameplayRoom = roomNameForGameplay(game);
+    wsService.onReadyOrNow().then(() => {
+      wsService.send(createJoinRoomMessage(gameplayRoom));
+    });
+
     return () => {
+      // Leave gameplay room and clean up
+      wsService.send(createLeaveRoomMessage(gameplayRoom));
       wsService.removeMessageHandler(GAMEPLAY_DOMAIN, GameplayWsHandler);
       actions.reset();
     };
-  }, [actions]);
+  }, [game, actions]);
   
   // Input handlers for gameplay
   const handleTileSelect = (coord: Coord) => {

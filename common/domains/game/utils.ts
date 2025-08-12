@@ -4,5 +4,9 @@ function roomNameForGameChat(game: Game): string {
   return `game-chat:game-${game.id}`;
 } 
 
-export { roomNameForGameChat };
+function roomNameForGameplay(game: Game): string {
+  return `gameplay-${game.id}`;
+}
+
+export { roomNameForGameChat, roomNameForGameplay };
 
