@@ -104,3 +104,9 @@ span.army-count {
 .game-page {
   background-color: #777;
 }
+
+.game-ui-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  user-select: none;
+}

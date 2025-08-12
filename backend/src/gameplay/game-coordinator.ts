@@ -21,12 +21,12 @@ class GameCoordinator {
     }, this.TICK_RATE_MS);
   }
 
-  private tick(): void {
+  private async tick(): Promise<void> {
     if (this.games.size === 0) return;
 
     for (const [gameId, gameServer] of this.games) {
       try {
-        const gameEnded = gameServer.tick();
+        const gameEnded = await gameServer.tick();
         if (gameEnded) {
           console.log(`[GameCoordinator] Game ${gameId} ended, removing from registry`);
           this.removeGame(gameId);

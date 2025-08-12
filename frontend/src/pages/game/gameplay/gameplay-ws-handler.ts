@@ -26,8 +26,8 @@ const GameplayWsHandler = {
       case 'game-ended':
         const endedPayload = data.payload as Gameplay.GameEnded['payload'];
         actions.setBoardState(endedPayload.finalBoardState);
+        actions.setGameEnded(endedPayload.winner, endedPayload.reason);
         console.log('[gameplay] Game ended:', endedPayload);
-        // TODO: Show victory/defeat UI
         break;
 
       default:

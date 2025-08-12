@@ -20,14 +20,17 @@ interface GameUIProps {
   onTileSelect: (coord: Coord) => void;
   onMoveRequest: (direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => void;
   onCancelMoves: () => void;
+  disabled?: boolean;
 }
 
-function GameUI({ boardState, selectedTile, onTileSelect, onMoveRequest, onCancelMoves }: GameUIProps) {
+function GameUI({ boardState, selectedTile, onTileSelect, onMoveRequest, onCancelMoves, disabled = false }: GameUIProps) {
   // console.log('==================================================')
   // console.log('Rendering GameUI')
   
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
+      if (disabled) return;
+      
       switch (event.key.toLowerCase()) {
         case 'w':
           onMoveRequest('UP');
@@ -54,9 +57,18 @@ function GameUI({ boardState, selectedTile, onTileSelect, onMoveRequest, onCance
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [onMoveRequest, onCancelMoves]);
+  }, [onMoveRequest, onCancelMoves, disabled]);
   
-  return <GameBoard boardState={boardState} selectedTile={selectedTile} onTileSelect={onTileSelect} />;
+  const handleTileSelect = (coord: Coord) => {
+    if (disabled) return;
+    onTileSelect(coord);
+  };
+  
+  return (
+    <div className={disabled ? 'game-ui-disabled' : ''}>
+      <GameBoard boardState={boardState} selectedTile={selectedTile} onTileSelect={handleTileSelect} />
+    </div>
+  );
 }
 
 function playerIndexToColor(playerIndex: number): string {

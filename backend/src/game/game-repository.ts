@@ -97,6 +97,14 @@ class GameRepository {
       players: players as GamePlayer[],
     };
   }
+
+  async updateStatus(id: number, status: string): Promise<void> {
+    await this.dbInstance
+      .updateTable('games')
+      .set({ status })
+      .where('id', '=', id)
+      .execute();
+  }
 }
 
 export { GameRepository, GamePlayer };

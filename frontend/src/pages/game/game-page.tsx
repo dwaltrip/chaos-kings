@@ -28,6 +28,9 @@ function GamePage() {
   const boardState = gameplayStore((state) => state.boardState);
   const selectedTile = gameplayStore((state) => state.selectedTile);
   const playerMapping = gameplayStore((state) => state.playerMapping);
+  const gameEnded = gameplayStore((state) => state.gameEnded);
+  const winner = gameplayStore((state) => state.winner);
+  const endReason = gameplayStore((state) => state.endReason);
   const { actions } = gameplayStore.getState();
 
   useEffect(() => {
@@ -110,6 +113,27 @@ function GamePage() {
     }
   };
 
+  const getGameStatus = () => {
+    if (gameEnded) {
+      return 'COMPLETED';
+    }
+    return game?.status || 'UNKNOWN';
+  };
+
+  const getWinnerInfo = () => {
+    if (!gameEnded || winner === null || !playerMapping) {
+      return null;
+    }
+    
+    const winnerMapping = playerMapping.find(p => p.playerIndex === winner);
+    const winnerPlayer = winnerMapping ? game?.players.find(p => p.player_id.toString() === winnerMapping.playerId) : null;
+    
+    return {
+      playerName: winnerPlayer ? `Player ${winnerPlayer.player_id}` : `Player ${winner}`,
+      reason: endReason
+    };
+  };
+
   if (!user) {
     return <Navigate to="/" replace />;
   }
@@ -139,7 +163,10 @@ function GamePage() {
         <div className="flex gap-6 text-sm items-center">
           <span className="font-bold">Game #{game.id}</span>
           <span><strong>Player:</strong> {user.username}</span>
-          <span><strong>Status:</strong> {game.status}</span>
+          <span><strong>Status:</strong> {getGameStatus()}</span>
+          {getWinnerInfo() && (
+            <span><strong>Winner:</strong> {getWinnerInfo()!.playerName} ({getWinnerInfo()!.reason})</span>
+          )}
           <PlayerColors game={game} playerMapping={playerMapping} currentUserId={user.id} />
           <span><strong>Created:</strong> {new Date(game.created_at).toLocaleString()}</span>
           <span><strong>Updated:</strong> {new Date(game.updated_at).toLocaleString()}</span>
@@ -158,6 +185,7 @@ function GamePage() {
             onTileSelect={handleTileSelect}
             onMoveRequest={handleMoveRequest}
             onCancelMoves={handleCancelMoves}
+            disabled={gameEnded}
           />
         ) : (
           <GameUI 
@@ -169,6 +197,7 @@ function GamePage() {
             onTileSelect={() => console.log('No live gameplay yet')}
             onMoveRequest={() => console.log('No live gameplay yet')}
             onCancelMoves={() => console.log('No live gameplay yet')}
+            disabled={false}
           />
         )}
       </main>

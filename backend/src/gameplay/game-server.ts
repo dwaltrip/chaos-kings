@@ -8,6 +8,8 @@ import { getGlobalWebSocketManager } from '@/websocket/global-manager';
 import { removeUserFromGame } from './gameplay-ws-api';
 import { Board } from '@core/board';
 import { isPlayerSquare } from '@core/square';
+import { GameRepository } from '@/game/game-repository';
+import { GameStatus } from '@/game/types';
 
 interface QueuedMove {
   sourceCoord: Coord;
@@ -80,7 +82,7 @@ export class GameServer {
     }
   }
 
-  tick(): boolean {
+  async tick(): Promise<boolean> {
     if (!this.initialized || !this.gameState || this.gameEnded) {
       return this.gameEnded;
     }
@@ -92,7 +94,7 @@ export class GameServer {
       this.gameState.tick++;
       
       if (tickResult.gameEnded) {
-        this.handleGameEnd(tickResult.winnerPlayerIndex!);
+        await this.handleGameEnd(tickResult.winnerPlayerIndex!);
         return true;
       }
 
@@ -145,9 +147,13 @@ export class GameServer {
     }
   }
 
-  private handleGameEnd(winnerPlayerIndex: number): void {
+  private async handleGameEnd(winnerPlayerIndex: number): Promise<void> {
     console.log(`[GameServer] Game ${this.gameId} ended, winner: player ${winnerPlayerIndex}`);
     this.gameEnded = true;
+    
+    // Update game status to COMPLETE in database
+    const gameRepository = new GameRepository();
+    await gameRepository.updateStatus(this.gameId, GameStatus.COMPLETE);
     
     this.broadcastGameEnd(winnerPlayerIndex);
   }
