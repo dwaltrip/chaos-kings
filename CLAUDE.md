@@ -56,6 +56,18 @@ Hey Claude! My name is Daniel and I'm excited to build with you :)
 ### Core
 - `npm test` / `npm run test:watch` - Run Jest tests for game logic
 
+## Development Workflow
+
+### Build Verification
+- **ALWAYS** check the builds in the frontend and backend for TS errors after making changes
+- Use `bash tools/build-all.sh` to run both, or `npm run build` to run separately
+- Fix any type errors before proceeding or committing changes
+
+### Git Commit Strategy
+- **ALWAYS** commit with succinct messages after finishing a set of changes
+- For complex work with tricky debugging: commit progress frequently to save state and allow easy rollback of debugging attempts
+- Use concise commit messages for minor/straightforward changes - avoid overly verbose descriptions
+
 ## Code Conventions and Style
 
 ### General
