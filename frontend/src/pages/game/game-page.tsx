@@ -19,11 +19,9 @@ function GamePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Gameplay state from store
-  const { boardState, selectedTile } = gameplayStore((state) => ({
-    boardState: state.boardState,
-    selectedTile: state.selectedTile
-  }));
+  // Gameplay state from store (avoid unstable object selector)
+  const boardState = gameplayStore((state) => state.boardState);
+  const selectedTile = gameplayStore((state) => state.selectedTile);
   const { actions } = gameplayStore.getState();
 
   useEffect(() => {
