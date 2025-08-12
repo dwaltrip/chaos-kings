@@ -97,24 +97,38 @@ function applyMovement(board: BoardState, sourceCoord: Coord, movement: Movement
     if (source.units <= dest.units) {
       dest.units -= source.units;
       source.units = 0;
+      return;
     }
     // Case 3b: Regular enemy square is captured
     else {
       const surivingUnits = source.units - dest.units;
       dest.units = surivingUnits - 1;
       source.units = 1;
-      dest.playerIndex = source.playerIndex;
 
       // Case 3c: Enemy general is captured
       if (dest.type === PlayerSquareType.GENERAL) {
+        const defeatedPlayerIndex = dest.playerIndex; // Save before changing ownership
         dest.type = PlayerSquareType.PLAYER_CITY;
+        dest.playerIndex = source.playerIndex;
 
-        for (let square of Board.iterPlayerSquares(board, dest.playerIndex)) {
+        // Collect all squares owned by the defeated player first
+        // (to avoid modifying while iterating)
+        const defeatedPlayerSquares = [];
+        for (let square of Board.iterPlayerSquares(board, defeatedPlayerIndex)) {
+          defeatedPlayerSquares.push(square);
+        }
+
+        // Transfer ownership and halve units
+        for (let square of defeatedPlayerSquares) {
           square.playerIndex = source.playerIndex;
           if (square != dest) {
             square.units = Math.ceil(square.units / 2);
           }
         }
+      }
+      // Case 3b: Regular enemy square is captured (non-general)
+      else {
+        dest.playerIndex = source.playerIndex;
       }
     }
   }
