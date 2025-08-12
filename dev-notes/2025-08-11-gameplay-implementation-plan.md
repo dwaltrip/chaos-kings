@@ -21,46 +21,64 @@ We are building a **Generals.io-style game** with:
 - Turn-based movement with army splitting
 - Current `/core` package is already built for this. This is where all code relate dto core game logic and mechanics should live.
 
-## Minimal Implementation Plan
+## Remaining Implementation Plan
 
-### Phase 1: Game Loop Foundation (2-3 hours)
-**Backend Components:**
-- Create `GameServer` class implementing the tick-based architecture
-- Build `GameCoordinator` integration with existing matchmaking
-- Add WebSocket domain handler for `gameplay` messages
-- Implement basic game state broadcasting
+### Phase 3: Complete Backend Movement Logic (1-2 hours)
+**Goal**: Implement actual army movement, combat, and victory in GameServer
 
-**Core Tasks:**
-1. Create `game-server.ts` with simplified tick loop (250ms intervals)
-2. Create `gameplay-ws-api.ts` domain handler
-3. Wire matchmaking to spawn game instances
-4. Basic game state synchronization (no game logic yet)
+**Backend Tasks:**
+1. **Add Source Coordinate Selection System**
+   - Track selected tile per player in GameServer
+   - Handle tile selection via WebSocket messages
+   - Validate selection is player-owned territory
 
-### Phase 2: Core Gameplay (3-4 hours)
-**Game Mechanics:**
-- Player movement validation using existing `Board.canMove()`
-- Army movement with unit splitting using existing `applyMovement()`
-- Basic turn structure (moves queued per tick)
-- Win condition: capture enemy general
+2. **Integrate Movement Processing**
+   - Uncomment movement logic in GameServer (`game-server.ts:109-123`)
+   - Use `applyMovement()` from core engine with selected source
+   - Process moves from queue during tick with source/destination
 
-**Core Tasks:**
-1. Implement move validation and application
-2. Add turn progression logic
-3. Implement general capture victory condition
-4. Basic error handling for invalid moves
+3. **Complete Victory Detection**
+   - Territory conversion when general captured
+   - Game end broadcasting and cleanup
+   - Test win condition triggers correctly
 
-### Phase 3: Frontend Integration (2-3 hours)
-**UI Components:**
-- Game board rendering with CSS Grid
-- Player input handling (keyboard)  
-- Real-time state updates from WebSocket
-- Basic game status display
+**Success Criteria:**
+- Armies move between tiles during ticks
+- Combat works (larger army defeats smaller)
+- General capture converts territory and ends game
+- Move queues process at 250ms intervals
 
-**Core Tasks:**
-1. Create game board component with square rendering
-2. Add keyboard movement controls
-3. Connect to gameplay WebSocket domain
-4. Display current game state and player info
+### Phase 4: Frontend Integration (2-3 hours)
+**Goal**: Connect existing GameUI to live gameplay with input system
+
+**Frontend Tasks:**
+1. **Adapt GameUI Component** (`frontend/src/game-ui/game-ui.tsx`)
+   - Fix playerIndex bug: `game.players[playerIndex - 1]` → `game.players[playerIndex]` (line 25)
+   - Change props from `GameWithPlayers` to `BoardState` + player mapping
+   - Add input callbacks: `onTileSelect`, `onMoveRequest`, `onCancelMoves`
+
+2. **Add Input System to GameUI**
+   - Click selection: highlight selected tile, validate player ownership
+   - WASD keyboard: queue moves from selected tile
+   - 'Q' key: cancel queued moves
+   - Visual feedback for selection and moves
+
+3. **WebSocket Integration Layer** (game page level)
+   - Create `gameplay-ws-handler.ts` following chat pattern
+   - Handle `game-started` → join gameplay room
+   - Process `game-state-update` → pass BoardState to GameUI
+   - Send `move-request` and `tile-select-request` messages
+
+4. **Update Game Page**
+   - Pass live BoardState to GameUI (stay board-agnostic)
+   - Forward input callbacks to WebSocket layer
+   - Handle room transitions (matchmaking → gameplay)
+
+**Success Criteria:**
+- Two browser windows complete full gameplay flow
+- Visual board updates in real-time
+- Players select tiles and move with WASD
+- Game ends with victory/defeat display
 
 ## Technical Architecture
 
@@ -69,7 +87,13 @@ We are building a **Generals.io-style game** with:
 // Client → Server
 {
   domain: 'gameplay',
-  type: 'move_request',
+  type: 'tile_select_request',
+  payload: { row: number, col: number }
+}
+
+{
+  domain: 'gameplay',
+  type: 'move_request', 
   payload: { direction: Movement }
 }
 
@@ -88,12 +112,12 @@ We are building a **Generals.io-style game** with:
 }
 ```
 
-### Minimal Game Flow
+### Game Flow
 1. **Matchmaking**: Use existing service to match 2 players
 2. **Game Creation**: Create `GameServer` instance, send players to gameplay page
 3. **Game Start**: Brief delay (few seconds), then start tick loop
-4. **Game Loop**: 250ms ticks processing queued moves
-5. **Move Processing**: Queue moves → Process on tick → Broadcast state
+4. **Tile Selection**: Players select source tiles for moves
+5. **Move Processing**: WASD input → Queue moves → Process on tick → Broadcast state
 6. **Win Detection**: Immediate game stop when general captured
 7. **Game End**: Broadcast winner, cleanup resources
 
@@ -101,60 +125,27 @@ We are building a **Generals.io-style game** with:
 
 **Existing Systems to Leverage:**
 - `WebSocketManager` - handles connections and room broadcasting
-- `MatchmakingService` - already configured for 2-player games
+- `MatchmakingService` - already configured for 2-player games  
 - `Board` utilities from `/core` - movement validation, coord math
 - `GameRepository` - persist game state to database
 - Frontend `WebSocketService` - domain-based message routing
+- **GameUI Component** - existing board renderer with tile/army display
 
-**New Components Needed:**
-- `GameServer` class - manages individual game instances
-- `GameCoordinator` - bridges matchmaking to game instances  
-- `gameplay-ws-api.ts` - WebSocket domain handler
-- Frontend game board component
-- Game state management in frontend
+**Remaining Components Needed:**
+- Tile selection system in GameServer (Phase 3)
+- Input handling in GameUI (Phase 4)
+- WebSocket integration layer for frontend (Phase 4)
 
-## Key Decisions Made
+## Key Architecture Decisions
 
 1. **Server-Authoritative**: Full state sent each tick (< 10KB for 2 players)
 2. **No Client Prediction**: Display last received state only
 3. **Tick Rate**: 250ms (4 ticks/second) for move rate and production timing
-4. **Game Type**: Generals-style leveraging existing core engine
-5. **Player Count**: Start with 2 players (already configured)
-6. **Board Size**: Start small (10x10) for easier debugging
-7. **Move System**: Queued moves with high cap (~few hundred per player)
-8. **Global Timer**: One timer for all games to maintain consistency
+4. **GameUI/GamePage Separation**: GameUI handles rendering/input, GamePage handles WebSocket/networking
+5. **Move System**: Tile selection + WASD movement with move queuing
+6. **Board Size**: 10x10 for MVP debugging
 
-## ✅ Major Decisions Resolved
-
-1. **Game Initialization**: Random general placement on blank squares using existing `generateRandomMap()`
-2. **Board Generation**: `generateRandomMap` also generates random mountain tiles
-3. **Move Timing**: Queued moves processed once per 250ms tick (4 moves/sec max)
-4. **Reconnection**: Ignore for MVP (happy path only) 
-5. **Game Persistence**: Final results only for MVP
-6. **Move Queue**: High cap (~few hundred) to prevent hitting limits in practice
-7. **Invalid Moves**: Skip silently, no error messages to client
-8. **Game Start**: Few second delay after matchmaking before tick loop begins
-9. **Victory Condition**: Immediate game stop when general captured
-10. **WebSocket Typing**: Use naming conventions (MoveRequest vs GameStateUpdate) to distinguish direction
-
-## Key Context for Next Implementation Session
-
-### Existing Core Game Logic Review Needed
-- `core/src/engine.ts` has `applyMovement()` function that handles army combat
-- `core/src/board.ts` has movement validation and board utilities
-- `core/src/types.ts` defines `GameState`, `BoardState`, and square types
-- Current implementation assumes 1-based player indices (needs review)
-
-### Architecture Integration Points
-- Matchmaking already creates database game records via `createGame()`
-- WebSocket domain system uses `{ domain: 'X', type: 'Y', payload: {...} }` structure  
-- Game state needs to bridge between database persistence and realtime sync
-- Frontend uses Zustand stores for state management
-- Map generation exists at `core/src/map/generate-grid.ts` with `generateRandomMap()`
-- Core engine has movement/combat logic but empty `tick()` function to implement
-- Player indices currently 1-based in map generation (minor fix needed)
-
-### Generals.io Game Rules for MVP
+## Generals.io Game Rules (MVP Reference)
 - Each player starts with 1 general (1 unit initially) on random blank square
 - **NO CITIES in MVP** - only generals, armies, blank squares, and mountains
 - Generals produce 1 unit every 4 ticks (1 per second at 250ms tick rate)
@@ -162,276 +153,15 @@ We are building a **Generals.io-style game** with:
 - Move splits army: leave 1 unit, move rest to adjacent square
 - Combat: attacking army must have more units than defending square
 - Capture enemy general → convert all their territory to yours → immediate win
-- Fog of war: only see squares adjacent to your territory
 
-### Quick Start Development Order
-1. Get basic tick loop working with 2 players
-2. Implement simple movement (no combat) to test sync
-3. Add combat logic using existing engine functions  
-4. Add victory condition detection
-5. Build minimal frontend board renderer
-
-## Implementation Strategy
-
-### Happy Path Assumptions (95% case)
-- Players have stable connections
-- Valid moves only (minimal error handling)
-- No edge cases (disconnections, timeouts, etc.)
-- Simple win/loss outcomes only
-- No spectators or mid-game joins
-
-### Success Metrics
-- 2 players can join queue and start game
-- Real-time bidirectional communication working
-- Players can move their armies
-- Game ends when general is captured
-- Basic game state is visually rendered
-
-## Next Steps
-
-1. **✅ Game design confirmed**: Generals.io-style game (the other game was spec removed)
-2. **Create Gameplay WebSocket Messages**: Define types in `common/types/gameplay.ts` following existing patterns
-3. **Start Phase 1**: Build game server foundation with 250ms tick loop
-4. **Iterate Rapidly**: Get basic version working end-to-end
-5. **Test with 2 Browser Windows**: Validate multiplayer sync
-
-## Detailed Technical Specifications
-
-### Timing System
-- **Movement rate**: 4 moves per second or at most 1 move per 250 ms. Move rate should be configurable.
-- **Global tick rate**: For 4 moves/second, the global tick would need to be at most 250ms.
-- **General production**: Once per second (for 250 ms tick, once every 4 ticks)
-- **Land production**: Every 25 seconds (for 250 ms tick, once every 100 ticks)
-- **Game start delay**: ~3 seconds after player matching
-
-### Initial Board Composition (MVP)
-- **Size**: 10x10 grid for MVP (configurable via game config for future)
-- **Elements**: Generals (1 per player), blank squares, mountains only
-- **No cities, neutral cities, or other structures**
-- **Generals start with 1 unit each**
-- **Army / player-owned land tiles**: As players move on the map, they will accumulate tiles.
-
-### Movement System
-- **Queue-based**: Moves queued immediately, processed on tick boundary
-- **Rate limiting**: Natural limit of 4 moves/second due to tick rate
-- **Queue capacity**: High limit (~few hundred moves) to avoid practical limits
-- **Invalid move handling**: Skip silently, continue processing queue
-
-### Victory Conditions
-- **Win condition**: Capture enemy general
-- **Territory conversion**: All enemy land becomes yours when general captured
-- **Game end**: Immediate stop when victory achieved
-
-### WebSocket Architecture
-- **Domain**: `gameplay` following existing chat-demo pattern
-- **Message types**: Use directional naming (Request vs Update suffixes)
-- **Player identification**: Server sends full player mapping (playerId → playerIndex)
-- **State synchronization**: Full board state broadcast each tick
-
----
-
-## Things we are **NOT** implementing for initial MVP
+## Things NOT Implementing for MVP
 - Fog of war
-- Client reconnection
+- Client reconnection  
 - Neutral cities
-- Optimistic rendering of player's own moves (only render game state that the server sends up)
-- Automated testing
+- Optimistic rendering
 - Thorough error handling
-- Logging
-- Perf monitoring
-- Other similar infrastructure important for a robust production-ready game
 
----
-
-## 🚨 Critical Issues Identified & Resolved
-
-### Player Index Inconsistency (FIXED)
-- **Issue**: Core map generation uses 1-based indices, but arrays expect 0-based
-- **Location**: `core/src/map/generate-grid.ts:117` and `backend/src/game/actions/create-game.ts:54`
-- **Solution**: Convert entire codebase to 0-based player indices for consistency
-
-### Incomplete Core Engine  
-- **Issue**: `core/src/engine.ts:6` has empty `tick()` function
-- **Solution**: Implement production timing and game state progression
-
-### Missing Integration Points
-- **Issue**: No connection between matchmaking completion and game server spawning
-- **Solution**: Add game instances to global tick system when matchmaking completes
-
----
-
-## 📋 Detailed Phased Implementation Plan
-
-### **Phase 0: Foundation Fixes (30 mins)**
-**Goal**: Fix critical inconsistencies before building on top
-- Convert player indices to 0-based throughout codebase
-- Fix `addRandomGenerals()` in `core/src/map/generate-grid.ts:117` 
-- Fix `gamePlayersData` mapping in `backend/src/game/actions/create-game.ts:54`
-- Test map generation produces consistent player indices
-
-**Verification**: Map generation test shows generals have playerIndex 0,1 instead of 1,2
-
----
-
-### **Phase 1: Core Game Engine (1-2 hours)**
-**Goal**: Implement the heart of the game - the tick system and production
-- Implement `tick()` function in `core/src/engine.ts`
-- Add production timing: generals every 4 ticks, armies every 100 ticks
-- Fix combat logic bug where failed attacks set `source.units = 0`
-- Add basic game state validation
-
-**Key Files**: 
-- `core/src/engine.ts` - Complete the tick function
-- Add unit tests for production and combat
-
-**Verification**: Standalone tests show generals produce units, combat works correctly
-
----
-
-### **Phase 2: Game Server & WebSocket Integration (2-3 hours)**  
-**Goal**: Connect the game engine to real-time multiplayer infrastructure
-- Create `GameServer` class managing individual game instances
-- Create global tick timer in main server process (250ms intervals)
-- Add `gameplay` WebSocket domain with message types
-- Wire matchmaking completion to spawn game instances with 3-second delay
-
-**Key Files**:
-- `backend/src/gameplay/game-server.ts` - New game instance management
-- `backend/src/gameplay/gameplay-ws-api.ts` - New WebSocket domain handler  
-- `common/types/gameplay.ts` - New message type definitions
-- Modify `backend/src/game-matchmaking/matchmaking-service.ts` to trigger game spawning
-
-**Message Types Needed**:
-```typescript
-// Client → Server
-MoveRequest { direction: Movement }
-CancelMovesRequest { }
-
-// Server → Client  
-GameStateUpdate { tick: number, board: BoardState, players: PlayerInfo[] }
-GameStarted { gameId: string, playerMapping: {playerId: string, playerIndex: number}[] }
-GameEnded { winner: number, reason: string }
-```
-
-**Verification**: Two browser windows can connect, receive game_started, and see synchronized tick updates
-
----
-
-### **Phase 3: Movement & Victory (1-2 hours)**
-**Goal**: Players can actually play the game
-- Integrate existing `applyMovement()` from core engine
-- Add move queuing system (high capacity ~few hundred)
-- Implement victory detection when general captured
-- Add basic player info broadcasting
-
-**Key Files**:
-- Extend `GameServer` with move processing
-- Add victory condition checking
-- Territory conversion on general capture
-
-**Verification**: Players can move armies, capture each other's generals, game ends correctly
-
----
-
-### **Phase 4: Frontend Live Integration (2-3 hours)**
-**Goal**: Connect existing GameUI to live gameplay with WebSocket integration and player input
-
-**Phase 4 Implementation Tasks:**
-
-1. **Adapt GameUI for Live Data** (`frontend/src/game-ui/game-ui.tsx`)
-   - Change props from `GameWithPlayers` to `BoardState` + player info
-   - Fix player indexing bug in `playerIndexToPlayer()` function (line 25)
-   - Add input callbacks for move requests
-
-2. **WebSocket Integration** (game page level - stay board-agnostic)
-   - Create `gameplay-ws-handler.ts` for WebSocket domain connection
-   - Handle `game-started` message → join gameplay room, pass data to GameUI
-   - Process `game-state-update` messages → pass BoardState to GameUI
-   - Send `move-request` and `cancel-moves-request` messages
-   - Handle `game-ended` message → show victory/defeat screen
-
-3. **Game Page State Management** (`game-page-store.ts`)
-   - Replace placeholder with minimal game state (stay board-agnostic)
-   - Store: current BoardState (pass-through), player mapping, game status
-   - Actions: WebSocket message handlers, input forwarding
-
-4. **Player Input System** (add to GameUI)
-   - Click selection: Allow clicking on player's own tiles
-   - WASD keyboard controls: Queue moves from selected tile
-   - 'Q' key: Cancel all queued moves  
-   - Selected tile tracking: Update selection when army moves
-
-**Success Criteria for Phase 4:**
-- ✅ Two browser windows can complete full gameplay flow
-- ✅ Visual game board displays and updates in real-time
-- ✅ Players can select tiles and queue moves with WASD
-- ✅ Room transitions work (matchmaking → gameplay)
-- ✅ Game ends properly with victory/defeat display
-
-**Testing Approach:**
-1. Start backend server (with Phase 3 movement logic working)
-2. Open two browser tabs
-3. Both join matchmaking queue  
-4. Verify game spawns and board displays correctly
-5. Test tile selection and movement controls
-6. Verify real-time board updates
-7. Test complete gameplay flow to victory
-
-**Estimated Time:** 2-3 hours for frontend integration
-
----
-
-### **Phase 5: Polish & Room Transitions (1 hour)**
-**Goal**: Smooth user experience and proper room management  
-- Add room transitions: matchmaking room → game-specific rooms
-- Display game status (waiting, active, ended)
-- Add basic error handling for disconnections (display message, don't crash)
-- Game cleanup when players disconnect
-
-**Key Files**:
-- Update room management in WebSocket handlers
-- Add game state UI indicators
-- Basic error boundaries
-
-**Verification**: Players transition smoothly from matchmaking to gameplay, games clean up properly
-
----
-
-## 🎯 Success Criteria for Each Phase
-
-- **Phase 0**: Unit tests pass, no 1-based indices remain
-- **Phase 1**: Game engine can run standalone with unit production  
-- **Phase 2**: WebSocket messages flow, game instances spawn on matchmaking
-- **Phase 3**: Players can move and win/lose games
-- **Phase 4**: Visual game board displays and responds to keyboard input
-- **Phase 5**: End-to-end user experience is smooth
-
-## 🔧 Technical Implementation Notes
-
-### Room Management Strategy
-- Matchmaking: Players join `matchmaking` room
-- Game Start: Players transition to `game-${gameId}` rooms  
-- Game messages broadcast only to game-specific room
-
-### Global Tick System Architecture  
-- Single `setInterval(250ms)` in main server process
-- Maintains `Map<gameId, GameServer>` of active games
-- Each tick: iterate all games, call `game.tick()`, broadcast updates
-- Games self-remove when ended or empty
-
-### State Synchronization
-- Server sends full board state each tick (< 10KB for 10x10 grid)
-- No client-side prediction or state management
-- Client displays exactly what server sends
-
-### Error Handling Strategy (MVP)
-- Invalid moves: Skip silently, continue processing
-- Player disconnection: Display message, keep game running
-- Game crashes: Log error, remove from tick system
-
-## Reminder
-
-Assume the 95% happy path! This is a prototype :) Don't over-engineer things.
+**Reminder**: Assume the 95% happy path! This is a prototype.
 
 ---
 
