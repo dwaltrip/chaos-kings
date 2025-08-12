@@ -23,8 +23,8 @@ interface GameUIProps {
 }
 
 function GameUI({ boardState, selectedTile, onTileSelect, onMoveRequest, onCancelMoves }: GameUIProps) {
-  console.log('==================================================')
-  console.log('Rendering GameUI')
+  // console.log('==================================================')
+  // console.log('Rendering GameUI')
   
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {

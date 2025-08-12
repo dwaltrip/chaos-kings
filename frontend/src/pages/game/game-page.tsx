@@ -15,6 +15,9 @@ import { roomNameForGameplay } from '@common/domains/game/utils';
 import { PlayerColors } from '@/pages/game/player-colors';
 
 function GamePage() {
+  // console.log('==================================================')
+  // console.log('Rendering GamePage')
+
   const { gameId } = useParams();
   const user = userStore((state) => state.user);
   const [game, setGame] = useState<GameWithPlayers | null>(null);
@@ -64,6 +67,9 @@ function GamePage() {
       console.warn('Cannot move: no tile selected');
       return;
     }
+    
+    // Follow the army to its destination
+    actions.followArmyMovement(selectedTile, direction as Movement);
     
     const wsService = getWebSocketService();
     wsService.send({
