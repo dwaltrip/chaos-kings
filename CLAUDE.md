@@ -63,6 +63,11 @@ Hey Claude! My name is Daniel and I'm excited to build with you :)
 - Use `bash tools/build-all.sh` to run both, or `npm run build` to run separately
 - Fix any type errors before proceeding or committing changes
 
+### Test Verification
+- **ALWAYS** run tests after finishing a set of changes to ensure nothing is broken
+- Use `bash tools/test-all.sh` to run tests in both backend and core
+- Fix any test failures before committing changes
+
 ### Git Commit Strategy
 - **ALWAYS** commit with succinct messages after finishing a set of changes
 - For complex work with tricky debugging: commit progress frequently to save state and allow easy rollback of debugging attempts
