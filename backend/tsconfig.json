@@ -20,6 +20,6 @@
   "ts-node": {
     "require": ["tsconfig-paths/register"]
   },
-  "include": ["src/**/*.ts", "../common/**/*.ts", "../core/src/**/*.ts"],
+  "include": ["src/**/*.ts", "scripts/**/*.ts", "../common/**/*.ts", "../core/src/**/*.ts"],
   "exclude": ["node_modules", "dist", "client"]
 }

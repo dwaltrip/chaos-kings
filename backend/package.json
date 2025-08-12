@@ -11,7 +11,8 @@
     "test:watch": "jest --watch",
     "migrate:latest": "kysely migrate latest",
     "migrate:up": "kysely migrate up",
-    "migrate:down": "kysely migrate down"
+    "migrate:down": "kysely migrate down",
+    "clear:dev-db": "ts-node scripts/clear-dev-db.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
