@@ -1,64 +1,46 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useParams, Navigate } from 'react-router';
 
-import type { GameWithPlayers } from '@common/types/games';
 import { userStore } from '@/stores/user-store';
-import { loadGame as apiLoadGame, GameNotFoundError } from '@/pages/game/games-api';
+import { gameMetadataStore } from '@/stores/game-metadata-store';
 import { GameChat } from '@/pages/game/game-chat/game-chat';
 import { GameUI } from '@/game-ui/game-ui';
-import { gameplayStore } from '@/game-ui/store/gameplay-store';
 import { PlayerColors } from '@/pages/game/player-colors';
 
 function GamePage() {
   const { gameId } = useParams();
   const user = userStore((state) => state.user);
-  const [game, setGame] = useState<GameWithPlayers | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   
-  // For header display - get minimal state from store
-  const gameEnded = gameplayStore((state) => state.gameEnded);
-  const winner = gameplayStore((state) => state.winner);
-  const endReason = gameplayStore((state) => state.endReason);
-  const playerMapping = gameplayStore((state) => state.playerMapping);
-  
+  // Get all metadata from game metadata store
+  const game = gameMetadataStore((state) => state.game);
+  const loading = gameMetadataStore((state) => state.loading);
+  const error = gameMetadataStore((state) => state.error);
+  const isGameEnded = gameMetadataStore((state) => state.isGameEnded);
+  const winner = gameMetadataStore((state) => state.winner);
+  const endReason = gameMetadataStore((state) => state.endReason);
+  const playerMapping = gameMetadataStore((state) => state.playerMapping);
+  const { actions } = gameMetadataStore.getState();
 
   useEffect(() => {
     if (gameId) {
-      loadGame(gameId);
+      actions.loadGame(gameId);
     }
-  }, [gameId]);
-  
-
-  const loadGame = async (id: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const game = await apiLoadGame(id);
-      setGame(game);
-    }
-    catch (err) {
-      if (err instanceof GameNotFoundError) {
-        setError('Game not found');
-      } else {
-        setError('Failed to load game');
-      }
-      console.error('Error loading game:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    
+    // Reset store when component unmounts or gameId changes
+    return () => {
+      actions.reset();
+    };
+  }, [gameId, actions]);
 
   const getGameStatus = () => {
-    if (gameEnded) {
+    if (isGameEnded) {
       return 'COMPLETED';
     }
     return game?.status || 'UNKNOWN';
   };
 
-
   const getWinnerInfo = () => {
-    if (!gameEnded || winner === null || !playerMapping) {
+    if (!isGameEnded || winner === null || !playerMapping) {
       return null;
     }
     

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { BoardState, Coord, Movement } from '@core/types';
 import { Board } from '@core/board';
+import { gameMetadataStore } from '@/stores/game-metadata-store';
 
 interface GameplayState {
   boardState: BoardState | null;
@@ -34,11 +35,19 @@ const gameplayStore = create<GameplayState>((set) => ({
   endReason: null,
   actions: {
     setBoardState: (boardState) => set({ boardState }),
-    setPlayerMapping: (mapping) => set({ playerMapping: mapping }),
+    setPlayerMapping: (mapping) => {
+      set({ playerMapping: mapping });
+      // Bridge to metadata store for GamePage header display
+      gameMetadataStore.getState().actions.setPlayerMapping(mapping);
+    },
     setSelectedTile: (coord) => set({ selectedTile: coord }),
     setGameId: (gameId) => set({ gameId }),
     setTick: (tick) => set({ tick }),
-    setGameEnded: (winner, reason) => set({ gameEnded: true, winner, endReason: reason }),
+    setGameEnded: (winner, reason) => {
+      set({ gameEnded: true, winner, endReason: reason });
+      // Bridge to metadata store for GamePage header display
+      gameMetadataStore.getState().actions.setGameEnded(winner, reason);
+    },
     followArmyMovement: (sourceCoord, direction) => set((state) => {
       if (!state.boardState) return state;
       
