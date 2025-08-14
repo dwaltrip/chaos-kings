@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import type { Coord, Movement } from '@core/types';
 import { getWebSocketService } from '@/services/websocket-service';
 import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
-import { gameplayStore } from '@/pages/game/gameplay/gameplay-store';
+import { gameplayStore } from '@/game-ui/store/gameplay-store';
 
 export function useGameplay() {
   const { actions } = gameplayStore.getState();

@@ -1,13 +1,12 @@
 import { useMemo } from 'react';
 import type { BoardState, Coord } from '@core/types';
-import type { GameWithPlayers } from '@common/types/games';
 import { Board } from '@core/board';
 
 interface UseFogOfWarParams {
   boardState: BoardState | null;
   playerMapping: { playerId: string; playerIndex: number }[] | null;
   user: { id: number } | null;
-  game: GameWithPlayers | null;
+  gameId: number | null;
 }
 
 interface FogOfWarResult {
@@ -15,7 +14,7 @@ interface FogOfWarResult {
   visibleSquares: Set<Coord>;
 }
 
-export function useFogOfWar({ boardState, playerMapping, user, game }: UseFogOfWarParams): FogOfWarResult {
+export function useFogOfWar({ boardState, playerMapping, user, gameId }: UseFogOfWarParams): FogOfWarResult {
   const currentPlayerIndex = useMemo(() => {
     if (!user) {
       console.log('[DEBUG useFogOfWar] No user');
@@ -32,19 +31,12 @@ export function useFogOfWar({ boardState, playerMapping, user, game }: UseFogOfW
       }
     }
     
-    // Fallback: try to determine from game.players if game is not actively started
-    if (game?.players) {
-      console.log('[DEBUG useFogOfWar] Checking game.players', { players: game.players, userId: user.id });
-      const playerIndex = game.players.findIndex(p => p.player_id === user.id);
-      if (playerIndex >= 0) {
-        console.log('[DEBUG useFogOfWar] Found mapping from game.players', { playerIndex });
-        return playerIndex;
-      }
-    }
+    // Note: Removed game.players fallback since GameUI is now autonomous
+    // and should rely only on playerMapping from active gameplay state
     
     console.log('[DEBUG useFogOfWar] No mapping found');
     return null;
-  }, [user, playerMapping, game]);
+  }, [user, playerMapping, gameId]);
 
   const visibleSquares = useMemo(() => {
     if (!boardState || currentPlayerIndex === null) return new Set<Coord>();

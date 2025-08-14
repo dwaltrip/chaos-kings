@@ -6,11 +6,7 @@ import { userStore } from '@/stores/user-store';
 import { loadGame as apiLoadGame, GameNotFoundError } from '@/pages/game/games-api';
 import { GameChat } from '@/pages/game/game-chat/game-chat';
 import { GameUI } from '@/game-ui/game-ui';
-import { gameplayStore } from '@/pages/game/gameplay/gameplay-store';
-import { GameplayWsHandler } from '@/pages/game/gameplay/gameplay-ws-handler';
-import { getWebSocketService } from '@/services/websocket-service';
-import { GAMEPLAY_DOMAIN, createJoinRoomMessage, createLeaveRoomMessage } from '@common/types/gameplay';
-import { roomNameForGameplay } from '@common/domains/game/utils';
+import { gameplayStore } from '@/game-ui/store/gameplay-store';
 import { PlayerColors } from '@/pages/game/player-colors';
 
 function GamePage() {
@@ -25,7 +21,7 @@ function GamePage() {
   const winner = gameplayStore((state) => state.winner);
   const endReason = gameplayStore((state) => state.endReason);
   const playerMapping = gameplayStore((state) => state.playerMapping);
-  const { actions } = gameplayStore.getState();
+  
 
   useEffect(() => {
     if (gameId) {
@@ -33,26 +29,6 @@ function GamePage() {
     }
   }, [gameId]);
   
-  // Setup gameplay WebSocket integration
-  useEffect(() => {
-    if (!game) return;
-
-    const wsService = getWebSocketService();
-    wsService.addMessageHandler(GAMEPLAY_DOMAIN, GameplayWsHandler);
-    
-    // Join gameplay room after connection is established
-    const gameplayRoom = roomNameForGameplay(game);
-    wsService.onReadyOrNow().then(() => {
-      wsService.send(createJoinRoomMessage(gameplayRoom));
-    });
-
-    return () => {
-      // Leave gameplay room and clean up
-      wsService.send(createLeaveRoomMessage(gameplayRoom));
-      wsService.removeMessageHandler(GAMEPLAY_DOMAIN, GameplayWsHandler);
-      actions.reset();
-    };
-  }, [game, actions]);
 
   const loadGame = async (id: string) => {
     try {
@@ -139,7 +115,7 @@ function GamePage() {
       </aside>
 
       <main className="game-main">
-        <GameUI gameId={game?.id || null} game={game} />
+        <GameUI gameId={game?.id || null} />
       </main>
     </div>
   );

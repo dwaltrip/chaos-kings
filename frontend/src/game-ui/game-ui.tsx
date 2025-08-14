@@ -9,32 +9,34 @@ import {
   type BoardState,
   type Coord,
 } from '@core/types';
-import type { GameWithPlayers } from '@common/types/games';
 import { isPlayerSquare } from '@core/square';
-import { useKeyboardControls } from '@/game-ui/use-keyboard-controls';
-import { isSquareVisible, shouldShowMountain } from '@/game-ui/visibility-utils';
-import { useGameplayState } from '@/game-ui/use-gameplay-state';
-import { useFogOfWar } from '@/game-ui/use-fog-of-war';
-import { useGameplay } from '@/game-ui/use-gameplay';
+import { useKeyboardControls } from '@/game-ui/hooks/use-keyboard-controls';
+import { isSquareVisible, shouldShowMountain } from '@/game-ui/utils/visibility-utils';
+import { useGameplayState } from '@/game-ui/hooks/use-gameplay-state';
+import { useFogOfWar } from '@/game-ui/hooks/use-fog-of-war';
+import { useGameplay } from '@/game-ui/hooks/use-gameplay';
+import { useGameplayWebSocket } from '@/game-ui/hooks/use-gameplay-websocket';
 import { userStore } from '@/stores/user-store';
 
 import '@/game-ui/game-ui.css';
 
 interface GameUIProps {
   gameId: number | null;
-  game: GameWithPlayers | null;
 }
 
-function GameUI({ gameId, game }: GameUIProps) {
+function GameUI({ gameId }: GameUIProps) {
   const user = userStore((state) => state.user);
   
   // Internal state management
   const gameplayState = useGameplayState(gameId);
+  
+  // WebSocket connection management
+  useGameplayWebSocket(gameId);
   const fogOfWarResult = useFogOfWar({
     boardState: gameplayState.boardState,
     playerMapping: gameplayState.playerMapping,
     user,
-    game,
+    gameId,
   });
   const gameplayActions = useGameplay();
   

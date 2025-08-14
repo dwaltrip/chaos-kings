@@ -1,5 +1,5 @@
 import type { BoardState, Coord } from '@core/types';
-import { gameplayStore } from '@/pages/game/gameplay/gameplay-store';
+import { gameplayStore } from '@/game-ui/store/gameplay-store';
 
 interface GameplayState {
   boardState: BoardState | null;

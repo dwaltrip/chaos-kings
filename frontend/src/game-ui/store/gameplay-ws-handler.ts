@@ -1,6 +1,6 @@
 import type { WsMessage } from '@common/types/websockets';
 import type { GameplayMessageType, Gameplay } from '@common/types/gameplay';
-import { gameplayStore } from '@/pages/game/gameplay/gameplay-store';
+import { gameplayStore } from '@/game-ui/store/gameplay-store';
 
 const { actions } = gameplayStore.getState();
 
