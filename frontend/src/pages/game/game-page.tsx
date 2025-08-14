@@ -6,6 +6,8 @@ import { gameMetadataStore } from '@/stores/game-metadata-store';
 import { GameChat } from '@/pages/game/game-chat/game-chat';
 import { GameUI } from '@/game-ui/game-ui';
 import { PlayerColors } from '@/pages/game/player-colors';
+import { GameCountdown } from '@/components/game-countdown';
+import { useGameplayWebSocket } from '@/game-ui/hooks/use-gameplay-websocket';
 
 function GamePage() {
   const { gameId } = useParams();
@@ -15,11 +17,20 @@ function GamePage() {
   const game = gameMetadataStore((state) => state.game);
   const loading = gameMetadataStore((state) => state.loading);
   const error = gameMetadataStore((state) => state.error);
+  const countdownActive = gameMetadataStore((state) => state.countdownActive);
+  const countdownSeconds = gameMetadataStore((state) => state.countdownSeconds);
   const isGameEnded = gameMetadataStore((state) => state.isGameEnded);
   const winner = gameMetadataStore((state) => state.winner);
   const endReason = gameMetadataStore((state) => state.endReason);
   const playerMapping = gameMetadataStore((state) => state.playerMapping);
   const { actions } = gameMetadataStore.getState();
+
+  // Connect to gameplay WebSocket at page level so players join the gameplay room
+  // immediately when page loads, even before GameUI renders. This ensures the
+  // backend can send countdown messages to players who are waiting.
+  // Ideally we'd keep WebSocket details contained in GameUI, but for now this
+  // is the easiest solution to fix the countdown race condition.
+  useGameplayWebSocket(game?.id || null);
 
   useEffect(() => {
     if (gameId) {
@@ -120,7 +131,25 @@ function GamePage() {
       </aside>
 
       <main className="game-main">
-        <GameUI gameId={game?.id || null} />
+        {countdownActive ? (
+          <GameCountdown
+            countdown={countdownSeconds}
+            isActive={countdownActive}
+            title="Game Starting!"
+            subtitle="Get ready..."
+          />
+        ) : game?.status === 'not_started' ? (
+          <div className="flex flex-col items-center justify-center p-8">
+            <div className="text-xl text-gray-600 mb-4">
+              Waiting for game to start...
+            </div>
+            <div className="text-sm text-gray-500">
+              Players are joining the game
+            </div>
+          </div>
+        ) : (
+          <GameUI gameId={game?.id || null} />
+        )}
       </main>
     </div>
   );

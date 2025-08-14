@@ -6,14 +6,12 @@ interface GameMatchmakingState {
   isInQueue: boolean;
   gameReady: boolean;
   gameId: number | null;
-  countdown: number;
 
   actions: {
     setQueueSize: (size: number) => void;
     setPlayersNeeded: (needed: number) => void;
     setIsInQueue: (isInQueue: boolean) => void;
     setGameReady: (gameId: number) => void;
-    setCountdown: (countdown: number) => void;
     resetGameState: () => void;
   };
 }
@@ -24,16 +22,14 @@ const gameMatchmakingStore = create<GameMatchmakingState>((set) => ({
   isInQueue: false,
   gameReady: false,
   gameId: null,
-  countdown: 5,
 
   actions: {
     setQueueSize: (size) => set({ queueSize: size }),
     setPlayersNeeded: (needed) => set({ playersNeeded: needed }),
     setIsInQueue: (isInQueue) => set({ isInQueue }),
-    setGameReady: (gameId) => set({ gameReady: true, gameId, countdown: 5 }),
-    setCountdown: (countdown) => set({ countdown }),
+    setGameReady: (gameId) => set({ gameReady: true, gameId }),
     resetGameState: () =>
-      set({ gameReady: false, gameId: null, countdown: 5, isInQueue: false }),
+      set({ gameReady: false, gameId: null, isInQueue: false }),
   },
 }));
 

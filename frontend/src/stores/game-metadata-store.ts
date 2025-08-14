@@ -12,6 +12,10 @@ interface GameMetadataState {
   loading: boolean;
   error: string | null;
 
+  // Game start countdown
+  countdownActive: boolean;
+  countdownSeconds: number;
+
   // Dynamic gameplay metadata (updated by GameUI)
   isGameEnded: boolean;
   winner: number | null;
@@ -24,6 +28,8 @@ interface GameMetadataState {
     setGame: (game: GameWithPlayers) => void;
     setLoading: (loading: boolean) => void;
     setError: (error: string | null) => void;
+    setCountdownActive: (active: boolean) => void;
+    setCountdownSeconds: (seconds: number) => void;
     setGameEnded: (
       winner: number,
       reason: 'general_captured' | 'timeout' | 'disconnect',
@@ -40,6 +46,10 @@ const gameMetadataStore = create<GameMetadataState>((set) => ({
   game: null,
   loading: false,
   error: null,
+
+  // Game start countdown
+  countdownActive: false,
+  countdownSeconds: 5,
 
   // Dynamic gameplay metadata
   isGameEnded: false,
@@ -75,6 +85,14 @@ const gameMetadataStore = create<GameMetadataState>((set) => ({
       set({ error });
     },
 
+    setCountdownActive: (active: boolean) => {
+      set({ countdownActive: active });
+    },
+
+    setCountdownSeconds: (seconds: number) => {
+      set({ countdownSeconds: seconds });
+    },
+
     setGameEnded: (
       winner: number,
       reason: 'general_captured' | 'timeout' | 'disconnect',
@@ -97,6 +115,8 @@ const gameMetadataStore = create<GameMetadataState>((set) => ({
         game: null,
         loading: false,
         error: null,
+        countdownActive: false,
+        countdownSeconds: 5,
         isGameEnded: false,
         winner: null,
         endReason: null,

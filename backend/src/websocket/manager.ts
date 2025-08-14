@@ -18,13 +18,13 @@ type RoomId = string;
 interface WsClient {
   id: WsClientId;
   ws: WebSocket;
-  currentRoom: RoomId | null;
+  rooms: Set<RoomId>;
   user?: User;
 }
 
 function createWsClient(ws: WebSocket): WsClient {
   const id = `client-${uuidv4()}`;
-  return { id, ws, currentRoom: null };
+  return { id, ws, rooms: new Set() };
 }
 
 class ClientStore {
@@ -102,6 +102,10 @@ class WebSocketManager {
 
     ws.on('close', async () => {
       logger.log('Client disconnected');
+      // Remove client from all rooms before removing from store
+      client.rooms.forEach((roomId) => {
+        this.leaveRoom(client, roomId);
+      });
       this.clientStore.removeClient(client);
       logger.log('Client cleanup completed');
     });
@@ -123,14 +127,12 @@ class WebSocketManager {
   }
 
   private joinRoom(client: WsClient, roomId: string) {
-    if (client.currentRoom) {
-      this.leaveRoom(client, client.currentRoom);
-    }
+    // Don't auto-leave other rooms - allow multiple room memberships
     if (!this.rooms.has(roomId)) {
       this.rooms.set(roomId, new Set());
     }
     this.rooms.get(roomId)!.add(client);
-    client.currentRoom = roomId;
+    client.rooms.add(roomId);
     clientLogger(client).log(`Joined room: ${roomId}`);
   }
 
@@ -142,7 +144,7 @@ class WebSocketManager {
         this.rooms.delete(roomId);
       }
     }
-    client.currentRoom = null;
+    client.rooms.delete(roomId);
     clientLogger(client).log(`Left room: ${roomId}`);
   }
 
@@ -243,7 +245,7 @@ class WebSocketManager {
       if (
         client.user &&
         client.user.id.toString() === userId &&
-        client.currentRoom === roomId
+        client.rooms.has(roomId)
       ) {
         this.leaveRoom(client, roomId);
         console.log(

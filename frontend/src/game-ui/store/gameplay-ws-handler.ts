@@ -1,6 +1,7 @@
 import type { WsMessage } from '@common/types/websockets';
 import type { GameplayMessageType, Gameplay } from '@common/types/gameplay';
 import { gameplayStore } from '@/game-ui/store/gameplay-store';
+import { gameMetadataStore } from '@/stores/game-metadata-store';
 
 const { actions } = gameplayStore.getState();
 
@@ -9,9 +10,22 @@ const GameplayWsHandler = {
     const { type } = data;
 
     switch (type as GameplayMessageType) {
+      case 'game-starting':
+        const gameStartingPayload =
+          data.payload as Gameplay.GameStarting['payload'];
+        const metadataActions = gameMetadataStore.getState().actions;
+        metadataActions.setCountdownActive(true);
+        metadataActions.setCountdownSeconds(gameStartingPayload.countdown);
+        console.log('[gameplay] Game countdown:', gameStartingPayload);
+        break;
+
       case 'game-started':
         const gameStartedPayload =
           data.payload as Gameplay.GameStarted['payload'];
+        // Stop countdown when game actually starts
+        const metadataActionsStarted = gameMetadataStore.getState().actions;
+        metadataActionsStarted.setCountdownActive(false);
+        // Initialize gameplay state
         actions.setGameId(gameStartedPayload.gameId);
         actions.setPlayerMapping(gameStartedPayload.playerMapping);
         actions.setBoardState(gameStartedPayload.boardState);

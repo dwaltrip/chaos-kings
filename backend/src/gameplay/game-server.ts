@@ -22,9 +22,15 @@ export class GameServer {
   private playerQueues: Map<number, QueuedMove[]> = new Map();
   private roomName: string;
   private playerMapping: Map<string, number> = new Map(); // userId -> playerIndex
+  private connectedPlayers: Set<string> = new Set(); // userIds who joined gameplay room
+  private expectedPlayerCount: number = 0;
   private gameStarted: boolean = false;
   private gameEnded: boolean = false;
   private initialized: boolean = false;
+  private countdownActive: boolean = false;
+  private countdownSeconds: number = 5;
+  private countdownInterval: NodeJS.Timeout | null = null;
+  private fallbackTimer: NodeJS.Timeout | null = null;
 
   constructor(gameId: number) {
     this.gameId = gameId;
@@ -43,7 +49,11 @@ export class GameServer {
       this.initializeGameState(gameData);
       this.setupPlayerMappings(gameData);
       this.initializePlayerQueues();
+      this.expectedPlayerCount = gameData.players.length;
       this.initialized = true;
+
+      // Start fallback timer to ensure countdown starts even if not all players join
+      this.startFallbackTimer();
 
       console.log(
         `[GameServer] Game ${this.gameId} initialized with ${gameData.players.length} players`,
@@ -281,7 +291,104 @@ export class GameServer {
     }
   }
 
-  startGame(): void {
+  onPlayerJoinedRoom(userId: string): void {
+    if (!this.playerMapping.has(userId)) {
+      console.log(
+        `[GameServer] User ${userId} not part of game ${this.gameId}, ignoring join`,
+      );
+      return;
+    }
+
+    this.connectedPlayers.add(userId);
+    console.log(
+      `[GameServer] Player ${userId} joined game ${this.gameId} room (${this.connectedPlayers.size}/${this.expectedPlayerCount})`,
+    );
+
+    // Start countdown when we have enough players (or at least 1)
+    if (
+      this.connectedPlayers.size >= Math.min(1, this.expectedPlayerCount) &&
+      !this.countdownActive &&
+      !this.gameStarted
+    ) {
+      this.clearFallbackTimer();
+      this.startCountdown();
+    }
+  }
+
+  private startFallbackTimer(): void {
+    // Start countdown after 10 seconds even if not all players joined
+    this.fallbackTimer = setTimeout(() => {
+      if (
+        !this.countdownActive &&
+        !this.gameStarted &&
+        this.connectedPlayers.size > 0
+      ) {
+        console.log(
+          `[GameServer] Starting fallback countdown for game ${this.gameId} with ${this.connectedPlayers.size} players`,
+        );
+        this.startCountdown();
+      }
+    }, 10000);
+  }
+
+  private clearFallbackTimer(): void {
+    if (this.fallbackTimer) {
+      clearTimeout(this.fallbackTimer);
+      this.fallbackTimer = null;
+    }
+  }
+
+  startCountdown(): void {
+    if (this.countdownActive || this.gameStarted || !this.initialized) {
+      return;
+    }
+
+    this.countdownActive = true;
+    this.countdownSeconds = 5;
+    console.log(`[GameServer] Starting countdown for game ${this.gameId}`);
+
+    this.broadcastGameStarting();
+
+    this.countdownInterval = setInterval(() => {
+      this.countdownSeconds--;
+
+      if (this.countdownSeconds <= 0) {
+        this.finishCountdown();
+      } else {
+        this.broadcastGameStarting();
+      }
+    }, 1000);
+  }
+
+  private async finishCountdown(): Promise<void> {
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+      this.countdownInterval = null;
+    }
+    this.countdownActive = false;
+    await this.startGame();
+  }
+
+  private broadcastGameStarting(): void {
+    try {
+      const wsManager = getGlobalWebSocketManager();
+      wsManager.serverBroadcastToRoom(this.roomName, {
+        domain: GAMEPLAY_DOMAIN,
+        type: 'game-starting',
+        payload: {
+          gameId: this.gameId,
+          countdown: this.countdownSeconds,
+        },
+      });
+    } catch (error) {
+      console.error(
+        `[GameServer] Failed to broadcast game starting for game ${this.gameId}:`,
+        error,
+      );
+    }
+  }
+
+  async startGame(): Promise<void> {
     if (this.gameStarted || !this.initialized || !this.gameState) {
       return;
     }
@@ -289,7 +396,17 @@ export class GameServer {
     this.gameStarted = true;
     console.log(`[GameServer] Starting game ${this.gameId}`);
 
-    // TODO: Send GameStarted message to all players in room
+    // Update game status to IN_PROGRESS in database
+    try {
+      const gameRepository = new GameRepository();
+      await gameRepository.updateStatus(this.gameId, GameStatus.IN_PROGRESS);
+    } catch (error) {
+      console.error(
+        `[GameServer] Failed to update game status for game ${this.gameId}:`,
+        error,
+      );
+    }
+
     this.broadcastGameStart();
   }
 
@@ -334,6 +451,15 @@ export class GameServer {
 
   cleanup(): void {
     console.log(`[GameServer] Cleaning up game ${this.gameId}`);
+
+    // Clean up countdown interval
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+      this.countdownInterval = null;
+    }
+
+    // Clean up fallback timer
+    this.clearFallbackTimer();
 
     // Clean up user-game mappings
     for (const userId of this.playerMapping.keys()) {

@@ -4,7 +4,6 @@ import { useKeyboardControls } from '@/game-ui/hooks/use-keyboard-controls';
 import { useGameplayState } from '@/game-ui/hooks/use-gameplay-state';
 import { useFogOfWar } from '@/game-ui/hooks/use-fog-of-war';
 import { useGameplay } from '@/game-ui/hooks/use-gameplay';
-import { useGameplayWebSocket } from '@/game-ui/hooks/use-gameplay-websocket';
 import { userStore } from '@/stores/user-store';
 import { GameBoard } from '@/game-ui/components/game-board';
 
@@ -19,9 +18,6 @@ function GameUI({ gameId }: GameUIProps) {
 
   // Internal state management
   const gameplayState = useGameplayState(gameId);
-
-  // WebSocket connection management
-  useGameplayWebSocket(gameId);
   const fogOfWarResult = useFogOfWar({
     boardState: gameplayState.boardState,
     playerMapping: gameplayState.playerMapping,

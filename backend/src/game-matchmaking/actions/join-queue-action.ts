@@ -30,7 +30,7 @@ export async function handleJoinQueue(
       payload: { gameId: game.gameId },
     });
 
-    // Spawn game instance after 3-second delay
+    // Spawn game instance after 1-second delay (matches frontend navigation)
     setTimeout(async () => {
       try {
         await spawnGameInstance(game.gameId);
@@ -40,7 +40,7 @@ export async function handleJoinQueue(
           error,
         );
       }
-    }, 3000);
+    }, 1000);
   }
 
   const queueStatus = await matchmakingService.getQueueStatus();

@@ -7,6 +7,7 @@ type GameplayMessageType =
   | 'move-request'
   | 'cancel-moves-request'
   | 'game-state-update'
+  | 'game-starting'
   | 'game-started'
   | 'game-ended'
   | 'join-room'
@@ -28,6 +29,13 @@ namespace Gameplay {
     payload: {
       tick: number;
       boardState: BoardState;
+    };
+  }
+
+  export interface GameStarting extends WsMessage {
+    payload: {
+      gameId: number;
+      countdown: number;
     };
   }
 

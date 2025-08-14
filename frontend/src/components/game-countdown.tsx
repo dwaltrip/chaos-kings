@@ -30,7 +30,8 @@ function GameCountdown({
 
   const radius = 45;
   const circumference = 2 * Math.PI * radius;
-  const progress = ((5 - countdown) / 5) * circumference;
+  const maxCountdown = 5;
+  const progress = ((maxCountdown - countdown) / maxCountdown) * circumference;
 
   return (
     <div className="flex flex-col items-center justify-center p-8 bg-white rounded-lg border border-gray-200 shadow-lg">
