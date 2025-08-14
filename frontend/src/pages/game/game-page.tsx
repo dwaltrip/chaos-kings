@@ -4,9 +4,9 @@ import { useParams, Navigate } from 'react-router';
 import { userStore } from '@/stores/user-store';
 import { gameMetadataStore } from '@/stores/game-metadata-store';
 import { GameChat } from '@/pages/game/game-chat/game-chat';
-import { GameUI } from '@/game-ui/game-ui';
 import { PlayerColors } from '@/pages/game/player-colors';
-import { GameCountdown } from '@/components/game-countdown';
+import { GameStatusInfo } from '@/pages/game/game-status-info';
+import { GameMainContent } from '@/pages/game/game-main-content';
 import { useGameplayWebSocket } from '@/game-ui/hooks/use-gameplay-websocket';
 
 function GamePage() {
@@ -30,7 +30,7 @@ function GamePage() {
   // backend can send countdown messages to players who are waiting.
   // Ideally we'd keep WebSocket details contained in GameUI, but for now this
   // is the easiest solution to fix the countdown race condition.
-  useGameplayWebSocket(game?.id || null);
+  useGameplayWebSocket(game ? game.id : null);
 
   useEffect(() => {
     if (gameId) {
@@ -42,33 +42,6 @@ function GamePage() {
       actions.reset();
     };
   }, [gameId, actions]);
-
-  const getGameStatus = () => {
-    if (isGameEnded) {
-      return 'COMPLETED';
-    }
-    return game?.status || 'UNKNOWN';
-  };
-
-  const getWinnerInfo = () => {
-    if (!isGameEnded || winner === null || !playerMapping) {
-      return null;
-    }
-
-    const winnerMapping = playerMapping.find((p) => p.playerIndex === winner);
-    const winnerPlayer = winnerMapping
-      ? game?.players.find(
-          (p) => p.player_id.toString() === winnerMapping.playerId,
-        )
-      : null;
-
-    return {
-      playerName: winnerPlayer
-        ? `Player ${winnerPlayer.player_id}`
-        : `Player ${winner}`,
-      reason: endReason,
-    };
-  };
 
   if (!user) {
     return <Navigate to="/" replace />;
@@ -101,15 +74,13 @@ function GamePage() {
           <span>
             <strong>Player:</strong> {user.username}
           </span>
-          <span>
-            <strong>Status:</strong> {getGameStatus()}
-          </span>
-          {getWinnerInfo() && (
-            <span>
-              <strong>Winner:</strong> {getWinnerInfo()!.playerName} (
-              {getWinnerInfo()!.reason})
-            </span>
-          )}
+          <GameStatusInfo
+            game={game}
+            isGameEnded={isGameEnded}
+            winner={winner}
+            endReason={endReason}
+            playerMapping={playerMapping}
+          />
           <PlayerColors
             game={game}
             playerMapping={playerMapping}
@@ -131,25 +102,12 @@ function GamePage() {
       </aside>
 
       <main className="game-main">
-        {countdownActive ? (
-          <GameCountdown
-            countdown={countdownSeconds}
-            isActive={countdownActive}
-            title="Game Starting!"
-            subtitle="Get ready..."
-          />
-        ) : game?.status === 'not_started' ? (
-          <div className="flex flex-col items-center justify-center p-8">
-            <div className="text-xl text-gray-600 mb-4">
-              Waiting for game to start...
-            </div>
-            <div className="text-sm text-gray-500">
-              Players are joining the game
-            </div>
-          </div>
-        ) : (
-          <GameUI gameId={game?.id || null} />
-        )}
+        <GameMainContent
+          gameId={game.id}
+          gameStatus={game.status}
+          countdownActive={countdownActive}
+          countdownSeconds={countdownSeconds}
+        />
       </main>
     </div>
   );
