@@ -12,8 +12,6 @@ import { getWebSocketService } from '@/services/websocket-service';
 import { GAMEPLAY_DOMAIN, createJoinRoomMessage, createLeaveRoomMessage } from '@common/types/gameplay';
 import { roomNameForGameplay } from '@common/domains/game/utils';
 import { PlayerColors } from '@/pages/game/player-colors';
-import { useFogOfWar } from '@/pages/game/use-fog-of-war';
-import { useGameplay } from '@/pages/game/use-gameplay';
 
 function GamePage() {
   const { gameId } = useParams();
@@ -22,18 +20,12 @@ function GamePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Gameplay state from store
-  const boardState = gameplayStore((state) => state.boardState);
-  const selectedTile = gameplayStore((state) => state.selectedTile);
-  const playerMapping = gameplayStore((state) => state.playerMapping);
+  // For header display - get minimal state from store
   const gameEnded = gameplayStore((state) => state.gameEnded);
   const winner = gameplayStore((state) => state.winner);
   const endReason = gameplayStore((state) => state.endReason);
+  const playerMapping = gameplayStore((state) => state.playerMapping);
   const { actions } = gameplayStore.getState();
-  
-  // Custom hooks for cleaner logic
-  const { currentPlayerIndex, visibleSquares } = useFogOfWar({ boardState, playerMapping, user, game });
-  const { handleTileSelect, handleMoveRequest, handleCancelMoves } = useGameplay();
 
   useEffect(() => {
     if (gameId) {
@@ -147,32 +139,7 @@ function GamePage() {
       </aside>
 
       <main className="game-main">
-        {boardState ? (
-          <GameUI 
-            boardState={boardState}
-            selectedTile={selectedTile}
-            onTileSelect={handleTileSelect}
-            onMoveRequest={(direction) => handleMoveRequest(direction, selectedTile)}
-            onCancelMoves={handleCancelMoves}
-            disabled={gameEnded}
-            currentPlayerIndex={currentPlayerIndex}
-            visibleSquares={visibleSquares}
-          />
-        ) : (
-          <GameUI 
-            boardState={{
-              grid: game.config?.startingGrid || [],
-              size: { width: 10, height: 10 }
-            }}
-            selectedTile={null}
-            onTileSelect={() => console.log('No live gameplay yet')}
-            onMoveRequest={() => console.log('No live gameplay yet')}
-            onCancelMoves={() => console.log('No live gameplay yet')}
-            disabled={false}
-            currentPlayerIndex={currentPlayerIndex}
-            visibleSquares={visibleSquares}
-          />
-        )}
+        <GameUI gameId={game?.id || null} game={game} />
       </main>
     </div>
   );

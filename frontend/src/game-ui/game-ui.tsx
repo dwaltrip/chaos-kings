@@ -9,49 +9,69 @@ import {
   type BoardState,
   type Coord,
 } from '@core/types';
+import type { GameWithPlayers } from '@common/types/games';
 import { isPlayerSquare } from '@core/square';
 import { useKeyboardControls } from '@/game-ui/use-keyboard-controls';
 import { isSquareVisible, shouldShowMountain } from '@/game-ui/visibility-utils';
+import { useGameplayState } from '@/game-ui/use-gameplay-state';
+import { useFogOfWar } from '@/game-ui/use-fog-of-war';
+import { useGameplay } from '@/game-ui/use-gameplay';
+import { userStore } from '@/stores/user-store';
 
 import '@/game-ui/game-ui.css';
 
 interface GameUIProps {
-  boardState: BoardState;
-  selectedTile: Coord | null;
-  onTileSelect: (coord: Coord) => void;
-  onMoveRequest: (direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => void;
-  onCancelMoves: () => void;
-  disabled?: boolean;
-  currentPlayerIndex: number | null;
-  visibleSquares: Set<Coord>;
+  gameId: number | null;
+  game: GameWithPlayers | null;
 }
 
-function GameUI({
-  boardState,
-  selectedTile,
-  onTileSelect,
-  onMoveRequest,
-  onCancelMoves,
-  disabled = false,
-  currentPlayerIndex,
-  visibleSquares
-}: GameUIProps) {
-  useKeyboardControls({ onMoveRequest, onCancelMoves, disabled });
+function GameUI({ gameId, game }: GameUIProps) {
+  const user = userStore((state) => state.user);
+  
+  // Internal state management
+  const gameplayState = useGameplayState(gameId);
+  const fogOfWarResult = useFogOfWar({
+    boardState: gameplayState.boardState,
+    playerMapping: gameplayState.playerMapping,
+    user,
+    game,
+  });
+  const gameplayActions = useGameplay();
+  
+  // Derived state
+  const boardState = gameplayState.boardState;
+  const selectedTile = gameplayState.selectedTile;
+  const disabled = gameplayState.gameEnded;
+  const currentPlayerIndex = fogOfWarResult.currentPlayerIndex;
+  const visibleSquares = fogOfWarResult.visibleSquares;
+  
+  const onMoveRequest = (direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => 
+    gameplayActions.handleMoveRequest(direction, selectedTile);
+  
+  useKeyboardControls({ 
+    onMoveRequest, 
+    onCancelMoves: gameplayActions.handleCancelMoves, 
+    disabled 
+  });
   
   const handleTileSelect = (coord: Coord) => {
     if (disabled) return;
-    onTileSelect(coord);
+    gameplayActions.handleTileSelect(coord);
   };
   
   return (
     <div className={disabled ? 'game-ui-disabled' : ''}>
-      <GameBoard 
-        boardState={boardState} 
-        selectedTile={selectedTile} 
-        onTileSelect={handleTileSelect}
-        currentPlayerIndex={currentPlayerIndex}
-        visibleSquares={visibleSquares}
-      />
+      {boardState ? (
+        <GameBoard 
+          boardState={boardState} 
+          selectedTile={selectedTile} 
+          onTileSelect={handleTileSelect}
+          currentPlayerIndex={currentPlayerIndex}
+          visibleSquares={visibleSquares}
+        />
+      ) : (
+        <div>Loading game...</div>
+      )}
     </div>
   );
 }
