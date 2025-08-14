@@ -7,3 +7,9 @@ coverage/
 backend/dist/
 frontend/dist/
 .claude/
+
+*.md
+issues/
+dev-notes/
+docs/
+_misc/
