@@ -22,8 +22,7 @@ const gameChatStore = create<GameChatState>((set) => ({
       set((state) => ({ messages: [...state.messages, message] }));
     },
     setNewMessage: (newMessage) => set({ newMessage }),
-  }
+  },
 }));
 
 export { gameChatStore };
-

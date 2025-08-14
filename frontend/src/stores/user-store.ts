@@ -27,7 +27,7 @@ const userStore = create<UserState>((set) => ({
         set({ isLoading: false, isInitialized: true });
       }
     },
-    
+
     updateUsername: async (username: string) => {
       set({ isLoading: true });
       try {
@@ -38,12 +38,11 @@ const userStore = create<UserState>((set) => ({
         throw error;
       }
     },
-    
+
     clearUser: () => {
       set({ user: null, isInitialized: false });
-    }
-  }
+    },
+  },
 }));
 
 export { userStore };
-

@@ -8,5 +8,4 @@ interface GameConfig {
   playerIndexToColor: Record<string, PlayerColor>;
 }
 
-export { type GameConfig};
-
+export { type GameConfig };

@@ -1,4 +1,3 @@
-
 const PlayerColor = {
   RED: 'RED',
   BLUE: 'BLUE',
@@ -19,4 +18,3 @@ const ColorMap: Map<PlayerColor, string> = new Map([
 ]);
 
 export { PlayerColor, PLAYER_COLORS, ColorMap };
-

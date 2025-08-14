@@ -4,7 +4,7 @@ import type { GameConfig } from '@core/game-config';
 const GameStatus = {
   NOT_STARTED: 'not_started',
   IN_PROGRESS: 'in_progress',
-  COMPLETE: 'complete'
+  COMPLETE: 'complete',
 } as const;
 
 // -----------------------------------------------------------
@@ -41,9 +41,7 @@ interface GetGameResponse {
   game: GameWithPlayers;
 }
 
-export {
-  GameStatus,
-};
+export { GameStatus };
 
 export type {
   Game,
@@ -53,4 +51,3 @@ export type {
   ListGamesResponse,
   GetGameResponse,
 };
-

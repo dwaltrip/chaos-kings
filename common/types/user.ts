@@ -1,4 +1,3 @@
-
 interface User {
   id: string;
   username: string;
@@ -8,4 +7,3 @@ interface User {
 }
 
 export { type User };
-

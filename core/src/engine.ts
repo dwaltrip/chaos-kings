@@ -1,19 +1,27 @@
-import { BoardState, Coord, Movement, PlayerSquareType, SquareType } from '@core/types';
+import {
+  BoardState,
+  Coord,
+  Movement,
+  PlayerSquareType,
+  SquareType,
+} from '@core/types';
 import { Board } from '@core/board';
 import { isPlayerSquare } from '@core/square';
 
-
-function tick(board: BoardState, tickNumber: number): { gameEnded: boolean; winnerPlayerIndex?: number } {
+function tick(
+  board: BoardState,
+  tickNumber: number,
+): { gameEnded: boolean; winnerPlayerIndex?: number } {
   // General production: +1 unit every 4 ticks (1 per second at 250ms)
   if (tickNumber % 4 === 0) {
     applyCityProduction(board);
   }
-  
-  // Army production: +1 unit every 100 ticks (25 seconds at 250ms)  
+
+  // Army production: +1 unit every 100 ticks (25 seconds at 250ms)
   if (tickNumber % 100 === 0) {
     applyTroopProduction(board);
   }
-  
+
   // Check for victory condition (no generals remaining for a player)
   const playersWithGenerals = new Set<number>();
   for (let row of board.grid) {
@@ -23,12 +31,12 @@ function tick(board: BoardState, tickNumber: number): { gameEnded: boolean; winn
       }
     }
   }
-  
+
   if (playersWithGenerals.size === 1) {
     const winnerPlayerIndex = Array.from(playersWithGenerals)[0];
     return { gameEnded: true, winnerPlayerIndex };
   }
-  
+
   return { gameEnded: false };
 }
 
@@ -55,11 +63,15 @@ function applyTroopProduction(board: BoardState): void {
 }
 
 // function handleMove(game: Game, sourceCoord: Coord, direction: Movement) {
-function applyMovement(board: BoardState, sourceCoord: Coord, movement: Movement): void {
+function applyMovement(
+  board: BoardState,
+  sourceCoord: Coord,
+  movement: Movement,
+): void {
   // const board = game.board;
   if (!Board.canMove(board, sourceCoord, movement)) {
     console.warn('[handleMove] Cannot move');
-    return; 
+    return;
   }
 
   const source = Board.getSquare(board, sourceCoord);
@@ -79,8 +91,7 @@ function applyMovement(board: BoardState, sourceCoord: Coord, movement: Movement
     source.units = 1;
     Board.replaceSquare(board, dest.coord, newDest);
     return;
-  }
-  else if (!isPlayerSquare(dest)) {
+  } else if (!isPlayerSquare(dest)) {
     throw new Error('Destination is not a player square');
   }
 
@@ -92,7 +103,6 @@ function applyMovement(board: BoardState, sourceCoord: Coord, movement: Movement
 
   // Case 3: dest is enemy
   else if (dest.playerIndex !== source.playerIndex) {
-
     // Case 3a: Enemy defends successfully
     if (source.units <= dest.units) {
       dest.units -= source.units;
@@ -114,7 +124,10 @@ function applyMovement(board: BoardState, sourceCoord: Coord, movement: Movement
         // Collect all squares owned by the defeated player first
         // (to avoid modifying while iterating)
         const defeatedPlayerSquares = [];
-        for (let square of Board.iterPlayerSquares(board, defeatedPlayerIndex)) {
+        for (let square of Board.iterPlayerSquares(
+          board,
+          defeatedPlayerIndex,
+        )) {
           defeatedPlayerSquares.push(square);
         }
 
@@ -134,5 +147,4 @@ function applyMovement(board: BoardState, sourceCoord: Coord, movement: Movement
   }
 }
 
-export { tick, applyMovement }
-
+export { tick, applyMovement };

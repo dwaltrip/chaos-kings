@@ -5,7 +5,7 @@ const SESSION_COOKIE_OPTIONS = {
   secure: false, // Set to true in production (HTTPS)
   sameSite: 'lax' as const,
   maxAge: 24 * 60 * 60 * 1000, // 24 hours
-  path: '/'
+  path: '/',
 };
 
 const SESSION_COOKIE_NAME = 'general-v2:session-id';
@@ -15,4 +15,3 @@ function generateSessionId(): string {
 }
 
 export { SESSION_COOKIE_OPTIONS, SESSION_COOKIE_NAME, generateSessionId };
-

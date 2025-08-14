@@ -1,6 +1,11 @@
 import { createUser } from '@/user/actions/create-user';
 import { updateUsername } from '@/user/actions/update-username';
-import { setupTestDb, cleanupTestDb, teardownTestDb, testDb } from '@/tests/test-helpers';
+import {
+  setupTestDb,
+  cleanupTestDb,
+  teardownTestDb,
+  testDb,
+} from '@/tests/test-helpers';
 
 describe('updateUsername', () => {
   beforeAll(async () => {
@@ -19,7 +24,7 @@ describe('updateUsername', () => {
     test('should update username with valid new username', async () => {
       // Create a user first
       const user = await createUser('originaluser', testDb);
-      
+
       // Update the username
       const updatedUser = await updateUsername(user.id, 'newusername', testDb);
 
@@ -31,7 +36,11 @@ describe('updateUsername', () => {
 
     test('should trim whitespace from new username', async () => {
       const user = await createUser('originaluser', testDb);
-      const updatedUser = await updateUsername(user.id, '  newusername  ', testDb);
+      const updatedUser = await updateUsername(
+        user.id,
+        '  newusername  ',
+        testDb,
+      );
 
       expect(updatedUser.username).toBe('newusername');
     });
@@ -48,33 +57,53 @@ describe('updateUsername', () => {
   describe('validation errors', () => {
     test('should reject empty new username', async () => {
       const user = await createUser('originaluser', testDb);
-      await expect(updateUsername(user.id, '', testDb)).rejects.toThrow('Username is required');
+      await expect(updateUsername(user.id, '', testDb)).rejects.toThrow(
+        'Username is required',
+      );
     });
 
     test('should reject whitespace-only new username', async () => {
       const user = await createUser('originaluser', testDb);
-      await expect(updateUsername(user.id, '   ', testDb)).rejects.toThrow('Username is required');
+      await expect(updateUsername(user.id, '   ', testDb)).rejects.toThrow(
+        'Username is required',
+      );
     });
 
     test('should reject new username longer than 50 characters', async () => {
       const user = await createUser('originaluser', testDb);
       const longUsername = 'a'.repeat(51);
-      await expect(updateUsername(user.id, longUsername, testDb)).rejects.toThrow('Username must be 25 characters or less');
+      await expect(
+        updateUsername(user.id, longUsername, testDb),
+      ).rejects.toThrow('Username must be 25 characters or less');
     });
 
     test('should reject new username with invalid characters', async () => {
       const user = await createUser('originaluser', testDb);
-      
-      await expect(updateUsername(user.id, 'test@user', testDb)).rejects.toThrow('Username can only contain letters, numbers, underscores, and hyphens');
-      await expect(updateUsername(user.id, 'test user', testDb)).rejects.toThrow('Username can only contain letters, numbers, underscores, and hyphens');
-      await expect(updateUsername(user.id, 'test.user', testDb)).rejects.toThrow('Username can only contain letters, numbers, underscores, and hyphens');
+
+      await expect(
+        updateUsername(user.id, 'test@user', testDb),
+      ).rejects.toThrow(
+        'Username can only contain letters, numbers, underscores, and hyphens',
+      );
+      await expect(
+        updateUsername(user.id, 'test user', testDb),
+      ).rejects.toThrow(
+        'Username can only contain letters, numbers, underscores, and hyphens',
+      );
+      await expect(
+        updateUsername(user.id, 'test.user', testDb),
+      ).rejects.toThrow(
+        'Username can only contain letters, numbers, underscores, and hyphens',
+      );
     });
   });
 
   describe('user existence checks', () => {
     test('should reject update for non-existent user', async () => {
       const nonExistentUserId = 99999;
-      await expect(updateUsername(nonExistentUserId, 'newusername', testDb)).rejects.toThrow('User not found');
+      await expect(
+        updateUsername(nonExistentUserId, 'newusername', testDb),
+      ).rejects.toThrow('User not found');
     });
   });
 
@@ -83,9 +112,11 @@ describe('updateUsername', () => {
       // Create two users
       const user1 = await createUser('user1', testDb);
       const user2 = await createUser('user2', testDb);
-      
+
       // Try to update user2 to have same username as user1
-      await expect(updateUsername(user2.id, 'user1', testDb)).rejects.toThrow('Username already exists');
+      await expect(updateUsername(user2.id, 'user1', testDb)).rejects.toThrow(
+        'Username already exists',
+      );
     });
 
     test('should allow updating to same username (no-op)', async () => {
@@ -113,15 +144,18 @@ describe('updateUsername', () => {
     test('should not affect other users', async () => {
       const user1 = await createUser('user1', testDb);
       const user2 = await createUser('user2', testDb);
-      
+
       await updateUsername(user1.id, 'updateduser1', testDb);
 
       // Verify only user1 was updated
-      const users = await testDb.selectFrom('users').orderBy('id').selectAll().execute();
+      const users = await testDb
+        .selectFrom('users')
+        .orderBy('id')
+        .selectAll()
+        .execute();
       expect(users).toHaveLength(2);
       expect(users[0].username).toBe('updateduser1');
       expect(users[1].username).toBe('user2');
     });
   });
 });
-

@@ -2,12 +2,12 @@ import { createClient } from 'redis';
 
 let client: ReturnType<typeof createClient> | null = null;
 
-async function getClient()  {
+async function getClient() {
   if (client) {
     return client;
   }
   client = await createClient()
-    .on("error", (err) => console.log("Redis Client Error", err))
+    .on('error', (err) => console.log('Redis Client Error', err))
     .connect();
   return client;
 
@@ -26,4 +26,3 @@ function destroyClient() {
 }
 
 export { getClient, destroyClient };
-

@@ -25,7 +25,7 @@ export class GameServer {
   private gameStarted: boolean = false;
   private gameEnded: boolean = false;
   private initialized: boolean = false;
-  
+
   constructor(gameId: number) {
     this.gameId = gameId;
     this.roomName = `gameplay-${gameId}`;
@@ -44,29 +44,37 @@ export class GameServer {
       this.setupPlayerMappings(gameData);
       this.initializePlayerQueues();
       this.initialized = true;
-      
-      console.log(`[GameServer] Game ${this.gameId} initialized with ${gameData.players.length} players`);
+
+      console.log(
+        `[GameServer] Game ${this.gameId} initialized with ${gameData.players.length} players`,
+      );
     } catch (error) {
-      console.error(`[GameServer] Failed to initialize game ${this.gameId}:`, error);
+      console.error(
+        `[GameServer] Failed to initialize game ${this.gameId}:`,
+        error,
+      );
       throw error;
     }
   }
 
   private initializeGameState(gameData: GameWithPlayers): void {
-    const mapData = generateRandomMap({ 
-      width: 10, 
-      height: 10 
-    }, gameData.players.length);
+    const mapData = generateRandomMap(
+      {
+        width: 10,
+        height: 10,
+      },
+      gameData.players.length,
+    );
 
     const boardState: BoardState = {
       grid: mapData.grid,
-      size: { width: 10, height: 10 }
+      size: { width: 10, height: 10 },
     };
 
     this.gameState = {
       board: boardState,
       tick: 0,
-      config: gameData.config
+      config: gameData.config,
     };
   }
 
@@ -89,10 +97,10 @@ export class GameServer {
 
     try {
       this.processPlayerMoves();
-      
+
       const tickResult = engineTick(this.gameState.board, this.gameState.tick);
       this.gameState.tick++;
-      
+
       if (tickResult.gameEnded) {
         await this.handleGameEnd(tickResult.winnerPlayerIndex!);
         return true;
@@ -101,7 +109,10 @@ export class GameServer {
       this.broadcastGameState();
       return false;
     } catch (error) {
-      console.error(`[GameServer] Error during tick for game ${this.gameId}:`, error);
+      console.error(
+        `[GameServer] Error during tick for game ${this.gameId}:`,
+        error,
+      );
       this.gameEnded = true;
       return true;
     }
@@ -115,46 +126,61 @@ export class GameServer {
 
       const queuedMove = moveQueue.shift()!;
       const { sourceCoord, movement } = queuedMove;
-      
+
       try {
         // Validate at tick time - deferred validation allows queuing moves from future conquests
         if (!Board.isCoordValid(this.gameState.board, sourceCoord)) {
-          console.log(`[GameServer] Invalid source coordinate ${sourceCoord.x},${sourceCoord.y} for player ${playerIndex} in game ${this.gameId}`);
+          console.log(
+            `[GameServer] Invalid source coordinate ${sourceCoord.x},${sourceCoord.y} for player ${playerIndex} in game ${this.gameId}`,
+          );
           continue;
         }
 
         const sourceSquare = Board.getSquare(this.gameState.board, sourceCoord);
-        
+
         // Check if player owns this tile (deferred validation)
-        if (!isPlayerSquare(sourceSquare) || sourceSquare.playerIndex !== playerIndex) {
-          console.log(`[GameServer] Player ${playerIndex} cannot move from ${sourceCoord.x},${sourceCoord.y} - not owned in game ${this.gameId}`);
+        if (
+          !isPlayerSquare(sourceSquare) ||
+          sourceSquare.playerIndex !== playerIndex
+        ) {
+          console.log(
+            `[GameServer] Player ${playerIndex} cannot move from ${sourceCoord.x},${sourceCoord.y} - not owned in game ${this.gameId}`,
+          );
           continue;
         }
 
         // Check if tile has enough units to move
         if (sourceSquare.units <= 1) {
-          console.log(`[GameServer] Player ${playerIndex} cannot move from ${sourceCoord.x},${sourceCoord.y} - insufficient units (${sourceSquare.units}) in game ${this.gameId}`);
+          console.log(
+            `[GameServer] Player ${playerIndex} cannot move from ${sourceCoord.x},${sourceCoord.y} - insufficient units (${sourceSquare.units}) in game ${this.gameId}`,
+          );
           continue;
         }
 
         // Apply the movement
-        console.log(`[GameServer] Processing move ${movement} from ${sourceCoord.x},${sourceCoord.y} for player ${playerIndex} in game ${this.gameId}`);
+        console.log(
+          `[GameServer] Processing move ${movement} from ${sourceCoord.x},${sourceCoord.y} for player ${playerIndex} in game ${this.gameId}`,
+        );
         applyMovement(this.gameState.board, sourceCoord, movement);
-        
       } catch (error) {
-        console.log(`[GameServer] Invalid move ${movement} from ${sourceCoord.x},${sourceCoord.y} for player ${playerIndex} in game ${this.gameId}:`, error);
+        console.log(
+          `[GameServer] Invalid move ${movement} from ${sourceCoord.x},${sourceCoord.y} for player ${playerIndex} in game ${this.gameId}:`,
+          error,
+        );
       }
     }
   }
 
   private async handleGameEnd(winnerPlayerIndex: number): Promise<void> {
-    console.log(`[GameServer] Game ${this.gameId} ended, winner: player ${winnerPlayerIndex}`);
+    console.log(
+      `[GameServer] Game ${this.gameId} ended, winner: player ${winnerPlayerIndex}`,
+    );
     this.gameEnded = true;
-    
+
     // Update game status to COMPLETE in database
     const gameRepository = new GameRepository();
     await gameRepository.updateStatus(this.gameId, GameStatus.COMPLETE);
-    
+
     this.broadcastGameEnd(winnerPlayerIndex);
   }
 
@@ -168,11 +194,14 @@ export class GameServer {
         type: 'game-state-update',
         payload: {
           tick: this.gameState.tick,
-          boardState: this.gameState.board
-        }
+          boardState: this.gameState.board,
+        },
       });
     } catch (error) {
-      console.error(`[GameServer] Failed to broadcast game state for game ${this.gameId}:`, error);
+      console.error(
+        `[GameServer] Failed to broadcast game state for game ${this.gameId}:`,
+        error,
+      );
     }
   }
 
@@ -187,53 +216,70 @@ export class GameServer {
         payload: {
           winner: winnerPlayerIndex,
           reason: 'general_captured',
-          finalBoardState: this.gameState.board
-        }
+          finalBoardState: this.gameState.board,
+        },
       });
     } catch (error) {
-      console.error(`[GameServer] Failed to broadcast game end for game ${this.gameId}:`, error);
+      console.error(
+        `[GameServer] Failed to broadcast game end for game ${this.gameId}:`,
+        error,
+      );
     }
   }
 
   queueMove(userId: string, sourceCoord: Coord, movement: Movement): void {
     const playerIndex = this.playerMapping.get(userId);
     if (playerIndex === undefined) {
-      console.log(`[GameServer] Move request from unknown user ${userId} in game ${this.gameId}`);
+      console.log(
+        `[GameServer] Move request from unknown user ${userId} in game ${this.gameId}`,
+      );
       return;
     }
 
     const queue = this.playerQueues.get(playerIndex);
     if (!queue) {
-      console.log(`[GameServer] No queue found for player ${playerIndex} in game ${this.gameId}`);
+      console.log(
+        `[GameServer] No queue found for player ${playerIndex} in game ${this.gameId}`,
+      );
       return;
     }
 
     // Basic validation at queue time - only check bounds, not ownership
-    if (!this.gameState || !Board.isCoordValid(this.gameState.board, sourceCoord)) {
-      console.log(`[GameServer] Invalid coordinates ${sourceCoord.x},${sourceCoord.y} for move request from user ${userId} in game ${this.gameId}`);
+    if (
+      !this.gameState ||
+      !Board.isCoordValid(this.gameState.board, sourceCoord)
+    ) {
+      console.log(
+        `[GameServer] Invalid coordinates ${sourceCoord.x},${sourceCoord.y} for move request from user ${userId} in game ${this.gameId}`,
+      );
       return;
     }
 
     const queuedMove: QueuedMove = { sourceCoord, movement };
     queue.push(queuedMove);
-    
-    console.log(`[GameServer] Queued move ${movement} from ${sourceCoord.x},${sourceCoord.y} for player ${playerIndex} in game ${this.gameId}, queue length: ${queue.length}`);
+
+    console.log(
+      `[GameServer] Queued move ${movement} from ${sourceCoord.x},${sourceCoord.y} for player ${playerIndex} in game ${this.gameId}, queue length: ${queue.length}`,
+    );
   }
 
   clearMoves(userId: string): void {
     const playerIndex = this.playerMapping.get(userId);
     if (playerIndex === undefined) {
-      console.log(`[GameServer] Clear moves request from unknown user ${userId} in game ${this.gameId}`);
+      console.log(
+        `[GameServer] Clear moves request from unknown user ${userId} in game ${this.gameId}`,
+      );
       return;
     }
 
     const queue = this.playerQueues.get(playerIndex);
     if (queue) {
       queue.length = 0;
-      console.log(`[GameServer] Cleared move queue for player ${playerIndex} in game ${this.gameId}`);
+      console.log(
+        `[GameServer] Cleared move queue for player ${playerIndex} in game ${this.gameId}`,
+      );
     }
   }
-
 
   startGame(): void {
     if (this.gameStarted || !this.initialized || !this.gameState) {
@@ -258,11 +304,14 @@ export class GameServer {
         payload: {
           gameId: this.gameId,
           playerMapping: this.getPlayerMapping(),
-          boardState: this.gameState.board
-        }
+          boardState: this.gameState.board,
+        },
       });
     } catch (error) {
-      console.error(`[GameServer] Failed to broadcast game start for game ${this.gameId}:`, error);
+      console.error(
+        `[GameServer] Failed to broadcast game start for game ${this.gameId}:`,
+        error,
+      );
     }
   }
 
@@ -270,11 +319,13 @@ export class GameServer {
     return this.roomName;
   }
 
-  getPlayerMapping(): Array<{ playerId: string, playerIndex: number }> {
-    return Array.from(this.playerMapping.entries()).map(([playerId, playerIndex]) => ({
-      playerId,
-      playerIndex
-    }));
+  getPlayerMapping(): Array<{ playerId: string; playerIndex: number }> {
+    return Array.from(this.playerMapping.entries()).map(
+      ([playerId, playerIndex]) => ({
+        playerId,
+        playerIndex,
+      }),
+    );
   }
 
   isGameEnded(): boolean {
@@ -283,12 +334,12 @@ export class GameServer {
 
   cleanup(): void {
     console.log(`[GameServer] Cleaning up game ${this.gameId}`);
-    
+
     // Clean up user-game mappings
     for (const userId of this.playerMapping.keys()) {
       removeUserFromGame(userId);
     }
-    
+
     this.playerQueues.clear();
     this.gameEnded = true;
   }

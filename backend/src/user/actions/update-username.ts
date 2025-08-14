@@ -6,7 +6,11 @@ import { validateUsername } from '@common/validation/username';
 
 type User = Selectable<UsersTable>;
 
-async function updateUsername(userId: number, newUsername: string, dbInstance?: Kysely<Database>): Promise<User> {
+async function updateUsername(
+  userId: number,
+  newUsername: string,
+  dbInstance?: Kysely<Database>,
+): Promise<User> {
   const validation = validateUsername(newUsername);
   if (!validation.isValid) {
     throw new Error(validation.error);
@@ -16,7 +20,10 @@ async function updateUsername(userId: number, newUsername: string, dbInstance?: 
 
   try {
     const userRepository = new UserRepository(dbInstance);
-    const updatedUser = await userRepository.updateUsername(userId, trimmedUsername);
+    const updatedUser = await userRepository.updateUsername(
+      userId,
+      trimmedUsername,
+    );
 
     if (!updatedUser) {
       throw new Error('User not found');
@@ -32,4 +39,3 @@ async function updateUsername(userId: number, newUsername: string, dbInstance?: 
 }
 
 export { updateUsername };
-

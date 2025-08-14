@@ -10,7 +10,7 @@ class GameNotFoundError extends Error {
 
 class GameApiError extends Error {
   public statusCode?: number;
-  
+
   constructor(message: string, statusCode?: number) {
     super(message);
     this.name = 'GameApiError';
@@ -21,29 +21,29 @@ class GameApiError extends Error {
 async function loadGame(gameId: string): Promise<GameWithPlayers> {
   try {
     const response = await apiService.get(`/api/games/${gameId}`);
-    
+
     if (response.status === 404) {
       throw new GameNotFoundError(gameId);
     }
-    
+
     if (!response.ok) {
-      throw new GameApiError(`Failed to load game: ${response.statusText}`, response.status);
+      throw new GameApiError(
+        `Failed to load game: ${response.statusText}`,
+        response.status,
+      );
     }
-    
+
     const data: GetGameResponse = await response.json();
     return data.game;
   } catch (error) {
     if (error instanceof GameNotFoundError || error instanceof GameApiError) {
       throw error;
     }
-    
-    throw new GameApiError('Failed to load game due to network or parsing error');
+
+    throw new GameApiError(
+      'Failed to load game due to network or parsing error',
+    );
   }
 }
 
-export {
-  GameNotFoundError,
-  GameApiError,
-  loadGame,
-};
-
+export { GameNotFoundError, GameApiError, loadGame };

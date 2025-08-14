@@ -10,12 +10,20 @@ interface GameplayState {
   endReason: 'general_captured' | 'timeout' | 'disconnect' | null;
   actions: {
     setBoardState: (boardState: BoardState) => void;
-    setPlayerMapping: (mapping: { playerId: string; playerIndex: number }[]) => void;
+    setPlayerMapping: (
+      mapping: { playerId: string; playerIndex: number }[],
+    ) => void;
     setSelectedTile: (coord: Coord | null) => void;
     setGameId: (gameId: number) => void;
     setTick: (tick: number) => void;
-    setGameEnded: (winner: number, reason: 'general_captured' | 'timeout' | 'disconnect') => void;
-    followArmyMovement: (sourceCoord: Coord, direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => void;
+    setGameEnded: (
+      winner: number,
+      reason: 'general_captured' | 'timeout' | 'disconnect',
+    ) => void;
+    followArmyMovement: (
+      sourceCoord: Coord,
+      direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT',
+    ) => void;
     reset: () => void;
   };
 }

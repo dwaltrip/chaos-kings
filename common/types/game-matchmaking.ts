@@ -3,12 +3,11 @@ import type { User } from '@common/types/user';
 
 const GAME_MATCHMAKING_DOMAIN = 'game-matchmaking';
 
-type GameMatchmakingMessageType = (
-  'join-queue' |
-  'leave-queue' |
-  'queue-status' |
-  'game-ready'
-);
+type GameMatchmakingMessageType =
+  | 'join-queue'
+  | 'leave-queue'
+  | 'queue-status'
+  | 'game-ready';
 
 namespace GameMatchmaking {
   export interface GameMatchmakingMessage extends WsMessage {
@@ -17,7 +16,7 @@ namespace GameMatchmaking {
       room: string;
       timestamp: number;
       user?: User;
-    }
+    };
   }
 
   export interface JoinQueueMessage extends WsMessage {
@@ -32,19 +31,18 @@ namespace GameMatchmaking {
     payload: {
       queueSize: number;
       playersNeeded: number;
-    }
+    };
   }
 
   export interface GameReadyMessage extends WsMessage {
     payload: {
       gameId: string;
-    }
+    };
   }
 }
 
 export {
   GAME_MATCHMAKING_DOMAIN,
   type GameMatchmaking,
-  type GameMatchmakingMessageType
+  type GameMatchmakingMessageType,
 };
-

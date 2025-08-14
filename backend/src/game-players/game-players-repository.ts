@@ -1,5 +1,8 @@
 import { db } from '@/services/db';
-import { GamePlayersTable, GamePlayerStatus } from '@/game-players/game-players.db';
+import {
+  GamePlayersTable,
+  GamePlayerStatus,
+} from '@/game-players/game-players.db';
 import { Kysely, Selectable, Insertable } from 'kysely';
 import { Database } from '@/types';
 
@@ -47,7 +50,7 @@ class GamePlayersRepository {
   }
 
   async bulkCreate(players: CreateGamePlayerData[]): Promise<GamePlayer[]> {
-    const gamePlayersData: NewGamePlayer[] = players.map(data => ({
+    const gamePlayersData: NewGamePlayer[] = players.map((data) => ({
       game_id: data.game_id,
       player_id: data.player_id,
       player_index: data.player_index,
@@ -65,5 +68,9 @@ class GamePlayersRepository {
   }
 }
 
-export { GamePlayersRepository, GamePlayer, NewGamePlayer, CreateGamePlayerData };
-
+export {
+  GamePlayersRepository,
+  GamePlayer,
+  NewGamePlayer,
+  CreateGamePlayerData,
+};

@@ -7,12 +7,7 @@ type NewGame = Insertable<GamesTable>;
 enum GameStatus {
   NOT_STARTED = 'not_started',
   IN_PROGRESS = 'in_progress',
-  COMPLETE = 'complete'
+  COMPLETE = 'complete',
 }
 
-export {
-  Game,
-  NewGame,
-  GameStatus,
-};
-
+export { Game, NewGame, GameStatus };

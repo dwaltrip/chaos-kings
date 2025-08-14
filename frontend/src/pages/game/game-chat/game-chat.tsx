@@ -14,8 +14,8 @@ import { GameChatWsHandler } from '@/pages/game/game-chat/game-chat-ws-handler';
 type WebSocketService = ReturnType<typeof websocketConnect>;
 
 function GameChat({ game }: { game: Game }) {
-  const messages = gameChatStore(state => state.messages);
-  const newMessage = gameChatStore(state => state.newMessage);
+  const messages = gameChatStore((state) => state.messages);
+  const newMessage = gameChatStore((state) => state.newMessage);
   const { isConnected } = useWsStore();
   const wsServiceRef = useRef<WebSocketService | null>(null);
 
@@ -58,10 +58,7 @@ function GameChat({ game }: { game: Game }) {
           placeholder="Type your message..."
           disabled={!isConnected}
         />
-        <button 
-          type="submit" 
-          disabled={!isConnected || !newMessage.trim()}
-        >
+        <button type="submit" disabled={!isConnected || !newMessage.trim()}>
           Send
         </button>
       </form>
@@ -70,4 +67,3 @@ function GameChat({ game }: { game: Game }) {
 }
 
 export { GameChat };
-

@@ -50,5 +50,4 @@ export {
   isArmySquare,
   isPlayerCitySquare,
   isGeneralSquare,
-}
-
+};

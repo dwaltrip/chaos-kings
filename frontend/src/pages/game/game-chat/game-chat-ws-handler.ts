@@ -6,7 +6,7 @@ import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
 const { actions } = gameChatStore.getState();
 
 const GameChatWsHandler = {
-  handleMessage: (data: WsMessage) => { 
+  handleMessage: (data: WsMessage) => {
     const { type } = data;
     // const { type, payload } = data;
     // const user = payload.user || '??';
@@ -16,7 +16,7 @@ const GameChatWsHandler = {
       case 'new-message':
         const payload = {
           ...data.payload,
-          user: data.user || undefined
+          user: data.user || undefined,
         };
         actions.addMessage(payload as ChatMessage);
         break;
@@ -26,8 +26,7 @@ const GameChatWsHandler = {
       default:
         console.error(`[game-chat] Unknown message type: ${type}`);
     }
-  }
-}
+  },
+};
 
 export { GameChatWsHandler };
-

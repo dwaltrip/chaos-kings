@@ -5,11 +5,13 @@ import { Database } from '@/types';
 
 type User = Selectable<UsersTable>;
 
-async function findUser(userId: number, dbInstance?: Kysely<Database>): Promise<User | null> {
+async function findUser(
+  userId: number,
+  dbInstance?: Kysely<Database>,
+): Promise<User | null> {
   const userRepository = new UserRepository(dbInstance);
-  
+
   return await userRepository.findById(userId);
 }
 
 export { findUser };
-

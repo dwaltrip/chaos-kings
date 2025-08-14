@@ -4,33 +4,41 @@ class ApiService {
   async get(path: string, options?: RequestInit): Promise<Response> {
     return fetch(`${this.baseUrl}${path}`, {
       credentials: 'include',
-      ...options
+      ...options,
     });
   }
 
-  async post(path: string, data?: any, options?: RequestInit): Promise<Response> {
+  async post(
+    path: string,
+    data?: any,
+    options?: RequestInit,
+  ): Promise<Response> {
     return fetch(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...options?.headers
+        ...options?.headers,
       },
       credentials: 'include',
       body: JSON.stringify(data || {}),
-      ...options
+      ...options,
     });
   }
 
-  async put(path: string, data?: any, options?: RequestInit): Promise<Response> {
+  async put(
+    path: string,
+    data?: any,
+    options?: RequestInit,
+  ): Promise<Response> {
     return fetch(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        ...options?.headers
+        ...options?.headers,
       },
       credentials: 'include',
       body: data ? JSON.stringify(data) : undefined,
-      ...options
+      ...options,
     });
   }
 
@@ -38,7 +46,7 @@ class ApiService {
     return fetch(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       credentials: 'include',
-      ...options
+      ...options,
     });
   }
 }
@@ -46,4 +54,3 @@ class ApiService {
 const apiService = new ApiService();
 
 export { apiService };
-

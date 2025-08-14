@@ -2,7 +2,9 @@ import { Gameplay } from '@common/types/gameplay';
 import { getGameCoordinator } from '../game-coordinator';
 import { getUserGame } from './user-game-mapping';
 
-export async function handleMoveRequest(data: Gameplay.MoveRequest): Promise<void> {
+export async function handleMoveRequest(
+  data: Gameplay.MoveRequest,
+): Promise<void> {
   if (!data.user) {
     console.error('[GameplayActions] No user data in move-request message');
     return;
@@ -10,7 +12,7 @@ export async function handleMoveRequest(data: Gameplay.MoveRequest): Promise<voi
 
   const userId = data.user.id.toString();
   const gameId = getUserGame(userId);
-  
+
   if (!gameId) {
     console.log(`[GameplayActions] User ${userId} not in any active game`);
     return;
@@ -18,11 +20,17 @@ export async function handleMoveRequest(data: Gameplay.MoveRequest): Promise<voi
 
   const gameCoordinator = getGameCoordinator();
   const gameServer = gameCoordinator.getGame(gameId);
-  
+
   if (!gameServer) {
-    console.log(`[GameplayActions] Game ${gameId} not found for user ${userId}`);
+    console.log(
+      `[GameplayActions] Game ${gameId} not found for user ${userId}`,
+    );
     return;
   }
 
-  gameServer.queueMove(userId, data.payload.sourceCoord, data.payload.direction);
+  gameServer.queueMove(
+    userId,
+    data.payload.sourceCoord,
+    data.payload.direction,
+  );
 }

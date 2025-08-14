@@ -7,7 +7,10 @@ import { validateUsername } from '@common/validation/username';
 type User = Selectable<UsersTable>;
 type NewUser = Insertable<UsersTable>;
 
-async function createUser(username: string, dbInstance?: Kysely<Database>): Promise<User> {
+async function createUser(
+  username: string,
+  dbInstance?: Kysely<Database>,
+): Promise<User> {
   const validation = validateUsername(username);
   if (!validation.isValid) {
     throw new Error(validation.error);
@@ -24,4 +27,3 @@ async function createUser(username: string, dbInstance?: Kysely<Database>): Prom
 }
 
 export { createUser };
-

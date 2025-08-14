@@ -7,36 +7,45 @@ import { gameplayStore } from '@/game-ui/store/gameplay-store';
 export function useGameplay() {
   const { actions } = gameplayStore.getState();
 
-  const handleTileSelect = useCallback((coord: Coord) => {
-    actions.setSelectedTile(coord);
-  }, [actions]);
+  const handleTileSelect = useCallback(
+    (coord: Coord) => {
+      actions.setSelectedTile(coord);
+    },
+    [actions],
+  );
 
-  const handleMoveRequest = useCallback((direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT', selectedTile: Coord | null) => {
-    if (!selectedTile) {
-      console.warn('Cannot move: no tile selected');
-      return;
-    }
-    
-    // Follow the army to its destination
-    actions.followArmyMovement(selectedTile, direction as Movement);
-    
-    const wsService = getWebSocketService();
-    wsService.send({
-      domain: GAMEPLAY_DOMAIN,
-      type: 'move-request',
-      payload: {
-        sourceCoord: selectedTile,
-        direction: direction as Movement
+  const handleMoveRequest = useCallback(
+    (
+      direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT',
+      selectedTile: Coord | null,
+    ) => {
+      if (!selectedTile) {
+        console.warn('Cannot move: no tile selected');
+        return;
       }
-    });
-  }, [actions]);
+
+      // Follow the army to its destination
+      actions.followArmyMovement(selectedTile, direction as Movement);
+
+      const wsService = getWebSocketService();
+      wsService.send({
+        domain: GAMEPLAY_DOMAIN,
+        type: 'move-request',
+        payload: {
+          sourceCoord: selectedTile,
+          direction: direction as Movement,
+        },
+      });
+    },
+    [actions],
+  );
 
   const handleCancelMoves = useCallback(() => {
     const wsService = getWebSocketService();
     wsService.send({
       domain: GAMEPLAY_DOMAIN,
       type: 'cancel-moves-request',
-      payload: null
+      payload: null,
     });
   }, []);
 

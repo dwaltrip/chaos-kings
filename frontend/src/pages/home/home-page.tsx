@@ -25,7 +25,7 @@ function HomePage() {
         Welcome to Game Rooms
       </h1>
 
-      {(user && !isEditing) ? (
+      {user && !isEditing ? (
         <div className="bg-green-50 p-6 rounded-lg border border-green-200">
           <h2 className="text-lg font-semibold text-green-800 mb-2">
             Hello, {user.username}!
@@ -48,4 +48,3 @@ function HomePage() {
 }
 
 export { HomePage };
-

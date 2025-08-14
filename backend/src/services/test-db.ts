@@ -9,7 +9,7 @@ const testDialect = new PostgresDialect({
     user: 'postgres',
     port: 5432,
     max: 10,
-  })
+  }),
 });
 
 const testDb = new Kysely<Database>({
@@ -17,4 +17,3 @@ const testDb = new Kysely<Database>({
 });
 
 export { testDb };
-

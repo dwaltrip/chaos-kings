@@ -9,12 +9,11 @@ const dialect = new PostgresDialect({
     user: 'postgres',
     port: 5432,
     max: 10,
-  })
-})
+  }),
+});
 
 const db = new Kysely<Database>({
   dialect,
 });
 
 export { db };
-

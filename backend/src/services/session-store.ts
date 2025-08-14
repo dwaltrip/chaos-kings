@@ -11,19 +11,23 @@ class SessionStore {
   private readonly PREFIX = 'session:';
   private readonly TTL = 24 * 60 * 60; // 24 hours in seconds
 
-  async create(sessionId: string, userId: number, userKey: string): Promise<void> {
+  async create(
+    sessionId: string,
+    userId: number,
+    userKey: string,
+  ): Promise<void> {
     const sessionData: SessionData = {
       userId,
       userKey,
       createdAt: Date.now(),
-      lastActive: Date.now()
+      lastActive: Date.now(),
     };
 
     const redisClient = await getClient();
     await redisClient.setEx(
       `${this.PREFIX}${sessionId}`,
       this.TTL,
-      JSON.stringify(sessionData)
+      JSON.stringify(sessionData),
     );
   }
 
@@ -47,7 +51,7 @@ class SessionStore {
       await redisClient.setEx(
         `${this.PREFIX}${sessionId}`,
         this.TTL,
-        JSON.stringify(sessionData)
+        JSON.stringify(sessionData),
       );
     }
   }
@@ -79,4 +83,3 @@ class SessionStore {
 }
 
 export { SessionStore, type SessionData };
-

@@ -1,12 +1,11 @@
-
 /* The main container for header/sidebar/main layout */
 .game-layout {
   display: grid;
   grid-template-rows: auto 1fr;
   grid-template-columns: 1fr 280px;
   grid-template-areas:
-    "header header"
-    "main sidebar";
+    'header header'
+    'main sidebar';
   height: 100vh;
 }
 
@@ -56,7 +55,9 @@
   display: grid;
   place-items: center;
   background: #fafafa;
-  font: 12px/1 system-ui, sans-serif;
+  font:
+    12px/1 system-ui,
+    sans-serif;
   cursor: pointer;
 }
 

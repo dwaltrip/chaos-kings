@@ -7,7 +7,11 @@ interface PlayerColorsProps {
   currentUserId: number;
 }
 
-function PlayerColors({ game, playerMapping, currentUserId }: PlayerColorsProps) {
+function PlayerColors({
+  game,
+  playerMapping,
+  currentUserId,
+}: PlayerColorsProps) {
   if (!game.players.length) {
     return null;
   }
@@ -17,14 +21,16 @@ function PlayerColors({ game, playerMapping, currentUserId }: PlayerColorsProps)
       <span className="font-medium">Players:</span>
       <div className="flex gap-2">
         {game.players.map((player) => {
-          const mapping = playerMapping?.find(m => m.playerId === player.player_id.toString());
+          const mapping = playerMapping?.find(
+            (m) => m.playerId === player.player_id.toString(),
+          );
           const playerIndex = mapping?.playerIndex ?? player.player_index;
           const color = getPlayerColor(playerIndex);
           const isCurrentUser = player.player_id === currentUserId;
-          
+
           return (
             <div key={player.id} className="flex items-center gap-1">
-              <div 
+              <div
                 className="w-3 h-3 rounded border border-gray-400"
                 style={{ backgroundColor: color }}
                 title={`Player ${playerIndex + 1}`}

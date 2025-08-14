@@ -15,7 +15,9 @@ class GameCoordinator {
       return;
     }
 
-    console.log(`[GameCoordinator] Starting global tick system at ${this.TICK_RATE_MS}ms intervals`);
+    console.log(
+      `[GameCoordinator] Starting global tick system at ${this.TICK_RATE_MS}ms intervals`,
+    );
     this.tickInterval = setInterval(() => {
       this.tick();
     }, this.TICK_RATE_MS);
@@ -28,11 +30,16 @@ class GameCoordinator {
       try {
         const gameEnded = await gameServer.tick();
         if (gameEnded) {
-          console.log(`[GameCoordinator] Game ${gameId} ended, removing from registry`);
+          console.log(
+            `[GameCoordinator] Game ${gameId} ended, removing from registry`,
+          );
           this.removeGame(gameId);
         }
       } catch (error) {
-        console.error(`[GameCoordinator] Error processing game ${gameId}:`, error);
+        console.error(
+          `[GameCoordinator] Error processing game ${gameId}:`,
+          error,
+        );
         this.removeGame(gameId);
       }
     }
@@ -40,7 +47,9 @@ class GameCoordinator {
 
   addGame(gameId: number): void {
     if (this.games.has(gameId)) {
-      console.warn(`[GameCoordinator] Game ${gameId} already exists in registry`);
+      console.warn(
+        `[GameCoordinator] Game ${gameId} already exists in registry`,
+      );
       return;
     }
 
@@ -52,7 +61,9 @@ class GameCoordinator {
   removeGame(gameId: number): void {
     const gameServer = this.games.get(gameId);
     if (!gameServer) {
-      console.warn(`[GameCoordinator] Attempted to remove non-existent game ${gameId}`);
+      console.warn(
+        `[GameCoordinator] Attempted to remove non-existent game ${gameId}`,
+      );
       return;
     }
 
@@ -71,17 +82,19 @@ class GameCoordinator {
 
   shutdown(): void {
     console.log('[GameCoordinator] Shutting down game coordinator');
-    
+
     if (this.tickInterval) {
       clearInterval(this.tickInterval);
       this.tickInterval = null;
     }
 
     for (const [gameId, gameServer] of this.games) {
-      console.log(`[GameCoordinator] Cleaning up game ${gameId} during shutdown`);
+      console.log(
+        `[GameCoordinator] Cleaning up game ${gameId} during shutdown`,
+      );
       gameServer.cleanup();
     }
-    
+
     this.games.clear();
   }
 }

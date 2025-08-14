@@ -22,7 +22,9 @@ interface PlayerDisplayInfo {
   status: string;
 }
 
-function getPlayerDisplayInfo(player: Player & { username?: string }): PlayerDisplayInfo {
+function getPlayerDisplayInfo(
+  player: Player & { username?: string },
+): PlayerDisplayInfo {
   return {
     id: player.id,
     playerId: player.player_id,

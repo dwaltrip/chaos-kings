@@ -18,13 +18,14 @@ function GameListPlayerInfo({ players }: GameListPlayerInfoProps) {
           const playerInfo = getPlayerDisplayInfo(player);
           return (
             <div key={player.id} className="flex items-center gap-1 text-xs">
-              <div 
+              <div
                 className="w-3 h-3 rounded border border-gray-400"
                 style={{ backgroundColor: playerInfo.color }}
                 title={`Player ${playerInfo.playerIndex + 1}`}
               />
               <span className="text-gray-700">
-                {playerInfo.username || `User ${playerInfo.playerId}`} (ID: {playerInfo.playerId})
+                {playerInfo.username || `User ${playerInfo.playerId}`} (ID:{' '}
+                {playerInfo.playerId})
               </span>
             </div>
           );

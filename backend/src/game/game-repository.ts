@@ -38,7 +38,7 @@ class GameRepository {
           ...game,
           players: players as GamePlayer[],
         };
-      })
+      }),
     );
 
     return gamesWithPlayers;
@@ -64,7 +64,9 @@ class GameRepository {
     return game;
   }
 
-  async findByIdWithPlayers(id: number): Promise<(Game & { players: GamePlayer[] }) | null> {
+  async findByIdWithPlayers(
+    id: number,
+  ): Promise<(Game & { players: GamePlayer[] }) | null> {
     const game = await this.dbInstance
       .selectFrom('games')
       .selectAll()
@@ -108,4 +110,3 @@ class GameRepository {
 }
 
 export { GameRepository, GamePlayer };
-

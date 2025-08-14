@@ -7,7 +7,7 @@ import { GameStatus } from '@/game/types';
 
 export async function spawnGameInstance(gameId: number): Promise<void> {
   console.log(`[MatchmakingActions] Spawning game instance for game ${gameId}`);
-  
+
   // Get game data with players
   const gameData = await getGame(gameId);
   if (!gameData) {
@@ -33,13 +33,15 @@ export async function spawnGameInstance(gameId: number): Promise<void> {
   const gameServer = gameCoordinator.getGame(gameId);
   if (gameServer) {
     gameServer.startGame();
-    
+
     // Update game status to IN_PROGRESS in database
     const gameRepository = new GameRepository();
     await gameRepository.updateStatus(gameId, GameStatus.IN_PROGRESS);
-    
+
     console.log(`[MatchmakingActions] Game ${gameId} started successfully`);
   } else {
-    console.error(`[MatchmakingActions] GameServer not found after adding game ${gameId}`);
+    console.error(
+      `[MatchmakingActions] GameServer not found after adding game ${gameId}`,
+    );
   }
 }

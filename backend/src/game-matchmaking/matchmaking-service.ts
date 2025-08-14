@@ -47,18 +47,25 @@ class MatchmakingService {
     this.gameKey = 'matchmaking:games';
   }
 
-  async addPlayer(playerId: string, playerData: PlayerData = {}): Promise<MatchmakingGame | null> {
+  async addPlayer(
+    playerId: string,
+    playerData: PlayerData = {},
+  ): Promise<MatchmakingGame | null> {
     const timestamp = Date.now();
     const queueEntry = {
       playerId,
       joinedAt: timestamp,
-      ...playerData
+      ...playerData,
     };
 
-    await this.redis.hSet(this.playerDataKey, playerId, JSON.stringify(queueEntry));
+    await this.redis.hSet(
+      this.playerDataKey,
+      playerId,
+      JSON.stringify(queueEntry),
+    );
     await this.redis.zAdd(this.queueKey, {
       score: timestamp,
-      value: playerId
+      value: playerId,
     });
 
     return await this.checkForMatch();
@@ -75,9 +82,9 @@ class MatchmakingService {
     if (this.isCreatingGame) {
       return null;
     }
-    
+
     const queueSize = await this.redis.zCard(this.queueKey);
-    
+
     if (queueSize >= this.playersPerGame) {
       if (this.isCreatingGame) {
         return null;
@@ -85,27 +92,34 @@ class MatchmakingService {
       this.isCreatingGame = true;
       return await this.createGame();
     }
-    
+
     return null;
   }
 
   async createGame(): Promise<MatchmakingGame | null> {
     try {
-      const playerIds = await this.redis.zRange(this.queueKey, 0, this.playersPerGame - 1);
-      
+      const playerIds = await this.redis.zRange(
+        this.queueKey,
+        0,
+        this.playersPerGame - 1,
+      );
+
       if (playerIds.length < this.playersPerGame) {
         return null;
       }
 
-      const playerDataArray = await this.redis.hmGet(this.playerDataKey, playerIds);
+      const playerDataArray = await this.redis.hmGet(
+        this.playerDataKey,
+        playerIds,
+      );
       const players = playerIds.map((id: string, index: number) => ({
         playerId: id,
         ...JSON.parse(playerDataArray[index] || '{}'),
       }));
 
       // Convert string playerIds to numbers for database
-      const userIds = playerIds.map(id => parseInt(id, 10));
-      
+      const userIds = playerIds.map((id) => parseInt(id, 10));
+
       // Create actual game in database
       const dbGame = await createGame({ playerIds: userIds });
 
@@ -113,14 +127,18 @@ class MatchmakingService {
         gameId: dbGame.id,
         players,
         createdAt: Date.now(),
-        status: 'starting'
+        status: 'starting',
       };
 
       // Store in Redis for quick lookup (optional)
-      await this.redis.hSet(this.gameKey, dbGame.id.toString(), JSON.stringify(matchmakingGame));
+      await this.redis.hSet(
+        this.gameKey,
+        dbGame.id.toString(),
+        JSON.stringify(matchmakingGame),
+      );
       await this.redis.zRem(this.queueKey, playerIds);
       await this.redis.hDel(this.playerDataKey, playerIds);
-      
+
       return matchmakingGame;
     } finally {
       this.isCreatingGame = false;
@@ -130,11 +148,11 @@ class MatchmakingService {
   async getQueueStatus(): Promise<QueueStatus> {
     const queueSize = await this.redis.zCard(this.queueKey);
     const playersInQueue = await this.redis.zRange(this.queueKey, 0, -1);
-    
+
     return {
       queueSize,
       playersInQueue,
-      playersNeeded: Math.max(0, this.playersPerGame - queueSize)
+      playersNeeded: Math.max(0, this.playersPerGame - queueSize),
     };
   }
 
@@ -150,7 +168,7 @@ async function getMatchmakingService(): Promise<MatchmakingService> {
   if (matchmakingService) {
     return matchmakingService;
   }
-  
+
   const redis = await getClient();
   matchmakingService = new MatchmakingService(redis);
   return matchmakingService;
@@ -158,4 +176,3 @@ async function getMatchmakingService(): Promise<MatchmakingService> {
 
 export { MatchmakingService, getMatchmakingService };
 export type { QueueStatus, MatchmakingGame };
-

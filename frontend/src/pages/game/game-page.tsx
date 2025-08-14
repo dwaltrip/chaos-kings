@@ -10,7 +10,7 @@ import { PlayerColors } from '@/pages/game/player-colors';
 function GamePage() {
   const { gameId } = useParams();
   const user = userStore((state) => state.user);
-  
+
   // Get all metadata from game metadata store
   const game = gameMetadataStore((state) => state.game);
   const loading = gameMetadataStore((state) => state.loading);
@@ -25,7 +25,7 @@ function GamePage() {
     if (gameId) {
       actions.loadGame(gameId);
     }
-    
+
     // Reset store when component unmounts or gameId changes
     return () => {
       actions.reset();
@@ -43,13 +43,19 @@ function GamePage() {
     if (!isGameEnded || winner === null || !playerMapping) {
       return null;
     }
-    
-    const winnerMapping = playerMapping.find(p => p.playerIndex === winner);
-    const winnerPlayer = winnerMapping ? game?.players.find(p => p.player_id.toString() === winnerMapping.playerId) : null;
-    
+
+    const winnerMapping = playerMapping.find((p) => p.playerIndex === winner);
+    const winnerPlayer = winnerMapping
+      ? game?.players.find(
+          (p) => p.player_id.toString() === winnerMapping.playerId,
+        )
+      : null;
+
     return {
-      playerName: winnerPlayer ? `Player ${winnerPlayer.player_id}` : `Player ${winner}`,
-      reason: endReason
+      playerName: winnerPlayer
+        ? `Player ${winnerPlayer.player_id}`
+        : `Player ${winner}`,
+      reason: endReason,
     };
   };
 
@@ -81,14 +87,31 @@ function GamePage() {
       <header className="game-header">
         <div className="flex gap-6 text-sm items-center">
           <span className="font-bold">Game #{game.id}</span>
-          <span><strong>Player:</strong> {user.username}</span>
-          <span><strong>Status:</strong> {getGameStatus()}</span>
+          <span>
+            <strong>Player:</strong> {user.username}
+          </span>
+          <span>
+            <strong>Status:</strong> {getGameStatus()}
+          </span>
           {getWinnerInfo() && (
-            <span><strong>Winner:</strong> {getWinnerInfo()!.playerName} ({getWinnerInfo()!.reason})</span>
+            <span>
+              <strong>Winner:</strong> {getWinnerInfo()!.playerName} (
+              {getWinnerInfo()!.reason})
+            </span>
           )}
-          <PlayerColors game={game} playerMapping={playerMapping} currentUserId={user.id} />
-          <span><strong>Created:</strong> {new Date(game.created_at).toLocaleString()}</span>
-          <span><strong>Updated:</strong> {new Date(game.updated_at).toLocaleString()}</span>
+          <PlayerColors
+            game={game}
+            playerMapping={playerMapping}
+            currentUserId={user.id}
+          />
+          <span>
+            <strong>Created:</strong>{' '}
+            {new Date(game.created_at).toLocaleString()}
+          </span>
+          <span>
+            <strong>Updated:</strong>{' '}
+            {new Date(game.updated_at).toLocaleString()}
+          </span>
         </div>
       </header>
 
@@ -104,4 +127,3 @@ function GamePage() {
 }
 
 export { GamePage };
-

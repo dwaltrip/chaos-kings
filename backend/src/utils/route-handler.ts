@@ -1,6 +1,9 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 
-type RouteHandler = (request: FastifyRequest, reply: FastifyReply) => Promise<any>;
+type RouteHandler = (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => Promise<any>;
 
 function asyncHandler(handler: RouteHandler) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
@@ -15,7 +18,7 @@ function asyncHandler(handler: RouteHandler) {
         // Default to 400 for other Error instances
         return reply.status(400).send({ error: error.message });
       }
-      
+
       // Log unknown errors and return generic 500 response
       request.server.log.error(error);
       return reply.status(500).send({ error: 'Internal server error' });
@@ -32,4 +35,3 @@ function parseId(id: string): number {
 }
 
 export { asyncHandler, parseId };
-

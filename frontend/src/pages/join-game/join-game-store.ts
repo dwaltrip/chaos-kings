@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 
 interface GameMatchmakingState {
-  playersNeeded: number
-  queueSize: number
-  isInQueue: boolean
-  gameReady: boolean
-  gameId: number | null
-  countdown: number
+  playersNeeded: number;
+  queueSize: number;
+  isInQueue: boolean;
+  gameReady: boolean;
+  gameId: number | null;
+  countdown: number;
 
   actions: {
     setQueueSize: (size: number) => void;
@@ -32,9 +32,9 @@ const gameMatchmakingStore = create<GameMatchmakingState>((set) => ({
     setIsInQueue: (isInQueue) => set({ isInQueue }),
     setGameReady: (gameId) => set({ gameReady: true, gameId, countdown: 5 }),
     setCountdown: (countdown) => set({ countdown }),
-    resetGameState: () => set({ gameReady: false, gameId: null, countdown: 5, isInQueue: false }),
-  }
+    resetGameState: () =>
+      set({ gameReady: false, gameId: null, countdown: 5, isInQueue: false }),
+  },
 }));
 
 export { gameMatchmakingStore };
-

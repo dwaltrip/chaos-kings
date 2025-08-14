@@ -7,7 +7,7 @@ interface WsMessageHandler {
 }
 
 // Exclude 'message' event as it is handled separately
-type EventNames = 'open' | 'close' | 'error'; 
+type EventNames = 'open' | 'close' | 'error';
 type EventTypes = MessageEvent | CloseEvent | Event;
 type WsEventListener = (event: EventTypes) => void;
 type EventListeners = { [key in EventNames]?: WsEventListener[] };
@@ -27,9 +27,11 @@ class WebSocketService {
     this.ws = new WebSocket(this.url);
 
     this.ws.onopen = (event) => {
-      console.log(`[ws-service] WebSocket connection established to ${this.url}`);
+      console.log(
+        `[ws-service] WebSocket connection established to ${this.url}`,
+      );
       this._store.setIsConnected(true);
-      this.listeners.open?.forEach(listener => listener(event));
+      this.listeners.open?.forEach((listener) => listener(event));
     };
 
     this.ws.onmessage = (event) => {
@@ -37,9 +39,12 @@ class WebSocketService {
       try {
         const message = JSON.parse(event.data);
         const wsMessage = message as WsMessage;
-        invariant('domain' in message, 'WebSocket message must have a domain property');
+        invariant(
+          'domain' in message,
+          'WebSocket message must have a domain property',
+        );
 
-        this.getMessageHandlers(wsMessage.domain).forEach(listener => {
+        this.getMessageHandlers(wsMessage.domain).forEach((listener) => {
           listener.handleMessage(wsMessage);
         });
       } catch (error) {
@@ -50,12 +55,12 @@ class WebSocketService {
     this.ws.onclose = (event) => {
       console.log(`[ws-service] WebSocket connection closed:`, event);
       this._store.setIsConnected(false);
-      this.listeners.close?.forEach(listener => listener(event));
+      this.listeners.close?.forEach((listener) => listener(event));
     };
 
     this.ws.onerror = (error) => {
       console.error(`[ws-service] WebSocket error:`, error);
-      this.listeners.error?.forEach(listener => listener(error));
+      this.listeners.error?.forEach((listener) => listener(error));
     };
 
     window.addEventListener('beforeunload', this.handleUnload);
@@ -85,7 +90,7 @@ class WebSocketService {
       console.error(`[ws-service] cannot send message: Not connected`, message);
       return;
     }
-    
+
     try {
       const messageStr = JSON.stringify(message);
       this.ws.send(messageStr);
@@ -95,7 +100,7 @@ class WebSocketService {
   }
 
   get isConnected(): boolean {
-    return this._store.getState().isConnected
+    return this._store.getState().isConnected;
   }
   get currentRoom(): string | undefined {
     return this._currentRoom;
@@ -130,7 +135,9 @@ class WebSocketService {
       const index = handlers.indexOf(handler);
       if (index > -1) {
         handlers.splice(index, 1);
-        console.log(`[ws-service] Message handler removed for domain: ${domain}`);
+        console.log(
+          `[ws-service] Message handler removed for domain: ${domain}`,
+        );
       }
     }
   }
@@ -151,4 +158,3 @@ function getWebSocketService(url?: string): WebSocketService {
 }
 
 export { getWebSocketService, type WsMessage };
-

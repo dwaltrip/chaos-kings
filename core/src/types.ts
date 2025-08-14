@@ -1,4 +1,3 @@
-
 interface GameState {
   board: BoardState;
   tick: number;
@@ -11,23 +10,25 @@ interface BoardState {
   size: Size2d;
 }
 
-type Coord = { x: number; y: number; };
+type Coord = { x: number; y: number };
 
-type Size2d = { width: number; height: number; };
+type Size2d = { width: number; height: number };
 
 const PlayerSquareType = {
   GENERAL: 'GENERAL',
   ARMY: 'ARMY',
   PLAYER_CITY: 'PLAYER_CITY',
 } as const;
-type PlayerSquareType = typeof PlayerSquareType[keyof typeof PlayerSquareType];
+type PlayerSquareType =
+  (typeof PlayerSquareType)[keyof typeof PlayerSquareType];
 
 const NeutralSquareType = {
   BLANK: 'BLANK',
   MOUNTAIN: 'MOUNTAIN',
   NEUTRAL_CITY: 'NEUTRAL_CITY',
 } as const;
-type NeutralSquareType = typeof NeutralSquareType[keyof typeof NeutralSquareType];
+type NeutralSquareType =
+  (typeof NeutralSquareType)[keyof typeof NeutralSquareType];
 
 const SquareType = { ...PlayerSquareType, ...NeutralSquareType };
 type SquareType = PlayerSquareType | NeutralSquareType;
@@ -57,7 +58,7 @@ const Movement = {
   LEFT: 'LEFT',
   RIGHT: 'RIGHT',
 } as const;
-type Movement = typeof Movement[keyof typeof Movement];
+type Movement = (typeof Movement)[keyof typeof Movement];
 
 export { Movement, PlayerSquareType, NeutralSquareType, SquareType };
 
@@ -70,5 +71,4 @@ export type {
   PlayerSquare,
   Square,
   GameGrid,
-}
-
+};

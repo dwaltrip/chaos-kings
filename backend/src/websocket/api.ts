@@ -5,8 +5,8 @@ function injectDomain(domain: string, actions: WsActions): WsActions {
     ...actions,
     broadcastToRoom: (roomId, data) => {
       actions.broadcastToRoom(roomId, { ...data, domain });
-    }
-  }
+    },
+  };
 }
 
 // -----------------------------------------------------------------------
@@ -14,19 +14,23 @@ function injectDomain(domain: string, actions: WsActions): WsActions {
 // The current architecture doens't reflect the "or" part.
 // The "...MessagType" type defs should be split into two.
 // -----------------------------------------------------------------------
-class DomainAPI<TMessageType extends string = string> { 
+class DomainAPI<TMessageType extends string = string> {
   constructor(
     public name: string,
-    private handlers: Record<TMessageType, WsMessageHandler>
+    private handlers: Record<TMessageType, WsMessageHandler>,
   ) {}
 
   handleMessage(type: string, data: WsMessage, actions: WsActions) {
     if (type in this.handlers) {
-      this.handlers[type as TMessageType](data, injectDomain(this.name, actions));
-    }
-    else {
+      this.handlers[type as TMessageType](
+        data,
+        injectDomain(this.name, actions),
+      );
+    } else {
       // throw new Error(`No handler for message type: ${type} in domain: ${this.name}`);
-      console.warn(`[ws-api] No handler for message type: ${type} in domain: ${this.name}`);
+      console.warn(
+        `[ws-api] No handler for message type: ${type} in domain: ${this.name}`,
+      );
     }
   }
 }
@@ -61,16 +65,11 @@ const websocketAPI = new WebSocketAPI();
 
 function handleWebSocketMessage(data: WsMessage, wsActions: WsActions) {
   websocketAPI.handleMessage(data, wsActions);
-} 
+}
 
 function registerDomainAPI(domainAPI: DomainAPI) {
   console.log(`[ws-api] Registering domain: ${domainAPI.name}`);
   websocketAPI.registerDomain(domainAPI);
 }
 
-export {
-  DomainAPI,
-  handleWebSocketMessage,
-  registerDomainAPI,
-};
-
+export { DomainAPI, handleWebSocketMessage, registerDomainAPI };

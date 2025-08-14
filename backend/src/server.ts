@@ -7,10 +7,7 @@ import authPlugin from '@/plugins/auth';
 import { systemRoutes } from '@/system/system-routes';
 import { userRoutes } from '@/user/user-routes';
 import { gameRoutes } from '@/game/game-routes';
-import { 
-  WebSocketManager,
-  handleWebSocketMessage,
-} from '@/websocket';
+import { WebSocketManager, handleWebSocketMessage } from '@/websocket';
 import { registerDomainAPI } from '@/websocket/api';
 import { GameChatWsAPI } from '@/game-chat/game-chat-ws-api';
 import { GameMatchmakingWsAPI } from '@/game-matchmaking/game-matchmaking-ws-api';
@@ -21,13 +18,13 @@ import { setGlobalWebSocketManager } from '@/websocket/global-manager';
 const PORT = 3131;
 
 const fastify = Fastify({
-  logger: true
+  logger: true,
 });
 
 fastify.register(cors, {
   origin: ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
 });
 
 fastify.register(fastifyCookie);
@@ -66,4 +63,3 @@ const start = async () => {
 };
 
 start();
-

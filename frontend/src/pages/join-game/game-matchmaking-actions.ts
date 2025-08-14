@@ -18,7 +18,7 @@ function joinQueue() {
   wsService.send({
     domain: 'game-matchmaking',
     type: 'join-queue',
-    payload: null
+    payload: null,
   });
   actions.setIsInQueue(true);
 }
@@ -28,7 +28,7 @@ function leaveQueue() {
   wsService.send({
     domain: 'game-matchmaking',
     type: 'leave-queue',
-    payload: null
+    payload: null,
   });
   actions.setIsInQueue(false);
 }
@@ -38,7 +38,7 @@ function requestQueueStatus() {
   wsService.send({
     domain: 'game-matchmaking',
     type: 'queue-status',
-    payload: null
+    payload: null,
   });
 }
 
@@ -47,7 +47,7 @@ function joinRoom(room: string) {
   wsService.send({
     domain: 'game-chat',
     type: 'join-room',
-    payload: { room }
+    payload: { room },
   });
 }
 
@@ -55,11 +55,4 @@ function cleanup() {
   actions.setIsInQueue(false);
 }
 
-export {
-  websocketConnect,
-  joinQueue,
-  leaveQueue,
-  requestQueueStatus,
-  cleanup,
-};
-
+export { websocketConnect, joinQueue, leaveQueue, requestQueueStatus, cleanup };

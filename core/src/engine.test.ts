@@ -15,17 +15,17 @@ describe('tick function', () => {
 
   test('should produce units for generals every 4 ticks', () => {
     const initialUnits = generals[0].units;
-    
+
     // Tick 1-3: no production
     tick(board, 1);
     tick(board, 2);
     tick(board, 3);
     expect(generals[0].units).toBe(initialUnits);
-    
+
     // Tick 4: production occurs
     tick(board, 4);
     expect(generals[0].units).toBe(initialUnits + 1);
-    
+
     // Tick 8: production occurs again
     tick(board, 8);
     expect(generals[0].units).toBe(initialUnits + 2);
@@ -37,16 +37,16 @@ describe('tick function', () => {
       coord: { x: 5, y: 5 },
       type: SquareType.ARMY,
       playerIndex: 0,
-      units: 5
+      units: 5,
     };
     board.grid[5][5] = armySquare;
-    
+
     const initialUnits = armySquare.units;
-    
+
     // Tick 99: no production
     tick(board, 99);
     expect(armySquare.units).toBe(initialUnits);
-    
+
     // Tick 100: production occurs
     tick(board, 100);
     expect(armySquare.units).toBe(initialUnits + 1);
@@ -57,9 +57,9 @@ describe('tick function', () => {
     const firstGeneral = generals[0];
     board.grid[firstGeneral.coord.y][firstGeneral.coord.x] = {
       coord: firstGeneral.coord,
-      type: SquareType.BLANK
+      type: SquareType.BLANK,
     };
-    
+
     const result = tick(board, 1);
     expect(result.gameEnded).toBe(true);
     expect(result.winnerPlayerIndex).toBe(generals[1].playerIndex);
@@ -76,12 +76,12 @@ describe('tick function', () => {
     const firstGeneral = generals[0];
     board.grid[firstGeneral.coord.y][firstGeneral.coord.x] = {
       coord: firstGeneral.coord,
-      type: SquareType.BLANK
+      type: SquareType.BLANK,
     };
-    
+
     const remainingGeneral = generals[1];
     const initialUnits = remainingGeneral.units;
-    
+
     // Tick 4: should produce units AND detect victory
     const result = tick(board, 4);
     expect(result.gameEnded).toBe(true);

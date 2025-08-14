@@ -2,14 +2,14 @@ import { DomainAPI } from '@/websocket/api';
 import {
   Gameplay,
   GameplayMessageType,
-  GAMEPLAY_DOMAIN
+  GAMEPLAY_DOMAIN,
 } from '@common/types/gameplay';
 import {
   handleMoveRequest,
   handleCancelMovesRequest,
   addUserToGame,
   removeUserFromGame,
-  getUserGame
+  getUserGame,
 } from './actions';
 
 const GameplayWsAPI = new DomainAPI<GameplayMessageType>(GAMEPLAY_DOMAIN, {
@@ -36,7 +36,7 @@ const GameplayWsAPI = new DomainAPI<GameplayMessageType>(GAMEPLAY_DOMAIN, {
 
   'game-ended': (data: Gameplay.GameEnded, wsActions) => {
     // Clients don't send this message, only receive it
-  }
+  },
 });
 
 export { GameplayWsAPI, addUserToGame, removeUserFromGame, getUserGame };

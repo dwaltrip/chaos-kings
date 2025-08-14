@@ -1,4 +1,4 @@
-import type { User } from "@common/types/user";
+import type { User } from '@common/types/user';
 
 interface WsMessage {
   domain: string;
@@ -8,4 +8,3 @@ interface WsMessage {
 }
 
 export type { WsMessage };
-

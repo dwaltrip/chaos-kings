@@ -8,7 +8,9 @@ export function setGlobalWebSocketManager(manager: WebSocketManager): void {
 
 export function getGlobalWebSocketManager(): WebSocketManager {
   if (!globalWebSocketManager) {
-    throw new Error('Global WebSocketManager not initialized. Call setGlobalWebSocketManager() first.');
+    throw new Error(
+      'Global WebSocketManager not initialized. Call setGlobalWebSocketManager() first.',
+    );
   }
   return globalWebSocketManager;
 }

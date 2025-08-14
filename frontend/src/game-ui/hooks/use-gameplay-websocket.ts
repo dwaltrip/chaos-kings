@@ -1,12 +1,18 @@
 import { useEffect, useRef } from 'react';
 
-import { GAMEPLAY_DOMAIN, createJoinRoomMessage, createLeaveRoomMessage } from '@common/types/gameplay';
+import {
+  GAMEPLAY_DOMAIN,
+  createJoinRoomMessage,
+  createLeaveRoomMessage,
+} from '@common/types/gameplay';
 import { getWebSocketService } from '@/services/websocket-service';
 import { GameplayWsHandler } from '@/game-ui/store/gameplay-ws-handler';
 import { gameplayStore } from '@/game-ui/store/gameplay-store';
 
 function useGameplayWebSocket(gameId: number | null) {
-  const wsServiceRef = useRef<ReturnType<typeof getWebSocketService> | null>(null);
+  const wsServiceRef = useRef<ReturnType<typeof getWebSocketService> | null>(
+    null,
+  );
   const { actions } = gameplayStore.getState();
 
   useEffect(() => {

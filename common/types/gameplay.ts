@@ -3,15 +3,14 @@ import type { BoardState, Movement, Coord } from '@core/types';
 
 const GAMEPLAY_DOMAIN = 'gameplay';
 
-type GameplayMessageType = (
-  'move-request' |
-  'cancel-moves-request' |
-  'game-state-update' |
-  'game-started' |
-  'game-ended' |
-  'join-room' |
-  'leave-room'
-);
+type GameplayMessageType =
+  | 'move-request'
+  | 'cancel-moves-request'
+  | 'game-state-update'
+  | 'game-started'
+  | 'game-ended'
+  | 'join-room'
+  | 'leave-room';
 
 namespace Gameplay {
   export interface MoveRequest extends WsMessage {
@@ -25,7 +24,6 @@ namespace Gameplay {
     payload: null;
   }
 
-
   export interface GameStateUpdate extends WsMessage {
     payload: {
       tick: number;
@@ -36,7 +34,7 @@ namespace Gameplay {
   export interface GameStarted extends WsMessage {
     payload: {
       gameId: number;
-      playerMapping: { playerId: string, playerIndex: number }[];
+      playerMapping: { playerId: string; playerIndex: number }[];
       boardState: BoardState;
     };
   }
@@ -91,5 +89,5 @@ export {
   createJoinRoomMessage,
   createLeaveRoomMessage,
   type Gameplay,
-  type GameplayMessageType
+  type GameplayMessageType,
 };

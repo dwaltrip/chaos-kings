@@ -1,10 +1,19 @@
 import { Board } from '@core/board';
 import { isBlankSquare, isNeutralSquare } from '@core/square';
-import { SquareType, Square, GameGrid, Coord, Size2d, PlayerSquare } from '@core/types';
+import {
+  SquareType,
+  Square,
+  GameGrid,
+  Coord,
+  Size2d,
+  PlayerSquare,
+} from '@core/types';
 import { PlayerIndex } from '@common/types/player';
 
-
-function generateRandomMap(size: Size2d, numPlayers: number): { grid: GameGrid; generals: PlayerSquare[] } {
+function generateRandomMap(
+  size: Size2d,
+  numPlayers: number,
+): { grid: GameGrid; generals: PlayerSquare[] } {
   const grid = generateGridWithRandomMountains(size);
   const generals = addRandomGenerals(grid, numPlayers);
   return { grid, generals };
@@ -40,19 +49,24 @@ function createBlankCell(coord: Coord): Square {
   return { coord, type: SquareType.BLANK };
 }
 
-function createArmyCell(coord: Coord, playerIndex: PlayerIndex, units: number): PlayerSquare {
+function createArmyCell(
+  coord: Coord,
+  playerIndex: PlayerIndex,
+  units: number,
+): PlayerSquare {
   return {
     coord,
     type: SquareType.ARMY,
     playerIndex,
     units,
-  }
+  };
 }
 
 // TODO: Think about how to make this more configurable
 function mountainOrBlank(grid: GameGrid, x: number, y: number): Square {
-  const nearbyMountains: number = getNeightbors(grid, x, y)
-    .filter(cell => cell && cell.type === SquareType.MOUNTAIN).length;
+  const nearbyMountains: number = getNeightbors(grid, x, y).filter(
+    (cell) => cell && cell.type === SquareType.MOUNTAIN,
+  ).length;
 
   const defaultProb = 0.1;
   const probMap = new Map<number, number>([
@@ -122,7 +136,10 @@ function addRandomGenerals(grid: GameGrid, count: number): PlayerSquare[] {
   return generals;
 }
 
-function convertToGeneral(square: Square, playerIndex: PlayerIndex): PlayerSquare {
+function convertToGeneral(
+  square: Square,
+  playerIndex: PlayerIndex,
+): PlayerSquare {
   if (!isNeutralSquare(square)) {
     throw new Error('Cannot convert non-neutral square to general');
   }
@@ -144,5 +161,4 @@ export {
   createArmyCell,
   addGenerals,
   addRandomGenerals,
-}
-
+};

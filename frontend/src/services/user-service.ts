@@ -22,19 +22,21 @@ class UserService {
     if (!createResponse.ok) {
       throw new Error('Failed to create user');
     }
-    
+
     const data = await createResponse.json();
     return data.user;
   }
-  
+
   async updateUsername(username: string): Promise<User> {
-    const response = await apiService.put('/api/users/me/username', { username });
-    
+    const response = await apiService.put('/api/users/me/username', {
+      username,
+    });
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Failed to update username');
     }
-    
+
     return await response.json();
   }
 }
@@ -43,4 +45,3 @@ const userService = new UserService();
 
 export { userService };
 export type { User };
-

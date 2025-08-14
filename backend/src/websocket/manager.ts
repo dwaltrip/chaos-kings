@@ -5,13 +5,18 @@ import type { WebSocket as FastifyWebSocket } from '@fastify/websocket';
 
 import { invariant } from '@common/utils/invariant';
 import { User } from '@common/types/user';
-import { WsClientId, WsActions, WsMessageHandler, WsMessage } from '@/websocket/types';
+import {
+  WsClientId,
+  WsActions,
+  WsMessageHandler,
+  WsMessage,
+} from '@/websocket/types';
 import { handleWebSocketMessage } from '@/websocket/api';
 
 type RoomId = string;
 
 interface WsClient {
-  id: WsClientId
+  id: WsClientId;
   ws: WebSocket;
   currentRoom: RoomId | null;
   user?: User;
@@ -54,7 +59,7 @@ class ClientStore {
 
 function clientLogger(client: WsClient) {
   const userStr = client.user ? `${client.user.username}` : 'anonymous';
-  const prefix = `[manage:${userStr}-${client.id.slice(0,5)}..]`;
+  const prefix = `[manage:${userStr}-${client.id.slice(0, 5)}..]`;
   return {
     log: (...args: any[]) => console.log(prefix, ...args),
     error: (...args: any[]) => console.error(prefix, ...args),
@@ -74,15 +79,15 @@ class WebSocketManager {
   handleConnection(connection: FastifyWebSocket, req: FastifyRequest) {
     const ws = connection;
     const client = this.clientStore.addClient(ws);
-  
+
     invariant(!!req.currentUser, 'Request must have currentUser set');
     // Link WebSocket to authenticated user from request
     client.user = req.currentUser;
-    
+
     const logger = clientLogger(client);
     console.log('-'.repeat(80));
     logger.log('New client connected');
-    
+
     ws.on('message', (buffer: Buffer) => {
       const bufferStr = buffer.toString();
       try {
@@ -90,8 +95,7 @@ class WebSocketManager {
         logger.log('Received:', data);
         data.user = client.user; // Attach user info to message
         handleWebSocketMessage(data, this.actionsForClient(client));
-      }
-      catch (error) {
+      } catch (error) {
         logger.error('Error parsing message:', error, '-- data:', bufferStr);
       }
     });
@@ -142,34 +146,52 @@ class WebSocketManager {
     clientLogger(client).log(`Left room: ${roomId}`);
   }
 
-  private broadcastToRoom(roomId: string, data: WsMessage, fromClient: WsClient) {
+  private broadcastToRoom(
+    roomId: string,
+    data: WsMessage,
+    fromClient: WsClient,
+  ) {
     const logger = clientLogger(fromClient);
-    const room  = this.rooms.get(roomId);
+    const room = this.rooms.get(roomId);
     if (!room) {
-      console.log('====== rooms:', JSON.stringify(Array.from(this.rooms.keys())));
+      console.log(
+        '====== rooms:',
+        JSON.stringify(Array.from(this.rooms.keys())),
+      );
       logger.log(`Cannot broadcast to room ${roomId}: room does not exist`);
       return;
     }
 
-    logger.log(`Broadcasting to room ${roomId} with ${room.size} clients:`, data);
+    logger.log(
+      `Broadcasting to room ${roomId} with ${room.size} clients:`,
+      data,
+    );
     const dataStr = JSON.stringify(data);
-    room.forEach(client => {
+    room.forEach((client) => {
       if (client.ws.readyState === WebSocket.OPEN) {
         try {
           client.ws.send(dataStr);
         } catch (error) {
-          const userStr = client.user ? `${client.user.username || client.user.id}` : 'anonymous';
-          logger.error(`Failed to send to "${userStr}" in room ${roomId}:`, error);
+          const userStr = client.user
+            ? `${client.user.username || client.user.id}`
+            : 'anonymous';
+          logger.error(
+            `Failed to send to "${userStr}" in room ${roomId}:`,
+            error,
+          );
         }
-      } 
+      }
     });
     logger.log(`Broadcast complete for room ${roomId}`);
     console.log('-'.repeat(80));
   }
 
   private broadcastToAllClients(message: any) {
-    console.log(`Broadcasting to all clients (${this.clientStore.size} total):`, message);
-    this.clientStore.forEach(client => {
+    console.log(
+      `Broadcasting to all clients (${this.clientStore.size} total):`,
+      message,
+    );
+    this.clientStore.forEach((client) => {
       if (client.ws.readyState === WebSocket.OPEN) {
         try {
           client.ws.send(JSON.stringify(message));
@@ -183,31 +205,50 @@ class WebSocketManager {
   public serverBroadcastToRoom(roomId: string, data: WsMessage) {
     const room = this.rooms.get(roomId);
     if (!room) {
-      console.log(`[WebSocketManager] Cannot broadcast to room ${roomId}: room does not exist`);
-      console.log(`[WebSocketManager] Available rooms:`, Array.from(this.rooms.keys()));
+      console.log(
+        `[WebSocketManager] Cannot broadcast to room ${roomId}: room does not exist`,
+      );
+      console.log(
+        `[WebSocketManager] Available rooms:`,
+        Array.from(this.rooms.keys()),
+      );
       return;
     }
 
-    console.log(`[WebSocketManager] Broadcasting to room ${roomId} with ${room.size} clients:`, data);
+    console.log(
+      `[WebSocketManager] Broadcasting to room ${roomId} with ${room.size} clients:`,
+      data,
+    );
     const dataStr = JSON.stringify(data);
-    room.forEach(client => {
+    room.forEach((client) => {
       if (client.ws.readyState === WebSocket.OPEN) {
         try {
           client.ws.send(dataStr);
         } catch (error) {
-          const userStr = client.user ? `${client.user.username || client.user.id}` : 'anonymous';
-          console.error(`[WebSocketManager] Failed to send to "${userStr}" in room ${roomId}:`, error);
+          const userStr = client.user
+            ? `${client.user.username || client.user.id}`
+            : 'anonymous';
+          console.error(
+            `[WebSocketManager] Failed to send to "${userStr}" in room ${roomId}:`,
+            error,
+          );
         }
-      } 
+      }
     });
     console.log(`[WebSocketManager] Broadcast complete for room ${roomId}`);
   }
 
   public removeUserFromRoom(userId: string, roomId: string): void {
-    this.clientStore.forEach(client => {
-      if (client.user && client.user.id.toString() === userId && client.currentRoom === roomId) {
+    this.clientStore.forEach((client) => {
+      if (
+        client.user &&
+        client.user.id.toString() === userId &&
+        client.currentRoom === roomId
+      ) {
         this.leaveRoom(client, roomId);
-        console.log(`[WebSocketManager] Removed user ${userId} from room ${roomId}`);
+        console.log(
+          `[WebSocketManager] Removed user ${userId} from room ${roomId}`,
+        );
       }
     });
   }
@@ -225,5 +266,4 @@ function validateMessage(data: unknown): WsMessage {
   return data as WsMessage;
 }
 
-export { WebSocketManager};
-
+export { WebSocketManager };

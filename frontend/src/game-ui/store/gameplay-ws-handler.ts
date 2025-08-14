@@ -10,7 +10,8 @@ const GameplayWsHandler = {
 
     switch (type as GameplayMessageType) {
       case 'game-started':
-        const gameStartedPayload = data.payload as Gameplay.GameStarted['payload'];
+        const gameStartedPayload =
+          data.payload as Gameplay.GameStarted['payload'];
         actions.setGameId(gameStartedPayload.gameId);
         actions.setPlayerMapping(gameStartedPayload.playerMapping);
         actions.setBoardState(gameStartedPayload.boardState);
@@ -18,7 +19,8 @@ const GameplayWsHandler = {
         break;
 
       case 'game-state-update':
-        const updatePayload = data.payload as Gameplay.GameStateUpdate['payload'];
+        const updatePayload =
+          data.payload as Gameplay.GameStateUpdate['payload'];
         actions.setBoardState(updatePayload.boardState);
         actions.setTick(updatePayload.tick);
         break;
@@ -33,7 +35,7 @@ const GameplayWsHandler = {
       default:
         console.error(`[gameplay] Unknown message type: ${type}`);
     }
-  }
+  },
 };
 
 export { GameplayWsHandler };

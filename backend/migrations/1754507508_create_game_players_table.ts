@@ -5,15 +5,22 @@ export async function up(db: Kysely<any>): Promise<void> {
   await db.schema
     .createTable('game_players')
     .addColumn('id', 'serial', (col) => col.primaryKey())
-    .addColumn('game_id', 'integer', (col) => col.notNull().references('games.id'))
-    .addColumn('player_id', 'integer', (col) => col.notNull().references('users.id'))
+    .addColumn('game_id', 'integer', (col) =>
+      col.notNull().references('games.id'),
+    )
+    .addColumn('player_id', 'integer', (col) =>
+      col.notNull().references('users.id'),
+    )
     .addColumn('joined_at', 'timestamp', (col) =>
       col.defaultTo(sql`now()`).notNull(),
     )
     .addColumn('status', 'varchar(50)', (col) => col.notNull())
     .addColumn('player_index', 'integer', (col) => col.notNull())
     .addColumn('data', 'json')
-    .addUniqueConstraint('game_players_game_id_player_id_unique', ['game_id', 'player_id'])
+    .addUniqueConstraint('game_players_game_id_player_id_unique', [
+      'game_id',
+      'player_id',
+    ])
     .execute();
 
   await db.schema

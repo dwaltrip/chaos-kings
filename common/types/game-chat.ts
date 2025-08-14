@@ -12,25 +12,28 @@ namespace GameChat {
       room: string;
       timestamp: number;
       user?: User;
-    }
+    };
   }
 
-  export interface JoinRoomMessage extends WsMessage{
+  export interface JoinRoomMessage extends WsMessage {
     payload: {
       room: string;
       timestamp: number;
-    }
+    };
   }
 
   export interface LeaveRoomMessage extends WsMessage {
     payload: {
       room: string;
       timestamp: number;
-    }
+    };
   }
 }
 
-function createNewChatMessage(content: string, room: string): GameChat.ChatMessage {
+function createNewChatMessage(
+  content: string,
+  room: string,
+): GameChat.ChatMessage {
   return {
     domain: GAME_CHAT_DOMAIN,
     type: 'new-message',
@@ -58,6 +61,5 @@ export {
   createNewChatMessage,
   createJoinRoomMessage,
   type GameChat,
-  type GameChatMessageType
+  type GameChatMessageType,
 };
-

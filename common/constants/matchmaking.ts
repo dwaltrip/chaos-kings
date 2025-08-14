@@ -1,5 +1,4 @@
 const PLAYERS_PER_GAME = 2;
-const MATCHMAKING_ROOM_NAME = "matchmaking-queue";
+const MATCHMAKING_ROOM_NAME = 'matchmaking-queue';
 
 export { PLAYERS_PER_GAME, MATCHMAKING_ROOM_NAME };
-

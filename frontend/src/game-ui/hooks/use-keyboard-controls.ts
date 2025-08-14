@@ -6,11 +6,15 @@ interface UseKeyboardControlsParams {
   disabled: boolean;
 }
 
-export function useKeyboardControls({ onMoveRequest, onCancelMoves, disabled }: UseKeyboardControlsParams) {
+export function useKeyboardControls({
+  onMoveRequest,
+  onCancelMoves,
+  disabled,
+}: UseKeyboardControlsParams) {
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       if (disabled) return;
-      
+
       switch (event.key.toLowerCase()) {
         case 'w':
           onMoveRequest('UP');

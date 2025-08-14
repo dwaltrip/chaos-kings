@@ -1,5 +1,11 @@
 import { createUser } from '@/user/actions/create-user';
-import { setupTestDb, cleanupTestDb, teardownTestDb, testDb, expectUniqueConstraintViolation } from '@/tests/test-helpers';
+import {
+  setupTestDb,
+  cleanupTestDb,
+  teardownTestDb,
+  testDb,
+  expectUniqueConstraintViolation,
+} from '@/tests/test-helpers';
 
 describe('createUser', () => {
   beforeAll(async () => {
@@ -44,32 +50,44 @@ describe('createUser', () => {
 
   describe('validation errors', () => {
     test('should reject empty username', async () => {
-      await expect(createUser('', testDb)).rejects.toThrow('Username is required');
+      await expect(createUser('', testDb)).rejects.toThrow(
+        'Username is required',
+      );
     });
 
     test('should reject whitespace-only username', async () => {
-      await expect(createUser('   ', testDb)).rejects.toThrow('Username is required');
+      await expect(createUser('   ', testDb)).rejects.toThrow(
+        'Username is required',
+      );
     });
 
     test('should reject username longer than 50 characters', async () => {
       const longUsername = 'a'.repeat(51);
-      await expect(createUser(longUsername, testDb)).rejects.toThrow('Username must be 25 characters or less');
+      await expect(createUser(longUsername, testDb)).rejects.toThrow(
+        'Username must be 25 characters or less',
+      );
     });
 
     test('should reject username with invalid characters', async () => {
-      await expect(createUser('test@user', testDb)).rejects.toThrow('Username can only contain letters, numbers, underscores, and hyphens');
-      await expect(createUser('test user', testDb)).rejects.toThrow('Username can only contain letters, numbers, underscores, and hyphens');
-      await expect(createUser('test.user', testDb)).rejects.toThrow('Username can only contain letters, numbers, underscores, and hyphens');
+      await expect(createUser('test@user', testDb)).rejects.toThrow(
+        'Username can only contain letters, numbers, underscores, and hyphens',
+      );
+      await expect(createUser('test user', testDb)).rejects.toThrow(
+        'Username can only contain letters, numbers, underscores, and hyphens',
+      );
+      await expect(createUser('test.user', testDb)).rejects.toThrow(
+        'Username can only contain letters, numbers, underscores, and hyphens',
+      );
     });
   });
 
   describe('database constraints', () => {
     test('should reject duplicate usernames', async () => {
       const username = 'duplicateuser';
-      
+
       // Create first user
       await createUser(username, testDb);
-      
+
       // Attempt to create duplicate - should trigger unique constraint violation
       try {
         await createUser(username, testDb);
@@ -95,10 +113,10 @@ describe('createUser', () => {
 
     test('should generate valid UUID for user_key', async () => {
       const user = await createUser('testuser', testDb);
-      
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       expect(user.user_key).toMatch(uuidRegex);
     });
   });
 });
-

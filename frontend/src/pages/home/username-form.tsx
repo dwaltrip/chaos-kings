@@ -13,7 +13,7 @@ function UsernameForm({ onUsernameSet }: UsernameFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const validationResult = validateUsername(inputValue);
     if (!validationResult.isValid) {
       setError(validationResult.error || '');
@@ -26,14 +26,18 @@ function UsernameForm({ onUsernameSet }: UsernameFormProps) {
       setInputValue('');
       onUsernameSet?.();
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to update username');
+      setError(
+        error instanceof Error ? error.message : 'Failed to update username',
+      );
     }
   };
 
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-      <h2 className="text-xl font-semibold mb-4 text-gray-800">Choose Your Username</h2>
-      
+      <h2 className="text-xl font-semibold mb-4 text-gray-800">
+        Choose Your Username
+      </h2>
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <input
@@ -47,11 +51,9 @@ function UsernameForm({ onUsernameSet }: UsernameFormProps) {
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             maxLength={25}
           />
-          {error && (
-            <p className="mt-1 text-sm text-red-600">{error}</p>
-          )}
+          {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
         </div>
-        
+
         <button
           type="submit"
           className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
@@ -64,4 +66,3 @@ function UsernameForm({ onUsernameSet }: UsernameFormProps) {
 }
 
 export { UsernameForm };
-

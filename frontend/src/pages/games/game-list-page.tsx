@@ -31,7 +31,6 @@ function GameListPage() {
     }
   };
 
-
   if (loading) {
     return <div className="text-center">Loading games...</div>;
   }
@@ -40,7 +39,7 @@ function GameListPage() {
     return (
       <div className="text-center text-red-600">
         <p>{error}</p>
-        <button 
+        <button
           onClick={loadGames}
           className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
@@ -54,15 +53,20 @@ function GameListPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Games</h1>
-        <p className="text-sm text-gray-600">Games are created through matchmaking. Visit the Join Game page to find a match!</p>
+        <p className="text-sm text-gray-600">
+          Games are created through matchmaking. Visit the Join Game page to
+          find a match!
+        </p>
       </div>
 
       {!games || games.length === 0 ? (
-        <p className="text-gray-600">No games yet. Join the matchmaking queue to start playing!</p>
+        <p className="text-gray-600">
+          No games yet. Join the matchmaking queue to start playing!
+        </p>
       ) : (
         <div className="space-y-4">
-          {games.map(game => (
-            <div 
+          {games.map((game) => (
+            <div
               key={game.id}
               onClick={() => navigate(`/games/${game.id}`)}
               className="p-4 border border-gray-300 rounded cursor-pointer hover:bg-gray-50"
@@ -87,4 +91,3 @@ function GameListPage() {
 }
 
 export { GameListPage };
-

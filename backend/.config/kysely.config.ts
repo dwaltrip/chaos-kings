@@ -9,12 +9,12 @@ import { db } from '../src/services/db.ts';
 
 export default defineConfig({
   kysely: db,
-	// dialect: 'pg',
-	//   migrations: {
-	//     migrationFolder: "migrations",
-	//   },
-	//   plugins: [],
-	//   seeds: {
-	//     seedFolder: "seeds",
-	//   }
+  // dialect: 'pg',
+  //   migrations: {
+  //     migrationFolder: "migrations",
+  //   },
+  //   plugins: [],
+  //   seeds: {
+  //     seedFolder: "seeds",
+  //   }
 });
