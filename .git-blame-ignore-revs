@@ -1,3 +1,4 @@
 # Ignore formatting commits for git blame
 # Usage: git blame --ignore-revs-file .git-blame-ignore-revs
 # Add commit SHAs of pure formatting changes below:
+e3ba8e7
