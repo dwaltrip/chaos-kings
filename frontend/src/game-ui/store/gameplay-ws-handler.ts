@@ -1,5 +1,6 @@
 import type { WsMessage } from '@common/types/websockets';
 import type { GameplayMessageType, Gameplay } from '@common/types/gameplay';
+import { GameStatus } from '@common/types/games';
 import { gameplayStore } from '@/game-ui/store/gameplay-store';
 import { gameMetadataStore } from '@/stores/game-metadata-store';
 
@@ -25,6 +26,23 @@ const GameplayWsHandler = {
         // Stop countdown when game actually starts
         const metadataActionsStarted = gameMetadataStore.getState().actions;
         metadataActionsStarted.setCountdownActive(false);
+
+        // Update entire game object if provided by backend
+        if (gameStartedPayload.game) {
+          metadataActionsStarted.setGame(gameStartedPayload.game);
+          console.log(
+            '[gameplay] Updated game object from backend:',
+            gameStartedPayload.game,
+          );
+        } else {
+          // Fallback: manually update status if no game object provided
+          metadataActionsStarted.updateGame({
+            status: GameStatus.IN_PROGRESS,
+            updated_at: new Date().toISOString(),
+          });
+          console.log('[gameplay] Fallback: manually updated game status');
+        }
+
         // Initialize gameplay state
         actions.setGameId(gameStartedPayload.gameId);
         actions.setPlayerMapping(gameStartedPayload.playerMapping);
@@ -41,6 +59,12 @@ const GameplayWsHandler = {
 
       case 'game-ended':
         const endedPayload = data.payload as Gameplay.GameEnded['payload'];
+        // Update game status to complete and timestamp
+        const metadataActionsEnded = gameMetadataStore.getState().actions;
+        metadataActionsEnded.updateGame({
+          status: GameStatus.COMPLETE,
+          updated_at: new Date().toISOString(),
+        });
         actions.setBoardState(endedPayload.finalBoardState);
         actions.setGameEnded(endedPayload.winner, endedPayload.reason);
         console.log('[gameplay] Game ended:', endedPayload);

@@ -1,5 +1,6 @@
 import type { WsMessage } from '@common/types/websockets';
 import type { BoardState, Movement, Coord } from '@core/types';
+import type { GameWithPlayers } from '@common/types/games';
 
 const GAMEPLAY_DOMAIN = 'gameplay';
 
@@ -44,6 +45,7 @@ namespace Gameplay {
       gameId: number;
       playerMapping: { playerId: string; playerIndex: number }[];
       boardState: BoardState;
+      game: GameWithPlayers;
     };
   }
 

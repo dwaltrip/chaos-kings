@@ -400,29 +400,42 @@ export class GameServer {
     try {
       const gameRepository = new GameRepository();
       await gameRepository.updateStatus(this.gameId, GameStatus.IN_PROGRESS);
+
+      // Get the updated game object with new status
+      const updatedGame = await getGame(this.gameId);
+      await this.broadcastGameStart(updatedGame);
     } catch (error) {
       console.error(
         `[GameServer] Failed to update game status for game ${this.gameId}:`,
         error,
       );
+      // Fallback to broadcast without updated game object
+      await this.broadcastGameStart(null);
     }
-
-    this.broadcastGameStart();
   }
 
-  private broadcastGameStart(): void {
+  private async broadcastGameStart(
+    game: GameWithPlayers | null,
+  ): Promise<void> {
     if (!this.gameState) return;
 
     try {
       const wsManager = getGlobalWebSocketManager();
+      const payload: any = {
+        gameId: this.gameId,
+        playerMapping: this.getPlayerMapping(),
+        boardState: this.gameState.board,
+      };
+
+      // Include the full game object if available
+      if (game) {
+        payload.game = game;
+      }
+
       wsManager.serverBroadcastToRoom(this.roomName, {
         domain: GAMEPLAY_DOMAIN,
         type: 'game-started',
-        payload: {
-          gameId: this.gameId,
-          playerMapping: this.getPlayerMapping(),
-          boardState: this.gameState.board,
-        },
+        payload,
       });
     } catch (error) {
       console.error(
