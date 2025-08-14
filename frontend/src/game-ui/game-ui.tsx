@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import mountainIcon from '@/assets/mountain.svg';
 import generalIcon from '@/assets/crown.png';
 
@@ -11,6 +10,8 @@ import {
   type Coord,
 } from '@core/types';
 import { isPlayerSquare } from '@core/square';
+import { useKeyboardControls } from '@/game-ui/use-keyboard-controls';
+import { isSquareVisible, shouldShowMountain } from '@/game-ui/visibility-utils';
 
 import '@/game-ui/game-ui.css';
 
@@ -21,43 +22,21 @@ interface GameUIProps {
   onMoveRequest: (direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => void;
   onCancelMoves: () => void;
   disabled?: boolean;
+  currentPlayerIndex: number | null;
+  visibleSquares: Set<Coord>;
 }
 
-function GameUI({ boardState, selectedTile, onTileSelect, onMoveRequest, onCancelMoves, disabled = false }: GameUIProps) {
-  // console.log('==================================================')
-  // console.log('Rendering GameUI')
-  
-  useEffect(() => {
-    const handleKeyPress = (event: KeyboardEvent) => {
-      if (disabled) return;
-      
-      switch (event.key.toLowerCase()) {
-        case 'w':
-          onMoveRequest('UP');
-          event.preventDefault();
-          break;
-        case 's':
-          onMoveRequest('DOWN');
-          event.preventDefault();
-          break;
-        case 'a':
-          onMoveRequest('LEFT');
-          event.preventDefault();
-          break;
-        case 'd':
-          onMoveRequest('RIGHT');
-          event.preventDefault();
-          break;
-        case 'q':
-          onCancelMoves();
-          event.preventDefault();
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [onMoveRequest, onCancelMoves, disabled]);
+function GameUI({
+  boardState,
+  selectedTile,
+  onTileSelect,
+  onMoveRequest,
+  onCancelMoves,
+  disabled = false,
+  currentPlayerIndex,
+  visibleSquares
+}: GameUIProps) {
+  useKeyboardControls({ onMoveRequest, onCancelMoves, disabled });
   
   const handleTileSelect = (coord: Coord) => {
     if (disabled) return;
@@ -66,7 +45,13 @@ function GameUI({ boardState, selectedTile, onTileSelect, onMoveRequest, onCance
   
   return (
     <div className={disabled ? 'game-ui-disabled' : ''}>
-      <GameBoard boardState={boardState} selectedTile={selectedTile} onTileSelect={handleTileSelect} />
+      <GameBoard 
+        boardState={boardState} 
+        selectedTile={selectedTile} 
+        onTileSelect={handleTileSelect}
+        currentPlayerIndex={currentPlayerIndex}
+        visibleSquares={visibleSquares}
+      />
     </div>
   );
 }
@@ -81,9 +66,17 @@ interface GameBoardProps {
   boardState: BoardState;
   selectedTile: Coord | null;
   onTileSelect: (coord: Coord) => void;
+  currentPlayerIndex: number | null;
+  visibleSquares: Set<Coord>;
 }
 
-function GameBoard({ boardState, selectedTile, onTileSelect }: GameBoardProps) {
+function GameBoard({
+  boardState,
+  selectedTile,
+  onTileSelect,
+  currentPlayerIndex,
+  visibleSquares
+}: GameBoardProps) {
   const grid = boardState.grid;
   const gridRows = grid.length;
   const gridCols = grid[0]?.length || 0;
@@ -98,6 +91,8 @@ function GameBoard({ boardState, selectedTile, onTileSelect }: GameBoardProps) {
         const col = i % gridCols;
         const coord = { x: col, y: row };
         const isSelected = selectedTile ? selectedTile.x === coord.x && selectedTile.y === coord.y : false;
+        const visible = isSquareVisible(coord, visibleSquares, currentPlayerIndex);
+        const showMountain = shouldShowMountain(square);
         
         return isPlayerSquare(square) ? (
           <PlayerSquareView
@@ -106,9 +101,18 @@ function GameBoard({ boardState, selectedTile, onTileSelect }: GameBoardProps) {
             coord={coord}
             isSelected={isSelected}
             onTileSelect={onTileSelect}
+            isVisible={visible}
           />
         ) : (
-          <SquareView key={i} square={square} coord={coord} isSelected={isSelected} onTileSelect={onTileSelect} />
+          <SquareView 
+            key={i} 
+            square={square} 
+            coord={coord} 
+            isSelected={isSelected} 
+            onTileSelect={onTileSelect}
+            isVisible={visible}
+            showMountain={showMountain}
+          />
         );
       })}
     </div>
@@ -123,33 +127,49 @@ type PlayerSquareProps = {
   square: PlayerSquare; 
   coord: Coord; 
   isSelected: boolean; 
-  onTileSelect: (coord: Coord) => void; 
+  onTileSelect: (coord: Coord) => void;
+  isVisible: boolean;
 };
 
-function General({ square, coord, isSelected, onTileSelect } : PlayerSquareProps) {
+function General({ square, coord, isSelected, onTileSelect, isVisible } : PlayerSquareProps) {
   return (
-    <PlayerSquareLayout className='general-icon' playerIndex={square.playerIndex} isSelected={isSelected} onClick={() => onTileSelect(coord)}>
+    <PlayerSquareLayout 
+      className='general-icon' 
+      playerIndex={square.playerIndex} 
+      isSelected={isSelected} 
+      onClick={() => onTileSelect(coord)}
+      isVisible={isVisible}
+    >
       <img className='general-img' src={generalIcon} /> 
       <ArmyCount count={square.units} />
     </PlayerSquareLayout>
   );
 }
 
-function ArmySquare({ square, coord, isSelected, onTileSelect } : PlayerSquareProps) {
+function ArmySquare({ square, coord, isSelected, onTileSelect, isVisible } : PlayerSquareProps) {
   return (
-    <PlayerSquareLayout className='army-square' playerIndex={square.playerIndex} isSelected={isSelected} onClick={() => onTileSelect(coord)}>
+    <PlayerSquareLayout 
+      className='army-square' 
+      playerIndex={square.playerIndex} 
+      isSelected={isSelected} 
+      onClick={() => onTileSelect(coord)}
+      isVisible={isVisible}
+    >
       <ArmyCount count={square.units} />
     </PlayerSquareLayout>
   );
 }
 
-function SquareView({ square, coord, isSelected, onTileSelect } : { 
+function SquareView({ square, coord, isSelected, onTileSelect, isVisible, showMountain } : { 
   square: Square; 
   coord: Coord; 
   isSelected: boolean; 
-  onTileSelect: (coord: Coord) => void; 
+  onTileSelect: (coord: Coord) => void;
+  isVisible: boolean;
+  showMountain: boolean;
 }) {
-  const className = `cell ${square && square.type.toString().toLowerCase()} ${isSelected ? 'selected' : ''}`;
+  const fogClass = !isVisible ? 'fog-of-war' : '';
+  const className = `cell ${square && square.type.toString().toLowerCase()} ${isSelected ? 'selected' : ''} ${fogClass}`;
   
   const handleClick = () => {
     console.log(`[DEBUG_TILE_SELECT] Clicked tile at (${coord.x}, ${coord.y})`);
@@ -161,27 +181,46 @@ function SquareView({ square, coord, isSelected, onTileSelect } : {
   }
   return (
     <div className={className} onClick={handleClick}>
-      {square.type === SquareType.MOUNTAIN && <img src={mountainIcon} />}
+      {(isVisible || showMountain) && square.type === SquareType.MOUNTAIN && <img src={mountainIcon} />}
     </div>
   );
 }
 
-function PlayerSquareView({ square, coord, isSelected, onTileSelect } : PlayerSquareProps) {
-  const className = `cell ${square && square.type.toString().toLowerCase()}`;
+function PlayerSquareView({ square, coord, isSelected, onTileSelect, isVisible } : PlayerSquareProps) {
+  const fogClass = !isVisible ? 'fog-of-war' : '';
+  const className = `cell ${square && square.type.toString().toLowerCase()} ${fogClass}`;
   if (!square) {
     throw new Error('Square is null');
   }
   return (
     <div className={className}>
-      {square.type === PlayerSquareType.GENERAL && 
-        <General square={square} coord={coord} isSelected={isSelected} onTileSelect={onTileSelect}/>
+      {isVisible && square.type === PlayerSquareType.GENERAL && 
+        <General
+          square={square}
+          coord={coord}
+          isSelected={isSelected}
+          onTileSelect={onTileSelect}
+          isVisible={isVisible}
+        />
       }
-      {square.type === PlayerSquareType.ARMY &&
-        <ArmySquare square={square} coord={coord} isSelected={isSelected} onTileSelect={onTileSelect}/>
+      {isVisible && square.type === PlayerSquareType.ARMY &&
+        <ArmySquare
+          square={square}
+          coord={coord}
+          isSelected={isSelected}
+          onTileSelect={onTileSelect}
+          isVisible={isVisible}
+        />
       }
       {/* TODO: Implement view for PLAYER_CITY */}
-      {square.type === PlayerSquareType.PLAYER_CITY &&
-        <ArmySquare square={square} coord={coord} isSelected={isSelected} onTileSelect={onTileSelect}/>
+      {isVisible && square.type === PlayerSquareType.PLAYER_CITY &&
+        <ArmySquare
+          square={square}
+          coord={coord}
+          isSelected={isSelected}
+          onTileSelect={onTileSelect}
+          isVisible={isVisible}
+        />
       }
     </div>
   );
@@ -191,11 +230,12 @@ function PlayerSquareView({ square, coord, isSelected, onTileSelect } : PlayerSq
 // TODO: consolidate with PlayerSquareView
 // ---------------------------------------
 function PlayerSquareLayout(
-  { playerIndex, children, className, isSelected, onClick } :
-  { playerIndex: number, children: any, className?: string, isSelected: boolean, onClick: () => void }
+  { playerIndex, children, className, isSelected, onClick, isVisible } :
+  { playerIndex: number, children: any, className?: string, isSelected: boolean, onClick: () => void, isVisible: boolean }
 ) {
   const colorStyle = { backgroundColor: playerIndexToColor(playerIndex) };
   const selectedClass = isSelected ? 'selected' : '';
+  const visibilityClass = !isVisible ? 'fog-of-war' : '';
   
   const handleClick = () => {
     console.log(`[DEBUG_TILE_SELECT] Clicked player square, isSelected: ${isSelected}`);
@@ -204,7 +244,7 @@ function PlayerSquareLayout(
   
   return (
     <div 
-      className={`player-square ${className || ''} ${selectedClass}`} 
+      className={`player-square ${className || ''} ${selectedClass} ${visibilityClass}`} 
       style={colorStyle}
       onClick={handleClick}
     >

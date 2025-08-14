@@ -38,7 +38,7 @@ function g2(x: number, y: number, units: number) {
 }
 
 describe('Board.getVisibleSquares', () => {
-  it('should return all 8 neighboring squares for a single player square in center', () => {
+  it('should return all 8 neighboring squares plus the player square itself', () => {
     const grid: GameGrid = [
       [blank(0, 0), blank(1, 0), blank(2, 0)],
       [blank(0, 1), p1(1, 1, 5), blank(2, 1)],
@@ -51,7 +51,7 @@ describe('Board.getVisibleSquares', () => {
 
     const visibleSquares = Board.getVisibleSquares(board, 1);
     
-    expect(visibleSquares.size).toBe(8);
+    expect(visibleSquares.size).toBe(9); // 8 neighbors + 1 owned square
     
     const coordsArray = Array.from(visibleSquares);
     const coordStrings = coordsArray.map(coord => `${coord.x},${coord.y}`);
@@ -60,6 +60,7 @@ describe('Board.getVisibleSquares', () => {
     expect(coordStrings).toContain('1,0'); // N
     expect(coordStrings).toContain('2,0'); // NE
     expect(coordStrings).toContain('0,1'); // W
+    expect(coordStrings).toContain('1,1'); // Player's own square
     expect(coordStrings).toContain('2,1'); // E
     expect(coordStrings).toContain('0,2'); // SW
     expect(coordStrings).toContain('1,2'); // S
@@ -95,11 +96,12 @@ describe('Board.getVisibleSquares', () => {
 
     const visibleSquares = Board.getVisibleSquares(board, 1);
     
-    expect(visibleSquares.size).toBe(3);
+    expect(visibleSquares.size).toBe(4); // 3 neighbors + 1 owned square
     
     const coordsArray = Array.from(visibleSquares);
     const coordStrings = coordsArray.map(coord => `${coord.x},${coord.y}`);
     
+    expect(coordStrings).toContain('0,0'); // Player's own square
     expect(coordStrings).toContain('1,0'); // E
     expect(coordStrings).toContain('0,1'); // S
     expect(coordStrings).toContain('1,1'); // SE
@@ -142,15 +144,17 @@ describe('Board.getVisibleSquares', () => {
     const player1Visible = Board.getVisibleSquares(board, 1);
     const player2Visible = Board.getVisibleSquares(board, 2);
     
-    // Player 1 can see around (0,0)
+    // Player 1 can see around (0,0) including their own square
     const player1Coords = Array.from(player1Visible).map(coord => `${coord.x},${coord.y}`);
+    expect(player1Coords).toContain('0,0'); // Player 1's own square
     expect(player1Coords).toContain('1,0');
     expect(player1Coords).toContain('0,1');
     expect(player1Coords).toContain('1,1');
     
-    // Player 2 can see around (1,0)  
+    // Player 2 can see around (1,0) including their own square  
     const player2Coords = Array.from(player2Visible).map(coord => `${coord.x},${coord.y}`);
     expect(player2Coords).toContain('0,0');
+    expect(player2Coords).toContain('1,0'); // Player 2's own square
     expect(player2Coords).toContain('2,0');
     expect(player2Coords).toContain('0,1');
     expect(player2Coords).toContain('1,1');

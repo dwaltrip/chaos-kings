@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router';
 
 import type { GameWithPlayers } from '@common/types/games';
-import type { Coord, Movement } from '@core/types';
 import { userStore } from '@/stores/user-store';
 import { loadGame as apiLoadGame, GameNotFoundError } from '@/pages/game/games-api';
 import { GameChat } from '@/pages/game/game-chat/game-chat';
@@ -13,18 +12,17 @@ import { getWebSocketService } from '@/services/websocket-service';
 import { GAMEPLAY_DOMAIN, createJoinRoomMessage, createLeaveRoomMessage } from '@common/types/gameplay';
 import { roomNameForGameplay } from '@common/domains/game/utils';
 import { PlayerColors } from '@/pages/game/player-colors';
+import { useFogOfWar } from '@/pages/game/use-fog-of-war';
+import { useGameplay } from '@/pages/game/use-gameplay';
 
 function GamePage() {
-  // console.log('==================================================')
-  // console.log('Rendering GamePage')
-
   const { gameId } = useParams();
   const user = userStore((state) => state.user);
   const [game, setGame] = useState<GameWithPlayers | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Gameplay state from store (avoid unstable object selector)
+  // Gameplay state from store
   const boardState = gameplayStore((state) => state.boardState);
   const selectedTile = gameplayStore((state) => state.selectedTile);
   const playerMapping = gameplayStore((state) => state.playerMapping);
@@ -32,6 +30,10 @@ function GamePage() {
   const winner = gameplayStore((state) => state.winner);
   const endReason = gameplayStore((state) => state.endReason);
   const { actions } = gameplayStore.getState();
+  
+  // Custom hooks for cleaner logic
+  const { currentPlayerIndex, visibleSquares } = useFogOfWar({ boardState, playerMapping, user, game });
+  const { handleTileSelect, handleMoveRequest, handleCancelMoves } = useGameplay();
 
   useEffect(() => {
     if (gameId) {
@@ -59,40 +61,6 @@ function GamePage() {
       actions.reset();
     };
   }, [game, actions]);
-  
-  // Input handlers for gameplay
-  const handleTileSelect = (coord: Coord) => {
-    actions.setSelectedTile(coord);
-  };
-  
-  const handleMoveRequest = (direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
-    if (!selectedTile) {
-      console.warn('Cannot move: no tile selected');
-      return;
-    }
-    
-    // Follow the army to its destination
-    actions.followArmyMovement(selectedTile, direction as Movement);
-    
-    const wsService = getWebSocketService();
-    wsService.send({
-      domain: GAMEPLAY_DOMAIN,
-      type: 'move-request',
-      payload: {
-        sourceCoord: selectedTile,
-        direction: direction as Movement
-      }
-    });
-  };
-  
-  const handleCancelMoves = () => {
-    const wsService = getWebSocketService();
-    wsService.send({
-      domain: GAMEPLAY_DOMAIN,
-      type: 'cancel-moves-request',
-      payload: null
-    });
-  };
 
   const loadGame = async (id: string) => {
     try {
@@ -119,6 +87,7 @@ function GamePage() {
     }
     return game?.status || 'UNKNOWN';
   };
+
 
   const getWinnerInfo = () => {
     if (!gameEnded || winner === null || !playerMapping) {
@@ -183,9 +152,11 @@ function GamePage() {
             boardState={boardState}
             selectedTile={selectedTile}
             onTileSelect={handleTileSelect}
-            onMoveRequest={handleMoveRequest}
+            onMoveRequest={(direction) => handleMoveRequest(direction, selectedTile)}
             onCancelMoves={handleCancelMoves}
             disabled={gameEnded}
+            currentPlayerIndex={currentPlayerIndex}
+            visibleSquares={visibleSquares}
           />
         ) : (
           <GameUI 
@@ -198,6 +169,8 @@ function GamePage() {
             onMoveRequest={() => console.log('No live gameplay yet')}
             onCancelMoves={() => console.log('No live gameplay yet')}
             disabled={false}
+            currentPlayerIndex={currentPlayerIndex}
+            visibleSquares={visibleSquares}
           />
         )}
       </main>

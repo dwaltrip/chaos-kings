@@ -88,6 +88,9 @@ function getVisibleSquares(board: BoardState, playerIndex: number): Set<Coord> {
         visibleCoords.add(`${neighborCoord.x},${neighborCoord.y}`);
       }
     }
+
+    // Also add the square the player owns
+    visibleCoords.add(`${playerSquare.coord.x},${playerSquare.coord.y}`);
   }
   
   // Convert back to Set of Coord objects
