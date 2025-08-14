@@ -11,6 +11,7 @@ import {
   cleanup,
 } from '@/pages/join-game/game-matchmaking-actions';
 import { GameMatchmakingWsHandler } from '@/pages/join-game/game-matchmaking-ws-handler';
+import { GameCountdown } from '@/components/game-countdown';
 
 type WebSocketService = ReturnType<typeof websocketConnect>;
 
@@ -18,6 +19,8 @@ function JoinGamePage() {
   const queueSize = gameMatchmakingStore((state) => state.queueSize);
   const playersNeeded = gameMatchmakingStore((state) => state.playersNeeded);
   const isInQueue = gameMatchmakingStore((state) => state.isInQueue);
+  const gameReady = gameMatchmakingStore((state) => state.gameReady);
+  const countdown = gameMatchmakingStore((state) => state.countdown);
   const { isConnected } = useWsStore();
   const wsServiceRef = useRef<WebSocketService | null>(null);
   const [waitingTime, setWaitingTime] = useState(0);
@@ -74,7 +77,9 @@ function JoinGamePage() {
         {isInQueue ? 'Waiting for players...' : 'Find a Game'}
       </h1>
 
-      {!isInQueue ? (
+      {gameReady ? (
+        <GameCountdown countdown={countdown} isActive={gameReady} />
+      ) : !isInQueue ? (
         <button
           onClick={handleJoinQueue}
           disabled={!isConnected}
