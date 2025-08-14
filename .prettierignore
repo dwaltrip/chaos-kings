@@ -1,0 +1,9 @@
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.git/
+backend/dist/
+frontend/dist/
+.claude/
