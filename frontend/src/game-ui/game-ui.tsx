@@ -1,5 +1,6 @@
 import mountainIcon from '@/assets/mountain.svg';
 import generalIcon from '@/assets/crown.png';
+import clsx from 'clsx';
 
 import {
   SquareType,
@@ -218,8 +219,12 @@ function SquareView({
   isVisible: boolean;
   showMountain: boolean;
 }) {
-  const fogClass = !isVisible ? 'fog-of-war' : '';
-  const className = `cell ${square && square.type.toString().toLowerCase()} ${isSelected ? 'selected' : ''} ${fogClass}`;
+  const className = clsx(
+    'cell',
+    square && square.type.toString().toLowerCase(),
+    isSelected && 'selected',
+    !isVisible && 'fog-of-war',
+  );
 
   const handleClick = () => {
     console.log(`[DEBUG_TILE_SELECT] Clicked tile at (${coord.x}, ${coord.y})`);
