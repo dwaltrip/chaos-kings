@@ -4,13 +4,12 @@ import { invariant } from '@common/utils/invariant';
 import { PLAYER_COLORS, PlayerColor } from '@core/colors';
 import { generateRandomMap } from '@core/map/generate-grid';
 import { GameConfig } from '@core/game-config';
+import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
 
 import { GameRepository } from '@/game/game-repository';
 import { GamePlayersRepository } from '@/game-players/game-players-repository';
 import { GameStatus, Game, NewGame } from '@/game/types';
 import { Database } from '@/types';
-
-const DEFAULT_SIZE = { width: 30, height: 30 };
 
 interface CreateGameOptions {
   playerIds: number[];
@@ -24,7 +23,10 @@ async function createGame(options: CreateGameOptions): Promise<Game> {
     `Not enough colors for ${playerCount} players`,
   );
 
-  const { grid, generals } = generateRandomMap(DEFAULT_SIZE, playerCount);
+  const { grid, generals } = generateRandomMap(
+    DEFAULT_GAME_GENERATION_CONFIG.mapSize,
+    playerCount,
+  );
 
   const playerIndexToColor: GameConfig['playerIndexToColor'] = {};
   for (let i = 0; i < playerCount; i++) {
@@ -35,7 +37,7 @@ async function createGame(options: CreateGameOptions): Promise<Game> {
   const newGame: NewGame = {
     game_state: {},
     config: {
-      size: DEFAULT_SIZE,
+      size: DEFAULT_GAME_GENERATION_CONFIG.mapSize,
       startingGrid: grid,
       numPlayers: playerCount,
       playerIndexToColor,

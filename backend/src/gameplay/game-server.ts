@@ -1,6 +1,8 @@
 import { GameState, BoardState, Movement, Coord } from '@core/types';
 import { tick as engineTick, applyMovement } from '@core/engine';
 import { generateRandomMap } from '@core/map/generate-grid';
+import { GameGenerationConfig } from '@core/game-generation-config';
+import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
 import { getGame } from '@/game/actions/get-game';
 import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
 import type { GameWithPlayers } from '@common/types/games';
@@ -46,7 +48,7 @@ export class GameServer {
         throw new Error(`Game ${this.gameId} not found in database`);
       }
 
-      this.initializeGameState(gameData);
+      this.initializeGameState(gameData, DEFAULT_GAME_GENERATION_CONFIG);
       this.setupPlayerMappings(gameData);
       this.initializePlayerQueues();
       this.expectedPlayerCount = gameData.players.length;
@@ -67,18 +69,18 @@ export class GameServer {
     }
   }
 
-  private initializeGameState(gameData: GameWithPlayers): void {
+  private initializeGameState(
+    gameData: GameWithPlayers,
+    generationConfig: GameGenerationConfig,
+  ): void {
     const mapData = generateRandomMap(
-      {
-        width: 10,
-        height: 10,
-      },
+      generationConfig.mapSize,
       gameData.players.length,
     );
 
     const boardState: BoardState = {
       grid: mapData.grid,
-      size: { width: 10, height: 10 },
+      size: generationConfig.mapSize,
     };
 
     this.gameState = {
