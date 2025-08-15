@@ -10,7 +10,7 @@ Current map generation places mountains randomly with clustering, then places ge
 - Mountain density: ~10-30% of tiles
 - Generation frequency: Once per game start
 
-## Approach 1: Post-Generation Validation + Repair
+## Approach 1: Post-Generation Validation + Repair (PGR)
 
 ### Algorithm
 1. Generate map normally (mountains + generals)
@@ -57,7 +57,7 @@ function areAllGeneralsConnected(grid, generals):
 - **Pros:** Simple implementation, preserves existing generation logic, maintains randomness
 - **Cons:** May create unnatural corridors, requires multiple connectivity tests
 
-## Approach 3: Constraint-Based Mountain Placement
+## Approach 2: Constraint-Based Mountain Placement (CBP)
 
 ### Algorithm
 1. Place generals first with good spatial distribution
@@ -101,7 +101,7 @@ function constrainedMountainPlacement(grid, generals):
 - **Pros:** Prevents problems during generation, maintains full randomness
 - **Cons:** More complex implementation, requires sophisticated optimizations for large maps
 
-## Approach 4: Multi-Pass Generation
+## Approach 3: Multi-Pass Generation (MPG)
 
 ### Algorithm
 1. Generate N candidate maps quickly (using simpler algorithms)
@@ -153,30 +153,30 @@ function multiPassGeneration(size, numPlayers, targetQuality):
 
 ### Small Maps (20x20, ≤8 players)
 - All approaches viable
-- Approach 3 reasonable with Union-Find optimization
-- Approach 4 feasible with 5-10 candidates
+- Approach 2 (CBP) reasonable with Union-Find optimization
+- Approach 3 (MPG) feasible with 5-10 candidates
 
 ### Medium Maps (30x30, ≤15 players)  
-- Approach 1 recommended for simplicity
-- Approach 3 viable with heavy optimization
-- Approach 4 with 3-5 candidates for quality needs
+- Approach 1 (PGR) recommended for simplicity
+- Approach 2 (CBP) viable with heavy optimization
+- Approach 3 (MPG) with 3-5 candidates for quality needs
 
 ### Large Maps (50x50, ≤30 players)
-- Approach 1 most reliable if repair iterations stay low
-- Approach 3 challenging without sophisticated optimizations
-- Approach 4 only for premium quality requirements
+- Approach 1 (PGR) most reliable if repair iterations stay low
+- Approach 2 (CBP) challenging without sophisticated optimizations
+- Approach 3 (MPG) only for premium quality requirements
 
 ## Implementation Recommendations
 
-### Phase 1: Start with Approach 1
+### Phase 1: Start with Approach 1 (PGR)
 - Implement basic connectivity validation and repair
 - Establish BFS utilities and connectivity testing infrastructure
 - Measure actual repair iteration counts on various map configurations
 
 ### Phase 2: Optimize Based on Data
-- If repair iterations are consistently low (1-3), stick with Approach 1
-- If repair creates too many artificial corridors, consider Approach 3 with Union-Find
-- If quality requirements are high, explore Approach 4
+- If repair iterations are consistently low (1-3), stick with Approach 1 (PGR)
+- If repair creates too many artificial corridors, consider Approach 2 (CBP) with Union-Find
+- If quality requirements are high, explore Approach 3 (MPG)
 
 ### Related Ideas to Explore
 - **Hybrid approaches:** Combine constraint-based placement for critical areas with post-generation repair
