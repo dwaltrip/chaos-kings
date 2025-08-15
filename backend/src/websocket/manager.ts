@@ -92,7 +92,6 @@ class WebSocketManager {
       const bufferStr = buffer.toString();
       try {
         const data: WsMessage = validateMessage(JSON.parse(bufferStr));
-        logger.log('Received:', data);
         data.user = client.user; // Attach user info to message
         handleWebSocketMessage(data, this.actionsForClient(client));
       } catch (error) {
@@ -164,10 +163,7 @@ class WebSocketManager {
       return;
     }
 
-    logger.log(
-      `Broadcasting to room ${roomId} with ${room.size} clients:`,
-      data,
-    );
+    logger.log(`Broadcasting to room ${roomId} with ${room.size} clients`);
     const dataStr = JSON.stringify(data);
     room.forEach((client) => {
       if (client.ws.readyState === WebSocket.OPEN) {
@@ -184,24 +180,7 @@ class WebSocketManager {
         }
       }
     });
-    logger.log(`Broadcast complete for room ${roomId}`);
     console.log('-'.repeat(80));
-  }
-
-  private broadcastToAllClients(message: any) {
-    console.log(
-      `Broadcasting to all clients (${this.clientStore.size} total):`,
-      message,
-    );
-    this.clientStore.forEach((client) => {
-      if (client.ws.readyState === WebSocket.OPEN) {
-        try {
-          client.ws.send(JSON.stringify(message));
-        } catch (error) {
-          console.error('Failed to send broadcast message to client:', error);
-        }
-      }
-    });
   }
 
   public serverBroadcastToRoom(roomId: string, data: WsMessage) {

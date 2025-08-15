@@ -17,8 +17,24 @@ import { setGlobalWebSocketManager } from '@/websocket/global-manager';
 
 const PORT = 3131;
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 const fastify = Fastify({
-  logger: true,
+  logger: isDev
+    ? {
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            translateTime: 'HH:MM:ss.l',
+            ignore: 'pid,hostname',
+            colorize: true,
+            // singleLine: true,
+            hideObject: true,
+            messageFormat: '{msg} [{reqId}] {req.method} {req.url}',
+          },
+        },
+      }
+    : true,
 });
 
 fastify.register(cors, {

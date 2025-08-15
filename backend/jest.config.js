@@ -4,7 +4,7 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@common/(.*)$': '<rootDir>/../common/$1',
-    '^@core/(.*)$': '<rootDir>/../core/$1',
+    '^@core/(.*)$': '<rootDir>/../core/src/$1',
   },
   testMatch: ['<rootDir>/src/**/*.test.ts', '<rootDir>/src/**/*.spec.ts'],
   collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts'],
