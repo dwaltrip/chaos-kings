@@ -121,7 +121,7 @@ class MatchmakingService {
       const userIds = playerIds.map((id) => parseInt(id, 10));
 
       // Create actual game in database
-      const dbGame = await createGame({ playerIds: userIds });
+      const dbGame = await createGame(userIds);
 
       const matchmakingGame: MatchmakingGame = {
         gameId: dbGame.id,

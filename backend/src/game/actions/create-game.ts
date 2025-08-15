@@ -10,18 +10,44 @@ import { GameRepository } from '@/game/game-repository';
 import { GamePlayersRepository } from '@/game-players/game-players-repository';
 import { GameStatus, Game, NewGame } from '@/game/types';
 import { Database } from '@/types';
+import { db } from '@/services/db';
 
-interface CreateGameOptions {
-  playerIds: number[];
-}
+async function createGame(
+  playerIds: number[],
+  dbInstance: Kysely<Database> = db,
+): Promise<Game> {
+  // Validate player count first
+  if (!playerIds || playerIds.length < 2) {
+    throw new Error('At least two player IDs are required to create a game.');
+  }
 
-async function createGame(options: CreateGameOptions): Promise<Game> {
-  const { playerIds = [] } = options;
-  const playerCount = Math.max(playerIds.length, 2);
-  invariant(
-    playerCount <= PLAYER_COLORS.length,
-    `Not enough colors for ${playerCount} players`,
-  );
+  if (playerIds.length > PLAYER_COLORS.length) {
+    throw new Error(
+      `Too many players. Maximum allowed: ${PLAYER_COLORS.length}`,
+    );
+  }
+
+  // Check for duplicate player IDs
+  const uniquePlayerIds = new Set(playerIds);
+  if (uniquePlayerIds.size !== playerIds.length) {
+    throw new Error('Duplicate player IDs are not allowed.');
+  }
+
+  // Validate that all player IDs exist in the database
+  const existingUsers = await dbInstance
+    .selectFrom('users')
+    .select('id')
+    .where('id', 'in', playerIds)
+    .execute();
+
+  const existingUserIds = new Set(existingUsers.map((user) => user.id));
+  const invalidUserIds = playerIds.filter((id) => !existingUserIds.has(id));
+
+  if (invalidUserIds.length > 0) {
+    throw new Error(`Invalid user IDs: ${invalidUserIds.join(', ')}`);
+  }
+
+  const playerCount = playerIds.length;
 
   const { grid, generals } = generateRandomMap(
     DEFAULT_GAME_GENERATION_CONFIG.mapSize,
@@ -45,14 +71,10 @@ async function createGame(options: CreateGameOptions): Promise<Game> {
     status: GameStatus.NOT_STARTED,
   };
 
-  const gameRepository = new GameRepository();
+  const gameRepository = new GameRepository(dbInstance);
   const game = await gameRepository.create(newGame);
 
-  if (playerIds.length < 2) {
-    throw new Error('At least two player IDs are required to create a game.');
-  }
-
-  const gamePlayersRepository = new GamePlayersRepository();
+  const gamePlayersRepository = new GamePlayersRepository(dbInstance);
   const gamePlayersData = playerIds.map((playerId, index) => ({
     game_id: game.id,
     player_id: playerId,
