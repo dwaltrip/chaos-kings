@@ -1,13 +1,6 @@
-import { type BoardState, type Coord, PlayerSquareType } from '@core/types';
-import { isPlayerSquare } from '@core/square';
-import {
-  isSquareVisible,
-  shouldShowMountain,
-} from '@/game-ui/utils/visibility-utils';
-import { SquareView } from '@/game-ui/components/square-view';
-import { PlayerSquareView } from '@/game-ui/components/player-square';
-import { General } from '@/game-ui/components/general';
-import { ArmySquare } from '@/game-ui/components/army-square';
+import { type BoardState, type Coord } from '@core/types';
+import { isSquareVisible } from '@/game-ui/utils/visibility-utils';
+import { Tile } from '@/game-ui/components/tile';
 
 interface GameBoardProps {
   boardState: BoardState;
@@ -40,59 +33,19 @@ function GameBoard({
         const isSelected = selectedTile
           ? selectedTile.x === coord.x && selectedTile.y === coord.y
           : false;
-        const visible = isSquareVisible(
+        const isVisible = isSquareVisible(
           coord,
           visibleSquares,
           currentPlayerIndex,
         );
-        const showMountain = shouldShowMountain(square);
-
-        return isPlayerSquare(square) ? (
-          <PlayerSquareView
-            key={i}
+        return (
+          <Tile
             square={square}
             coord={coord}
             isSelected={isSelected}
+            isVisible={isVisible}
             onTileSelect={onTileSelect}
-            isVisible={visible}
-          >
-            {square.type === PlayerSquareType.GENERAL && (
-              <General
-                square={square}
-                coord={coord}
-                isSelected={isSelected}
-                onTileSelect={onTileSelect}
-                isVisible={visible}
-              />
-            )}
-            {square.type === PlayerSquareType.ARMY && (
-              <ArmySquare
-                square={square}
-                coord={coord}
-                isSelected={isSelected}
-                onTileSelect={onTileSelect}
-                isVisible={visible}
-              />
-            )}
-            {square.type === PlayerSquareType.PLAYER_CITY && (
-              <ArmySquare
-                square={square}
-                coord={coord}
-                isSelected={isSelected}
-                onTileSelect={onTileSelect}
-                isVisible={visible}
-              />
-            )}
-          </PlayerSquareView>
-        ) : (
-          <SquareView
-            key={i}
-            square={square}
-            coord={coord}
-            isSelected={isSelected}
-            onTileSelect={onTileSelect}
-            isVisible={visible}
-            showMountain={showMountain}
+            key={`${coord.x},${coord.y}`}
           />
         );
       })}
