@@ -1,8 +1,7 @@
 import { Kysely } from 'kysely';
 
-import { invariant } from '@common/utils/invariant';
-import { PLAYER_COLORS, PlayerColor } from '@core/colors';
-import { generateRandomMap } from '@core/map/generate-grid';
+import { PLAYER_COLORS } from '@core/colors';
+import { generateRandomMapWithConstraints } from '@core/map/generate-grid';
 import { GameConfig } from '@core/game-config';
 import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
 
@@ -49,9 +48,10 @@ async function createGame(
 
   const playerCount = playerIds.length;
 
-  const { grid, generals } = generateRandomMap(
+  const { grid, generals } = generateRandomMapWithConstraints(
     DEFAULT_GAME_GENERATION_CONFIG.mapSize,
     playerCount,
+    DEFAULT_GAME_GENERATION_CONFIG.minGeneralDistance,
   );
 
   const playerIndexToColor: GameConfig['playerIndexToColor'] = {};
