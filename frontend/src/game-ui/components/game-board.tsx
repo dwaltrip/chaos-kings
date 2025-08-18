@@ -4,6 +4,7 @@ import { isEnded } from '@core/game';
 
 import { isSquareVisible } from '@/game-ui/utils/visibility-utils';
 import { Tile } from '@/game-ui/components/tile';
+import { useTileNeighborVisibility } from '@/game-ui/hooks/use-tile-neighbor-visibility';
 
 interface GameBoardProps {
   game: GameWithPlayers;
@@ -22,6 +23,12 @@ function GameBoard({
   currentPlayerIndex,
   visibleSquares,
 }: GameBoardProps) {
+  const tileNeighborData = useTileNeighborVisibility({
+    boardState,
+    visibleSquares,
+    currentPlayerIndex,
+  });
+
   const grid = boardState.grid;
   const gridRows = grid.length;
   const gridCols = grid[0]?.length || 0;
@@ -35,12 +42,14 @@ function GameBoard({
         const row = Math.floor(i / gridCols);
         const col = i % gridCols;
         const coord = { x: col, y: row };
+        const coordKey = `${coord.x},${coord.y}`;
         const isSelected = selectedTile
           ? selectedTile.x === coord.x && selectedTile.y === coord.y
           : false;
         const isVisible =
           isEnded(game) ||
           isSquareVisible(coord, visibleSquares, currentPlayerIndex);
+        const neighborVisibility = tileNeighborData.get(coordKey);
         return (
           <Tile
             square={square}
@@ -48,7 +57,8 @@ function GameBoard({
             isSelected={isSelected}
             isVisible={isVisible}
             onTileSelect={onTileSelect}
-            key={`${coord.x},${coord.y}`}
+            neighborVisibility={neighborVisibility}
+            key={coordKey}
           />
         );
       })}

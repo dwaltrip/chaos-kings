@@ -4,6 +4,7 @@ import generalIcon from '@/assets/crown.png';
 import { SquareType, type Square, type PlayerSquare } from '@core/types';
 import { shouldShowMountain } from '@/game-ui/utils/visibility-utils';
 import { playerIndexToColor } from '@/game-ui/config/ui-constants';
+import type { TileVisibilityData } from '@/game-ui/hooks/use-tile-neighbor-visibility';
 
 interface TileContentProps {
   square: Square;
@@ -11,6 +12,7 @@ interface TileContentProps {
   isVisible: boolean;
   isGeneral: boolean;
   onClick: () => void;
+  neighborVisibility?: TileVisibilityData;
 }
 
 function TileContent({
@@ -19,6 +21,7 @@ function TileContent({
   isVisible,
   isGeneral,
   onClick,
+  neighborVisibility,
 }: TileContentProps) {
   const isPlayer = 'playerIndex' in square;
   const playerSquare = square as PlayerSquare;
@@ -31,6 +34,13 @@ function TileContent({
     isGeneral ? 'general-icon' : isPlayer && 'army-square',
     !isVisible && 'fog-of-war',
     isSelected && 'selected',
+    neighborVisibility && {
+      'tile-exploration-high': neighborVisibility.explorationValue === 'high',
+      'tile-exploration-medium':
+        neighborVisibility.explorationValue === 'medium',
+      'tile-exploration-low': neighborVisibility.explorationValue === 'low',
+      'tile-visibility-edge': neighborVisibility.isOnVisibilityEdge,
+    },
   );
 
   const colorStyle =
@@ -40,8 +50,17 @@ function TileContent({
         }
       : undefined;
 
+  const tooltipTitle = neighborVisibility
+    ? `Exploration: ${neighborVisibility.explorationValue} (${neighborVisibility.hiddenNeighborCount} hidden neighbors)`
+    : undefined;
+
   return (
-    <div className={className} style={colorStyle} onClick={onClick}>
+    <div
+      className={className}
+      style={colorStyle}
+      onClick={onClick}
+      title={tooltipTitle}
+    >
       {/* Mountain rendering */}
       {(isVisible || showMountain) && square.type === SquareType.MOUNTAIN && (
         <img src={mountainIcon} />

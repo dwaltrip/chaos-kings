@@ -5,6 +5,7 @@ import {
   debugPlayerSquareClick,
 } from '@/game-ui/utils/debug-utils';
 import { TileContent } from '@/game-ui/components/tile-content';
+import type { TileVisibilityData } from '@/game-ui/hooks/use-tile-neighbor-visibility';
 
 interface TileProps {
   square: Square;
@@ -12,6 +13,7 @@ interface TileProps {
   isSelected: boolean;
   isVisible: boolean;
   onTileSelect: (coord: Coord) => void;
+  neighborVisibility?: TileVisibilityData;
 }
 
 function Tile({
@@ -20,6 +22,7 @@ function Tile({
   isSelected,
   isVisible,
   onTileSelect,
+  neighborVisibility,
 }: TileProps) {
   const handleTileClick = () => {
     debugTileClick(coord);
@@ -36,6 +39,7 @@ function Tile({
       isVisible={isVisible}
       isGeneral={isGeneralSquare(square)}
       onClick={handleTileClick}
+      neighborVisibility={neighborVisibility}
     />
   );
 }
