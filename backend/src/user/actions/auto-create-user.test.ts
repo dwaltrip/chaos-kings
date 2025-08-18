@@ -146,6 +146,7 @@ describe('autoCreateUser', () => {
       expect(result.user.username).toMatch(/^Player_\d{6}$/);
     });
 
+    // TODO: suppress the noisy (completely expected) console.warn that this outputs
     test('should use fallback generation when max attempts exceeded', async () => {
       // Mock Math.random to return same number for first 50 attempts
       const originalMathRandom = Math.random;

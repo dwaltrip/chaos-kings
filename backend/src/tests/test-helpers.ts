@@ -46,13 +46,6 @@ const setupTestDb = async () => {
     throw error;
   }
 
-  // Only log if we actually ran migrations (not if they were already up to date)
-  if (results && results.length > 0) {
-    console.log(
-      `Test database setup: executed ${results.length} migration(s) successfully`,
-    );
-  }
-
   isDbSetup = true;
 };
 

@@ -196,10 +196,6 @@ class WebSocketManager {
       return;
     }
 
-    console.log(
-      `[WebSocketManager] Broadcasting to room ${roomId} with ${room.size} clients:`,
-      data,
-    );
     const dataStr = JSON.stringify(data);
     room.forEach((client) => {
       if (client.ws.readyState === WebSocket.OPEN) {
@@ -216,7 +212,6 @@ class WebSocketManager {
         }
       }
     });
-    console.log(`[WebSocketManager] Broadcast complete for room ${roomId}`);
   }
 
   public removeUserFromRoom(userId: string, roomId: string): void {
