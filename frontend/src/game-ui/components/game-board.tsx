@@ -1,8 +1,12 @@
+import type { GameWithPlayers } from '@common/types/games';
 import { type BoardState, type Coord } from '@core/types';
+import { isEnded } from '@core/game';
+
 import { isSquareVisible } from '@/game-ui/utils/visibility-utils';
 import { Tile } from '@/game-ui/components/tile';
 
 interface GameBoardProps {
+  game: GameWithPlayers;
   boardState: BoardState;
   selectedTile: Coord | null;
   onTileSelect: (coord: Coord) => void;
@@ -11,6 +15,7 @@ interface GameBoardProps {
 }
 
 function GameBoard({
+  game,
   boardState,
   selectedTile,
   onTileSelect,
@@ -33,11 +38,9 @@ function GameBoard({
         const isSelected = selectedTile
           ? selectedTile.x === coord.x && selectedTile.y === coord.y
           : false;
-        const isVisible = isSquareVisible(
-          coord,
-          visibleSquares,
-          currentPlayerIndex,
-        );
+        const isVisible =
+          isEnded(game) ||
+          isSquareVisible(coord, visibleSquares, currentPlayerIndex);
         return (
           <Tile
             square={square}

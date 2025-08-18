@@ -1,5 +1,7 @@
 import type { BoardState, Coord } from '@core/types';
+import type { GameWithPlayers } from '@common/types/games';
 import { gameplayStore } from '@/game-ui/store/gameplay-store';
+import { gameMetadataStore } from '@/stores/game-metadata-store';
 
 interface GameplayState {
   boardState: BoardState | null;
@@ -8,6 +10,7 @@ interface GameplayState {
   gameEnded: boolean;
   winner: number | null;
   endReason: 'general_captured' | 'timeout' | 'disconnect' | null;
+  game: GameWithPlayers | null;
   actions: {
     setBoardState: (boardState: BoardState) => void;
     setPlayerMapping: (
@@ -35,6 +38,7 @@ export function useGameplayState(_gameId: number | null): GameplayState {
   const gameEnded = gameplayStore((state) => state.gameEnded);
   const winner = gameplayStore((state) => state.winner);
   const endReason = gameplayStore((state) => state.endReason);
+  const game = gameMetadataStore((state) => state.game);
   const { actions } = gameplayStore.getState();
 
   return {
@@ -44,6 +48,7 @@ export function useGameplayState(_gameId: number | null): GameplayState {
     gameEnded,
     winner,
     endReason,
+    game,
     actions,
   };
 }

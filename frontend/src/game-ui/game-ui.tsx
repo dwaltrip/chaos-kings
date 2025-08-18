@@ -29,6 +29,7 @@ function GameUI({ gameId }: GameUIProps) {
   // Derived state
   const boardState = gameplayState.boardState;
   const selectedTile = gameplayState.selectedTile;
+  const game = gameplayState.game;
   const disabled = gameplayState.gameEnded;
   const currentPlayerIndex = fogOfWarResult.currentPlayerIndex;
   const visibleSquares = fogOfWarResult.visibleSquares;
@@ -51,8 +52,9 @@ function GameUI({ gameId }: GameUIProps) {
 
   return (
     <div className={clsx(disabled && 'game-ui-disabled')}>
-      {boardState ? (
+      {boardState && game ? (
         <GameBoard
+          game={game}
           boardState={boardState}
           selectedTile={selectedTile}
           onTileSelect={handleTileSelect}
