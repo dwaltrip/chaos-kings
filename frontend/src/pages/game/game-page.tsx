@@ -2,7 +2,10 @@ import { useEffect } from 'react';
 import { useParams, Navigate } from 'react-router';
 
 import { userStore } from '@/stores/user-store';
-import { gameMetadataStore } from '@/stores/game-metadata-store';
+import {
+  gameMetadataStore,
+  useGameLoadingState,
+} from '@/stores/game-metadata-store';
 import { GameChat } from '@/pages/game/game-chat/game-chat';
 import { PlayerColors } from '@/pages/game/player-colors';
 import { GameStatusInfo } from '@/pages/game/game-status-info';
@@ -30,10 +33,9 @@ function GamePage() {
 function GamePageContent({ gameId }: { gameId: string }) {
   const user = userStore((state) => state.user);
 
-  // Get all metadata from game metadata store
-  const game = gameMetadataStore((state) => state.game);
-  const isLoadingGame = gameMetadataStore((state) => state.loading);
-  const error = gameMetadataStore((state) => state.error);
+  // Get critical game loading state with proper selector
+  const { game, loading: isLoadingGame, error } = useGameLoadingState();
+
   const countdownActive = gameMetadataStore((state) => state.countdownActive);
   const countdownSeconds = gameMetadataStore((state) => state.countdownSeconds);
   const isGameEnded = gameMetadataStore((state) => state.isGameEnded);
@@ -48,22 +50,20 @@ function GamePageContent({ gameId }: { gameId: string }) {
   // Ideally we'd keep WebSocket details contained in GameUI, but for now this
   // is the easiest solution to fix the countdown race condition.
   // useGameplayWebSocket(game ? game.id : null);
-  const wsService = useWebsocket(
-    GAMEPLAY_DOMAIN,
-    GameplayWsHandler,
-    roomNameForGameplay(gameId),
-  );
+  const roomName = roomNameForGameplay(gameId);
+  const wsService = useWebsocket(GAMEPLAY_DOMAIN, GameplayWsHandler, roomName);
   const isConnected = wsService.isConnected;
 
   useEffect(() => {
     if (!game && gameId && !isLoadingGame) {
       actions.loadGame(gameId);
     }
-  }, [gameId, isLoadingGame]);
+  }, [gameId, game, isLoadingGame, actions]);
 
   if (!user) {
     return <Navigate to="/" replace />;
   }
+
   if (!isConnected || isLoadingGame) {
     return <div className="text-center">Loading game...</div>;
   }

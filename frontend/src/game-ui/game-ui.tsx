@@ -50,9 +50,11 @@ function GameUI({ gameId }: GameUIProps) {
     disabled,
   });
 
+  const shouldShowGameBoard = boardState && game && currentPlayerIndex !== null;
+
   return (
     <div className={clsx(disabled && 'game-ui-disabled')}>
-      {boardState && game && currentPlayerIndex ? (
+      {shouldShowGameBoard ? (
         <GameBoard
           game={game}
           boardState={boardState}

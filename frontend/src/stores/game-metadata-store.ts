@@ -5,6 +5,7 @@ import {
   loadGame as apiLoadGame,
   GameNotFoundError,
 } from '@/pages/game/games-api';
+import { useShallow } from 'zustand/shallow';
 
 interface GameMetadataState {
   // Static metadata from API
@@ -41,7 +42,7 @@ interface GameMetadataState {
   };
 }
 
-const gameMetadataStore = create<GameMetadataState>((set) => ({
+const gameMetadataStore = create<GameMetadataState>((set, get) => ({
   // Static metadata
   game: null,
   loading: false,
@@ -59,16 +60,32 @@ const gameMetadataStore = create<GameMetadataState>((set) => ({
 
   actions: {
     loadGame: async (gameId: string) => {
+      const state = get();
+      // Prevent duplicate loads
+      if (
+        state.loading ||
+        (state.game && state.game.id.toString() === gameId)
+      ) {
+        return;
+      }
+
       try {
         set({ loading: true, error: null });
         const game = await apiLoadGame(gameId);
-        set({ game, loading: false });
+
+        // Initialize countdown if game hasn't started yet
+        const shouldStartCountdown = game.status === 'not_started';
+        set({
+          game,
+          loading: false,
+          countdownActive: shouldStartCountdown,
+        });
       } catch (err) {
         let errorMessage = 'Failed to load game';
         if (err instanceof GameNotFoundError) {
           errorMessage = 'Game not found';
         }
-        console.error('Error loading game:', err);
+        console.error(`Error loading game (id=${gameId}):`, err);
         set({ error: errorMessage, loading: false });
       }
     },
@@ -128,4 +145,14 @@ const gameMetadataStore = create<GameMetadataState>((set) => ({
   },
 }));
 
-export { gameMetadataStore };
+const useGameLoadingState = () => {
+  return gameMetadataStore(
+    useShallow((state) => ({
+      game: state.game,
+      loading: state.loading,
+      error: state.error,
+    })),
+  );
+};
+
+export { gameMetadataStore, useGameLoadingState };

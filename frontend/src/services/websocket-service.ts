@@ -121,12 +121,11 @@ class WebSocketService {
   // TODO: queue messages if not connected????
   joinRoom(domain: string, room: string) {
     if (!this.isConnected) {
-      console.error(`[ws-service] cannot join room: Not connected`);
+      console.error(`Cannot join room ${room}: WebSocket not connected`);
       return;
     }
     this.send(createJoinRoomMessage(domain, room));
     this._rooms.add(room);
-    console.log(`[ws-service] joined room: ${room}`);
   }
 
   // TODO: what about `domain`????
