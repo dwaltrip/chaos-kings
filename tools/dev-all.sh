@@ -33,6 +33,9 @@ fnm use 2>/dev/null || true
 npm run start &
 BACKEND_PID=$!
 
+# Give the backend a moment to start up
+sleep 2
+
 # Start frontend development server
 echo "⚛️  Starting frontend server..."
 cd "$PROJECT_ROOT/frontend"

@@ -28,7 +28,7 @@ export const fastifyLoggerConfig = isDev
         target: 'pino-pretty',
         options: {
           ...baseLoggerOptions,
-          messageFormat: '{msg} [{reqId}] {req.method} {req.url}',
+          messageFormat: '[{reqId}] {msg} {req.method} {req.url}',
         },
       },
     }
