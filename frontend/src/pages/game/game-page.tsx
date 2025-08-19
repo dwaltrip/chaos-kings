@@ -7,7 +7,6 @@ import { GameChat } from '@/pages/game/game-chat/game-chat';
 import { PlayerColors } from '@/pages/game/player-colors';
 import { GameStatusInfo } from '@/pages/game/game-status-info';
 import { GameMainContent } from '@/pages/game/game-main-content';
-// import { useGameplayWebSocket } from '@/game-ui/hooks/use-gameplay-websocket';
 import { useWebsocket } from '@/hooks/use-websocket';
 import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
 import { GameplayWsHandler } from '@/game-ui/store/gameplay-ws-handler';
@@ -33,7 +32,7 @@ function GamePageContent({ gameId }: { gameId: string }) {
 
   // Get all metadata from game metadata store
   const game = gameMetadataStore((state) => state.game);
-  const loading = gameMetadataStore((state) => state.loading);
+  const isLoadingGame = gameMetadataStore((state) => state.loading);
   const error = gameMetadataStore((state) => state.error);
   const countdownActive = gameMetadataStore((state) => state.countdownActive);
   const countdownSeconds = gameMetadataStore((state) => state.countdownSeconds);
@@ -57,15 +56,15 @@ function GamePageContent({ gameId }: { gameId: string }) {
   const isConnected = wsService.isConnected;
 
   useEffect(() => {
-    if (gameId && !loading) {
+    if (!game && gameId && !isLoadingGame) {
       actions.loadGame(gameId);
     }
-  }, [gameId, loading]);
+  }, [gameId, isLoadingGame]);
 
   if (!user) {
     return <Navigate to="/" replace />;
   }
-  if (!isConnected || loading) {
+  if (!isConnected || isLoadingGame) {
     return <div className="text-center">Loading game...</div>;
   }
   if (error) {
