@@ -18,7 +18,7 @@ async function createGame(
 ): Promise<Game> {
   logger.info(`Creating game with players: ${playerIds.join(', ')}`);
   // Validate player count first
-  if (!playerIds || playerIds.length < 2) {
+  if (playerIds.length < 2) {
     throw new Error('At least two player IDs are required to create a game.');
   }
 

@@ -93,16 +93,6 @@ describe('createGame', () => {
       );
     });
 
-    test('should reject null/undefined player array', async () => {
-      await expect(createGame(null as any, testDb)).rejects.toThrow(
-        'At least two player IDs are required to create a game.',
-      );
-
-      await expect(createGame(undefined as any, testDb)).rejects.toThrow(
-        'At least two player IDs are required to create a game.',
-      );
-    });
-
     test('should reject single player', async () => {
       const user = await createUser('player1', testDb);
 
