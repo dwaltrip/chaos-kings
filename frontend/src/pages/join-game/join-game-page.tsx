@@ -21,24 +21,45 @@ function JoinGamePage() {
   const gameReady = gameMatchmakingStore((state) => state.gameReady);
   const { isConnected } = useWsStore();
   const wsServiceRef = useRef<WebSocketService | null>(null);
+  const wsInitializing = useRef(false);
   const [waitingTime, setWaitingTime] = useState(0);
 
   useEffect(() => {
-    console.log('==== Setting up GameMatchmaking WebSocket service');
-    const wsService = websocketConnect();
-    wsService.addMessageHandler(
-      GAME_MATCHMAKING_DOMAIN,
-      GameMatchmakingWsHandler,
+    console.log(
+      '🔍 useEffect running, wsInitializing.current:',
+      wsInitializing.current,
     );
-    wsServiceRef.current = wsService;
+
+    if (!wsInitializing.current) {
+      wsInitializing.current = true;
+      console.log(
+        '✅ Initializing WebSocket, set wsInitializing to:',
+        wsInitializing.current,
+      );
+      console.log('==== Setting up GameMatchmaking WebSocket service');
+      const wsService = websocketConnect();
+      wsService.addMessageHandler(
+        GAME_MATCHMAKING_DOMAIN,
+        GameMatchmakingWsHandler,
+      );
+      wsServiceRef.current = wsService;
+    }
 
     return () => {
+      console.log(
+        '🧹 Cleanup running, wsInitializing.current before reset:',
+        wsInitializing.current,
+      );
       console.log('==== Cleaning up GameMatchmaking websocket service');
       wsServiceRef.current?.removeMessageHandler(
         GAME_MATCHMAKING_DOMAIN,
         GameMatchmakingWsHandler,
       );
       cleanup();
+      console.log(
+        '🔄 Cleanup completed, wsInitializing.current after reset:',
+        wsInitializing.current,
+      );
     };
   }, []);
 
