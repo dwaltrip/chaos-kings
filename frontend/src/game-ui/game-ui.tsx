@@ -52,7 +52,7 @@ function GameUI({ gameId }: GameUIProps) {
 
   return (
     <div className={clsx(disabled && 'game-ui-disabled')}>
-      {boardState && game ? (
+      {boardState && game && currentPlayerIndex ? (
         <GameBoard
           game={game}
           boardState={boardState}

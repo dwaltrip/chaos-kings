@@ -11,7 +11,7 @@ interface GameBoardProps {
   boardState: BoardState;
   selectedTile: Coord | null;
   onTileSelect: (coord: Coord) => void;
-  currentPlayerIndex: number | null;
+  currentPlayerIndex: number;
   visibleSquares: Set<Coord>;
 }
 
@@ -23,7 +23,7 @@ function GameBoard({
   currentPlayerIndex,
   visibleSquares,
 }: GameBoardProps) {
-  const tileNeighborData = useTileNeighborVisibility({
+  const getTileNeighborVisibility = useTileNeighborVisibility({
     boardState,
     visibleSquares,
     currentPlayerIndex,
@@ -49,7 +49,13 @@ function GameBoard({
         const isVisible =
           isEnded(game) ||
           isSquareVisible(coord, visibleSquares, currentPlayerIndex);
-        const neighborVisibility = tileNeighborData.get(coordKey);
+        const neighborVisibility = getTileNeighborVisibility(coord);
+        const isOnEdge = {
+          top: row === 0,
+          right: col === gridCols - 1,
+          bottom: row === gridRows - 1,
+          left: col === 0,
+        };
         return (
           <Tile
             square={square}
@@ -58,6 +64,7 @@ function GameBoard({
             isVisible={isVisible}
             onTileSelect={onTileSelect}
             neighborVisibility={neighborVisibility}
+            isOnEdge={isOnEdge}
             key={coordKey}
           />
         );

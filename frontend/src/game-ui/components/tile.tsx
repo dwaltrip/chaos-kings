@@ -13,7 +13,13 @@ interface TileProps {
   isSelected: boolean;
   isVisible: boolean;
   onTileSelect: (coord: Coord) => void;
-  neighborVisibility?: TileVisibilityData;
+  neighborVisibility: TileVisibilityData;
+  isOnEdge: {
+    top: boolean;
+    right: boolean;
+    bottom: boolean;
+    left: boolean;
+  };
 }
 
 function Tile({
@@ -23,6 +29,7 @@ function Tile({
   isVisible,
   onTileSelect,
   neighborVisibility,
+  isOnEdge,
 }: TileProps) {
   const handleTileClick = () => {
     debugTileClick(coord);
@@ -40,6 +47,7 @@ function Tile({
       isGeneral={isGeneralSquare(square)}
       onClick={handleTileClick}
       neighborVisibility={neighborVisibility}
+      isOnEdge={isOnEdge}
     />
   );
 }

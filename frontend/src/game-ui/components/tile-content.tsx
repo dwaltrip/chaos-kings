@@ -12,7 +12,13 @@ interface TileContentProps {
   isVisible: boolean;
   isGeneral: boolean;
   onClick: () => void;
-  neighborVisibility?: TileVisibilityData;
+  neighborVisibility: TileVisibilityData;
+  isOnEdge: {
+    top: boolean;
+    right: boolean;
+    bottom: boolean;
+    left: boolean;
+  };
 }
 
 function TileContent({
@@ -22,10 +28,36 @@ function TileContent({
   isGeneral,
   onClick,
   neighborVisibility,
+  isOnEdge,
 }: TileContentProps) {
   const isPlayer = 'playerIndex' in square;
   const playerSquare = square as PlayerSquare;
   const showMountain = shouldShowMountain(square);
+
+  // figure out borders based on neighbor visibility
+  const borders = {
+    top: false,
+    right: false,
+    bottom: false,
+    left: false,
+  };
+  if (isVisible) {
+    if (isOnEdge.top) {
+      borders.top = true;
+    }
+    if (isOnEdge.left) {
+      borders.left = true;
+    }
+    if (isOnEdge.bottom) {
+      borders.bottom = true;
+    }
+    if (isOnEdge.bottom || neighborVisibility.bottom) {
+      borders.bottom = true;
+    }
+    if (isOnEdge.right || neighborVisibility.right) {
+      borders.right = true;
+    }
+  }
 
   const className = clsx(
     'cell',
@@ -34,13 +66,10 @@ function TileContent({
     isGeneral ? 'general-icon' : isPlayer && 'army-square',
     !isVisible && 'fog-of-war',
     isSelected && 'selected',
-    neighborVisibility && {
-      'tile-exploration-high': neighborVisibility.explorationValue === 'high',
-      'tile-exploration-medium':
-        neighborVisibility.explorationValue === 'medium',
-      'tile-exploration-low': neighborVisibility.explorationValue === 'low',
-      'tile-visibility-edge': neighborVisibility.isOnVisibilityEdge,
-    },
+    borders.top && 'border-top',
+    borders.right && 'border-right',
+    borders.bottom && 'border-bottom',
+    borders.left && 'border-left',
   );
 
   const colorStyle =
@@ -50,23 +79,12 @@ function TileContent({
         }
       : undefined;
 
-  const tooltipTitle = neighborVisibility
-    ? `Exploration: ${neighborVisibility.explorationValue} (${neighborVisibility.hiddenNeighborCount} hidden neighbors)`
-    : undefined;
-
   return (
-    <div
-      className={className}
-      style={colorStyle}
-      onClick={onClick}
-      title={tooltipTitle}
-    >
-      {/* Mountain rendering */}
+    <div className={className} style={colorStyle} onClick={onClick}>
       {(isVisible || showMountain) && square.type === SquareType.MOUNTAIN && (
         <img src={mountainIcon} />
       )}
 
-      {/* Player content rendering */}
       {isPlayer && isVisible && (
         <>
           {isGeneral && <img className="general-img" src={generalIcon} />}
