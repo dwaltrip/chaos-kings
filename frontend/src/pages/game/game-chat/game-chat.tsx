@@ -28,8 +28,7 @@ function GameChat({ game }: { game: Game }) {
     wsServiceRef.current = wsService;
 
     return () => {
-      console.log('==== Cleaning up websocket service');
-      wsServiceRef.current?.cleanup();
+      console.log('==== removing GAME_CHAT_DOMAIN handler');
       wsService.removeMessageHandler(GAME_CHAT_DOMAIN, GameChatWsHandler);
     };
   }, []);

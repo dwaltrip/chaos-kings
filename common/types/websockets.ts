@@ -6,5 +6,8 @@ interface WsMessage {
   payload: any;
   user?: User;
 }
+interface WsDomainHandler {
+  handleMessage: (data: WsMessage) => void;
+}
 
-export type { WsMessage };
+export type { WsMessage, WsDomainHandler };

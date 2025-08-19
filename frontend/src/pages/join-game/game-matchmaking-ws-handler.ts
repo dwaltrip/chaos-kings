@@ -1,10 +1,10 @@
-import type { WsMessage } from '@common/types/websockets';
+import type { WsDomainHandler, WsMessage } from '@common/types/websockets';
 import type { GameMatchmakingMessageType } from '@common/types/game-matchmaking';
 import { gameMatchmakingStore } from '@/pages/join-game/join-game-store';
 
 const { actions } = gameMatchmakingStore.getState();
 
-const GameMatchmakingWsHandler = {
+const GameMatchmakingWsHandler: WsDomainHandler = {
   handleMessage: (data: WsMessage) => {
     const { type, payload } = data;
 

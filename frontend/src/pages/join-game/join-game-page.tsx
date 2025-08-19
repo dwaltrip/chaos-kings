@@ -1,68 +1,27 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 import { GAME_MATCHMAKING_DOMAIN } from '@common/types/game-matchmaking';
 import { PLAYERS_PER_GAME } from '@common/constants/matchmaking';
-import { useWsStore } from '@/services/ws-store';
 import { gameMatchmakingStore } from '@/pages/join-game/join-game-store';
 import {
-  websocketConnect,
   joinQueue,
   leaveQueue,
-  cleanup,
 } from '@/pages/join-game/game-matchmaking-actions';
 import { GameMatchmakingWsHandler } from '@/pages/join-game/game-matchmaking-ws-handler';
-
-type WebSocketService = ReturnType<typeof websocketConnect>;
+import { useWebsocket } from '@/hooks/use-websocket';
 
 function JoinGamePage() {
   const queueSize = gameMatchmakingStore((state) => state.queueSize);
   const playersNeeded = gameMatchmakingStore((state) => state.playersNeeded);
   const isInQueue = gameMatchmakingStore((state) => state.isInQueue);
   const gameReady = gameMatchmakingStore((state) => state.gameReady);
-  const { isConnected } = useWsStore();
-  const wsServiceRef = useRef<WebSocketService | null>(null);
-  const wsInitializing = useRef(false);
   const [waitingTime, setWaitingTime] = useState(0);
+  const wsService = useWebsocket(
+    GAME_MATCHMAKING_DOMAIN,
+    GameMatchmakingWsHandler,
+  );
 
-  useEffect(() => {
-    console.log(
-      '🔍 useEffect running, wsInitializing.current:',
-      wsInitializing.current,
-    );
-
-    if (!wsInitializing.current) {
-      wsInitializing.current = true;
-      console.log(
-        '✅ Initializing WebSocket, set wsInitializing to:',
-        wsInitializing.current,
-      );
-      console.log('==== Setting up GameMatchmaking WebSocket service');
-      const wsService = websocketConnect();
-      wsService.addMessageHandler(
-        GAME_MATCHMAKING_DOMAIN,
-        GameMatchmakingWsHandler,
-      );
-      wsServiceRef.current = wsService;
-    }
-
-    return () => {
-      console.log(
-        '🧹 Cleanup running, wsInitializing.current before reset:',
-        wsInitializing.current,
-      );
-      console.log('==== Cleaning up GameMatchmaking websocket service');
-      wsServiceRef.current?.removeMessageHandler(
-        GAME_MATCHMAKING_DOMAIN,
-        GameMatchmakingWsHandler,
-      );
-      cleanup();
-      console.log(
-        '🔄 Cleanup completed, wsInitializing.current after reset:',
-        wsInitializing.current,
-      );
-    };
-  }, []);
-
+  // TODO: move this to store. also name it better (waiting time is not a good name)
   useEffect(() => {
     if (!isInQueue) {
       setWaitingTime(0);
@@ -76,19 +35,14 @@ function JoinGamePage() {
     return () => clearInterval(interval);
   }, [isInQueue]);
 
-  const handleJoinQueue = () => {
-    joinQueue();
-  };
-
-  const handleCancelQueue = () => {
-    leaveQueue();
-  };
+  const handleJoinQueue = () => joinQueue();
+  const handleCancelQueue = () => leaveQueue();
 
   return (
     <div className="p-4">
       <div className="mb-4">
         <span className="text-sm">
-          {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+          {wsService.isConnected ? '🟢 Connected' : '🔴 Disconnected'}
         </span>
       </div>
 
@@ -103,7 +57,7 @@ function JoinGamePage() {
       ) : !isInQueue ? (
         <button
           onClick={handleJoinQueue}
-          disabled={!isConnected}
+          disabled={!wsService.isConnected}
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           Join queue

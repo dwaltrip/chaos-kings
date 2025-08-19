@@ -1,6 +1,6 @@
 import { type WsMessage } from '@common/types/websockets';
 import { invariant } from '@common/utils/invariant';
-import { WsStore } from '@/services/ws-store';
+import { wsStore } from '@/services/ws-store';
 
 interface WsMessageHandler {
   handleMessage: (message: WsMessage) => void;
@@ -15,7 +15,7 @@ type EventListeners = { [key in EventNames]?: WsEventListener[] };
 class WebSocketService {
   private ws: WebSocket;
   private url: string;
-  private _store = WsStore;
+  private _store = wsStore;
   private _currentRoom?: string;
 
   private listeners: EventListeners = {};
@@ -23,19 +23,18 @@ class WebSocketService {
 
   // TODO: move URL to config
   constructor(url: string = 'ws://localhost:3131/ws') {
+    console.log('[ws-service] Initializing WebSocketService');
     this.url = url;
     this.ws = new WebSocket(this.url);
+    this._store.getState().setReadyState(WebSocket.CONNECTING);
 
     this.ws.onopen = (event) => {
-      console.log(
-        `[ws-service] WebSocket connection established to ${this.url}`,
-      );
-      this._store.setIsConnected(true);
+      console.log(`[ws-service] connection established to ${this.url}`);
+      this._store.getState().setReadyState(WebSocket.OPEN);
       this.listeners.open?.forEach((listener) => listener(event));
     };
 
     this.ws.onmessage = (event) => {
-      // console.log(`[ws-service] WebSocket message received:`, event.data);
       try {
         const message = JSON.parse(event.data);
         const wsMessage = message as WsMessage;
@@ -53,8 +52,8 @@ class WebSocketService {
     };
 
     this.ws.onclose = (event) => {
-      console.log(`[ws-service] WebSocket connection closed:`, event);
-      this._store.setIsConnected(false);
+      console.log(`[ws-service] connection closed:`, event);
+      this._store.getState().setReadyState(WebSocket.CLOSED);
       this.listeners.close?.forEach((listener) => listener(event));
     };
 
@@ -100,14 +99,20 @@ class WebSocketService {
   }
 
   get isConnected(): boolean {
-    return this._store.getState().isConnected;
+    // ---------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------
+    // TODO: is this reactive / correctly selecting only on the one property (getIsConnected)?
+    // E.g. if I use this in a component, will it re-render on connection state change?
+    // ---------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------
+    return this._store.getState().getIsConnected();
   }
-  get currentRoom(): string | undefined {
-    return this._currentRoom;
+  get isConnectedOrConnecting(): boolean {
+    return this._store.getState().getIsConnectedOrConnecting();
   }
 
-  getConnectionState(): boolean {
-    return this.isConnected;
+  get currentRoom(): string | undefined {
+    return this._currentRoom;
   }
 
   // TODO: what about `domain`????
@@ -123,10 +128,9 @@ class WebSocketService {
   }
 
   addMessageHandler(domain: string, handler: WsMessageHandler) {
-    if (!this.messageHandlers.has(domain)) {
-      this.messageHandlers.set(domain, []);
-    }
-    this.messageHandlers.get(domain)?.push(handler);
+    const handlers = this.messageHandlers.get(domain) ?? [];
+    handlers.push(handler);
+    this.messageHandlers.set(domain, handlers);
   }
 
   removeMessageHandler(domain: string, handler: WsMessageHandler) {
@@ -140,11 +144,6 @@ class WebSocketService {
         );
       }
     }
-  }
-
-  cleanup() {
-    // TODO: not sure what should go here as this is a singleton service
-    console.log('[ws-service] Cleaning up WebSocket service');
   }
 }
 
