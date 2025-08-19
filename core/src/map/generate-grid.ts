@@ -24,9 +24,11 @@ function generateRandomMapWithConstraints(
   numPlayers: number,
   minGeneralDistance: number,
 ): { grid: GameGrid; generals: PlayerSquare[] } {
+  // console.log('========= generateRandomMapWithConstraints =========');
   const maxAttempts = 10;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    // console.log(`---- attempt #${attempt}`);
     const grid = generateGridWithRandomMountains(size);
     const generals = addGeneralsWithDistanceConstraint(
       grid,
@@ -35,10 +37,12 @@ function generateRandomMapWithConstraints(
     );
 
     if (areAllGeneralsConnected(grid, generals)) {
+      // console.log('\t','--- all generals connected')
       return { grid, generals };
     }
 
     if (repairConnectivity(grid, generals)) {
+      // console.log('\t','--- repair connectivity');
       return { grid, generals };
     }
   }
@@ -173,6 +177,13 @@ function addGeneralsWithDistanceConstraint(
       coord = randCoord();
       attempts++;
     }
+
+    // console.log(
+    //   '====================== coord:', coord,
+    //   'isFarEnoughFromOtherGenerals:',
+    //   isFarEnoughFromOtherGenerals(coord, generals, minDistance),
+    //   '======================',
+    // );
 
     if (attempts >= maxAttempts) {
       throw new Error(

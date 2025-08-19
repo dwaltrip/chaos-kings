@@ -1,8 +1,8 @@
 import type { GameGenerationConfig } from '@core/game-generation-config';
 
 const DEFAULT_GAME_GENERATION_CONFIG: GameGenerationConfig = {
-  // mapSize: { width: 10, height: 10 },
-  mapSize: { width: 25, height: 25 },
+  mapSize: { width: 15, height: 15 },
+  // mapSize: { width: 25, height: 25 },
   mountainDensity: 0.1,
   minGeneralDistance: 10,
 };
