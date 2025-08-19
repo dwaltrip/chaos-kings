@@ -26,6 +26,8 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 
       if (!user) {
         console.warn('[auth-plugin] Invalid user key:', userKey);
+        reply.clearCookie(USER_KEY_COOKIE_NAME);
+        reply.clearCookie(SESSION_COOKIE_NAME);
         return; // Invalid user key
       }
 
