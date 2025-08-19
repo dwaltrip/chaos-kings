@@ -12,6 +12,7 @@ import { Board } from '@core/board';
 import { isPlayerSquare } from '@core/square';
 import { GameRepository } from '@/game/game-repository';
 import { GameStatus } from '@/game/types';
+import { endGame } from '@/game/actions/end-game';
 
 interface QueuedMove {
   sourceCoord: Coord;
@@ -189,9 +190,17 @@ export class GameServer {
     );
     this.gameEnded = true;
 
-    // Update game status to COMPLETE in database
-    const gameRepository = new GameRepository();
-    await gameRepository.updateStatus(this.gameId, GameStatus.COMPLETE);
+    // Update game status and save final game state to database
+    if (this.gameState) {
+      await endGame({
+        gameId: this.gameId,
+        winnerPlayerIndex,
+        finalGameState: this.gameState,
+        reason: 'general_captured',
+      });
+    } else {
+      throw new Error(`Game ${this.gameId} has no state to end`);
+    }
 
     this.broadcastGameEnd(winnerPlayerIndex);
   }
