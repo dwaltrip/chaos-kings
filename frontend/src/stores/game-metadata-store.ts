@@ -27,7 +27,6 @@ interface GameMetadataState {
     loadGame: (gameId: string) => Promise<void>;
     setGame: (game: GameWithPlayers) => void;
     updateGame: (updates: Partial<GameWithPlayers>) => void;
-    setLoading: (loading: boolean) => void;
     setError: (error: string | null) => void;
     setCountdownActive: (active: boolean) => void;
     setCountdownSeconds: (seconds: number) => void;
@@ -82,10 +81,6 @@ const gameMetadataStore = create<GameMetadataState>((set) => ({
       set((state) => ({
         game: state.game ? { ...state.game, ...updates } : null,
       }));
-    },
-
-    setLoading: (loading: boolean) => {
-      set({ loading });
     },
 
     setError: (error: string | null) => {

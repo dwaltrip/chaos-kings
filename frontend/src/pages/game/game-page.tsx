@@ -33,7 +33,7 @@ function GamePage() {
   useGameplayWebSocket(game ? game.id : null);
 
   useEffect(() => {
-    if (gameId) {
+    if (gameId && !loading) {
       actions.loadGame(gameId);
     }
 
@@ -41,7 +41,7 @@ function GamePage() {
     return () => {
       actions.reset();
     };
-  }, [gameId, actions]);
+  }, [gameId, loading, actions]);
 
   if (!user) {
     return <Navigate to="/" replace />;

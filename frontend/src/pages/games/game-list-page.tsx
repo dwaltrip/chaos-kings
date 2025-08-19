@@ -11,6 +11,7 @@ function GameListPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // TODO: make sure this only runs once
     loadGames();
   }, []);
 
