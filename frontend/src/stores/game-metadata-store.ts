@@ -64,7 +64,9 @@ const gameMetadataStore = create<GameMetadataState>((set, get) => ({
       // Prevent duplicate loads
       if (
         state.loading ||
-        (state.game && state.game.id.toString() === gameId)
+        (state.game && state.game.id.toString() === gameId) ||
+        // Don't try to load a game if there's an error
+        state.error
       ) {
         return;
       }
