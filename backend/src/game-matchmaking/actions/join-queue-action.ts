@@ -24,23 +24,24 @@ export async function handleJoinQueue(
   });
 
   if (game) {
-    wsActions.broadcastToRoom(MATCHMAKING_ROOM_NAME, {
-      domain: GAME_MATCHMAKING_DOMAIN,
-      type: 'game-ready',
-      payload: { gameId: game.gameId },
-    });
+    try {
+      // Spawn game instance IMMEDIATELY before broadcasting game-ready
+      await spawnGameInstance(game.gameId);
 
-    // Spawn game instance after 1-second delay (matches frontend navigation)
-    setTimeout(async () => {
-      try {
-        await spawnGameInstance(game.gameId);
-      } catch (error) {
-        console.error(
-          `Failed to spawn game instance for game ${game.gameId}:`,
-          error,
-        );
-      }
-    }, 1000);
+      // Now broadcast game-ready - players can safely connect
+      wsActions.broadcastToRoom(MATCHMAKING_ROOM_NAME, {
+        domain: GAME_MATCHMAKING_DOMAIN,
+        type: 'game-ready',
+        payload: { gameId: game.gameId },
+      });
+      console.log(`Game ${game.gameId} ready and broadcast to players`);
+    } catch (error) {
+      console.error(
+        `Failed to spawn game instance for game ${game.gameId}:`,
+        error,
+      );
+      // TODO: Should probably notify players of the error
+    }
   }
 
   const queueStatus = await matchmakingService.getQueueStatus();

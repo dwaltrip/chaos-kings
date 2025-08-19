@@ -6,7 +6,7 @@ import { GameRepository } from '@/game/game-repository';
 import { GameStatus } from '@/game/types';
 
 export async function spawnGameInstance(gameId: number): Promise<void> {
-  console.log(`[MatchmakingActions] Spawning game instance for game ${gameId}`);
+  console.log(`Spawning game instance for game ${gameId}`);
 
   // Get game data with players
   const gameData = await getGame(gameId);
@@ -30,6 +30,6 @@ export async function spawnGameInstance(gameId: number): Promise<void> {
   });
 
   console.log(
-    `[MatchmakingActions] Game ${gameId} instance spawned, waiting for players to join gameplay room`,
+    `Game ${gameId} instance spawned with ${gameData.players.length} players`,
   );
 }
