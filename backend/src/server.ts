@@ -14,27 +14,14 @@ import { GameMatchmakingWsAPI } from '@/game-matchmaking/game-matchmaking-ws-api
 import { GameplayWsAPI } from '@/gameplay/gameplay-ws-api';
 import { initializeGameCoordinator } from '@/gameplay/game-coordinator';
 import { setGlobalWebSocketManager } from '@/websocket/global-manager';
+import { logger, fastifyLoggerConfig } from '@/utils/logger';
 
 const PORT = 3131;
 
 const isDev = process.env.NODE_ENV !== 'production';
 
 const fastify = Fastify({
-  logger: isDev
-    ? {
-        transport: {
-          target: 'pino-pretty',
-          options: {
-            translateTime: 'HH:MM:ss.l',
-            ignore: 'pid,hostname',
-            colorize: true,
-            // singleLine: true,
-            hideObject: true,
-            messageFormat: '{msg} [{reqId}] {req.method} {req.url}',
-          },
-        },
-      }
-    : true,
+  logger: fastifyLoggerConfig,
 });
 
 fastify.register(cors, {
@@ -71,7 +58,7 @@ fastify.register(async function (fastify) {
 const start = async () => {
   try {
     await fastify.listen({ port: PORT, host: 'localhost' });
-    console.log(`🚀 Fastify server running on http://localhost:${PORT}`);
+    logger.info(`🚀 Fastify server running on http://localhost:${PORT}`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
