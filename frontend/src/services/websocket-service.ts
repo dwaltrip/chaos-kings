@@ -1,4 +1,5 @@
 import { type WsMessage } from '@common/types/websockets';
+import { createJoinRoomMessage } from '@common/websockets/message-types';
 import { invariant } from '@common/utils/invariant';
 import { wsStore } from '@/services/ws-store';
 
@@ -16,7 +17,10 @@ class WebSocketService {
   private ws: WebSocket;
   private url: string;
   private _store = wsStore;
-  private _currentRoom?: string;
+  // ----------------------------------------------------------------------
+  // TODO: key should be domain + room, make a helper for this or something
+  // ----------------------------------------------------------------------
+  private _rooms: Set<string> = new Set();
 
   private listeners: EventListeners = {};
   private messageHandlers: Map<string, WsMessageHandler[]> = new Map();
@@ -111,8 +115,18 @@ class WebSocketService {
     return this._store.getState().getIsConnectedOrConnecting();
   }
 
-  get currentRoom(): string | undefined {
-    return this._currentRoom;
+  // -------------------------------------------------------------------
+  // TODO: Standardize all room joining to use this or something similar
+  // -------------------------------------------------------------------
+  // TODO: queue messages if not connected????
+  joinRoom(domain: string, room: string) {
+    if (!this.isConnected) {
+      console.error(`[ws-service] cannot join room: Not connected`);
+      return;
+    }
+    this.send(createJoinRoomMessage(domain, room));
+    this._rooms.add(room);
+    console.log(`[ws-service] joined room: ${room}`);
   }
 
   // TODO: what about `domain`????
