@@ -5,6 +5,7 @@ import { generateRandomMapWithConstraints } from '@core/map/generate-grid';
 import { GameConfig } from '@core/game-config';
 import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
 
+import { logger } from '@/utils/logger';
 import { GameRepository } from '@/game/game-repository';
 import { GamePlayersRepository } from '@/game-players/game-players-repository';
 import { GameStatus, Game, NewGame } from '@/game/types';
@@ -15,6 +16,7 @@ async function createGame(
   playerIds: number[],
   dbInstance: Kysely<Database> = db,
 ): Promise<Game> {
+  logger.info(`Creating game with players: ${playerIds.join(', ')}`);
   // Validate player count first
   if (!playerIds || playerIds.length < 2) {
     throw new Error('At least two player IDs are required to create a game.');
