@@ -56,48 +56,6 @@ namespace Gameplay {
       finalBoardState: BoardState;
     };
   }
-
-  export interface JoinRoomMessage extends WsMessage {
-    payload: {
-      room: string;
-      timestamp: number;
-    };
-  }
-
-  export interface LeaveRoomMessage extends WsMessage {
-    payload: {
-      room: string;
-      timestamp: number;
-    };
-  }
 }
 
-function createJoinRoomMessage(room: string): WsMessage {
-  return {
-    domain: GAMEPLAY_DOMAIN,
-    type: 'join-room',
-    payload: {
-      room,
-      timestamp: Date.now(),
-    },
-  };
-}
-
-function createLeaveRoomMessage(room: string): WsMessage {
-  return {
-    domain: GAMEPLAY_DOMAIN,
-    type: 'leave-room',
-    payload: {
-      room,
-      timestamp: Date.now(),
-    },
-  };
-}
-
-export {
-  GAMEPLAY_DOMAIN,
-  createJoinRoomMessage,
-  createLeaveRoomMessage,
-  type Gameplay,
-  type GameplayMessageType,
-};
+export { GAMEPLAY_DOMAIN, type Gameplay, type GameplayMessageType };

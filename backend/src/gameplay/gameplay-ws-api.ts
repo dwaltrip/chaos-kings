@@ -1,24 +1,30 @@
-import { DomainAPI } from '@/websocket/api';
+import {
+  JoinRoomMessage,
+  LeaveRoomMessage,
+} from '@common/websockets/message-types';
 import {
   Gameplay,
   GameplayMessageType,
   GAMEPLAY_DOMAIN,
 } from '@common/types/gameplay';
+
+import { DomainAPI } from '@/websocket/api';
+import { WsActions } from '@/websocket/types';
 import {
   handleMoveRequest,
   handleCancelMovesRequest,
   addUserToGame,
   removeUserFromGame,
   getUserGame,
-} from './actions';
-import { getGameCoordinator } from './game-coordinator';
+} from '@/gameplay/actions';
+import { getGameCoordinator } from '@/gameplay/game-coordinator';
 
 const GameplayWsAPI = new DomainAPI<GameplayMessageType>(GAMEPLAY_DOMAIN, {
   'move-request': handleMoveRequest,
 
   'cancel-moves-request': handleCancelMovesRequest,
 
-  'join-room': (data: Gameplay.JoinRoomMessage, wsActions) => {
+  'join-room': (data: JoinRoomMessage, wsActions: WsActions) => {
     wsActions.joinRoom(data.payload.room);
 
     // Notify GameServer that player joined the room
@@ -35,7 +41,7 @@ const GameplayWsAPI = new DomainAPI<GameplayMessageType>(GAMEPLAY_DOMAIN, {
     }
   },
 
-  'leave-room': (data: Gameplay.LeaveRoomMessage, wsActions) => {
+  'leave-room': (data: LeaveRoomMessage, wsActions: WsActions) => {
     wsActions.leaveRoom(data.payload.room);
   },
 

@@ -7,10 +7,28 @@ import { GameChat } from '@/pages/game/game-chat/game-chat';
 import { PlayerColors } from '@/pages/game/player-colors';
 import { GameStatusInfo } from '@/pages/game/game-status-info';
 import { GameMainContent } from '@/pages/game/game-main-content';
-import { useGameplayWebSocket } from '@/game-ui/hooks/use-gameplay-websocket';
+// import { useGameplayWebSocket } from '@/game-ui/hooks/use-gameplay-websocket';
+import { useWebsocket } from '@/hooks/use-websocket';
+import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
+import { GameplayWsHandler } from '@/game-ui/store/gameplay-ws-handler';
+import { roomNameForGameplay } from '@common/domains/game/utils';
 
 function GamePage() {
   const { gameId } = useParams();
+
+  if (!gameId) {
+    return (
+      <div>
+        <h1>Game Not Found</h1>
+        <p>The game you're looking for doesn't exist.</p>
+      </div>
+    );
+  }
+
+  return <GamePageContent gameId={gameId} />;
+}
+
+function GamePageContent({ gameId }: { gameId: string }) {
   const user = userStore((state) => state.user);
 
   // Get all metadata from game metadata store
@@ -30,23 +48,24 @@ function GamePage() {
   // backend can send countdown messages to players who are waiting.
   // Ideally we'd keep WebSocket details contained in GameUI, but for now this
   // is the easiest solution to fix the countdown race condition.
-  useGameplayWebSocket(game ? game.id : null);
+  // useGameplayWebSocket(game ? game.id : null);
+  const wsService = useWebsocket(
+    GAMEPLAY_DOMAIN,
+    GameplayWsHandler,
+    roomNameForGameplay(gameId),
+  );
+  const isConnected = wsService.isConnected;
 
   useEffect(() => {
     if (gameId && !loading) {
       actions.loadGame(gameId);
     }
-
-    // Reset store when component unmounts or gameId changes
-    return () => {
-      actions.reset();
-    };
-  }, [gameId, loading, actions]);
+  }, [gameId, loading]);
 
   if (!user) {
     return <Navigate to="/" replace />;
   }
-  if (loading) {
+  if (!isConnected || loading) {
     return <div className="text-center">Loading game...</div>;
   }
   if (error) {

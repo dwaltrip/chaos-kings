@@ -4,8 +4,8 @@ function roomNameForGameChat(game: Game): string {
   return `game-chat:game-${game.id}`;
 }
 
-function roomNameForGameplay(game: Game): string {
-  return `gameplay-${game.id}`;
+function roomNameForGameplay(gameOrGameId: Game | string): string {
+  return `gameplay-${typeof gameOrGameId === 'string' ? gameOrGameId : gameOrGameId.id}`;
 }
 
 export { roomNameForGameChat, roomNameForGameplay };

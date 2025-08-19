@@ -1,13 +1,15 @@
 import { useEffect, useRef } from 'react';
 
+import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
 import {
-  GAMEPLAY_DOMAIN,
   createJoinRoomMessage,
   createLeaveRoomMessage,
-} from '@common/types/gameplay';
+} from '@common/websockets/message-types';
+
 import { getWebSocketService } from '@/services/websocket-service';
 import { GameplayWsHandler } from '@/game-ui/store/gameplay-ws-handler';
 import { gameplayStore } from '@/game-ui/store/gameplay-store';
+import { roomNameForGameplay } from '@common/domains/game/utils';
 
 function useGameplayWebSocket(gameId: number | null) {
   const wsServiceRef = useRef<ReturnType<typeof getWebSocketService> | null>(
@@ -22,15 +24,15 @@ function useGameplayWebSocket(gameId: number | null) {
     wsService.addMessageHandler(GAMEPLAY_DOMAIN, GameplayWsHandler);
     wsServiceRef.current = wsService;
 
-    // Join gameplay room after connection is established
-    const gameplayRoom = `gameplay-${gameId}`;
+    const gameplayRoom = roomNameForGameplay('' + gameId);
+    // Join gameplay room after connection is establishe
     wsService.onReadyOrNow().then(() => {
-      wsService.send(createJoinRoomMessage(gameplayRoom));
+      wsService.send(createJoinRoomMessage(GAMEPLAY_DOMAIN, gameplayRoom));
     });
 
     return () => {
       // Leave gameplay room and clean up
-      wsService.send(createLeaveRoomMessage(gameplayRoom));
+      wsService.send(createLeaveRoomMessage(GAMEPLAY_DOMAIN, gameplayRoom));
       wsService.removeMessageHandler(GAMEPLAY_DOMAIN, GameplayWsHandler);
       actions.reset();
     };
