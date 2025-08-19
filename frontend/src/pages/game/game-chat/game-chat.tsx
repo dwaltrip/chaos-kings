@@ -1,37 +1,20 @@
-import { useEffect, useRef } from 'react';
-
 import type { Game } from '@common/types/games';
 import { GAME_CHAT_DOMAIN } from '@common/types/game-chat';
-import { useWsStore } from '@/services/ws-store';
 import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
 import {
-  websocketConnect,
   sendChatMessage,
   setNewMessage,
 } from '@/pages/game/game-chat/game-chat-actions';
 import { GameChatWsHandler } from '@/pages/game/game-chat/game-chat-ws-handler';
 
 import '@/pages/game/game-chat/game-chat.css';
-
-type WebSocketService = ReturnType<typeof websocketConnect>;
+import { useWebsocket } from '@/hooks/use-websocket';
 
 function GameChat({ game }: { game: Game }) {
   const messages = gameChatStore((state) => state.messages);
   const newMessage = gameChatStore((state) => state.newMessage);
-  const { isConnected } = useWsStore();
-  const wsServiceRef = useRef<WebSocketService | null>(null);
-
-  useEffect(() => {
-    console.log('==== Setting up WebSocket service');
-    const wsService = websocketConnect({ game });
-    wsService.addMessageHandler(GAME_CHAT_DOMAIN, GameChatWsHandler);
-    wsServiceRef.current = wsService;
-
-    return () => {
-      console.log('==== removing GAME_CHAT_DOMAIN handler');
-      wsService.removeMessageHandler(GAME_CHAT_DOMAIN, GameChatWsHandler);
-    };
-  }, []);
+  const wsService = useWebsocket(GAME_CHAT_DOMAIN, GameChatWsHandler);
+  const isConnected = wsService.isConnected;
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
