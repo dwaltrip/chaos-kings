@@ -11,6 +11,8 @@ import {
 } from '@/pages/game/game-chat/game-chat-actions';
 import { GameChatWsHandler } from '@/pages/game/game-chat/game-chat-ws-handler';
 
+import '@/pages/game/game-chat/game-chat.css';
+
 type WebSocketService = ReturnType<typeof websocketConnect>;
 
 function GameChat({ game }: { game: Game }) {
@@ -38,7 +40,7 @@ function GameChat({ game }: { game: Game }) {
   };
 
   return (
-    <div>
+    <div className="game-chat">
       <span>{isConnected ? '🟢 Connected' : '🔴 Disconnected'}</span>
       <div>
         {messages.map((msg, i) => (

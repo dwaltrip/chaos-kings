@@ -28,7 +28,7 @@
   grid-area: main;
   display: grid;
   place-items: center;
-  container-type: size;
+  /* container-type: size; */
   overflow: hidden;
   padding: 8px;
 }
