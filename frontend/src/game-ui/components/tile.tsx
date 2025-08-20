@@ -1,9 +1,5 @@
-import { isGeneralSquare, isPlayerSquare } from '@core/square';
+import { isGeneralSquare } from '@core/square';
 import type { Coord, Square } from '@core/types';
-import {
-  debugTileClick,
-  debugPlayerSquareClick,
-} from '@/game-ui/utils/debug-utils';
 import { TileContent } from '@/game-ui/components/tile-content';
 import type { TileVisibilityData } from '@/game-ui/hooks/use-tile-neighbor-visibility';
 
@@ -14,6 +10,12 @@ interface TileProps {
   isVisible: boolean;
   onTileSelect: (coord: Coord) => void;
   neighborVisibility: TileVisibilityData;
+  isOnEdge: {
+    top: boolean;
+    bottom: boolean;
+    left: boolean;
+    right: boolean;
+  };
 }
 
 function Tile({
@@ -23,15 +25,9 @@ function Tile({
   isVisible,
   onTileSelect,
   neighborVisibility,
+  isOnEdge,
 }: TileProps) {
-  const handleTileClick = () => {
-    debugTileClick(coord);
-    if (isPlayerSquare(square)) {
-      debugPlayerSquareClick(isSelected);
-    }
-    onTileSelect(coord);
-  };
-
+  const handleTileClick = () => onTileSelect(coord);
   return (
     <TileContent
       square={square}
@@ -40,6 +36,7 @@ function Tile({
       isGeneral={isGeneralSquare(square)}
       onClick={handleTileClick}
       neighborVisibility={neighborVisibility}
+      isOnEdge={isOnEdge}
     />
   );
 }
