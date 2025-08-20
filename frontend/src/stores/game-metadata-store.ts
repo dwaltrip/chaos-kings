@@ -6,6 +6,7 @@ import {
   GameNotFoundError,
 } from '@/pages/game/games-api';
 import { useShallow } from 'zustand/shallow';
+import { userStore } from '@/stores/user-store';
 
 interface GameMetadataState {
   // Static metadata from API
@@ -157,4 +158,21 @@ const useGameLoadingState = () => {
   );
 };
 
-export { gameMetadataStore, useGameLoadingState };
+const getCurrentPlayerIndex = (
+  game: GameWithPlayers | null,
+  userId: number | null,
+): number | null => {
+  if (!game || !userId) return null;
+
+  const player = game.players.find((p) => p.player_id === userId);
+  return player ? player.player_index : null;
+};
+
+const useCurrentPlayerIndex = () => {
+  const game = gameMetadataStore((state) => state.game);
+  const user = userStore((state) => state.user);
+
+  return getCurrentPlayerIndex(game, user?.id ?? null);
+};
+
+export { gameMetadataStore, useGameLoadingState, useCurrentPlayerIndex };
