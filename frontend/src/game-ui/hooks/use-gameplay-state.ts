@@ -62,12 +62,19 @@ function useGameplayState(_gameId: number | null): GameplayState {
   };
 }
 
+// TODO: Clean this up
+// There should be just one way to get the current board state
 function useBoardState(): BoardState | null {
   const game = gameMetadataStore((state) => state.game);
   const boardState = gameplayStore((state) => state.boardState);
 
   if (game && hasCompletedGameState(game)) {
     return game.game_state.board;
+  }
+  // When users are still on the game page, they haven't loaded the updated game,
+  // so we need to use boardState instead of game_state.board
+  if (boardState && !(game?.game_state as any)?.board) {
+    return boardState;
   }
 
   if (game && game.status === GameStatus.COMPLETE) {

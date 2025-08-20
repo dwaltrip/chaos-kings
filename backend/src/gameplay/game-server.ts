@@ -103,6 +103,9 @@ export class GameServer {
     }
   }
 
+  // TODO: When game ends, we broadcast twice
+  // - broadcastGameState
+  // - broadcastGameEnd
   async tick(): Promise<boolean> {
     if (!this.initialized || !this.gameState || this.gameEnded) {
       return this.gameEnded;
