@@ -26,9 +26,9 @@
 
 .game-main {
   grid-area: main;
-  display: grid;
-  place-items: center;
-  /* container-type: size; */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   padding: 8px;
 }
@@ -39,18 +39,15 @@
   /* --gap: 2px; */
   --gap: 0px;
 
-  --size: min(
-    calc((100cqw - (var(--cols) - 1) * var(--gap)) / var(--cols)),
-    calc((100cqh - (var(--rows) - 1) * var(--gap)) / var(--rows))
-  );
-
   display: grid;
-  grid-template-columns: repeat(var(--cols), var(--size));
-  grid-auto-rows: var(--size);
+  grid-template-columns: repeat(var(--cols), 1fr);
+  grid-template-rows: repeat(var(--rows), 1fr);
   gap: var(--gap);
-
-  width: calc(var(--cols) * var(--size) + (var(--cols) - 1) * var(--gap));
-  height: calc(var(--rows) * var(--size) + (var(--rows) - 1) * var(--gap));
+  
+  /* Make the grid square by using the smaller container dimension */
+  width: min(100%, 100vh - 100px);
+  height: min(100%, 100vh - 100px);
+  aspect-ratio: 1;
 }
 
 .cell {
@@ -61,6 +58,7 @@
     12px/1 system-ui,
     sans-serif;
   cursor: pointer;
+  aspect-ratio: 1;
 
   border-color: black;
   border-width: 1px;

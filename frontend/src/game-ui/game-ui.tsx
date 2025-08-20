@@ -1,4 +1,3 @@
-import clsx from 'clsx';
 import { type Coord } from '@core/types';
 import { useKeyboardControls } from '@/game-ui/hooks/use-keyboard-controls';
 import {
@@ -60,21 +59,20 @@ function GameUI({ gameId }: GameUIProps) {
     });
   }
 
+  if (!shouldShowGameBoard) {
+    return <div>Loading game...</div>;
+  }
+
   return (
-    <div className={clsx(disabled && 'game-ui-disabled')}>
-      {shouldShowGameBoard ? (
-        <GameBoard
-          game={game}
-          boardState={boardState}
-          selectedTile={selectedTile}
-          onTileSelect={handleTileSelect}
-          currentPlayerIndex={currentPlayerIndex}
-          visibleSquares={visibleSquares}
-        />
-      ) : (
-        <div>Loading game...</div>
-      )}
-    </div>
+    <GameBoard
+      game={game}
+      boardState={boardState}
+      selectedTile={selectedTile}
+      onTileSelect={handleTileSelect}
+      currentPlayerIndex={currentPlayerIndex}
+      visibleSquares={visibleSquares}
+      disabled={disabled}
+    />
   );
 }
 

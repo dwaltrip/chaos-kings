@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import type { GameWithPlayers } from '@common/types/games';
 import { type BoardState, type Coord } from '@core/types';
 import { isEnded } from '@core/game';
@@ -13,6 +14,7 @@ interface GameBoardProps {
   onTileSelect: (coord: Coord) => void;
   currentPlayerIndex: number;
   visibleSquares: Set<Coord>;
+  disabled?: boolean;
 }
 
 function GameBoard({
@@ -22,6 +24,7 @@ function GameBoard({
   onTileSelect,
   currentPlayerIndex,
   visibleSquares,
+  disabled = false,
 }: GameBoardProps) {
   const getTileNeighborVisibility = useTileNeighborVisibility({
     boardState,
@@ -35,7 +38,7 @@ function GameBoard({
 
   return (
     <div
-      className="grid"
+      className={clsx('grid', disabled && 'game-ui-disabled')}
       style={{ '--rows': gridRows, '--cols': gridCols } as React.CSSProperties}
     >
       {grid.flat().map((square, i) => {
