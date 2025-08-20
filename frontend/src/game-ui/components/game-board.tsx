@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import type { GameWithPlayers } from '@common/types/games';
+import type { GameStatusType, GameWithPlayers } from '@common/types/games';
 import { type BoardState, type Coord } from '@core/types';
 import { isEnded } from '@core/game';
 
@@ -13,7 +13,7 @@ interface GameBoardProps {
   selectedTile: Coord | null;
   onTileSelect: (coord: Coord) => void;
   currentPlayerIndex: number;
-  visibleSquares: Set<Coord>;
+  visibleSquares: Set<string>;
   disabled?: boolean;
 }
 
@@ -30,6 +30,8 @@ function GameBoard({
     boardState,
     visibleSquares,
     currentPlayerIndex,
+    // TODO: update types `for game.status`, shouldn't need to cast this.
+    gameStatus: game.status as GameStatusType,
   });
 
   const grid = boardState.grid;

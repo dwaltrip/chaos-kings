@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { BoardState, Coord } from '@core/types';
+import type { BoardState } from '@core/types';
 import { Board } from '@core/board';
 
 interface UseFogOfWarParams {
@@ -8,7 +8,7 @@ interface UseFogOfWarParams {
 }
 
 interface FogOfWarResult {
-  visibleSquares: Set<Coord>;
+  visibleSquares: Set<string>;
 }
 
 export function useFogOfWar({
@@ -16,7 +16,7 @@ export function useFogOfWar({
   currentPlayerIndex,
 }: UseFogOfWarParams): FogOfWarResult {
   const visibleSquares = useMemo(() => {
-    if (!boardState || currentPlayerIndex === null) return new Set<Coord>();
+    if (!boardState || currentPlayerIndex === null) return new Set<string>();
     return Board.getVisibleSquares(boardState, currentPlayerIndex);
   }, [boardState, currentPlayerIndex]);
 

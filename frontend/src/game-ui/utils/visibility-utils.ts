@@ -1,14 +1,13 @@
 import type { Coord, Square, SquareType } from '@core/types';
+import { serializeCoord } from '@core/utils/coordinate-utils';
 
 export function isSquareVisible(
   coord: Coord,
-  visibleSquares: Set<Coord>,
+  visibleSquares: Set<string>,
   currentPlayerIndex: number | null,
 ): boolean {
   if (currentPlayerIndex === null) return true;
-  return Array.from(visibleSquares).some(
-    (visibleCoord) => visibleCoord.x === coord.x && visibleCoord.y === coord.y,
-  );
+  return visibleSquares.has(serializeCoord(coord));
 }
 
 export function shouldShowMountain(square: Square): boolean {

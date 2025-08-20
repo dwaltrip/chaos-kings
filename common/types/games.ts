@@ -2,11 +2,15 @@ import type { Player } from '@common/types/player';
 import type { GameConfig } from '@core/game-config';
 import type { CompletedGameState } from '@core/types';
 
+// TODO: this is duplicated on backend.
+// Also all of this should be in core.
+// I want common to be game-agnostic
 const GameStatus = {
   NOT_STARTED: 'not_started',
   IN_PROGRESS: 'in_progress',
   COMPLETE: 'complete',
 } as const;
+type GameStatusType = (typeof GameStatus)[keyof typeof GameStatus];
 
 // -----------------------------------------------------------
 // TODO: this is duplicate w/ GamesTable interface in backend.
@@ -47,6 +51,7 @@ export { GameStatus };
 export type {
   Game,
   GameWithPlayers,
+  GameStatusType,
   CreateGameRequest,
   CreateGameResponse,
   ListGamesResponse,

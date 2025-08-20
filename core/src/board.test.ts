@@ -63,18 +63,15 @@ describe('Board.getVisibleSquares', () => {
 
     expect(visibleSquares.size).toBe(9); // 8 neighbors + 1 owned square
 
-    const coordsArray = Array.from(visibleSquares);
-    const coordStrings = coordsArray.map((coord) => `${coord.x},${coord.y}`);
-
-    expect(coordStrings).toContain('0,0'); // NW
-    expect(coordStrings).toContain('1,0'); // N
-    expect(coordStrings).toContain('2,0'); // NE
-    expect(coordStrings).toContain('0,1'); // W
-    expect(coordStrings).toContain('1,1'); // Player's own square
-    expect(coordStrings).toContain('2,1'); // E
-    expect(coordStrings).toContain('0,2'); // SW
-    expect(coordStrings).toContain('1,2'); // S
-    expect(coordStrings).toContain('2,2'); // SE
+    expect(visibleSquares).toContain('0,0'); // NW
+    expect(visibleSquares).toContain('1,0'); // N
+    expect(visibleSquares).toContain('2,0'); // NE
+    expect(visibleSquares).toContain('0,1'); // W
+    expect(visibleSquares).toContain('1,1'); // Player's own square
+    expect(visibleSquares).toContain('2,1'); // E
+    expect(visibleSquares).toContain('0,2'); // SW
+    expect(visibleSquares).toContain('1,2'); // S
+    expect(visibleSquares).toContain('2,2'); // SE
   });
 
   it('should return empty set when player has no squares', () => {
@@ -108,13 +105,10 @@ describe('Board.getVisibleSquares', () => {
 
     expect(visibleSquares.size).toBe(4); // 3 neighbors + 1 owned square
 
-    const coordsArray = Array.from(visibleSquares);
-    const coordStrings = coordsArray.map((coord) => `${coord.x},${coord.y}`);
-
-    expect(coordStrings).toContain('0,0'); // Player's own square
-    expect(coordStrings).toContain('1,0'); // E
-    expect(coordStrings).toContain('0,1'); // S
-    expect(coordStrings).toContain('1,1'); // SE
+    expect(visibleSquares).toContain('0,0'); // Player's own square
+    expect(visibleSquares).toContain('1,0'); // E
+    expect(visibleSquares).toContain('0,1'); // S
+    expect(visibleSquares).toContain('1,1'); // SE
   });
 
   it('should deduplicate overlapping visibility areas from multiple player squares', () => {
@@ -131,13 +125,9 @@ describe('Board.getVisibleSquares', () => {
     const visibleSquares = Board.getVisibleSquares(board, 1);
 
     // Both player squares can see (1,1), but it should only be counted once
-    const coordsArray = Array.from(visibleSquares);
-    const coordStrings = coordsArray.map((coord) => `${coord.x},${coord.y}`);
-
-    expect(coordStrings).toContain('1,1');
-    // Count how many times (1,1) appears - should be exactly once
-    const count = coordStrings.filter((coord) => coord === '1,1').length;
-    expect(count).toBe(1);
+    expect(visibleSquares).toContain('1,1');
+    // Since it's a Set, duplicates are automatically eliminated
+    expect(visibleSquares.size).toBeGreaterThan(0);
   });
 
   it('should only return squares for the specified player', () => {
@@ -155,23 +145,17 @@ describe('Board.getVisibleSquares', () => {
     const player2Visible = Board.getVisibleSquares(board, 2);
 
     // Player 1 can see around (0,0) including their own square
-    const player1Coords = Array.from(player1Visible).map(
-      (coord) => `${coord.x},${coord.y}`,
-    );
-    expect(player1Coords).toContain('0,0'); // Player 1's own square
-    expect(player1Coords).toContain('1,0');
-    expect(player1Coords).toContain('0,1');
-    expect(player1Coords).toContain('1,1');
+    expect(player1Visible).toContain('0,0'); // Player 1's own square
+    expect(player1Visible).toContain('1,0');
+    expect(player1Visible).toContain('0,1');
+    expect(player1Visible).toContain('1,1');
 
     // Player 2 can see around (1,0) including their own square
-    const player2Coords = Array.from(player2Visible).map(
-      (coord) => `${coord.x},${coord.y}`,
-    );
-    expect(player2Coords).toContain('0,0');
-    expect(player2Coords).toContain('1,0'); // Player 2's own square
-    expect(player2Coords).toContain('2,0');
-    expect(player2Coords).toContain('0,1');
-    expect(player2Coords).toContain('1,1');
-    expect(player2Coords).toContain('2,1');
+    expect(player2Visible).toContain('0,0');
+    expect(player2Visible).toContain('1,0'); // Player 2's own square
+    expect(player2Visible).toContain('2,0');
+    expect(player2Visible).toContain('0,1');
+    expect(player2Visible).toContain('1,1');
+    expect(player2Visible).toContain('2,1');
   });
 });

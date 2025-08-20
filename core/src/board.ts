@@ -2,6 +2,7 @@ import { invariant } from '@common/utils/invariant';
 import type { BoardState, Coord, Square, PlayerSquare } from '@core/types';
 import { Movement, SquareType } from '@core/types';
 import { isPlayerSquare } from '@core/square';
+import { serializeCoord } from '@core/utils/coordinate-utils';
 
 function canMove(
   board: BoardState,
@@ -70,7 +71,10 @@ function* iterPlayerSquares(
   }
 }
 
-function getVisibleSquares(board: BoardState, playerIndex: number): Set<Coord> {
+function getVisibleSquares(
+  board: BoardState,
+  playerIndex: number,
+): Set<string> {
   const visibleCoords = new Set<string>();
 
   // Get all 8 neighboring directions (including diagonals)
@@ -96,22 +100,15 @@ function getVisibleSquares(board: BoardState, playerIndex: number): Set<Coord> {
 
       // Only add if the coordinate is valid (within board bounds)
       if (isCoordValid(board, neighborCoord)) {
-        visibleCoords.add(`${neighborCoord.x},${neighborCoord.y}`);
+        visibleCoords.add(serializeCoord(neighborCoord));
       }
     }
 
     // Also add the square the player owns
-    visibleCoords.add(`${playerSquare.coord.x},${playerSquare.coord.y}`);
+    visibleCoords.add(serializeCoord(playerSquare.coord));
   }
 
-  // Convert back to Set of Coord objects
-  const result = new Set<Coord>();
-  for (const coordString of visibleCoords) {
-    const [x, y] = coordString.split(',').map(Number);
-    result.add({ x, y });
-  }
-
-  return result;
+  return visibleCoords;
 }
 
 const Board = {
