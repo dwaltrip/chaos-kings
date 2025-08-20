@@ -88,7 +88,7 @@ function TileContent({
       {isPlayer && isVisible && (
         <>
           {isGeneral && <img className="general-img" src={generalIcon} />}
-          <span className="army-count">{playerSquare.units}</span>
+          <div className="army-count">{playerSquare.units}</div>
         </>
       )}
     </div>

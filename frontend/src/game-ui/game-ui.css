@@ -88,7 +88,6 @@
   align-items: center;
   height: 100%;
   width: 100%;
-  /* border: 1px oolid #555; */
   position: relative;
   cursor: pointer;
 }
@@ -104,11 +103,15 @@
   object-fit: contain;
 }
 
-span.army-count {
+.cell .army-count {
   color: white;
   font-weight: bold;
   font-size: 15px;
   position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
 }
 
 .game-page {
