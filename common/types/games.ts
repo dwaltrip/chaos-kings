@@ -1,5 +1,6 @@
 import type { Player } from '@common/types/player';
 import type { GameConfig } from '@core/game-config';
+import type { CompletedGameState } from '@core/types';
 
 const GameStatus = {
   NOT_STARTED: 'not_started',
@@ -12,7 +13,7 @@ const GameStatus = {
 // -----------------------------------------------------------
 interface Game {
   id: number;
-  game_state: object;
+  game_state: {} | CompletedGameState;
   config: GameConfig;
   move_history: object | null;
   status: string;

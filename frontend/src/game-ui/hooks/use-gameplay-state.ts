@@ -1,7 +1,8 @@
 import type { BoardState, Coord } from '@core/types';
-import type { GameWithPlayers } from '@common/types/games';
+import { GameStatus, type GameWithPlayers } from '@common/types/games';
 import { gameplayStore } from '@/game-ui/store/gameplay-store';
 import { gameMetadataStore } from '@/stores/game-metadata-store';
+import { hasCompletedGameState } from '@core/game';
 
 interface GameplayState {
   boardState: BoardState | null;
@@ -31,13 +32,21 @@ interface GameplayState {
   };
 }
 
-export function useGameplayState(_gameId: number | null): GameplayState {
+function useGameplayState(_gameId: number | null): GameplayState {
   const boardState = gameplayStore((state) => state.boardState);
   const selectedTile = gameplayStore((state) => state.selectedTile);
   const playerMapping = gameplayStore((state) => state.playerMapping);
   const gameEnded = gameplayStore((state) => state.gameEnded);
   const winner = gameplayStore((state) => state.winner);
   const endReason = gameplayStore((state) => state.endReason);
+  // -------------------------------------------------------------------------
+  // TODO: This is the only useage of `gameMetadataStore`
+  // it's not a problem per se, but wanna be intentional about the structure
+  // of all these stores I'm using for game, game play, etc.
+  // -------------------------------------------------------------------------
+  // TODO: Also I want it to be obvious what's coming from where.
+  // I missed the the fact that it was a different store when glancing over.
+  // -------------------------------------------------------------------------
   const game = gameMetadataStore((state) => state.game);
   const { actions } = gameplayStore.getState();
 
@@ -52,3 +61,22 @@ export function useGameplayState(_gameId: number | null): GameplayState {
     actions,
   };
 }
+
+function useBoardState(): BoardState | null {
+  const game = gameMetadataStore((state) => state.game);
+  const boardState = gameplayStore((state) => state.boardState);
+
+  if (game && hasCompletedGameState(game)) {
+    return game.game_state.board;
+  }
+
+  if (game && game.status === GameStatus.COMPLETE) {
+    throw new Error(
+      'Game is completed but board state is not available or malformed',
+    );
+  }
+
+  return boardState;
+}
+
+export { useGameplayState, useBoardState };

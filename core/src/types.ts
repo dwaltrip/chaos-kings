@@ -5,6 +5,15 @@ interface GameState {
   config?: any;
 }
 
+interface CompletedGameState {
+  board: BoardState;
+  tick: number;
+  config?: any;
+  endedAt: string;
+  winner: number;
+  endReason: 'general_captured' | 'timeout' | 'forfeit';
+}
+
 interface BoardState {
   grid: GameGrid;
   size: Size2d;
@@ -64,6 +73,7 @@ export { Movement, PlayerSquareType, NeutralSquareType, SquareType };
 
 export type {
   GameState,
+  CompletedGameState,
   BoardState,
   Coord,
   Size2d,
