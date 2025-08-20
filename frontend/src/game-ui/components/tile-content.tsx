@@ -13,12 +13,6 @@ interface TileContentProps {
   isGeneral: boolean;
   onClick: () => void;
   neighborVisibility: TileVisibilityData;
-  isOnEdge: {
-    top: boolean;
-    right: boolean;
-    bottom: boolean;
-    left: boolean;
-  };
 }
 
 function TileContent({
@@ -28,36 +22,18 @@ function TileContent({
   isGeneral,
   onClick,
   neighborVisibility,
-  isOnEdge,
 }: TileContentProps) {
   const isPlayer = 'playerIndex' in square;
   const playerSquare = square as PlayerSquare;
   const showMountain = shouldShowMountain(square);
 
-  // figure out borders based on neighbor visibility
+  // Show borders only between tiles that are BOTH visible
   const borders = {
-    top: false,
-    right: false,
-    bottom: false,
-    left: false,
+    top: isVisible && neighborVisibility.top,
+    right: isVisible && neighborVisibility.right,
+    bottom: isVisible && neighborVisibility.bottom,
+    left: isVisible && neighborVisibility.left,
   };
-  if (isVisible) {
-    if (isOnEdge.top) {
-      borders.top = true;
-    }
-    if (isOnEdge.left) {
-      borders.left = true;
-    }
-    if (isOnEdge.bottom) {
-      borders.bottom = true;
-    }
-    if (isOnEdge.bottom || neighborVisibility.bottom) {
-      borders.bottom = true;
-    }
-    if (isOnEdge.right || neighborVisibility.right) {
-      borders.right = true;
-    }
-  }
 
   const className = clsx(
     'cell',

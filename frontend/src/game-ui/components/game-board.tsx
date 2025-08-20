@@ -53,12 +53,6 @@ function GameBoard({
           isEnded(game) ||
           isSquareVisible(coord, visibleSquares, currentPlayerIndex);
         const neighborVisibility = getTileNeighborVisibility(coord);
-        const isOnEdge = {
-          top: row === 0,
-          right: col === gridCols - 1,
-          bottom: row === gridRows - 1,
-          left: col === 0,
-        };
         return (
           <Tile
             square={square}
@@ -67,7 +61,6 @@ function GameBoard({
             isVisible={isVisible}
             onTileSelect={onTileSelect}
             neighborVisibility={neighborVisibility}
-            isOnEdge={isOnEdge}
             key={coordKey}
           />
         );

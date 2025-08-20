@@ -48,6 +48,9 @@
   width: min(100%, 100vh - 100px);
   height: min(100%, 100vh - 100px);
   aspect-ratio: 1;
+  
+  /* Overall map border */
+  border: 1px solid black;
 }
 
 .cell {
