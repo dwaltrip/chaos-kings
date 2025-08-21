@@ -34,6 +34,7 @@ function getNeighborCoords(coord: Coord): NeighborCoords {
   };
 }
 
+// This is for horizontal and vertical adjacency (no diagonals)
 function isAdjacentTo(coord1: Coord, coord2: Coord): boolean {
   const dx = Math.abs(coord1.x - coord2.x);
   const dy = Math.abs(coord1.y - coord2.y);

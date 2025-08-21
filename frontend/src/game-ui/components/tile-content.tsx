@@ -12,6 +12,7 @@ import { isMountainSquare } from '@core/square';
 interface TileContentProps {
   square: Square;
   isSelected: boolean;
+  isSelectable: boolean;
   isNeighborOfSelected: boolean;
   isVisible: boolean;
   isGeneral: boolean;
@@ -23,6 +24,7 @@ interface TileContentProps {
 function TileContent({
   square,
   isSelected,
+  isSelectable,
   isNeighborOfSelected,
   isVisible,
   isGeneral,
@@ -39,8 +41,9 @@ function TileContent({
     isPlayer && 'player-square',
     isGeneral ? 'general-icon' : isPlayer && 'army-square',
     isVisible ? 'visible' : 'fog-of-war',
+    isSelectable && 'selectable',
     isSelected && 'selected',
-    isNeighborOfSelected && 'neighbor-highlighted',
+    isNeighborOfSelected && 'is-neighbor-selected',
     isMountain && 'mountain',
     borders.top && 'border-top',
     borders.left && 'border-left',
@@ -54,7 +57,11 @@ function TileContent({
       : undefined;
 
   return (
-    <div className={className} style={colorStyle} onClick={onClick}>
+    <div
+      className={className}
+      style={colorStyle}
+      onClick={isSelectable ? onClick : undefined}
+    >
       {isMountain && <img src={mountainIcon} />}
 
       {isPlayer && isVisible && (
@@ -63,6 +70,8 @@ function TileContent({
           <div className="army-count">{playerSquare.units}</div>
         </>
       )}
+
+      {isNeighborOfSelected && <div className="possible-move-overlay" />}
     </div>
   );
 }

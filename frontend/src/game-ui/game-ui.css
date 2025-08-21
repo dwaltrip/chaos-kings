@@ -60,7 +60,13 @@
   font:
     12px/1 system-ui,
     sans-serif;
-  cursor: pointer;
+  
+  pointer-events: none;
+
+  &.selectable {
+    cursor: pointer;
+    pointer-events: all;
+  }
   aspect-ratio: 1;
 
   border-color: black;
@@ -102,15 +108,32 @@
   object-fit: contain;
 }
 
-.cell .army-count {
-  color: white;
-  font-weight: bold;
-  font-size: 15px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2;
+.cell.is-neighbor-selected {
+  position: relative;
+}
+
+.cell {
+  & .army-count,
+  & .possible-move-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  & .army-count {
+    z-index: 2;
+    color: white;
+    font-weight: bold;
+    font-size: 15px;
+  }
+
+  & .possible-move-overlay {
+    z-index: 3;
+    height: 100%;
+    width: 100%;
+    background-color: rgba(70, 70, 70, 0.6);
+  }
 }
 
 .game-page {

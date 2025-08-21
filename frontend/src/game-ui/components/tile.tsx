@@ -17,6 +17,7 @@ function Tile({ coord }: TileProps) {
     <TileContent
       square={tileState.square}
       isSelected={tileState.isSelected}
+      isSelectable={tileState.isSelectable}
       isNeighborOfSelected={tileState.isNeighborOfSelected}
       isVisible={tileState.isVisible}
       isGeneral={tileState.isGeneral}

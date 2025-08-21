@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { Coord, Square } from '@core/types';
 import { coordsEqual } from '@core/utils/coordinate-utils';
-import { isGeneralSquare } from '@core/square';
+import { isGeneralSquare, isMountainSquare } from '@core/square';
 import { isSquareVisible } from '@/game-ui/utils/visibility-utils';
 import { isEnded } from '@core/game';
 import {
@@ -21,6 +21,7 @@ import { useCurrentPlayerIndex } from '@/stores/game-metadata-store';
 interface TileState {
   square: Square;
   isSelected: boolean;
+  isSelectable: boolean;
   isNeighborOfSelected: boolean;
   isVisible: boolean;
   isGeneral: boolean;
@@ -40,7 +41,11 @@ function useTileState(coord: Coord): TileState {
     }
 
     const square = boardState.grid[coord.y][coord.x];
+    const isMountain = isMountainSquare(square);
+
     const isSelected = selectedTile ? coordsEqual(selectedTile, coord) : false;
+    const isSelectable = !isEnded(game) && !(isMountain || isSelected);
+
     const isNeighborOfSelected = selectedTile
       ? isAdjacentTo(selectedTile, coord)
       : false;
@@ -62,6 +67,7 @@ function useTileState(coord: Coord): TileState {
     return {
       square,
       isSelected,
+      isSelectable,
       isNeighborOfSelected,
       isVisible,
       isGeneral,
