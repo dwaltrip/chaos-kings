@@ -1,39 +1,13 @@
 import clsx from 'clsx';
-import type { GameStatusType, GameWithPlayers } from '@common/types/games';
-import { type BoardState, type Coord } from '@core/types';
-import { isEnded } from '@core/game';
-
-import { isSquareVisible } from '@/game-ui/utils/visibility-utils';
+import type { BoardState } from '@core/types';
 import { Tile } from '@/game-ui/components/tile';
-import { useTileNeighborVisibility } from '@/game-ui/hooks/use-tile-neighbor-visibility';
 
 interface GameBoardProps {
-  game: GameWithPlayers;
   boardState: BoardState;
-  selectedTile: Coord | null;
-  onTileSelect: (coord: Coord) => void;
-  currentPlayerIndex: number;
-  visibleSquares: Set<string>;
   disabled?: boolean;
 }
 
-function GameBoard({
-  game,
-  boardState,
-  selectedTile,
-  onTileSelect,
-  currentPlayerIndex,
-  visibleSquares,
-  disabled = false,
-}: GameBoardProps) {
-  const getTileNeighborVisibility = useTileNeighborVisibility({
-    boardState,
-    visibleSquares,
-    currentPlayerIndex,
-    // TODO: update types `for game.status`, shouldn't need to cast this.
-    gameStatus: game.status as GameStatusType,
-  });
-
+function GameBoard({ boardState, disabled = false }: GameBoardProps) {
   const grid = boardState.grid;
   const gridRows = grid.length;
   const gridCols = grid[0]?.length || 0;
@@ -43,36 +17,13 @@ function GameBoard({
       className={clsx('grid', disabled && 'game-ui-disabled')}
       style={{ '--rows': gridRows, '--cols': gridCols } as React.CSSProperties}
     >
-      {grid.flat().map((square, i) => {
+      {grid.flat().map((_, i) => {
         const row = Math.floor(i / gridCols);
         const col = i % gridCols;
         const coord = { x: col, y: row };
         const coordKey = `${coord.x},${coord.y}`;
-        const isSelected = selectedTile
-          ? selectedTile.x === coord.x && selectedTile.y === coord.y
-          : false;
-        const isVisible =
-          isEnded(game) ||
-          isSquareVisible(coord, visibleSquares, currentPlayerIndex);
-        const neighborVisibility = getTileNeighborVisibility(coord);
-        const isOnEdge = {
-          top: row === 0,
-          bottom: row === gridRows - 1,
-          left: col === 0,
-          right: col === gridCols - 1,
-        };
-        return (
-          <Tile
-            square={square}
-            coord={coord}
-            isSelected={isSelected}
-            isVisible={isVisible}
-            onTileSelect={onTileSelect}
-            neighborVisibility={neighborVisibility}
-            isOnEdge={isOnEdge}
-            key={coordKey}
-          />
-        );
+
+        return <Tile coord={coord} key={coordKey} />;
       })}
     </div>
   );

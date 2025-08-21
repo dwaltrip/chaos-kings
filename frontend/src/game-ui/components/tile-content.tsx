@@ -1,47 +1,37 @@
 import clsx from 'clsx';
 import mountainIcon from '@/assets/mountain.svg';
 import generalIcon from '@/assets/crown.png';
-import { SquareType, type Square, type PlayerSquare } from '@core/types';
+import { type Square, type PlayerSquare } from '@core/types';
 import { playerIndexToColor } from '@/game-ui/config/ui-constants';
-import type { TileVisibilityData } from '@/game-ui/hooks/use-tile-neighbor-visibility';
+import type {
+  NeighborVisibility,
+  BorderData,
+} from '@/game-ui/utils/tile-utils';
 import { isMountainSquare } from '@core/square';
 
 interface TileContentProps {
   square: Square;
   isSelected: boolean;
+  isNeighborOfSelected: boolean;
   isVisible: boolean;
   isGeneral: boolean;
   onClick: () => void;
-  neighborVisibility: TileVisibilityData;
-  isOnEdge: {
-    top: boolean;
-    bottom: boolean;
-    left: boolean;
-    right: boolean;
-  };
+  neighborVisibility: NeighborVisibility;
+  borders: BorderData;
 }
 
 function TileContent({
   square,
   isSelected,
+  isNeighborOfSelected,
   isVisible,
   isGeneral,
   onClick,
-  neighborVisibility,
-  isOnEdge,
+  borders,
 }: TileContentProps) {
   const isPlayer = 'playerIndex' in square;
   const playerSquare = square as PlayerSquare;
   const isMountain = isMountainSquare(square);
-
-  // Show borders only between tiles that are BOTH visible
-  // Each tile only draws TOP and LEFT borders to avoid double-thickness
-  const borders = {
-    top: isVisible && neighborVisibility.top && !isOnEdge.top,
-    right: false, // Never draw - right neighbor handles this
-    bottom: false, // Never draw - bottom neighbor handles this
-    left: isVisible && neighborVisibility.left && !isOnEdge.left,
-  };
 
   const className = clsx(
     'cell',
@@ -50,10 +40,9 @@ function TileContent({
     isGeneral ? 'general-icon' : isPlayer && 'army-square',
     isVisible ? 'visible' : 'fog-of-war',
     isSelected && 'selected',
+    isNeighborOfSelected && 'neighbor-highlighted',
     isMountain && 'mountain',
     borders.top && 'border-top',
-    borders.right && 'border-right',
-    borders.bottom && 'border-bottom',
     borders.left && 'border-left',
   );
 

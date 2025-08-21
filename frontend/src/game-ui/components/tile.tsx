@@ -1,42 +1,28 @@
-import { isGeneralSquare } from '@core/square';
-import type { Coord, Square } from '@core/types';
+import type { Coord } from '@core/types';
 import { TileContent } from '@/game-ui/components/tile-content';
-import type { TileVisibilityData } from '@/game-ui/hooks/use-tile-neighbor-visibility';
+import { useTileState } from '@/game-ui/hooks/use-tile-state';
+import { useGameplay } from '@/game-ui/hooks/use-gameplay';
 
 interface TileProps {
-  square: Square;
   coord: Coord;
-  isSelected: boolean;
-  isVisible: boolean;
-  onTileSelect: (coord: Coord) => void;
-  neighborVisibility: TileVisibilityData;
-  isOnEdge: {
-    top: boolean;
-    bottom: boolean;
-    left: boolean;
-    right: boolean;
-  };
 }
 
-function Tile({
-  square,
-  coord,
-  isSelected,
-  isVisible,
-  onTileSelect,
-  neighborVisibility,
-  isOnEdge,
-}: TileProps) {
-  const handleTileClick = () => onTileSelect(coord);
+function Tile({ coord }: TileProps) {
+  const tileState = useTileState(coord);
+  const { handleTileSelect } = useGameplay();
+
+  const handleTileClick = () => handleTileSelect(coord);
+
   return (
     <TileContent
-      square={square}
-      isSelected={isSelected}
-      isVisible={isVisible}
-      isGeneral={isGeneralSquare(square)}
+      square={tileState.square}
+      isSelected={tileState.isSelected}
+      isNeighborOfSelected={tileState.isNeighborOfSelected}
+      isVisible={tileState.isVisible}
+      isGeneral={tileState.isGeneral}
       onClick={handleTileClick}
-      neighborVisibility={neighborVisibility}
-      isOnEdge={isOnEdge}
+      neighborVisibility={tileState.neighborVisibility}
+      borders={tileState.borders}
     />
   );
 }
