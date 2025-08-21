@@ -2,9 +2,9 @@ import clsx from 'clsx';
 import mountainIcon from '@/assets/mountain.svg';
 import generalIcon from '@/assets/crown.png';
 import { SquareType, type Square, type PlayerSquare } from '@core/types';
-import { shouldShowMountain } from '@/game-ui/utils/visibility-utils';
 import { playerIndexToColor } from '@/game-ui/config/ui-constants';
 import type { TileVisibilityData } from '@/game-ui/hooks/use-tile-neighbor-visibility';
+import { isMountainSquare } from '@core/square';
 
 interface TileContentProps {
   square: Square;
@@ -32,7 +32,7 @@ function TileContent({
 }: TileContentProps) {
   const isPlayer = 'playerIndex' in square;
   const playerSquare = square as PlayerSquare;
-  const showMountain = shouldShowMountain(square);
+  const isMountain = isMountainSquare(square);
 
   // Show borders only between tiles that are BOTH visible
   // Each tile only draws TOP and LEFT borders to avoid double-thickness
@@ -48,8 +48,9 @@ function TileContent({
     square.type.toString().toLowerCase(),
     isPlayer && 'player-square',
     isGeneral ? 'general-icon' : isPlayer && 'army-square',
-    !isVisible && 'fog-of-war',
+    isVisible ? 'visible' : 'fog-of-war',
     isSelected && 'selected',
+    isMountain && 'mountain',
     borders.top && 'border-top',
     borders.right && 'border-right',
     borders.bottom && 'border-bottom',
@@ -65,9 +66,7 @@ function TileContent({
 
   return (
     <div className={className} style={colorStyle} onClick={onClick}>
-      {(isVisible || showMountain) && square.type === SquareType.MOUNTAIN && (
-        <img src={mountainIcon} />
-      )}
+      {isMountain && <img src={mountainIcon} />}
 
       {isPlayer && isVisible && (
         <>

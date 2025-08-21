@@ -1,7 +1,7 @@
-import type { Coord, Square, SquareType } from '@core/types';
+import type { Coord } from '@core/types';
 import { serializeCoord } from '@core/utils/coordinate-utils';
 
-export function isSquareVisible(
+function isSquareVisible(
   coord: Coord,
   visibleSquares: Set<string>,
   currentPlayerIndex: number | null,
@@ -10,6 +10,4 @@ export function isSquareVisible(
   return visibleSquares.has(serializeCoord(coord));
 }
 
-export function shouldShowMountain(square: Square): boolean {
-  return square.type === ('MOUNTAIN' as SquareType);
-}
+export { isSquareVisible };

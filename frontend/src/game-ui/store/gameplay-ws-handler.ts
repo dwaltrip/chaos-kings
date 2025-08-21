@@ -67,6 +67,7 @@ const GameplayWsHandler = {
         });
         actions.setBoardState(endedPayload.finalBoardState);
         actions.setGameEnded(endedPayload.winner, endedPayload.reason);
+        actions.setSelectedTile(null);
         console.log('[gameplay] Game ended:', endedPayload);
         break;
 

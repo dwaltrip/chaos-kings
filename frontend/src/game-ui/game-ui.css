@@ -73,9 +73,10 @@
   &.border-left { border-left: solid; }
 }
 
-.cell.selected {
-  background: #ffeb3b !important;
-  border: 2px solid #ff9800 !important;
+.cell.selected,
+.player-square.selected {
+  /* TODO: get rid of this important */
+  border: 2px solid white !important;
 }
 
 .cell img {
@@ -93,11 +94,6 @@
   width: 100%;
   position: relative;
   cursor: pointer;
-}
-
-.player-square.selected {
-  border: 3px solid #ff9800 !important;
-  box-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
 }
 
 .square .general-icon .general-img {
@@ -141,4 +137,8 @@
   background-color: rgba(91, 91, 91, 0.7);
   pointer-events: none;
   z-index: 1;
+}
+
+.cell.mountain.visible {
+  background-color: #dfdfdf;
 }
