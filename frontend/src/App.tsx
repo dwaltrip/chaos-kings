@@ -31,14 +31,12 @@ function App() {
         </nav>
       )}
 
-      <div className={isGamePage ? '' : 'p-5'}>
-        <Routes>
-          <Route index element={<HomePage />} />
-          <Route path="games" element={<GameListPage />} />
-          <Route path="games/:gameId" element={<GamePage />} />
-          <Route path="join-game" element={<JoinGamePage />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route index element={<HomePage />} />
+        <Route path="games" element={<GameListPage />} />
+        <Route path="games/:gameId" element={<GamePage />} />
+        <Route path="join-game" element={<JoinGamePage />} />
+      </Routes>
     </div>
   );
 }

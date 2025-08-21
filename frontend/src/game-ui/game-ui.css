@@ -33,79 +33,37 @@
   padding: 8px;
 }
 
-.grid {
-  --rows: 1;
-  --cols: 1;
-  /* --gap: 2px; */
-  --gap: 0px;
-
-  display: grid;
-  grid-template-columns: repeat(var(--cols), 1fr);
-  grid-template-rows: repeat(var(--rows), 1fr);
-  gap: var(--gap);
-  
-  /* Make the grid square by using the smaller container dimension */
-  width: min(100%, 100vh - 100px);
-  height: min(100%, 100vh - 100px);
-  aspect-ratio: 1;
-  
-  /* Overall map border */
-  border: 1px solid black;
-}
-
 .cell {
-  display: grid;
-  place-items: center;
-  background: #fafafa;
-  font:
-    12px/1 system-ui,
-    sans-serif;
-  
-  pointer-events: none;
-
-  &.selectable {
-    cursor: pointer;
-    pointer-events: all;
-  }
+  position: relative;
   aspect-ratio: 1;
-
-  border-color: black;
-  border-width: 1px;
-  border-style: none;
-
-  &.border-top { border-top: solid; }
-  &.border-right { border-right: solid; }
-  &.border-bottom { border-bottom: solid; }
-  &.border-left { border-left: solid; }
-}
-
-.cell.selected,
-.player-square.selected {
-  /* TODO: get rid of this important */
-  border: 2px solid white !important;
-}
-
-.cell img {
-  width: 90%;
-  height: 90%;
-  object-fit: contain;
-}
-
-/* .general-icon { */
-.player-square {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100%;
   width: 100%;
-  position: relative;
-  cursor: pointer;
+  background: #fafafa;
+  user-select: none;
+  cursor: default;
+
+  &.selectable {
+    cursor: pointer;
+    pointer-events: all;
+  }
 }
 
-.square .general-icon .general-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+/* Selected styling is now handled via CSS custom properties in GameTile */
+
+.cell {
+  & img.mountain-img {
+    width: 90%;
+    height: 90%;
+    object-fit: contain;
+  }
+  & img.general-img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+  }
 }
 
 .cell.is-neighbor-selected {
@@ -113,26 +71,17 @@
 }
 
 .cell {
-  & .army-count,
-  & .possible-move-overlay {
+  & .army-count {
+    z-index: 2;
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-  }
-
-  & .army-count {
-    z-index: 2;
     color: white;
+    font-size: clamp(8px, calc(var(--game-tile-size, 60px) * 0.30), 20px);
     font-weight: bold;
-    font-size: 15px;
-  }
-
-  & .possible-move-overlay {
-    z-index: 3;
-    height: 100%;
-    width: 100%;
-    background-color: rgba(70, 70, 70, 0.6);
+    font-family: system-ui;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
   }
 }
 
@@ -146,20 +95,19 @@
   user-select: none;
 }
 
-.fog-of-war {
-  position: relative;
-}
-
-.fog-of-war::after {
-  content: '';
+.tile-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(91, 91, 91, 0.7);
-  pointer-events: none;
-  z-index: 1;
+
+  &.fog-of-war {
+    background-color: rgba(115, 115, 115, 0.7);
+  }
+  &.possible-move {
+    background-color: rgba(50, 50, 50, 0.4);
+  } 
 }
 
 .cell.mountain.visible {

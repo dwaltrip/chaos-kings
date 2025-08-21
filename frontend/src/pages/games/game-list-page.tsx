@@ -4,6 +4,7 @@ import { apiService } from '@/services/api-service';
 import type { GameWithPlayers, ListGamesResponse } from '@common/types/games';
 import { GameListPlayerInfo } from '@/pages/games/game-list-player-info';
 
+// TODO: layout on this page is a bit messed up. it's overflowing / not scrolling
 function GameListPage() {
   const [games, setGames] = useState<GameWithPlayers[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +52,7 @@ function GameListPage() {
   }
 
   return (
-    <div>
+    <div className="game-list-page">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Games</h1>
         <p className="text-sm text-gray-600">
@@ -65,7 +66,7 @@ function GameListPage() {
           No games yet. Join the matchmaking queue to start playing!
         </p>
       ) : (
-        <div className="space-y-4">
+        <div className="games-list space-y-4">
           {games.map((game) => (
             <div
               key={game.id}

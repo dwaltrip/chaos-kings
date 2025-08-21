@@ -35,7 +35,8 @@ function GameUI({ gameId }: GameUIProps) {
     disabled,
   });
 
-  const shouldShowGameBoard = boardState && game && currentPlayerIndex !== null;
+  // const shouldShowGameBoard = boardState && game && currentPlayerIndex !== null;
+  const shouldShowGameBoard = boardState && game;
   if (!shouldShowGameBoard) {
     console.log('[DEBUG GameUI] Not showing game board', {
       boardState,
