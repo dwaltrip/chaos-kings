@@ -35,13 +35,23 @@
         margin-top: -1px;
     }
 
-    &.custom-border::after {
-        border: var(--game-tile-custom-border);
-        z-index: 1;
+    &.selected::after {
+        border: 1px solid white;
+        z-index: 2;
     }
 
-    &.selected.custom-border::after {
-        z-index: 2;
+    /*
+    NOTE: Right now I dont like a custom border on
+        potential moves. But leaving this here commented out,
+        in case I want to experiment later.
+    &.valid-move::after {
+        border: 1px solid #bcfad1;
+        z-index: 1;
+    }
+    */
+
+    &.selectable {
+        cursor: pointer;
     }
 }
 

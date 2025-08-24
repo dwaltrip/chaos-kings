@@ -42,21 +42,15 @@ function GameTile({ coord, row, col }: GameTileProps) {
   const isPlayer = 'playerIndex' in square;
   const playerSquare = square as PlayerSquare;
   const isMountain = isMountainSquare(square);
-  const isValidMove = !isMountain;
-
-  // Create custom border CSS variable based on tile state
-  let customBorder = 'none';
-  if (isSelected) {
-    customBorder = '2px solid #ffdd00';
-  } else if (isNeighborOfSelected) {
-    customBorder = '1px solid #88ff88';
-  }
+  const isValidMove = isNeighborOfSelected && !isMountain;
 
   const tileClassName = clsx(
     'game-tile',
     `row-${row}`,
     `col-${col}`,
-    (isSelected || isNeighborOfSelected) && 'custom-border',
+    isSelected && 'selected',
+    isValidMove && 'valid-move',
+    isSelectable && 'selectable',
   );
 
   const contentClassName = clsx(
@@ -67,16 +61,12 @@ function GameTile({ coord, row, col }: GameTileProps) {
     isVisible ? 'visible' : 'fog-of-war',
     isSelectable && 'selectable',
     isSelected && 'selected',
-    isNeighborOfSelected && 'is-neighbor-selected',
     isMountain && 'mountain',
     borders.top && 'border-top',
     borders.left && 'border-left',
   );
 
-  const tileStyle: React.CSSProperties = {
-    cursor: isSelectable ? 'pointer' : 'default',
-    '--game-tile-custom-border': customBorder,
-  } as React.CSSProperties;
+  const tileStyle: React.CSSProperties = {};
 
   const colorStyle =
     isPlayer && isVisible
