@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { BoardState, Coord, Movement } from '@core/types';
 import { Board } from '@core/board';
 import { gameMetadataStore } from '@/stores/game-metadata-store';
+import { ARROW_REMOVAL_DELAY_MS } from '@core/ui-timing-config';
 
 interface GameplayState {
   boardState: BoardState | null;
@@ -94,7 +95,7 @@ const gameplayStore = create<GameplayState>((set) => ({
                 (move) => moveToKey(move) !== moveToKey(arrow),
               ),
             }));
-          }, 500);
+          }, ARROW_REMOVAL_DELAY_MS);
         });
 
         return { queuedMoves: [...moves, ...removedArrows] };

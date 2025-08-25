@@ -9,6 +9,7 @@ import {
 } from '@/pages/join-game/game-matchmaking-actions';
 import { GameMatchmakingWsHandler } from '@/pages/join-game/game-matchmaking-ws-handler';
 import { useWebsocket } from '@/hooks/use-websocket';
+import { MATCHMAKING_WAITING_TIMER_INTERVAL_MS } from '@core/ui-timing-config';
 
 function JoinGamePage() {
   const queueSize = gameMatchmakingStore((state) => state.queueSize);
@@ -30,7 +31,7 @@ function JoinGamePage() {
 
     const interval = setInterval(() => {
       setWaitingTime((prev) => prev + 1);
-    }, 1000);
+    }, MATCHMAKING_WAITING_TIMER_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, [isInQueue]);

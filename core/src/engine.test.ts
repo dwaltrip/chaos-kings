@@ -1,6 +1,10 @@
 import { tick } from '@core/engine';
 import { generateRandomMap } from '@core/map/generate-grid';
 import { BoardState, SquareType } from '@core/types';
+import {
+  GENERAL_PRODUCTION_TICKS,
+  ARMY_PRODUCTION_TICKS,
+} from '@core/game-timing-config';
 
 describe('tick function', () => {
   let board: BoardState;
@@ -13,25 +17,25 @@ describe('tick function', () => {
     generals = mapResult.generals;
   });
 
-  test('should produce units for generals every 4 ticks', () => {
+  test(`should produce units for generals every ${GENERAL_PRODUCTION_TICKS} ticks`, () => {
     const initialUnits = generals[0].units;
 
-    // Tick 1-3: no production
-    tick(board, 1);
-    tick(board, 2);
-    tick(board, 3);
-    expect(generals[0].units).toBe(initialUnits);
+    // Test no production before first interval
+    for (let tickNum = 1; tickNum < GENERAL_PRODUCTION_TICKS; tickNum++) {
+      tick(board, tickNum);
+      expect(generals[0].units).toBe(initialUnits);
+    }
 
-    // Tick 4: production occurs
-    tick(board, 4);
+    // First production interval: production occurs
+    tick(board, GENERAL_PRODUCTION_TICKS);
     expect(generals[0].units).toBe(initialUnits + 1);
 
-    // Tick 8: production occurs again
-    tick(board, 8);
+    // Second production interval: production occurs again
+    tick(board, GENERAL_PRODUCTION_TICKS * 2);
     expect(generals[0].units).toBe(initialUnits + 2);
   });
 
-  test('should produce units for armies every 100 ticks', () => {
+  test(`should produce units for armies every ${ARMY_PRODUCTION_TICKS} ticks`, () => {
     // Add an army square to test
     const armySquare = {
       coord: { x: 5, y: 5 },
@@ -43,12 +47,12 @@ describe('tick function', () => {
 
     const initialUnits = armySquare.units;
 
-    // Tick 99: no production
-    tick(board, 99);
+    // No production before first interval
+    tick(board, ARMY_PRODUCTION_TICKS - 1);
     expect(armySquare.units).toBe(initialUnits);
 
-    // Tick 100: production occurs
-    tick(board, 100);
+    // First production interval: production occurs
+    tick(board, ARMY_PRODUCTION_TICKS);
     expect(armySquare.units).toBe(initialUnits + 1);
   });
 
@@ -82,8 +86,8 @@ describe('tick function', () => {
     const remainingGeneral = generals[1];
     const initialUnits = remainingGeneral.units;
 
-    // Tick 4: should produce units AND detect victory
-    const result = tick(board, 4);
+    // Production tick: should produce units AND detect victory
+    const result = tick(board, GENERAL_PRODUCTION_TICKS);
     expect(result.gameEnded).toBe(true);
     expect(result.winnerPlayerIndex).toBe(remainingGeneral.playerIndex);
     expect(remainingGeneral.units).toBe(initialUnits + 1); // Production still happens

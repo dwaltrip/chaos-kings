@@ -13,6 +13,10 @@ import { isPlayerSquare } from '@core/square';
 import { GameRepository } from '@/game/game-repository';
 import { GameStatus } from '@/game/types';
 import { endGame } from '@/game/actions/end-game';
+import {
+  FALLBACK_TIMER_MS,
+  GAME_START_COUNTDOWN_INTERVAL_MS,
+} from '@core/ui-timing-config';
 
 interface QueuedMove {
   sourceCoord: Coord;
@@ -348,7 +352,7 @@ export class GameServer {
   }
 
   private startFallbackTimer(): void {
-    // Start countdown after 10 seconds even if not all players joined
+    // Start countdown after fallback delay even if not all players joined
     this.fallbackTimer = setTimeout(() => {
       if (
         !this.countdownActive &&
@@ -360,7 +364,7 @@ export class GameServer {
         );
         this.startCountdown();
       }
-    }, 10000);
+    }, FALLBACK_TIMER_MS);
   }
 
   private clearFallbackTimer(): void {
@@ -389,7 +393,7 @@ export class GameServer {
       } else {
         this.broadcastGameStarting();
       }
-    }, 1000);
+    }, GAME_START_COUNTDOWN_INTERVAL_MS);
   }
 
   private async finishCountdown(): Promise<void> {

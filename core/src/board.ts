@@ -4,6 +4,7 @@ import { Movement, SquareType } from '@core/types';
 import { isPlayerSquare } from '@core/square';
 import { serializeCoord } from '@core/utils/coordinate-utils';
 
+// TODO: rename this to "isValidMoveTarget" or something
 function canMove(
   board: BoardState,
   source: Coord,

@@ -1,6 +1,7 @@
 import type { WsDomainHandler, WsMessage } from '@common/types/websockets';
 import type { GameMatchmakingMessageType } from '@common/types/game-matchmaking';
 import { gameMatchmakingStore } from '@/pages/join-game/join-game-store';
+import { NAVIGATION_DELAY_MS } from '@core/ui-timing-config';
 
 const { actions } = gameMatchmakingStore.getState();
 
@@ -38,11 +39,11 @@ const GameMatchmakingWsHandler: WsDomainHandler = {
           // Set game ready state (for UI feedback)
           actions.setGameReady(gameId);
 
-          // Navigate to game page after 1 second delay
+          // Navigate to game page after navigation delay
           setTimeout(() => {
             console.log(`Navigating to game ${gameId}...`);
             window.location.href = `/games/${gameId}`;
-          }, 1000);
+          }, NAVIGATION_DELAY_MS);
         }
         break;
       default:

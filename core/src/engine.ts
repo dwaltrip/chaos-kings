@@ -7,18 +7,22 @@ import {
 } from '@core/types';
 import { Board } from '@core/board';
 import { isPlayerSquare } from '@core/square';
+import {
+  GENERAL_PRODUCTION_TICKS,
+  ARMY_PRODUCTION_TICKS,
+} from '@core/game-timing-config';
 
 function tick(
   board: BoardState,
   tickNumber: number,
 ): { gameEnded: boolean; winnerPlayerIndex?: number } {
-  // General production: +1 unit every 4 ticks (1 per second at 250ms)
-  if (tickNumber % 4 === 0) {
+  // General production: +1 unit every GENERAL_PRODUCTION_TICKS
+  if (tickNumber % GENERAL_PRODUCTION_TICKS === 0) {
     applyCityProduction(board);
   }
 
-  // Army production: +1 unit every 100 ticks (25 seconds at 250ms)
-  if (tickNumber % 100 === 0) {
+  // Army production: +1 unit every ARMY_PRODUCTION_TICKS
+  if (tickNumber % ARMY_PRODUCTION_TICKS === 0) {
     applyTroopProduction(board);
   }
 

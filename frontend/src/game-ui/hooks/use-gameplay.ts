@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { Coord, Movement } from '@core/types';
+import { type Coord } from '@core/types';
 import { Board } from '@core/board';
 import { getWebSocketService } from '@/services/websocket-service';
 import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
@@ -47,29 +47,19 @@ export function useGameplay() {
         return;
       }
 
-      // Basic client-side validation
-      const moveDirection = direction as Movement;
-      const sourceSquare = Board.getSquare(boardState, selectedTile);
-
-      // Check if player owns the source tile and has enough units
-      const canMakeMove =
-        Board.isPlayerSquare(sourceSquare) &&
-        sourceSquare.playerIndex === currentPlayerIndex &&
-        sourceSquare.units > 1 &&
-        Board.canMove(boardState, selectedTile, moveDirection);
-
-      if (!canMakeMove) {
-        console.warn('Cannot move: invalid move detected by client validation');
+      // Basic client-side validation / movement UX
+      // Can't queue off the map or into mountains
+      if (!Board.canMove(boardState, selectedTile, direction)) {
         return;
       }
 
       // Immediately add to local queue for instant arrow feedback
       const currentQueuedMoves = state.queuedMoves;
-      const newMove = { sourceCoord: selectedTile, direction: moveDirection };
+      const newMove = { sourceCoord: selectedTile, direction };
       actions.setQueuedMoves([...currentQueuedMoves, newMove]);
 
       // Follow the army to its destination
-      actions.followArmyMovement(selectedTile, moveDirection);
+      actions.followArmyMovement(selectedTile, direction);
 
       // Send to server
       const wsService = getWebSocketService();
@@ -78,7 +68,7 @@ export function useGameplay() {
         type: 'move-request',
         payload: {
           sourceCoord: selectedTile,
-          direction: moveDirection,
+          direction,
         },
       });
     },

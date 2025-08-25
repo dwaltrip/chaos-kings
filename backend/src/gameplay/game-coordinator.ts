@@ -1,9 +1,9 @@
 import { GameServer } from './game-server';
+import { TICK_RATE_MS } from '@core/game-timing-config';
 
 class GameCoordinator {
   private games: Map<number, GameServer> = new Map();
   private tickInterval: NodeJS.Timeout | null = null;
-  private readonly TICK_RATE_MS = 250;
 
   constructor() {
     this.startGlobalTick();
@@ -16,11 +16,11 @@ class GameCoordinator {
     }
 
     console.log(
-      `[GameCoordinator] Starting global tick system at ${this.TICK_RATE_MS}ms intervals`,
+      `[GameCoordinator] Starting global tick system at ${TICK_RATE_MS}ms intervals`,
     );
     this.tickInterval = setInterval(() => {
       this.tick();
-    }, this.TICK_RATE_MS);
+    }, TICK_RATE_MS);
   }
 
   private async tick(): Promise<void> {
