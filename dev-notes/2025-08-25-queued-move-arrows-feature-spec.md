@@ -33,11 +33,12 @@ Add visual directional arrows to the game UI that show the player's currently qu
 5. **Player-only Display:** Only show the current player's queued moves (not opponents)
 
 ### Visual Design
-- Directional arrows pointing toward destination tile (UP/DOWN/LEFT/RIGHT)
-- Subtle but clearly visible over tile content
-- Multiple arrows should stack/offset if multiple moves from same tile
-- Consistent with existing UI color scheme and styling
-- Responsive to different tile sizes
+- **Arrow Style:** Unicode arrows (→ ↑ ↓ ←) positioned on tile edges pointing toward destination
+- **Color:** White arrows for clear visibility
+- **Multiple Directions:** Show 1-4 arrows per tile (one for each direction with queued moves)
+- **Multiple Same Direction:** Treat multiple moves in same direction as single arrow display
+- **Positioning:** Arrows positioned on tile edges - top (↑), right (→), bottom (↓), left (←)
+- **Player Visibility:** Only show current player's queued moves (frontend-only approach)
 
 ## Implementation Plan
 
@@ -82,13 +83,21 @@ const handleMoveRequest = useCallback((direction, selectedTile) => {
 ```typescript
 interface MoveArrowProps {
   direction: Movement;
-  index?: number; // for stacking multiple arrows
 }
 
-function MoveArrow({ direction, index = 0 }: MoveArrowProps) {
-  // CSS class based on direction
-  // Optional offset based on index for multiple arrows
-  return <div className={`move-arrow move-arrow-${direction.toLowerCase()}`} />;
+function MoveArrow({ direction }: MoveArrowProps) {
+  const arrows = {
+    UP: '↑',
+    DOWN: '↓', 
+    LEFT: '←',
+    RIGHT: '→'
+  };
+  
+  return (
+    <div className={`move-arrow move-arrow-${direction.toLowerCase()}`}>
+      {arrows[direction]}
+    </div>
+  );
 }
 ```
 
@@ -100,45 +109,51 @@ function MoveArrow({ direction, index = 0 }: MoveArrowProps) {
 
 ### 5. Queue Management Strategy
 
-#### Move Removal Triggers:
-- **Game State Updates:** Remove moves when new board state arrives (compare ticks)
-- **Cancel Moves:** Clear all queued moves when `handleCancelMoves()` called
-- **Timeout Cleanup:** Optional fallback for edge cases
+#### Move Removal Context:
+- **Game Tick Rate:** 4 moves per second (0.25s intervals)
+- **Move Validation:** Use existing validation only (no additional frontend validation)
+- **Detection Approach:** Heuristic-based cleanup when board state updates arrive
 
-#### Implementation Options:
-1. **Tick-based Cleanup:** Remove moves when `tick` increases (assumes moves processed)
-2. **Smart Cleanup:** Track which moves were likely processed based on board state changes
-3. **Simple Timeout:** Remove moves after fixed duration (2-3 seconds)
+#### Move Removal Triggers:
+- **Game State Updates:** Analyze board changes to detect executed/invalid moves
+- **Cancel Moves:** Clear all queued moves when `handleCancelMoves()` called
+- **Immediate Invalid:** Remove moves when source conditions change
 
 ### 6. CSS Implementation (`game-tile.css`)
 
 ```css
 .move-arrow {
   position: absolute;
-  width: 0;
-  height: 0;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
   z-index: 3; /* Above tile content, below overlays */
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8); /* Ensure visibility on all backgrounds */
 }
 
 .move-arrow-up {
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-bottom: 10px solid #4CAF50;
-  top: 10%;
+  top: 2px;
   left: 50%;
   transform: translateX(-50%);
 }
 
 .move-arrow-right {
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-  border-left: 10px solid #4CAF50;
-  right: 10%;
+  right: 2px;
   top: 50%;
   transform: translateY(-50%);
 }
 
-/* DOWN, LEFT variants... */
+.move-arrow-down {
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.move-arrow-left {
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+}
 ```
 
 ## Technical Considerations
@@ -159,46 +174,44 @@ function MoveArrow({ direction, index = 0 }: MoveArrowProps) {
 - Consider adding ARIA labels or alt text for screen readers
 - Maintain sufficient color contrast
 
-## Open Questions & Clarifications Needed
+## Resolved Requirements
 
-### Visual Design Questions
-1. **Arrow Styling:** Simple CSS triangles vs Unicode arrows (→ ↑ ↓ ←) vs custom SVG icons?
-2. **Multiple Arrows:** How should 3+ queued moves from same tile be displayed?
-   - Stack vertically/horizontally?
-   - Show count badge instead?
-   - Limit display to most recent N moves?
-3. **Color Scheme:** What color should arrows be?
-   - Match player color?
-   - Fixed color (green for "pending")?
-   - Different color per move in sequence?
+### Visual Design (RESOLVED)
+- ✅ **Arrow Styling:** Unicode arrows (→ ↑ ↓ ←)
+- ✅ **Multiple Arrows:** 1-4 arrows per tile (one per direction), positioned on tile edges
+- ✅ **Multiple Same Direction:** Single arrow display (multiple moves same direction = one arrow)
+- ✅ **Color Scheme:** White arrows with text shadow for visibility
+- ✅ **Player Visibility:** Only show current player's queued moves (frontend-only)
+- ✅ **Mobile Support:** Not applicable (game doesn't support mobile)
 
-### Technical Implementation Questions
-4. **Queue Cleanup Strategy:** Which approach for removing processed moves?
-   - Tick-based (remove all on tick change)?
-   - Smart detection (compare board changes)?
-   - Fixed timeout duration?
-5. **Move Validation:** Should we validate queued moves locally?
-   - Check if source tile is still owned by player?
-   - Validate destination isn't blocked?
-   - Or rely entirely on server validation?
-6. **Performance Limits:** Maximum number of queued moves to display?
-   - Per tile limit?
-   - Total limit across board?
+### Technical Implementation (RESOLVED)
+- ✅ **Move Validation:** Use existing validation only, no additional frontend validation
+- ✅ **Performance Limits:** Assume reasonable limits based on game mechanics (4 moves/second)
+- ✅ **Move Cancellation:** Only bulk cancellation via existing cancel command
 
-### User Experience Questions  
-7. **Arrow Persistence:** How long should arrows remain visible?
-   - Until next game tick?
-   - Until move is processed?
-   - Fixed timeout (2-3 seconds)?
-8. **Multiple Players:** In multiplayer, show only own moves or all visible players' moves?
-9. **Move Cancellation:** Should individual queued moves be cancellable?
-   - Click on arrow to remove that specific move?
-   - Or only bulk cancellation via existing cancel command?
+## Queue Cleanup Strategy - TO DISCUSS
 
-### Integration Questions
-10. **Fog of War:** Do queued moves interact with fog of war visibility?
-11. **Spectator Mode:** Should spectators see queued moves? Whose moves?
-12. **Mobile Support:** How do arrows display on touch interfaces with different tile sizes?
+### Heuristic Approach Framework
+**"Move occurred" detection logic:**
+- **Before**: Tile A has N troops, owned by player
+- **Queued**: A→RIGHT 
+- **After**: Tile A has <N troops, still owned by player
+- **Logic**: If A lost troops AND the RIGHT move was queued, likely that move executed → remove RIGHT arrow
+
+**"No longer possible" detection:**
+- Tile A has 0 troops → remove ALL arrows from A (can't move with 0)
+- Tile A no longer owned by player → remove ALL arrows from A (can't move from enemy tile)
+
+### Edge Cases to Resolve
+1. **Simultaneous incoming/outgoing moves**: Tile A loses 3 troops from queued move but gains 2 from incoming move → net -1, but our move still executed
+2. **Failed move vs pending move**: If A→RIGHT fails (blocked destination), how do we know the arrow should disappear vs the move still being pending?
+3. **Troop threshold**: If tile A has 2 troops and we queue A→RIGHT, but by next tick A only has 1 troop (minimum to stay), did our move fail or was it invalid to begin with?
+4. **Destination captured**: We queue A→RIGHT toward enemy tile B, but ally captures B first - does our move still execute or get cancelled?
+
+### Questions for Server Behavior
+- When a queued move becomes invalid (like destination blocked), does the server drop it silently or does it get processed but fail?
+- How does the server handle minimum troop requirements for moves?
+- Are moves atomic per tile or can partial moves occur?
 
 ## Success Criteria
 
