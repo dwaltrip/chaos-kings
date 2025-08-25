@@ -6,14 +6,12 @@ Refactor the codebase to support configurable game speeds (e.g., 2 moves per sec
 
 **End Goal:** Have all timing values defined in one centralized location, with different parts of the code configured with chosen values or receiving them as parameters, enabling easy game speed customization.
 
-## Critical Problem Discovered
+## Current State Assessment
 
-**Timing Inconsistency:** The core game logic in `engine.ts` was designed for 250ms ticks, but `game-coordinator.ts` currently uses 500ms ticks. This breaks the intended game timing:
+**Timing Status:** The game currently runs at 250ms tick intervals. All timing values are hardcoded throughout the system, making it impossible to easily adjust game speed or support different game modes.
 
-- **General production:** Designed for 1 second (4×250ms) but now takes 2 seconds (4×500ms)
-- **Army production:** Designed for 25 seconds (100×250ms) but now takes 50 seconds (100×500ms)
-
-This makes the game significantly slower than intended and breaks the game balance.
+- **General production:** Every 1 second (4 ticks × 250ms)
+- **Army production:** Every 25 seconds (100 ticks × 250ms)
 
 ## All Affected Files
 
@@ -27,10 +25,9 @@ This makes the game significantly slower than intended and breaks the game balan
 
 ### Frontend Files (UI timing)
 5. `frontend/src/game-ui/store/gameplay-store.ts` - hardcoded animation delays
-
-### New Files to Create
-6. `core/src/timing-config.ts` - centralized timing configuration
-7. `core/src/default-timing-config.ts` - default timing values
+6. `frontend/src/pages/join-game/join-game-page.tsx` - matchmaking timer
+7. `frontend/src/pages/join-game/game-matchmaking-ws-handler.ts` - navigation delay
+8. `frontend/src/components/game-countdown.tsx` - CSS transition durations
 
 ## Detailed Code Analysis
 
@@ -51,28 +48,24 @@ if (tickNumber % 100 === 0) {
 ```
 
 **Assumptions:**
-- Called every 250ms (designed tick rate)
-- `tickNumber % 4 === 0` should occur every 1000ms (1 second) for general production
-- `tickNumber % 100 === 0` should occur every 25000ms (25 seconds) for army production
-
-**Current Problem:** With 500ms actual tick rate, generals produce every 2 seconds, armies every 50 seconds
+- Called every 250ms
+- `tickNumber % 4 === 0` occurs every 1000ms (1 second) for general production
+- `tickNumber % 100 === 0` occurs every 25000ms (25 seconds) for army production
 
 **Refactor Needed:** Replace hardcoded intervals with calculated intervals based on timing config
 
 ### 2. `backend/src/gameplay/game-coordinator.ts`
 
-**Location:** Lines 7-8
+**Location:** Line 6
 **Current Code:**
 ```typescript
-// private readonly TICK_RATE_MS = 250;
-private readonly TICK_RATE_MS = 500;
+private readonly TICK_RATE_MS = 250;
 ```
 
-**Function:** `startGlobalTick()` - Lines 14-26
+**Function:** `startGlobalTick()` - Lines 12-24
 **Assumptions:**
-- 250ms was intended design (now commented out)
-- Currently hardcoded to 500ms
-- Creates `setInterval()` that drives entire game timing system
+- 250ms tick rate drives entire game timing system
+- Creates `setInterval()` that coordinates all active games
 
 **Usage:** Orchestrates all active games' tick progression via `setInterval(this.tick, TICK_RATE_MS)`
 
@@ -114,12 +107,12 @@ setTimeout(() => {
       (move) => moveToKey(move) !== moveToKey(arrow),
     ),
   }));
-}, 200);
+}, 500);
 ```
 
-**Assumptions:** 200ms sufficient visual feedback time for removed arrows
+**Assumptions:** 500ms sufficient visual feedback time for removed arrows
 **Usage:** Delays removal of move arrows for smooth UX
-**Dependency:** Should be shorter than game tick rate, but otherwise independent
+**Dependency:** Should be longer than game tick rate to provide visual feedback, but otherwise independent
 
 ### 5. `core/src/engine.test.ts`
 
@@ -130,9 +123,51 @@ test('should produce units for generals every 4 ticks')
 test('should produce units for armies every 100 ticks')
 ```
 
-**Assumptions:** Tests assume original 250ms tick design
+**Assumptions:** Tests assume 250ms tick design
 **Usage:** Validates game timing logic correctness
 **Problem:** Hard-coded expectations (4, 100) break with different tick rates
+
+### 6. `frontend/src/pages/join-game/join-game-page.tsx`
+
+**Location:** Lines 31-35
+**Function:** Matchmaking waiting timer
+```typescript
+const interval = setInterval(() => {
+  setWaitingTime((prev) => prev + 1);
+}, 1000);
+```
+
+**Assumptions:** 1000ms (1 second) appropriate for user-facing timer display
+**Usage:** Updates waiting time counter for players in matchmaking queue
+**Dependency:** Independent of game tick rate - UI feedback timing
+
+### 7. `frontend/src/pages/join-game/game-matchmaking-ws-handler.ts`
+
+**Location:** Lines 42-45
+**Function:** Game navigation delay
+```typescript
+setTimeout(() => {
+  console.log(`Navigating to game ${gameId}...`);
+  window.location.href = `/games/${gameId}`;
+}, 1000);
+```
+
+**Assumptions:** 1000ms (1 second) provides adequate visual feedback before navigation
+**Usage:** Delays navigation to game page after match is found
+**Dependency:** Independent of game tick rate - UX timing
+
+### 8. `frontend/src/components/game-countdown.tsx`
+
+**Location:** Lines 60, 65
+**Function:** CSS transition durations
+```typescript
+className="transition-all duration-1000 ease-linear"  // Line 60
+className="text-4xl font-bold text-gray-800 transition-all duration-300"  // Line 65
+```
+
+**Assumptions:** 1000ms for progress animation, 300ms for text transitions
+**Usage:** Countdown circle progress animation and number change transitions
+**Dependency:** Independent of game tick rate - visual polish timing
 
 ## Function Dependencies Analysis
 
@@ -142,20 +177,29 @@ test('should produce units for armies every 100 ticks')
 - `GameServer.tick()` ↔ `engine.tick()` assumptions
 
 ### Loosely Coupled (can be independent):
-- UI animation delays (200ms arrow removal)
-- Game start countdown (1000ms intervals)
+- UI animation delays (500ms arrow removal)
+- Game start countdown (1000ms intervals) 
 - Fallback timer (10000ms delay)
+- Matchmaking timers (1000ms updates)
+- Navigation delays (1000ms)
+- CSS animations (300ms, 1000ms)
 
-## Proposed Solution Architecture
+## Possible Solution Brainstorm
+
+*Note: This is one possible approach to consider. We will thoroughly plan the actual implementation separately.*
 
 ### 1. Create Centralized Configuration
-**New file:** `core/src/timing-config.ts`
+**Potential new files:**
+- `core/src/timing-config.ts` - centralized timing configuration interface
+- `core/src/default-timing-config.ts` - default timing values
+
+**Example structure:** `core/src/timing-config.ts`
 ```typescript
 interface TimingConfig {
   tickRateMs: number;                    // Base tick interval (250ms, 500ms, etc.)
   generalProductionIntervalMs: number;   // How often generals produce (1000ms = 1 second)
   armyProductionIntervalMs: number;      // How often armies produce (25000ms = 25 seconds)
-  uiAnimationDelayMs: number;           // UI transition delays (200ms for arrows)
+  uiAnimationDelayMs: number;           // UI transition delays (500ms for arrows)
   gameStartCountdownMs: number;         // Pre-game countdown (1000ms)
   gameStartFallbackMs: number;          // Fallback timer (10000ms)
 }
@@ -173,20 +217,20 @@ interface TimingConfig {
 - All timing-dependent code uses config values
 
 ### 4. Create Preset Configurations
-- **Standard:** 250ms ticks (original design intent)
-- **Slow:** 500ms ticks (current broken implementation)
-- **Fast:** 125ms ticks (for faster games)
-- **Blitz:** 100ms ticks (very fast games)
+- **Standard:** 250ms ticks
+- **Slow:** 500ms ticks
+- **Fast:** 125ms ticks
+- **Blitz:** 100ms ticks
 
 ## Key Insights
 
-1. **Root Cause:** The timing inconsistency likely occurred during development when someone changed the tick rate without understanding the engine dependencies.
+1. **Configuration Challenge:** All timing values are hardcoded throughout the system, making it impossible to easily adjust game speed or support different game modes.
 
-2. **Game Balance Impact:** The current 500ms implementation makes the game much slower and changes the strategic balance significantly.
+2. **Testing Gap:** The existing tests don't catch timing configuration mismatches because they only test the engine in isolation with hardcoded expectations.
 
-3. **Testing Gap:** The existing tests don't catch timing configuration mismatches because they only test the engine in isolation.
+3. **Architecture Principle:** Timing should be a first-class configuration concern, not scattered magic numbers.
 
-4. **Architecture Principle:** Timing should be a first-class configuration concern, not scattered magic numbers.
+4. **Scope Complexity:** Multiple types of timing exist in the system - game logic timing, UI feedback timing, and user experience timing - each with different configuration requirements.
 
 ## Questions for Implementation
 
@@ -197,17 +241,82 @@ interface TimingConfig {
 
 ## Implementation Priority
 
-**Critical (fixes broken game):**
-1. Fix the 250ms vs 500ms inconsistency
+**Critical (enables configurability):**
+1. Create centralized timing config structure
 2. Update engine.ts to use calculated intervals
 3. Update tests to work with configurable timing
 
-**Important (enables configurability):**
-4. Create centralized timing config structure
-5. Thread config through all components
-6. Add preset configurations
+**Important (system integration):**
+4. Thread config through all components (GameCoordinator, GameServer)
+5. Add preset configurations for different game speeds
+6. Update GameCoordinator to accept timing config
 
 **Nice-to-have (polish):**
 7. Add validation for reasonable timing configs
 8. Add UI for game speed selection
 9. Add timing config to game database schema
+
+## Questions for Implementation Scope
+
+### 1. CSS Animation Timing Scope
+**Question:** Should CSS transition and animation durations be included in the timing configuration system?
+
+**Context:** Files like `game-countdown.tsx` have CSS classes with hardcoded durations (1000ms, 300ms). These provide visual polish but are independent of game logic.
+
+**Options:**
+- A) Include CSS timing in config for complete consistency
+- B) Keep CSS timing separate as pure UI concerns
+- C) Create separate UI timing config distinct from game timing config
+
+### 2. Matchmaking and Navigation Timing
+**Question:** Should matchmaking UI timers and navigation delays be configurable or remain independent?
+
+**Context:** 
+- `join-game-page.tsx` has 1000ms waiting time counter updates
+- `game-matchmaking-ws-handler.ts` has 1000ms navigation delay
+
+**Options:**
+- A) Include in timing config for consistency
+- B) Keep independent since they're pure UX timing
+- C) Make configurable but with separate category
+
+### 3. Arrow Removal Timing Relationship
+**Question:** How should the 500ms arrow removal delay relate to the configurable tick rate?
+
+**Context:** Currently 500ms in `gameplay-store.ts`, which is 2x the current 250ms tick rate.
+
+**Options:**
+- A) Fixed ratio (e.g., always 2x tick rate)
+- B) Fixed absolute value (always 500ms)
+- C) Separately configurable with validation rules
+
+### 4. Configuration Granularity
+**Question:** Should timing config be per-game, global server setting, or both?
+
+**Context:** Different game modes might want different speeds, but server performance may have limits.
+
+**Options:**
+- A) Global server config only
+- B) Per-game config chosen at creation
+- C) Both - server defines allowed configs, games choose from them
+
+### 5. Fractional Tick Handling
+**Question:** How should we handle cases where production intervals don't divide evenly into tick rates?
+
+**Context:** If general production is 1000ms but tick rate is 333ms, we get 3.003 ticks per production.
+
+**Options:**
+- A) Round to nearest integer and accept slight timing variance
+- B) Require tick rates that divide evenly into production intervals
+- C) Use fractional accumulation system
+
+### 6. Validation Rules
+**Question:** What validation should prevent unreasonable timing configurations?
+
+**Context:** Need to prevent configs that break gameplay (e.g., armies producing faster than generals).
+
+**Considerations:**
+- Minimum/maximum tick rates for performance
+- Army vs. general production rate relationships
+- UI timing vs. game timing relationships
+- Client/server synchronization limits
