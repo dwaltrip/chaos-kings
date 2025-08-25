@@ -3,6 +3,8 @@ import type { GameplayMessageType, Gameplay } from '@common/types/gameplay';
 import { GameStatus } from '@common/types/games';
 import { gameplayStore } from '@/game-ui/store/gameplay-store';
 import { gameMetadataStore } from '@/stores/game-metadata-store';
+import { getCurrentPlayerIndex } from '@/stores/game-metadata-store';
+import { userStore } from '@/stores/user-store';
 
 const { actions } = gameplayStore.getState();
 
@@ -55,6 +57,21 @@ const GameplayWsHandler = {
           data.payload as Gameplay.GameStateUpdate['payload'];
         actions.setBoardState(updatePayload.boardState);
         actions.setTick(updatePayload.tick);
+
+        // Handle queue updates
+        if (updatePayload.playerQueues) {
+          const game = gameMetadataStore.getState().game;
+          const user = userStore.getState().user;
+          const currentPlayerIndex = getCurrentPlayerIndex(
+            game,
+            user?.id ?? null,
+          );
+          const myQueue =
+            currentPlayerIndex !== null
+              ? updatePayload.playerQueues[currentPlayerIndex] || []
+              : [];
+          actions.setQueuedMoves(myQueue);
+        }
         break;
 
       case 'game-ended':

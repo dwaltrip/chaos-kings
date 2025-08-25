@@ -12,6 +12,7 @@ interface GameplayState {
   gameEnded: boolean;
   winner: number | null;
   endReason: 'general_captured' | 'timeout' | 'disconnect' | null;
+  queuedMoves: Array<{ sourceCoord: Coord; direction: Movement }>;
   actions: {
     setBoardState: (boardState: BoardState) => void;
     setPlayerMapping: (
@@ -25,6 +26,9 @@ interface GameplayState {
       reason: 'general_captured' | 'timeout' | 'disconnect',
     ) => void;
     followArmyMovement: (sourceCoord: Coord, direction: Movement) => void;
+    setQueuedMoves: (
+      moves: Array<{ sourceCoord: Coord; direction: Movement }>,
+    ) => void;
     reset: () => void;
   };
 }
@@ -38,6 +42,7 @@ const gameplayStore = create<GameplayState>((set) => ({
   gameEnded: false,
   winner: null,
   endReason: null,
+  queuedMoves: [],
   actions: {
     setBoardState: (boardState) => set({ boardState }),
     setPlayerMapping: (mapping) => {
@@ -71,6 +76,7 @@ const gameplayStore = create<GameplayState>((set) => ({
 
         return state;
       }),
+    setQueuedMoves: (moves) => set({ queuedMoves: moves }),
     reset: () =>
       set({
         boardState: null,
@@ -81,6 +87,7 @@ const gameplayStore = create<GameplayState>((set) => ({
         gameEnded: false,
         winner: null,
         endReason: null,
+        queuedMoves: [],
       }),
   },
 }));

@@ -175,4 +175,9 @@ const useCurrentPlayerIndex = () => {
   return getCurrentPlayerIndex(game, user?.id ?? null);
 };
 
-export { gameMetadataStore, useGameLoadingState, useCurrentPlayerIndex };
+export {
+  gameMetadataStore,
+  useGameLoadingState,
+  useCurrentPlayerIndex,
+  getCurrentPlayerIndex,
+};

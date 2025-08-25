@@ -208,6 +208,23 @@ export class GameServer {
     this.broadcastGameEnd(winnerPlayerIndex);
   }
 
+  private getPlayerQueuesForBroadcast(): Record<
+    number,
+    Array<{ sourceCoord: Coord; direction: Movement }>
+  > {
+    const result: Record<
+      number,
+      Array<{ sourceCoord: Coord; direction: Movement }>
+    > = {};
+    for (const [playerIndex, queue] of this.playerQueues) {
+      result[playerIndex] = queue.map((move) => ({
+        sourceCoord: move.sourceCoord,
+        direction: move.movement,
+      }));
+    }
+    return result;
+  }
+
   private broadcastGameState(): void {
     if (!this.gameState) return;
 
@@ -219,6 +236,7 @@ export class GameServer {
         payload: {
           tick: this.gameState.tick,
           boardState: this.gameState.board,
+          playerQueues: this.getPlayerQueuesForBroadcast(),
         },
       });
     } catch (error) {

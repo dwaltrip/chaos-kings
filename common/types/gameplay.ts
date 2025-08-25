@@ -30,6 +30,10 @@ namespace Gameplay {
     payload: {
       tick: number;
       boardState: BoardState;
+      playerQueues?: Record<
+        number,
+        Array<{ sourceCoord: Coord; direction: Movement }>
+      >;
     };
   }
 
