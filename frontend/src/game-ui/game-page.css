@@ -1,0 +1,43 @@
+/* The main container for header/sidebar/main layout */
+.game-layout {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  /* grid-template-columns: 1fr 280px; */
+  grid-template-columns: 1fr 150px;
+  grid-template-areas:
+    'header header'
+    'main sidebar';
+  height: 100vh;
+}
+
+.game-header {
+  grid-area: header;
+  padding: 8px 12px;
+  background: #aaa;
+  border-bottom: 1px solid #444;
+}
+
+.game-sidebar {
+  grid-area: sidebar;
+  border-left: 1px solid #444;
+  overflow: hidden;
+}
+
+.game-main {
+  grid-area: main;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 8px;
+}
+
+.game-page {
+  background-color: #777;
+}
+
+.game-ui-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  user-select: none;
+}

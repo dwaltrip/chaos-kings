@@ -2,7 +2,7 @@ import type { BoardState } from '@core/types';
 import { useGridLayout } from '@/game-ui/hooks/use-grid-layout';
 import { GameTile } from '@/game-ui/components/game-tile';
 
-import '@/game-ui/components/grid-ui.css';
+import '@/game-ui/game-board.css';
 
 interface GameBoardProps {
   boardState: BoardState;

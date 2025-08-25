@@ -7,7 +7,8 @@ import { useGameplay } from '@/game-ui/hooks/use-gameplay';
 import { useCurrentPlayerIndex } from '@/stores/game-metadata-store';
 import { GameBoard } from '@/game-ui/components/game-board';
 
-import '@/game-ui/game-ui.css';
+import '@/game-ui/game-page.css';
+import '@/game-ui/game-tile.css';
 
 interface GameUIProps {
   gameId: number | null;

@@ -1,37 +1,3 @@
-/* The main container for header/sidebar/main layout */
-.game-layout {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  /* grid-template-columns: 1fr 280px; */
-  grid-template-columns: 1fr 150px;
-  grid-template-areas:
-    'header header'
-    'main sidebar';
-  height: 100vh;
-}
-
-.game-header {
-  grid-area: header;
-  padding: 8px 12px;
-  background: #aaa;
-  border-bottom: 1px solid #444;
-}
-
-.game-sidebar {
-  grid-area: sidebar;
-  border-left: 1px solid #444;
-  overflow: hidden;
-}
-
-.game-main {
-  grid-area: main;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  padding: 8px;
-}
-
 .cell {
   position: relative;
   aspect-ratio: 1;
@@ -48,22 +14,19 @@
     cursor: pointer;
     pointer-events: all;
   }
-}
 
-.cell {
   & img.mountain-img {
     width: 90%;
     height: 90%;
     object-fit: contain;
   }
+
   & img.general-img {
     width: 80%;
     height: 80%;
     object-fit: contain;
   }
-}
 
-.cell {
   & .army-count {
     z-index: 2;
     position: absolute;
@@ -76,16 +39,64 @@
     font-family: system-ui;
     text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
   }
+
+  &.mountain {
+    &.visible {
+      background-color: #e9e9e9;
+    }
+
+    /* TODO: temp hack to make mountains less prominent in the fog of war */
+    /* Need to fix the underlying SVG or something */
+    &:not(.visible) img.mountain-img {
+      opacity: 0.5;
+    }
+
+    & img.mountain-img {
+      z-index: 3;
+    }
+  }
 }
 
-.game-page {
-  background-color: #777;
-}
+.game-tile {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 
-.game-ui-disabled {
-  opacity: 0.6;
-  pointer-events: none;
-  user-select: none;
+  /* This ::after is how we create the tile borders */
+  &::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-color: transparent;
+    border: 1px solid #333;
+    margin-left: -1px;
+    margin-top: -1px;
+  }
+
+  &.selected::after {
+    border: 1px solid white;
+    z-index: 2;
+  }
+
+  /*
+  NOTE: Right now I don't like a custom border on
+      potential moves. But leaving this here commented out,
+      in case I want to experiment later.
+  &.valid-move::after {
+      border: 1px solid #bcfad1;
+      z-index: 1;
+  }
+  */
+
+  &.selectable {
+    cursor: pointer;
+  }
 }
 
 .tile-overlay {
@@ -98,6 +109,7 @@
   &.fog-of-war {
     background-color: #888;
   }
+
   &.possible-move {
     background-color: rgba(80, 80, 80, 0.5);
     /* -------------------------------------------------------
@@ -107,20 +119,4 @@
     ------------------------------------------------------- */
     z-index: 2;
   } 
-}
-
-.cell.mountain {
-  &.visible {
-    background-color: #e9e9e9;
-  }
-
-  /* TODO: temp hack to make mountains less prominent in the fog of war */
-  /* Need to fix the underlying SVG or something */
-  &:not(.visible) img.mountain-img {
-    opacity: 0.5;
-  }
-
-  & img.mountain-img {
-    z-index: 3;
-  }
 }
