@@ -8,6 +8,8 @@
 
 Add visual directional arrows to the game UI that show the player's currently queued moves. This provides immediate visual feedback when players queue multiple moves, helping them understand their pending actions before they're processed by the server.
 
+The main remaining technical unknown / challenge is discussed at the bottom: can we accurately update the list of queued moves by looking at new board states as they come in, without adding any new direct information from the backend related to queued moves.
+
 ## Current State Analysis
 
 ### Existing Move System
@@ -160,7 +162,9 @@ function MoveArrow({ direction }: MoveArrowProps) {
 
 ### Performance
 - Minimal performance impact (simple array operations and CSS)
-- Consider limiting max queued moves displayed (10+)
+- Consider limiting max queued moves displayed
+    - Doesn't seem super important technically, but could be a sanity check
+    - Maybe like 100-200? At faster game speeds, a player might queue many moves.
 - Use React keys properly for arrow component rendering
 
 ### Edge Cases
@@ -212,6 +216,13 @@ function MoveArrow({ direction }: MoveArrowProps) {
 - When a queued move becomes invalid (like destination blocked), does the server drop it silently or does it get processed but fail?
 - How does the server handle minimum troop requirements for moves?
 - Are moves atomic per tile or can partial moves occur?
+
+### Double-checking "frontend-only" assumption, future considerations
+
+- What would the simplest solution involving backend changes look like? Would it greatly simplify the frontend?
+- Relatedly, but also tangentially, the backend move queue will probably need some enhancements at some point. It's quite simplistic right now, and doens't have any special handling of edge cases, which we will probably need. But unclear if this is worth looking into for now.
+- Will need to balance moving forward reasonably quickly on this spike with laying some nice ground work for the future
+- Perhaps some of the logic we come up with for heuristics or other aspects of queuing moves could be added to the core package
 
 ## Success Criteria
 
