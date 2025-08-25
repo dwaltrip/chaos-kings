@@ -81,7 +81,6 @@ const gameplayStore = create<GameplayState>((set) => ({
         const moveToKey = (move: { sourceCoord: Coord; direction: Movement }) =>
           `${move.sourceCoord.x},${move.sourceCoord.y},${move.direction}`;
 
-        const currentKeys = new Set(state.queuedMoves.map(moveToKey));
         const newKeys = new Set(moves.map(moveToKey));
 
         // Find removed arrows and delay their removal
