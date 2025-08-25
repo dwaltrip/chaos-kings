@@ -12,17 +12,11 @@ interface GameBoardProps {
 function GameBoard({ boardState }: GameBoardProps) {
   const rows = boardState.grid.length;
   const cols = boardState.grid[0]?.length || 0;
-
   const { containerRef, gridStyle } = useGridLayout(rows, cols);
-
-  const gridStyleWithBorder = {
-    ...gridStyle,
-    '--game-tile-border': '1px solid #333',
-  } as React.CSSProperties;
 
   return (
     <div ref={containerRef} className="game-grid-container">
-      <div className="game-grid" style={gridStyleWithBorder}>
+      <div className="game-grid" style={gridStyle}>
         {boardState.grid.flatMap((row, y) =>
           row.map((_, x) => (
             <GameTile key={`${x}-${y}`} coord={{ x, y }} row={y} col={x} />

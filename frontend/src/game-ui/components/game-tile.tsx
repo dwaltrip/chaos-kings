@@ -66,8 +66,6 @@ function GameTile({ coord, row, col }: GameTileProps) {
     borders.left && 'border-left',
   );
 
-  const tileStyle: React.CSSProperties = {};
-
   const colorStyle =
     isPlayer && isVisible
       ? {
@@ -78,7 +76,6 @@ function GameTile({ coord, row, col }: GameTileProps) {
   return (
     <div
       className={tileClassName}
-      style={tileStyle}
       onClick={isSelectable ? handleTileClick : undefined}
     >
       <div className={contentClassName} style={colorStyle}>
