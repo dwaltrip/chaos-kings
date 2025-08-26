@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import type { BoardState, Coord, Movement } from '@core/types';
 import { Board } from '@core/board';
 import { gameMetadataStore } from '@/stores/game-metadata-store';
-import { ARROW_REMOVAL_DELAY_MS } from '@core/ui-timing-config';
 
 interface GameplayState {
   boardState: BoardState | null;
@@ -78,27 +77,8 @@ const gameplayStore = create<GameplayState>((set) => ({
         return state;
       }),
     setQueuedMoves: (moves) =>
-      set((state) => {
-        const moveToKey = (move: { sourceCoord: Coord; direction: Movement }) =>
-          `${move.sourceCoord.x},${move.sourceCoord.y},${move.direction}`;
-
-        const newKeys = new Set(moves.map(moveToKey));
-
-        // Find removed arrows and delay their removal
-        const removedArrows = state.queuedMoves.filter(
-          (move) => !newKeys.has(moveToKey(move)),
-        );
-        removedArrows.forEach((arrow) => {
-          setTimeout(() => {
-            set((currentState) => ({
-              queuedMoves: currentState.queuedMoves.filter(
-                (move) => moveToKey(move) !== moveToKey(arrow),
-              ),
-            }));
-          }, ARROW_REMOVAL_DELAY_MS);
-        });
-
-        return { queuedMoves: [...moves, ...removedArrows] };
+      set(() => {
+        return { queuedMoves: moves };
       }),
     reset: () =>
       set({

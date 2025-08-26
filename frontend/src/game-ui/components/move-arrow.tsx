@@ -4,18 +4,34 @@ interface MoveArrowProps {
   direction: Movement;
 }
 
+const THIN_ARROWS = {
+  RIGHT: '⭢',
+  DOWN: '⭣',
+  LEFT: '⭠',
+  UP: '⭡',
+};
+
+// Just for convenience, for later UI tweaking
+// @ts-ignore
+const _ARROWS = {
+  RIGHT: '→',
+  DOWN: '↓',
+  LEFT: '←',
+  UP: '↑',
+};
+
 const getArrowSymbol = (direction: Movement): string => {
   switch (direction) {
     case 'UP':
-      return '↑';
+      return THIN_ARROWS.UP;
     case 'RIGHT':
-      return '→';
+      return THIN_ARROWS.RIGHT;
     case 'DOWN':
-      return '↓';
+      return THIN_ARROWS.DOWN;
     case 'LEFT':
-      return '←';
+      return THIN_ARROWS.LEFT;
     default:
-      return '?';
+      throw new Error(`Invalid direction: ${direction}`);
   }
 };
 
@@ -30,7 +46,7 @@ const getArrowClass = (direction: Movement): string => {
     case 'LEFT':
       return 'move-arrow-left';
     default:
-      return 'move-arrow-top';
+      throw new Error(`Invalid direction: ${direction}`);
   }
 };
 

@@ -1,5 +1,3 @@
-// export const ARROW_REMOVAL_DELAY_MS = 500;
-export const ARROW_REMOVAL_DELAY_MS = 200;
 export const GAME_START_COUNTDOWN_INTERVAL_MS = 1000;
 export const NAVIGATION_DELAY_MS = 1000;
 export const FALLBACK_TIMER_MS = 10000;

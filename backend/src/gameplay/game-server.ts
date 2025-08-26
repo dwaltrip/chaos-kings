@@ -18,6 +18,8 @@ import {
   GAME_START_COUNTDOWN_INTERVAL_MS,
 } from '@core/ui-timing-config';
 
+const MAX_QUEUED_MOVES_PER_PLAYER = 200;
+
 interface QueuedMove {
   sourceCoord: Coord;
   movement: Movement;
@@ -297,6 +299,14 @@ export class GameServer {
     ) {
       console.log(
         `[GameServer] Invalid coordinates ${sourceCoord.x},${sourceCoord.y} for move request from user ${userId} in game ${this.gameId}`,
+      );
+      return;
+    }
+
+    // Check queue limit
+    if (queue.length >= MAX_QUEUED_MOVES_PER_PLAYER) {
+      console.log(
+        `[GameServer] Queue full for player ${playerIndex} in game ${this.gameId} (${queue.length} moves), ignoring move request`,
       );
       return;
     }

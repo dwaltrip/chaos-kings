@@ -14,8 +14,8 @@ const ONE_SECOND_MS = 1000;
 
 // Movement interval drives the game tick rate since it's the shortest interval.
 // Players can make one move every MOVEMENT_INTERVAL_MS milliseconds.
-// export const MOVEMENT_INTERVAL_MS = 250;
-export const MOVEMENT_INTERVAL_MS = 500;
+export const MOVEMENT_INTERVAL_MS = 250;
+// export const MOVEMENT_INTERVAL_MS = 500;
 
 // Tick rate matches movement interval since movement is the most frequent action.
 // This ensures moves are processed at the desired rate.
