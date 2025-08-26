@@ -54,9 +54,7 @@ export function useGameplay() {
       }
 
       // Immediately add to local queue for instant arrow feedback
-      const currentQueuedMoves = state.queuedMoves;
-      const newMove = { sourceCoord: selectedTile, direction };
-      actions.setQueuedMoves([...currentQueuedMoves, newMove]);
+      actions.addQueuedMove(selectedTile, direction);
 
       // Follow the army to its destination
       actions.followArmyMovement(selectedTile, direction);

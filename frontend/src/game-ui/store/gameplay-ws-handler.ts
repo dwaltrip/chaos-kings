@@ -70,7 +70,7 @@ const GameplayWsHandler = {
             currentPlayerIndex !== null
               ? updatePayload.playerQueues[currentPlayerIndex] || []
               : [];
-          actions.setQueuedMoves(myQueue);
+          actions.setQueuedMovesFromArray(myQueue);
         }
         break;
 

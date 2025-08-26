@@ -13,6 +13,7 @@ interface GameplayState {
   winner: number | null;
   endReason: 'general_captured' | 'timeout' | 'disconnect' | null;
   queuedMoves: Array<{ sourceCoord: Coord; direction: Movement }>;
+  queuedMovesByCoord: Map<string, Set<Movement>>;
   actions: {
     setBoardState: (boardState: BoardState) => void;
     setPlayerMapping: (
@@ -29,6 +30,11 @@ interface GameplayState {
     setQueuedMoves: (
       moves: Array<{ sourceCoord: Coord; direction: Movement }>,
     ) => void;
+    setQueuedMovesFromArray: (
+      moves: Array<{ sourceCoord: Coord; direction: Movement }>,
+    ) => void;
+    addQueuedMove: (sourceCoord: Coord, direction: Movement) => void;
+    clearAllQueuedMoves: () => void;
     reset: () => void;
   };
 }
@@ -43,6 +49,7 @@ const gameplayStore = create<GameplayState>((set) => ({
   winner: null,
   endReason: null,
   queuedMoves: [],
+  queuedMovesByCoord: new Map(),
   actions: {
     setBoardState: (boardState) => set({ boardState }),
     setPlayerMapping: (mapping) => {
@@ -80,6 +87,40 @@ const gameplayStore = create<GameplayState>((set) => ({
       set(() => {
         return { queuedMoves: moves };
       }),
+    setQueuedMovesFromArray: (moves) =>
+      set(() => {
+        // Convert array to coordinate-keyed Record
+        const queuedMovesByCoord: Map<string, Set<Movement>> = new Map();
+        for (const move of moves) {
+          const key = `${move.sourceCoord.x},${move.sourceCoord.y}`;
+          if (!queuedMovesByCoord.has(key)) {
+            queuedMovesByCoord.set(key, new Set());
+          }
+          queuedMovesByCoord.get(key)?.add(move.direction);
+        }
+        return { queuedMoves: moves, queuedMovesByCoord };
+      }),
+    addQueuedMove: (sourceCoord, direction) =>
+      set((state) => {
+        const key = `${sourceCoord.x},${sourceCoord.y}`;
+        const directionForTile = state.queuedMovesByCoord.get(key) || new Set();
+        directionForTile.add(direction);
+        state.queuedMovesByCoord.set(key, directionForTile);
+        return {
+          queuedMoves: [...state.queuedMoves, { sourceCoord, direction }],
+          // TODO: is this idiomatic?
+          // Seems dumb to create a new Map each time.
+          queuedMovesByCoord: state.queuedMovesByCoord,
+        };
+      }),
+    clearAllQueuedMoves: () =>
+      set(() => {
+        console.log(`[GameplayStore] clearAllQueuedMoves: clearing all moves`);
+        return {
+          queuedMoves: [],
+          queuedMovesByCoord: new Map(),
+        };
+      }),
     reset: () =>
       set({
         boardState: null,
@@ -91,6 +132,7 @@ const gameplayStore = create<GameplayState>((set) => ({
         winner: null,
         endReason: null,
         queuedMoves: [],
+        queuedMovesByCoord: new Map(),
       }),
   },
 }));
