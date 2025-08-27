@@ -3,6 +3,7 @@ import type { BoardState, Coord, Movement } from '@core/types';
 import { Board } from '@core/board';
 import { gameMetadataStore } from '@/stores/game-metadata-store';
 import { tileOrchestrator } from './tile-orchestrator';
+import { getTileStore } from './tile-store-registry';
 
 interface GameplayState {
   boardState: BoardState | null;
@@ -40,7 +41,7 @@ interface GameplayState {
   };
 }
 
-const gameplayStore = create<GameplayState>((set) => ({
+const gameplayStore = create<GameplayState>((set, get) => ({
   boardState: null,
   playerMapping: null,
   selectedTile: null,
@@ -54,9 +55,9 @@ const gameplayStore = create<GameplayState>((set) => ({
   actions: {
     setBoardState: (boardState) => {
       set({ boardState });
-      // Phase 1: Update tile stores with general status
+      // Phase 1b: Update tile stores w/ square info
       if (boardState) {
-        tileOrchestrator.updateGeneralStatus(boardState);
+        tileOrchestrator.updateTileSquares(boardState);
       }
     },
     setPlayerMapping: (mapping) => {
@@ -104,6 +105,19 @@ const gameplayStore = create<GameplayState>((set) => ({
       }),
     setQueuedMovesFromArray: (moves) =>
       set(() => {
+        const grid = get().boardState?.grid;
+        if (!grid) {
+          return { queuedMoves: [], queuedMovesByCoord: new Map() };
+        }
+
+        // TODO: resetting the state should happen all in one place
+        // Clear all existing moves in tile store
+        for (let y = 0; y < grid.length; y++) {
+          for (let x = 0; x < grid[y].length; x++) {
+            getTileStore({ x, y }).getState().updateQueuedMoves(new Set());
+          }
+        }
+
         // Convert array to coordinate-keyed Record
         const queuedMovesByCoord: Map<string, Set<Movement>> = new Map();
         for (const move of moves) {
@@ -164,5 +178,9 @@ const gameplayStore = create<GameplayState>((set) => ({
       }),
   },
 }));
+
+export function useSetSelectedTile() {
+  return gameplayStore((state) => state.actions.setSelectedTile);
+}
 
 export { gameplayStore };

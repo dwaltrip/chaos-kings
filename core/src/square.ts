@@ -1,4 +1,4 @@
-import type { Square, PlayerSquare, NeutralSquare } from '@core/types';
+import type { Square, PlayerSquare, NeutralSquare, Coord } from '@core/types';
 import { PlayerSquareType, NeutralSquareType } from '@core/types';
 
 // TODO: is this the best way to do this?
@@ -15,6 +15,10 @@ function isNeutralSquare(square: Square): square is NeutralSquare {
 }
 
 // --------------------
+
+function blankSquare(coord: Coord): NeutralSquare {
+  return { type: NeutralSquareType.BLANK, coord };
+}
 
 function isBlankSquare(square: Square): boolean {
   return square.type === NeutralSquareType.BLANK;
@@ -44,6 +48,7 @@ export {
   isSquare,
   isPlayerSquare,
   isNeutralSquare,
+  blankSquare,
   isBlankSquare,
   isMountainSquare,
   isNeutralCitySquare,

@@ -4,16 +4,16 @@ import mountainIcon from '@/assets/mountain.svg';
 import generalIcon from '@/assets/crown.png';
 import type { Coord, PlayerSquare } from '@core/types';
 import { playerIndexToColor } from '@/game-ui/config/ui-constants';
-import { isMountainSquare } from '@core/square';
-import { useTileState } from '@/game-ui/hooks/use-tile-state';
-import { useGameplay } from '@/game-ui/hooks/use-gameplay';
-import { useTileQueuedMoves } from '@/game-ui/hooks/use-tile-queued-moves';
+// import { useTileState } from '@/game-ui/hooks/use-tile-state';
+// import { useGameplay } from '@/game-ui/hooks/use-gameplay';
 import {
-  useTileSelection,
-  useTileGeneral,
+  useTileIsSelected,
   useTileQueuedMovesV2,
+  useTileSquare,
+  useTileSquareTypes,
 } from '@/game-ui/hooks/use-tile-store-state';
 import { MoveArrow } from '@/game-ui/components/move-arrow';
+import { useSetSelectedTile } from '../store/gameplay-store';
 
 // Track render count
 let renderCount = 0;
@@ -40,8 +40,8 @@ const GameTile = React.memo(
     // Track renders
     renderCount++;
     const now = Date.now();
-    if (now - lastLogTime > 100) {
-      // Log every 100ms to batch renders
+    if (now - lastLogTime > 1000) {
+      // Log every 1000ms to batch renders
       console.log(
         `[PERF] ${renderCount} tile renders in last ${now - lastLogTime}ms`,
       );
@@ -49,34 +49,43 @@ const GameTile = React.memo(
       lastLogTime = now;
     }
 
+    // ---- my new stuff for the refactotr
+    // Adding square to store...
+    const square = useTileSquare(coord);
+    // NOTE: temp..
+    // replacing `const { handleTileSelect } = useGameplay();` with this
+    const handleTileSelect = useSetSelectedTile();
+    // ---- my new stuff for the refactotr
+
+    const selectTile = () => handleTileSelect(coord);
+
     // Phase 1: Individual subscriptions (no object recreation)
-    const isSelectedFromStore = useTileSelection(coord);
-    const isGeneralFromStore = useTileGeneral(coord);
-    const queuedMovesFromStore = useTileQueuedMovesV2(coord);
+    const isSelected = useTileIsSelected(coord);
+    const queuedMoves = useTileQueuedMovesV2(coord);
 
     // Keep existing hook for complex state (Phase 2 will migrate)
-    const tileState = useTileState(coord);
-    const { handleTileSelect } = useGameplay();
-    const tileQueuedMoves = useTileQueuedMoves(coord); // Keep for comparison
+    // const tileState = useTileState(coord);
+    // const { handleTileSelect } = useGameplay();
 
     // Use tile store values where available, fall back to old hook
-    const { square, isSelectable, isNeighborOfSelected, isVisible, borders } =
-      tileState;
+    // const { square, isSelectable, isNeighborOfSelected, isVisible, borders } =
+    //   tileState;
 
-    // Phase 1: Use store values for primitive state
-    const isSelected = isSelectedFromStore;
-    const isGeneral = isGeneralFromStore;
-    const queuedMoves = queuedMovesFromStore;
+    const playerSquare = square as PlayerSquare;
+    const { isMountain, isGeneral } = useTileSquareTypes(coord);
 
-    const handleTileClick = () => handleTileSelect(coord);
+    // ------------------------------------------------
+    // ------------------------------------------------
+    // TODO: temp, until implemented in TileStore
+    const isVisible = true;
+    const isSelectable = !isMountain;
+    const isNeighborOfSelected = false;
+    const borders = { top: false, bottom: false, left: false, right: false };
+    // ------------------------------------------------
+    // ------------------------------------------------
 
     const isPlayer = 'playerIndex' in square;
-    const playerSquare = square as PlayerSquare;
-    const isMountain = isMountainSquare(square);
     const isValidMove = isNeighborOfSelected && !isMountain;
-
-    // Get unique directions (in case there are multiple moves in same direction)
-    const uniqueDirections = Array.from(queuedMoves);
 
     const tileClassName = clsx(
       'game-tile',
@@ -96,6 +105,8 @@ const GameTile = React.memo(
       isSelectable && 'selectable',
       isSelected && 'selected',
       isMountain && 'mountain',
+      // TODO: not sure if this is implemented correctly
+      // might have gotten messed up in refactor
       borders.top && 'border-top',
       borders.left && 'border-left',
     );
@@ -110,7 +121,7 @@ const GameTile = React.memo(
     return (
       <div
         className={tileClassName}
-        onClick={isSelectable ? handleTileClick : undefined}
+        onClick={isSelectable ? selectTile : undefined}
       >
         <div className={contentClassName} style={colorStyle}>
           {isMountain && <img className="mountain-img" src={mountainIcon} />}
@@ -128,7 +139,7 @@ const GameTile = React.memo(
           {!isVisible && <TileOverlay className="fog-of-war" />}
 
           {/* Render move arrows for queued moves */}
-          {uniqueDirections.map((direction) => (
+          {Array.from(queuedMoves, (direction) => (
             <MoveArrow key={direction} direction={direction} />
           ))}
         </div>

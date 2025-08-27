@@ -1,10 +1,14 @@
-import type { Coord, Movement } from '@core/types';
+import type { Coord, Movement, Square } from '@core/types';
 import { coordsEqual } from '@core/utils/coordinate-utils';
-import { isGeneralSquare } from '@core/square';
 import type { BoardState } from '@core/types';
-import { getTileStore } from './tile-store-registry';
+import { getTileStore } from '@/game-ui/store/tile-store-registry';
 
 export class TileOrchestrator {
+  updateTileSquare(coord: Coord, square: Square) {
+    const store = getTileStore(coord);
+    store.getState().updateSquare(square);
+  }
+
   // Phase 1: Update simple state across tiles
   updateSelectedTile(selectedCoord: Coord | null, allCoords: Coord[]) {
     allCoords.forEach((coord) => {
@@ -30,17 +34,14 @@ export class TileOrchestrator {
   }
 
   // Phase 1: Update general status across all tiles when board state changes
-  updateGeneralStatus(boardState: BoardState) {
+  updateTileSquares(boardState: BoardState) {
     if (!boardState?.grid) return;
 
     const { grid } = boardState;
     for (let y = 0; y < grid.length; y++) {
       for (let x = 0; x < grid[y].length; x++) {
-        const coord = { x, y };
-        const square = grid[y][x];
-        const store = getTileStore(coord);
-        const isGeneral = isGeneralSquare(square);
-        store.getState().updateGeneral(isGeneral);
+        const store = getTileStore({ x, y });
+        store.getState().updateSquare(grid[y][x]);
       }
     }
   }

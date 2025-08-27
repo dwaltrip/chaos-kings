@@ -1,29 +1,48 @@
 import { create } from 'zustand';
-import type { Coord, Movement } from '@core/types';
+import type { Coord, Movement, Square } from '@core/types';
+import { blankSquare, isGeneralSquare, isMountainSquare } from '@core/square';
+
+// ------------------------------------------------------
+// TODO: Create a helper that forces all pieces of state
+// in this file to be `useShallow` compatible
+// E.g. not deeply nested.
+// Could be a TS utility type
+// ------------------------------------------------------
 
 // Phase 1: Only primitive state (no objects requiring useShallow)
 interface TileStoreState {
   // Simple primitives - safe for normal subscriptions
   isSelected: boolean;
-  isGeneral: boolean;
   queuedMoves: Set<Movement>; // Already useShallow compatible
 
+  square: Square;
+
+  // Helpers
+  getIsGeneral: () => boolean;
+  getIsMountain: () => boolean;
+
   // Actions
+  updateSquare: (square: Square) => void;
   updateSelection: (selected: boolean) => void;
-  updateGeneral: (general: boolean) => void;
   updateQueuedMoves: (moves: Set<Movement>) => void;
 }
 
-const createTileStore = () =>
-  create<TileStoreState>((set) => ({
+function createTileStore(coord: Coord) {
+  return create<TileStoreState>((set, get) => ({
     isSelected: false,
     isGeneral: false,
     queuedMoves: new Set(),
 
+    square: blankSquare(coord),
+
+    getIsGeneral: () => isGeneralSquare(get().square),
+    getIsMountain: () => isMountainSquare(get().square),
+
+    updateSquare: (square) => set({ square }),
     updateSelection: (selected) => set({ isSelected: selected }),
-    updateGeneral: (general) => set({ isGeneral: general }),
     updateQueuedMoves: (moves) => set({ queuedMoves: moves }),
   }));
+}
 
 // Global registry
 const tileStoreRegistry = new Map<string, ReturnType<typeof createTileStore>>();
@@ -31,7 +50,7 @@ const tileStoreRegistry = new Map<string, ReturnType<typeof createTileStore>>();
 export const getTileStore = (coord: Coord) => {
   const key = `${coord.x},${coord.y}`;
   if (!tileStoreRegistry.has(key)) {
-    tileStoreRegistry.set(key, createTileStore());
+    tileStoreRegistry.set(key, createTileStore(coord));
   }
   return tileStoreRegistry.get(key)!;
 };
