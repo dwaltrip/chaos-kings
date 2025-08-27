@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { BoardState, Coord, Movement } from '@core/types';
 import { Board } from '@core/board';
 import { gameMetadataStore } from '@/stores/game-metadata-store';
+import { tileOrchestrator } from './tile-orchestrator';
 
 interface GameplayState {
   boardState: BoardState | null;
@@ -51,13 +52,27 @@ const gameplayStore = create<GameplayState>((set) => ({
   queuedMoves: [],
   queuedMovesByCoord: new Map(),
   actions: {
-    setBoardState: (boardState) => set({ boardState }),
+    setBoardState: (boardState) => {
+      set({ boardState });
+      // Phase 1: Update tile stores with general status
+      if (boardState) {
+        tileOrchestrator.updateGeneralStatus(boardState);
+      }
+    },
     setPlayerMapping: (mapping) => {
       set({ playerMapping: mapping });
       // Bridge to metadata store for GamePage header display
       gameMetadataStore.getState().actions.setPlayerMapping(mapping);
     },
-    setSelectedTile: (coord) => set({ selectedTile: coord }),
+    setSelectedTile: (coord) =>
+      set((state) => {
+        const newState = { selectedTile: coord };
+        // Phase 1: Update tile stores with selection state
+        if (state.boardState) {
+          tileOrchestrator.updateSelectedTileFromBoard(coord, state.boardState);
+        }
+        return newState;
+      }),
     setGameId: (gameId) => set({ gameId }),
     setTick: (tick) => set({ tick }),
     setGameEnded: (winner, reason) => {
@@ -98,6 +113,10 @@ const gameplayStore = create<GameplayState>((set) => ({
           }
           queuedMovesByCoord.get(key)?.add(move.direction);
         }
+
+        // Phase 1: Update tile stores with queued moves
+        tileOrchestrator.updateQueuedMoves(queuedMovesByCoord);
+
         return { queuedMoves: moves, queuedMovesByCoord };
       }),
     addQueuedMove: (sourceCoord, direction) =>
@@ -106,6 +125,10 @@ const gameplayStore = create<GameplayState>((set) => ({
         const directionForTile = state.queuedMovesByCoord.get(key) || new Set();
         directionForTile.add(direction);
         state.queuedMovesByCoord.set(key, directionForTile);
+
+        // Phase 1: Update tile stores with new queued moves
+        tileOrchestrator.updateQueuedMoves(state.queuedMovesByCoord);
+
         return {
           queuedMoves: [...state.queuedMoves, { sourceCoord, direction }],
           // TODO: is this idiomatic?
@@ -116,9 +139,14 @@ const gameplayStore = create<GameplayState>((set) => ({
     clearAllQueuedMoves: () =>
       set(() => {
         console.log(`[GameplayStore] clearAllQueuedMoves: clearing all moves`);
+        const emptyMoves = new Map();
+
+        // Phase 1: Update tile stores to clear all moves
+        tileOrchestrator.updateQueuedMoves(emptyMoves);
+
         return {
           queuedMoves: [],
-          queuedMovesByCoord: new Map(),
+          queuedMovesByCoord: emptyMoves,
         };
       }),
     reset: () =>

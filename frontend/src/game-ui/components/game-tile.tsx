@@ -8,6 +8,11 @@ import { isMountainSquare } from '@core/square';
 import { useTileState } from '@/game-ui/hooks/use-tile-state';
 import { useGameplay } from '@/game-ui/hooks/use-gameplay';
 import { useTileQueuedMoves } from '@/game-ui/hooks/use-tile-queued-moves';
+import {
+  useTileSelection,
+  useTileGeneral,
+  useTileQueuedMovesV2,
+} from '@/game-ui/hooks/use-tile-store-state';
 import { MoveArrow } from '@/game-ui/components/move-arrow';
 
 // Track render count
@@ -44,19 +49,24 @@ const GameTile = React.memo(
       lastLogTime = now;
     }
 
+    // Phase 1: Individual subscriptions (no object recreation)
+    const isSelectedFromStore = useTileSelection(coord);
+    const isGeneralFromStore = useTileGeneral(coord);
+    const queuedMovesFromStore = useTileQueuedMovesV2(coord);
+
+    // Keep existing hook for complex state (Phase 2 will migrate)
     const tileState = useTileState(coord);
     const { handleTileSelect } = useGameplay();
-    const tileQueuedMoves = useTileQueuedMoves(coord);
+    const tileQueuedMoves = useTileQueuedMoves(coord); // Keep for comparison
 
-    const {
-      square,
-      isSelected,
-      isSelectable,
-      isNeighborOfSelected,
-      isVisible,
-      isGeneral,
-      borders,
-    } = tileState;
+    // Use tile store values where available, fall back to old hook
+    const { square, isSelectable, isNeighborOfSelected, isVisible, borders } =
+      tileState;
+
+    // Phase 1: Use store values for primitive state
+    const isSelected = isSelectedFromStore;
+    const isGeneral = isGeneralFromStore;
+    const queuedMoves = queuedMovesFromStore;
 
     const handleTileClick = () => handleTileSelect(coord);
 
@@ -66,7 +76,7 @@ const GameTile = React.memo(
     const isValidMove = isNeighborOfSelected && !isMountain;
 
     // Get unique directions (in case there are multiple moves in same direction)
-    const uniqueDirections = Array.from(new Set(tileQueuedMoves));
+    const uniqueDirections = Array.from(queuedMoves);
 
     const tileClassName = clsx(
       'game-tile',
