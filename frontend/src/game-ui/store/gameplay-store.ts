@@ -4,11 +4,11 @@ import { Board } from '@core/board';
 import { gameMetadataStore } from '@/stores/game-metadata-store';
 import { tileOrchestrator } from './tile-orchestrator';
 import { getTileStore } from './tile-store-registry';
+import { useGameplayStoreV2 } from '@/game-ui/store/gameplay-store-v2';
 
 interface GameplayState {
   boardState: BoardState | null;
   playerMapping: { playerId: string; playerIndex: number }[] | null;
-  selectedTile: Coord | null;
   gameId: number | null;
   tick: number;
   gameEnded: boolean;
@@ -21,7 +21,6 @@ interface GameplayState {
     setPlayerMapping: (
       mapping: { playerId: string; playerIndex: number }[],
     ) => void;
-    setSelectedTile: (coord: Coord | null) => void;
     setGameId: (gameId: number) => void;
     setTick: (tick: number) => void;
     setGameEnded: (
@@ -44,7 +43,6 @@ interface GameplayState {
 const gameplayStore = create<GameplayState>((set, get) => ({
   boardState: null,
   playerMapping: null,
-  selectedTile: null,
   gameId: null,
   tick: 0,
   gameEnded: false,
@@ -65,15 +63,6 @@ const gameplayStore = create<GameplayState>((set, get) => ({
       // Bridge to metadata store for GamePage header display
       gameMetadataStore.getState().actions.setPlayerMapping(mapping);
     },
-    setSelectedTile: (coord) =>
-      set((state) => {
-        const newState = { selectedTile: coord };
-        // Phase 1: Update tile stores with selection state
-        if (state.boardState) {
-          tileOrchestrator.updateSelectedTileFromBoard(coord, state.boardState);
-        }
-        return newState;
-      }),
     setGameId: (gameId) => set({ gameId }),
     setTick: (tick) => set({ tick }),
     setGameEnded: (winner, reason) => {
@@ -88,13 +77,16 @@ const gameplayStore = create<GameplayState>((set, get) => ({
         const destinationCoord = Board.applyDirection(sourceCoord, direction);
 
         // Only update selection if the destination is valid and the source matches current selection
+        const selectedTile = useGameplayStoreV2.getState().selectedTile;
         if (
           Board.isCoordValid(state.boardState, destinationCoord) &&
-          state.selectedTile &&
-          state.selectedTile.x === sourceCoord.x &&
-          state.selectedTile.y === sourceCoord.y
+          selectedTile &&
+          selectedTile.x === sourceCoord.x &&
+          selectedTile.y === sourceCoord.y
         ) {
-          return { selectedTile: destinationCoord };
+          useGameplayStoreV2
+            .getState()
+            .actions.setSelectedTileV2(destinationCoord);
         }
 
         return state;
@@ -167,7 +159,6 @@ const gameplayStore = create<GameplayState>((set, get) => ({
       set({
         boardState: null,
         playerMapping: null,
-        selectedTile: null,
         gameId: null,
         tick: 0,
         gameEnded: false,
@@ -178,9 +169,5 @@ const gameplayStore = create<GameplayState>((set, get) => ({
       }),
   },
 }));
-
-export function useSetSelectedTile() {
-  return gameplayStore((state) => state.actions.setSelectedTile);
-}
 
 export { gameplayStore };

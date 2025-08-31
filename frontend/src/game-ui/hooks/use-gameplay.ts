@@ -11,13 +11,6 @@ import { userStore } from '@/stores/user-store';
 export function useGameplay() {
   const { actions } = gameplayStore.getState();
 
-  const handleTileSelect = useCallback(
-    (coord: Coord) => {
-      actions.setSelectedTile(coord);
-    },
-    [actions],
-  );
-
   const handleMoveRequest = useCallback(
     (
       direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT',
@@ -83,7 +76,6 @@ export function useGameplay() {
   }, []);
 
   return {
-    handleTileSelect,
     handleMoveRequest,
     handleCancelMoves,
   };

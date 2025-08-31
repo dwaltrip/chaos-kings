@@ -7,13 +7,15 @@ import { playerIndexToColor } from '@/game-ui/config/ui-constants';
 // import { useTileState } from '@/game-ui/hooks/use-tile-state';
 // import { useGameplay } from '@/game-ui/hooks/use-gameplay';
 import {
-  useTileIsSelected,
   useTileQueuedMovesV2,
   useTileSquare,
   useTileSquareTypes,
 } from '@/game-ui/hooks/use-tile-store-state';
 import { MoveArrow } from '@/game-ui/components/move-arrow';
-import { useSetSelectedTile } from '../store/gameplay-store';
+import {
+  useGameplayStoreV2,
+  useIsTileSelected,
+} from '@/game-ui/store/gameplay-store-v2';
 
 // Track render count
 let renderCount = 0;
@@ -35,6 +37,8 @@ interface GameTileProps {
   col: number;
 }
 
+const { setSelectedTileV2 } = useGameplayStoreV2.getState().actions;
+
 const GameTile = React.memo(
   ({ coord, row, col }: GameTileProps) => {
     // Track renders
@@ -52,21 +56,16 @@ const GameTile = React.memo(
     // ---- my new stuff for the refactotr
     // Adding square to store...
     const square = useTileSquare(coord);
-    // NOTE: temp..
-    // replacing `const { handleTileSelect } = useGameplay();` with this
-    const handleTileSelect = useSetSelectedTile();
+
+    // gameplay store v2
+    const isSelected = useGameplayStoreV2(useIsTileSelected(coord));
+    const selectTileV2 = () => setSelectedTileV2(coord);
     // ---- my new stuff for the refactotr
 
-    const selectTile = () => handleTileSelect(coord);
-
     // Phase 1: Individual subscriptions (no object recreation)
-    const isSelected = useTileIsSelected(coord);
     const queuedMoves = useTileQueuedMovesV2(coord);
 
     // Keep existing hook for complex state (Phase 2 will migrate)
-    // const tileState = useTileState(coord);
-    // const { handleTileSelect } = useGameplay();
-
     // Use tile store values where available, fall back to old hook
     // const { square, isSelectable, isNeighborOfSelected, isVisible, borders } =
     //   tileState;
@@ -121,7 +120,7 @@ const GameTile = React.memo(
     return (
       <div
         className={tileClassName}
-        onClick={isSelectable ? selectTile : undefined}
+        onClick={isSelectable ? selectTileV2 : undefined}
       >
         <div className={contentClassName} style={colorStyle}>
           {isMountain && <img className="mountain-img" src={mountainIcon} />}

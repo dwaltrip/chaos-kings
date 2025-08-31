@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import type { Coord, Square } from '@core/types';
-import { coordsEqual } from '@core/utils/coordinate-utils';
 import { isGeneralSquare, isMountainSquare } from '@core/square';
 import { isSquareVisible } from '@/game-ui/utils/visibility-utils';
 import { isEnded } from '@core/game';
@@ -43,7 +42,11 @@ function useTileState(coord: Coord): TileState {
     const square = boardState.grid[coord.y][coord.x];
     const isMountain = isMountainSquare(square);
 
-    const isSelected = selectedTile ? coordsEqual(selectedTile, coord) : false;
+    // ---------------------------------
+    // TODO [__FIX_TILE_SELECTION__]
+    // --------------------------------
+    // const isSelected = selectedTile ? areCoordsEqual(selectedTile, coord) : false;
+    const isSelected = false;
     const isSelectable = !isEnded(game) && !(isMountain || isSelected);
 
     const isNeighborOfSelected = selectedTile

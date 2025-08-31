@@ -20,11 +20,6 @@ function useTileSquare(coord: Coord): Square {
 }
 
 // Phase 1: Individual hooks for each piece of state
-function useTileIsSelected(coord: Coord): boolean {
-  const store = getTileStore(coord);
-  return store((state) => state.isSelected);
-}
-
 function useTileQueuedMovesV2(coord: Coord): Set<Movement> {
   const store = getTileStore(coord);
   return store(useShallow((state) => state.queuedMoves));
@@ -40,9 +35,4 @@ function useTileSquareTypes(coord: Coord) {
   );
 }
 
-export {
-  useTileSquare,
-  useTileIsSelected,
-  useTileQueuedMovesV2,
-  useTileSquareTypes,
-};
+export { useTileSquare, useTileQueuedMovesV2, useTileSquareTypes };

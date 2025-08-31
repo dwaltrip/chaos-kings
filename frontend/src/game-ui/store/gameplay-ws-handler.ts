@@ -5,6 +5,7 @@ import { gameplayStore } from '@/game-ui/store/gameplay-store';
 import { gameMetadataStore } from '@/stores/game-metadata-store';
 import { getCurrentPlayerIndex } from '@/stores/game-metadata-store';
 import { userStore } from '@/stores/user-store';
+import { useGameplayStoreV2 } from '@/game-ui/store/gameplay-store-v2';
 
 const { actions } = gameplayStore.getState();
 
@@ -84,7 +85,8 @@ const GameplayWsHandler = {
         });
         actions.setBoardState(endedPayload.finalBoardState);
         actions.setGameEnded(endedPayload.winner, endedPayload.reason);
-        actions.setSelectedTile(null);
+        // woot woot
+        useGameplayStoreV2.getState().actions.clearSelectedTile();
         console.log('[gameplay] Game ended:', endedPayload);
         break;
 

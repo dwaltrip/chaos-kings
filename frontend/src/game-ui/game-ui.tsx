@@ -9,6 +9,10 @@ import { GameBoard } from '@/game-ui/components/game-board';
 
 import '@/game-ui/game-page.css';
 import '@/game-ui/game-tile.css';
+import {
+  useGameplayStoreV2,
+  useSelectedTile,
+} from '@/game-ui/store/gameplay-store-v2';
 
 interface GameUIProps {
   gameId: number | null;
@@ -21,7 +25,7 @@ function GameUI({ gameId }: GameUIProps) {
   const gameplayActions = useGameplay();
 
   // Derived state
-  const selectedTile = gameplayState.selectedTile;
+  const selectedTile = useGameplayStoreV2(useSelectedTile);
   const game = gameplayState.game;
   const disabled = gameplayState.gameEnded;
 

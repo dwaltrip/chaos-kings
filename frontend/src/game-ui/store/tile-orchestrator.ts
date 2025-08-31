@@ -1,5 +1,4 @@
 import type { Coord, Movement, Square } from '@core/types';
-import { coordsEqual } from '@core/utils/coordinate-utils';
 import type { BoardState } from '@core/types';
 import { getTileStore } from '@/game-ui/store/tile-store-registry';
 
@@ -7,17 +6,6 @@ export class TileOrchestrator {
   updateTileSquare(coord: Coord, square: Square) {
     const store = getTileStore(coord);
     store.getState().updateSquare(square);
-  }
-
-  // Phase 1: Update simple state across tiles
-  updateSelectedTile(selectedCoord: Coord | null, allCoords: Coord[]) {
-    allCoords.forEach((coord) => {
-      const store = getTileStore(coord);
-      const isSelected = selectedCoord
-        ? coordsEqual(selectedCoord, coord)
-        : false;
-      store.getState().updateSelection(isSelected);
-    });
   }
 
   updateQueuedMoves(queuedMovesByCoord: Map<string, Set<Movement>>) {
@@ -47,6 +35,8 @@ export class TileOrchestrator {
   }
 
   // Helper to get all board coordinates from board state
+  // TODO: this might be dead code now
+  /*
   private getAllBoardCoords(boardState: BoardState): Coord[] {
     if (!boardState?.grid) return [];
 
@@ -58,15 +48,7 @@ export class TileOrchestrator {
     }
     return coords;
   }
-
-  // Convenience method to update selection with board context
-  updateSelectedTileFromBoard(
-    selectedCoord: Coord | null,
-    boardState: BoardState,
-  ) {
-    const allCoords = this.getAllBoardCoords(boardState);
-    this.updateSelectedTile(selectedCoord, allCoords);
-  }
+  */
 }
 
 export const tileOrchestrator = new TileOrchestrator();

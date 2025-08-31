@@ -11,10 +11,7 @@ import { blankSquare, isGeneralSquare, isMountainSquare } from '@core/square';
 
 // Phase 1: Only primitive state (no objects requiring useShallow)
 interface TileStoreState {
-  // Simple primitives - safe for normal subscriptions
-  isSelected: boolean;
   queuedMoves: Set<Movement>; // Already useShallow compatible
-
   square: Square;
 
   // Helpers
@@ -23,7 +20,6 @@ interface TileStoreState {
 
   // Actions
   updateSquare: (square: Square) => void;
-  updateSelection: (selected: boolean) => void;
   updateQueuedMoves: (moves: Set<Movement>) => void;
 }
 
@@ -39,7 +35,6 @@ function createTileStore(coord: Coord) {
     getIsMountain: () => isMountainSquare(get().square),
 
     updateSquare: (square) => set({ square }),
-    updateSelection: (selected) => set({ isSelected: selected }),
     updateQueuedMoves: (moves) => set({ queuedMoves: moves }),
   }));
 }

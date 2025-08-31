@@ -18,8 +18,11 @@ function deserializeCoord(key: string): Coord {
 /**
  * Check if two coordinates are equal
  */
-function coordsEqual(a: Coord, b: Coord): boolean {
+function areCoordsEqual(a: Coord | null, b: Coord | null): boolean {
+  if (a === null || b === null) {
+    return false;
+  }
   return a.x === b.x && a.y === b.y;
 }
 
-export { serializeCoord, deserializeCoord, coordsEqual };
+export { serializeCoord, deserializeCoord, areCoordsEqual };
