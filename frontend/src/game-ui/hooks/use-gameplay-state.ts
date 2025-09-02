@@ -17,7 +17,10 @@ interface GameplayState {
   endReason: 'general_captured' | 'timeout' | 'disconnect' | null;
   game: GameWithPlayers | null;
   actions: {
-    setBoardState: (boardState: BoardState) => void;
+    setBoardState: (
+      boardState: BoardState,
+      currentPlayerIndex?: number | null,
+    ) => void;
     setPlayerMapping: (
       mapping: { playerId: string; playerIndex: number }[],
     ) => void;
@@ -35,7 +38,7 @@ interface GameplayState {
   };
 }
 
-function useGameplayState(_gameId: number | null): GameplayState {
+function useGameplayState(): GameplayState {
   const boardState = gameplayStore((state) => state.boardState);
   const selectedTile = useGameplayStoreV2(useSelectedTile);
   const playerMapping = gameplayStore((state) => state.playerMapping);

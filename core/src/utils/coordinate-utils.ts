@@ -1,23 +1,16 @@
 import type { Coord } from '@core/types';
 
-/**
- * Serialize a coordinate to a string key for use in Maps/Sets
- */
+// Serialize a coordinate to a string key for use in Maps/Sets
 function serializeCoord(coord: Coord): string {
   return `${coord.x},${coord.y}`;
 }
 
-/**
- * Deserialize a string key back to a coordinate object
- */
+// Deserialize a string key back to a coordinate object
 function deserializeCoord(key: string): Coord {
   const [x, y] = key.split(',').map(Number);
   return { x, y };
 }
 
-/**
- * Check if two coordinates are equal
- */
 function areCoordsEqual(a: Coord | null, b: Coord | null): boolean {
   if (a === null || b === null) {
     return false;

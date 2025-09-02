@@ -49,27 +49,59 @@ const GameplayWsHandler = {
         // Initialize gameplay state
         actions.setGameId(gameStartedPayload.gameId);
         actions.setPlayerMapping(gameStartedPayload.playerMapping);
-        actions.setBoardState(gameStartedPayload.boardState);
+
+        // Get currentPlayerIndex for visible squares computation
+        const gameForStarted = gameMetadataStore.getState().game;
+        const userForStarted = userStore.getState().user;
+        const currentPlayerIndex = getCurrentPlayerIndex(
+          gameForStarted,
+          userForStarted?.id ?? null,
+        );
+
+        actions.setBoardState(
+          gameStartedPayload.boardState,
+          currentPlayerIndex,
+        );
+        // Also update v2 store
+        useGameplayStoreV2
+          .getState()
+          .actions.setBoardState(
+            gameStartedPayload.boardState,
+            currentPlayerIndex,
+          );
         console.log('[gameplay] Game started:', gameStartedPayload);
         break;
 
       case 'game-state-update':
         const updatePayload =
           data.payload as Gameplay.GameStateUpdate['payload'];
-        actions.setBoardState(updatePayload.boardState);
+
+        // Get currentPlayerIndex for both visible squares and queue updates
+        const gameForUpdate = gameMetadataStore.getState().game;
+        const userForUpdate = userStore.getState().user;
+        const currentPlayerIndexUpdate = getCurrentPlayerIndex(
+          gameForUpdate,
+          userForUpdate?.id ?? null,
+        );
+
+        actions.setBoardState(
+          updatePayload.boardState,
+          currentPlayerIndexUpdate,
+        );
+        // Also update v2 store
+        useGameplayStoreV2
+          .getState()
+          .actions.setBoardState(
+            updatePayload.boardState,
+            currentPlayerIndexUpdate,
+          );
         actions.setTick(updatePayload.tick);
 
         // Handle queue updates
         if (updatePayload.playerQueues) {
-          const game = gameMetadataStore.getState().game;
-          const user = userStore.getState().user;
-          const currentPlayerIndex = getCurrentPlayerIndex(
-            game,
-            user?.id ?? null,
-          );
           const myQueue =
-            currentPlayerIndex !== null
-              ? updatePayload.playerQueues[currentPlayerIndex] || []
+            currentPlayerIndexUpdate !== null
+              ? updatePayload.playerQueues[currentPlayerIndexUpdate] || []
               : [];
           actions.setQueuedMovesFromArray(myQueue);
         }
@@ -83,7 +115,26 @@ const GameplayWsHandler = {
           status: GameStatus.COMPLETE,
           updated_at: new Date().toISOString(),
         });
-        actions.setBoardState(endedPayload.finalBoardState);
+
+        // Get currentPlayerIndex for visible squares computation
+        const gameForEnded = gameMetadataStore.getState().game;
+        const userForEnded = userStore.getState().user;
+        const currentPlayerIndexEnded = getCurrentPlayerIndex(
+          gameForEnded,
+          userForEnded?.id ?? null,
+        );
+
+        actions.setBoardState(
+          endedPayload.finalBoardState,
+          currentPlayerIndexEnded,
+        );
+        // Also update v2 store
+        useGameplayStoreV2
+          .getState()
+          .actions.setBoardState(
+            endedPayload.finalBoardState,
+            currentPlayerIndexEnded,
+          );
         actions.setGameEnded(endedPayload.winner, endedPayload.reason);
         // woot woot
         useGameplayStoreV2.getState().actions.clearSelectedTile();

@@ -76,6 +76,10 @@ const gameMetadataStore = create<GameMetadataState>((set, get) => ({
         set({ loading: true, error: null });
         const game = await apiLoadGame(gameId);
 
+        // -------------------------------------------------------------
+        // TODO: This isn't how the countdown should be setup
+        // Should happen somewhere more obvious and a distinct action
+        // -------------------------------------------------------------
         // Initialize countdown if game hasn't started yet
         const shouldStartCountdown = game.status === 'not_started';
         set({
@@ -158,6 +162,14 @@ const useGameLoadingState = () => {
   );
 };
 
+// ----------------------------------------------------------------
+// TODO: I never actually used these...
+// ----------------------------------------------------------------
+// TODO: move this when we refactor game-metadata-store
+const useGameplayGame = (state: GameMetadataState) => state.game;
+const useIsGameEnded = (state: GameMetadataState) => state.isGameEnded;
+// ----------------------------------------------------------------
+
 const getCurrentPlayerIndex = (
   game: GameWithPlayers | null,
   userId: number | null,
@@ -175,9 +187,14 @@ const useCurrentPlayerIndex = () => {
   return getCurrentPlayerIndex(game, user?.id ?? null);
 };
 
+const useGameMetadataStore = gameMetadataStore;
+
 export {
   gameMetadataStore,
+  useGameMetadataStore,
   useGameLoadingState,
   useCurrentPlayerIndex,
   getCurrentPlayerIndex,
+  useGameplayGame,
+  useIsGameEnded,
 };

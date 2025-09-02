@@ -19,7 +19,7 @@ interface GameUIProps {
 }
 function GameUI({ gameId }: GameUIProps) {
   // Internal state management
-  const gameplayState = useGameplayState(gameId);
+  const gameplayState = useGameplayState();
   const boardState = useBoardState();
   const currentPlayerIndex = useCurrentPlayerIndex();
   const gameplayActions = useGameplay();

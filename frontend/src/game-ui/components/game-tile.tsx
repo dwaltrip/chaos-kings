@@ -1,25 +1,26 @@
 import React from 'react';
 import clsx from 'clsx';
-import mountainIcon from '@/assets/mountain.svg';
-import generalIcon from '@/assets/crown.png';
+
 import type { Coord, PlayerSquare } from '@core/types';
 import { playerIndexToColor } from '@/game-ui/config/ui-constants';
-// import { useTileState } from '@/game-ui/hooks/use-tile-state';
-// import { useGameplay } from '@/game-ui/hooks/use-gameplay';
 import {
   useTileQueuedMovesV2,
   useTileSquare,
   useTileSquareTypes,
 } from '@/game-ui/hooks/use-tile-store-state';
-import { MoveArrow } from '@/game-ui/components/move-arrow';
 import {
   useGameplayStoreV2,
+  useIsAdjacentToSelected,
   useIsTileSelected,
 } from '@/game-ui/store/gameplay-store-v2';
+import {
+  useIsVisible,
+  useNeighborVisibility,
+} from '@/game-ui/hooks/use-visibility';
 
-// Track render count
-let renderCount = 0;
-let lastLogTime = Date.now();
+import { MoveArrow } from '@/game-ui/components/move-arrow';
+import mountainIcon from '@/assets/mountain.svg';
+import generalIcon from '@/assets/crown.png';
 
 function TileOverlay({
   className,
@@ -41,50 +42,34 @@ const { setSelectedTileV2 } = useGameplayStoreV2.getState().actions;
 
 const GameTile = React.memo(
   ({ coord, row, col }: GameTileProps) => {
-    // Track renders
-    renderCount++;
-    const now = Date.now();
-    if (now - lastLogTime > 1000) {
-      // Log every 1000ms to batch renders
-      console.log(
-        `[PERF] ${renderCount} tile renders in last ${now - lastLogTime}ms`,
-      );
-      renderCount = 0;
-      lastLogTime = now;
-    }
-
-    // ---- my new stuff for the refactotr
-    // Adding square to store...
     const square = useTileSquare(coord);
-
-    // gameplay store v2
     const isSelected = useGameplayStoreV2(useIsTileSelected(coord));
     const selectTileV2 = () => setSelectedTileV2(coord);
-    // ---- my new stuff for the refactotr
+    const isNeighborOfSelected = useGameplayStoreV2(
+      useIsAdjacentToSelected(coord),
+    );
 
-    // Phase 1: Individual subscriptions (no object recreation)
     const queuedMoves = useTileQueuedMovesV2(coord);
 
-    // Keep existing hook for complex state (Phase 2 will migrate)
-    // Use tile store values where available, fall back to old hook
-    // const { square, isSelectable, isNeighborOfSelected, isVisible, borders } =
-    //   tileState;
+    const isVisible = useGameplayStoreV2(useIsVisible(coord));
+    const neighborVisibility = useGameplayStoreV2(useNeighborVisibility(coord));
 
     const playerSquare = square as PlayerSquare;
     const { isMountain, isGeneral } = useTileSquareTypes(coord);
 
-    // ------------------------------------------------
-    // ------------------------------------------------
-    // TODO: temp, until implemented in TileStore
-    const isVisible = true;
-    const isSelectable = !isMountain;
-    const isNeighborOfSelected = false;
-    const borders = { top: false, bottom: false, left: false, right: false };
-    // ------------------------------------------------
-    // ------------------------------------------------
-
+    const isGameEnded = useGameplayStoreV2((state) => state.isGameEnded);
+    const isSelectable = !isGameEnded && !(isMountain || isSelected);
     const isPlayer = 'playerIndex' in square;
     const isValidMove = isNeighborOfSelected && !isMountain;
+
+    const isOnTopEdge = coord.y === 0;
+    const isOnLeftEdge = coord.x === 0;
+    const borders = !isVisible
+      ? { top: false, left: false }
+      : {
+          top: neighborVisibility.top && !isOnTopEdge,
+          left: neighborVisibility.left && !isOnLeftEdge,
+        };
 
     const tileClassName = clsx(
       'game-tile',
@@ -145,6 +130,7 @@ const GameTile = React.memo(
       </div>
     );
   },
+  // TODO: Do I need this? or is there a nicer way to do it?
   (prevProps, nextProps) => {
     // Only re-render if coordinate actually changed
     return (

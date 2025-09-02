@@ -8,6 +8,7 @@ import { useGameplayStoreV2 } from '@/game-ui/store/gameplay-store-v2';
 
 interface GameplayState {
   boardState: BoardState | null;
+  visibleSquares: Set<string>;
   playerMapping: { playerId: string; playerIndex: number }[] | null;
   gameId: number | null;
   tick: number;
@@ -17,7 +18,10 @@ interface GameplayState {
   queuedMoves: Array<{ sourceCoord: Coord; direction: Movement }>;
   queuedMovesByCoord: Map<string, Set<Movement>>;
   actions: {
-    setBoardState: (boardState: BoardState) => void;
+    setBoardState: (
+      boardState: BoardState,
+      currentPlayerIndex?: number | null,
+    ) => void;
     setPlayerMapping: (
       mapping: { playerId: string; playerIndex: number }[],
     ) => void;
@@ -42,6 +46,7 @@ interface GameplayState {
 
 const gameplayStore = create<GameplayState>((set, get) => ({
   boardState: null,
+  visibleSquares: new Set<string>(),
   playerMapping: null,
   gameId: null,
   tick: 0,
@@ -51,9 +56,21 @@ const gameplayStore = create<GameplayState>((set, get) => ({
   queuedMoves: [],
   queuedMovesByCoord: new Map(),
   actions: {
-    setBoardState: (boardState) => {
-      set({ boardState });
-      // Phase 1b: Update tile stores w/ square info
+    setBoardState: (boardState, currentPlayerIndex) => {
+      // Compute visible squares if we have the required data
+      let visibleSquares = new Set<string>();
+      if (
+        boardState &&
+        currentPlayerIndex !== null &&
+        currentPlayerIndex !== undefined
+      ) {
+        visibleSquares = Board.getVisibleSquares(
+          boardState,
+          currentPlayerIndex,
+        );
+      }
+
+      set({ boardState, visibleSquares });
       if (boardState) {
         tileOrchestrator.updateTileSquares(boardState);
       }
@@ -158,6 +175,7 @@ const gameplayStore = create<GameplayState>((set, get) => ({
     reset: () =>
       set({
         boardState: null,
+        visibleSquares: new Set<string>(),
         playerMapping: null,
         gameId: null,
         tick: 0,
