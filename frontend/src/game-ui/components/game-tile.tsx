@@ -21,6 +21,7 @@ import {
 import { MoveArrow } from '@/game-ui/components/move-arrow';
 import mountainIcon from '@/assets/mountain.svg';
 import generalIcon from '@/assets/crown.png';
+import { useRenderCounter } from '@/lib/use-render-counter';
 
 function TileOverlay({
   className,
@@ -42,6 +43,8 @@ const { setSelectedTileV2 } = useGameplayStoreV2.getState().actions;
 
 const GameTile = React.memo(
   ({ coord, row, col }: GameTileProps) => {
+    useRenderCounter('game-tile')();
+
     const square = useTileSquare(coord);
     const isSelected = useGameplayStoreV2(useIsTileSelected(coord));
     const selectTileV2 = () => setSelectedTileV2(coord);
