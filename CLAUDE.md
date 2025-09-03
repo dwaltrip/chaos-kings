@@ -110,6 +110,13 @@ Hey Claude! My name is Daniel and I'm excited to build with you :)
 - Use `@/path/to/file` for all local imports (both FE and BE)
 - **ALWAYS** place all exports at the end of files using named export syntax: `export { ... }`
 
+## Debugging & Troubleshooting
+
+- **docs/DEBUGGING-GUIDE.md**: Contains tricky patterns, gotchas, and solutions for complex issues
+- **When debugging complex issues**: Check docs/DEBUGGING-GUIDE.md first - it covers non-obvious patterns that have caused problems before
+- **Common issues covered**: Zustand infinite re-render loops, cross-store subscriptions, React hooks violations, performance debugging
+- **When adding new patterns**: Update docs/DEBUGGING-GUIDE.md with problem/solution patterns for future reference
+
 ## Comments
 
 - **Comments**: Use very sparingly. NEVER explain what code does - only WHY or crucial context a senior dev couldn't infer
