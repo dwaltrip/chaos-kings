@@ -1,4 +1,4 @@
-# Terrain Generation V2 Integration Plan (UPDATED)
+# Terrain Generation V2 Integration Plan (FINALIZED)
 
 ## Overview
 
@@ -220,7 +220,34 @@ export type { GameMapResult, ConversionResult } from './game-map-generator';
 4. **Performance Tests**: Validate generation speed is acceptable
 5. **Deterministic Tests**: Verify same seed produces identical results
 
-## Technical Considerations (UPDATED)
+## Technical Considerations & Decisions (FINALIZED)
+
+### Key Architectural Decisions (From Review Session)
+
+**✅ Interface Breaking Change Accepted**  
+- Changing `CandidateGenerator.next()` from `Coord` to `Coord | null` is acceptable
+- Breaking change allows candidate-controlled generation pattern
+- Will update existing `RandomCandidateGenerator` to maintain compatibility
+
+**✅ Dual Generation Modes Approved**  
+- Both `generateTerrain()` (density-based) and `generateTerrainWithCandidates()` (candidate-controlled) will coexist
+- Supports future experimentation with different map generation approaches
+- Clear separation of concerns between generation strategies
+
+**✅ Algorithm Equivalence Over Exactness**  
+- Functionally equivalent clustering behavior is sufficient (not bit-perfect replication)
+- Seeded RNG producing different sequences than original `Math.random()` is acceptable
+- Focus on same clustering characteristics, not identical random sequences
+
+**✅ Grid Enhancement Strategy**  
+- `getEightDirectionalNeighbors()` will be added to `Grid` class (system-wide availability)
+- Other candidate generators may benefit from 8-directional neighbor detection
+- Maintains architectural consistency while enabling mountain clustering logic
+
+**✅ Probability Mapping Clarification**  
+- Original probability logic correctly captured: `probMap.get(nearbyMountains) || defaultProb`
+- 0 neighbors: 0.1, 1-2 neighbors: 0.35, 3 neighbors: 0.05, 4+ neighbors: 0.1
+- No changes needed to planned probability implementation
 
 ### Architecture Benefits of New Approach
 - **Perfect Algorithm Preservation**: Candidate-controlled generation mode allows exact replication of original row-by-row iteration
@@ -277,18 +304,35 @@ export type { GameMapResult, ConversionResult } from './game-map-generator';
 2. Monitor game creation performance and quality in production
 3. Remove old map generation code after validation period
 
-## Success Criteria (UPDATED)
+## Success Criteria (FINALIZED)
 
-- ✅ **Perfect Algorithm Preservation**: Generated maps have identical clustering characteristics to original system (same probability decisions, same iteration pattern)
-- ✅ **Architectural Integrity**: Clean integration with v2 system without breaking existing patterns or tests
+### Primary Success Metrics
+
+- ✅ **Functionally Equivalent Algorithm**: Generated maps have equivalent clustering characteristics to original system (same probability decisions, same iteration pattern)
+- ✅ **Architectural Integrity**: Clean integration with v2 system, dual generation modes working correctly
 - ✅ **Performance**: Generation time ≤ old system performance (single-pass efficiency maintained)
 - ✅ **Connectivity**: 100% of generated maps maintain connectivity through v2 validation
 - ✅ **Deterministic**: Same seed produces consistent, high-quality results (seeded RNG)
 - ✅ **Backend Compatibility**: Zero changes required to existing game creation API
 - ✅ **Test Coverage**: All existing backend tests pass; new integration tests validate clustering behavior
 
-## Future Enhancements
+### Implementation Validation Criteria
+- Interface breaking change properly handled across all existing v2 usage
+- `RandomCandidateGenerator` remains functional after interface update
+- `MountainCandidateGenerator` produces visually similar clustering patterns to original
+- Grid conversion layer maintains coordinate accuracy
+- General placement and connectivity repair logic ported successfully
 
+## Implementation Notes & Next Steps
+
+### Ready for Implementation
+With architectural decisions finalized, the implementation can proceed through the planned phases:
+1. **Phase 0**: V2 architecture enhancements (interface changes, dual generation modes)
+2. **Phase 1**: MountainCandidateGenerator implementation with systematic iteration
+3. **Phase 2-3**: Game integration components and conversion utilities
+4. **Phase 4-5**: Backend integration and comprehensive testing
+
+### Future Enhancements Enabled
 Once integration is complete, the enhanced v2 system enables:
 - **Candidate-Controlled Patterns**: Other systematic generation algorithms can use the new candidate-controlled mode
 - **Multiple Terrain Types**: Easy addition of forests, cities, etc. using different candidate generators
@@ -296,3 +340,9 @@ Once integration is complete, the enhanced v2 system enables:
 - **Advanced Clustering**: More sophisticated obstacle placement algorithms while preserving connectivity
 - **Hybrid Generation**: Combine density-based and candidate-controlled modes for different terrain features
 - **Performance Optimization**: Parallel generation for large maps with deterministic seeding
+
+---
+
+**Status**: Plan finalized and ready for implementation
+**Last Updated**: 2025-09-06 (Post-review session)
+**Key Decisions**: Interface breaking change accepted, dual generation modes approved, functional equivalence sufficient
