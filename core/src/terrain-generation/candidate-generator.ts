@@ -1,22 +1,9 @@
 import { Coord } from './types';
 import { Grid } from './grid';
+import { SeededRNG } from './seeded-rng';
 
 export interface CandidateGenerator {
   next(grid: Grid): Coord | null;
-}
-
-class SeededRNG {
-  private seed: number;
-
-  constructor(seed: number) {
-    this.seed = seed % 2147483647;
-    if (this.seed <= 0) this.seed += 2147483646;
-  }
-
-  next(): number {
-    this.seed = (this.seed * 16807) % 2147483647;
-    return (this.seed - 1) / 2147483646; // [0, 1)
-  }
 }
 
 export class RandomCandidateGenerator implements CandidateGenerator {

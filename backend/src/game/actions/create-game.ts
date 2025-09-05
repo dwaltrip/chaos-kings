@@ -1,7 +1,7 @@
 import { Kysely } from 'kysely';
 
 import { PLAYER_COLORS } from '@core/colors';
-import { generateRandomMapWithConstraints } from '@core/map/generate-grid';
+import { generateGameMapV2 } from '@core/terrain-generation';
 import { GameConfig } from '@core/game-config';
 import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
 
@@ -50,10 +50,11 @@ async function createGame(
 
   const playerCount = playerIds.length;
 
-  const { grid, generals } = generateRandomMapWithConstraints(
+  const { grid, generals } = generateGameMapV2(
     DEFAULT_GAME_GENERATION_CONFIG.mapSize,
     playerCount,
     DEFAULT_GAME_GENERATION_CONFIG.minGeneralDistance,
+    Date.now(), // Use current timestamp as seed for deterministic generation
   );
 
   const playerIndexToColor: GameConfig['playerIndexToColor'] = {};
