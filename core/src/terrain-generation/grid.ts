@@ -74,6 +74,33 @@ export class Grid {
     );
   }
 
+  getEightDirectionalNeighbors(pos: Coord): Coord[] {
+    if (!this.isValidCoord(pos)) {
+      throw new Error(`Invalid coordinate: (${pos.x}, ${pos.y})`);
+    }
+
+    const neighbors: Coord[] = [];
+    const directions = [
+      { x: -1, y: -1 }, // top-left
+      { x: 0, y: -1 }, // top
+      { x: 1, y: -1 }, // top-right
+      { x: -1, y: 0 }, // left
+      { x: 1, y: 0 }, // right
+      { x: -1, y: 1 }, // bottom-left
+      { x: 0, y: 1 }, // bottom
+      { x: 1, y: 1 }, // bottom-right
+    ];
+
+    for (const dir of directions) {
+      const neighbor = { x: pos.x + dir.x, y: pos.y + dir.y };
+      if (this.isValidCoord(neighbor)) {
+        neighbors.push(neighbor);
+      }
+    }
+
+    return neighbors;
+  }
+
   getDimensions(): GridDimensions {
     return { width: this.width, height: this.height };
   }

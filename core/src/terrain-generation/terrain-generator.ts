@@ -5,6 +5,7 @@ import { CandidateGenerator } from './candidate-generator';
 import {
   MAX_DENSITY,
   MAX_TOTAL_FAILURES,
+  MAX_GLOBAL_ATTEMPTS,
   MIN_GRID_SIZE,
   MAX_GRID_SIZE,
 } from './constants';
@@ -50,6 +51,11 @@ export class TerrainGenerator {
     ) {
       const candidate = candidateGenerator.next(grid);
 
+      // Handle null return from candidate generator (for backward compatibility)
+      if (candidate === null) {
+        break;
+      }
+
       if (grid.getCell(candidate) === CellState.OBSTACLE) {
         totalFailures++;
         continue;
@@ -78,6 +84,50 @@ export class TerrainGenerator {
       grid,
       actualDensity: grid.getObstacleDensity(),
       targetDensity,
+      obstaclesPlaced,
+      attemptsReached,
+    };
+  }
+
+  generateTerrainWithCandidates(
+    width: number,
+    height: number,
+    candidateGenerator: CandidateGenerator,
+    options: GenerationOptions = {},
+  ): GenerationResult {
+    this.validateParameters(width, height, 0.5); // Use max density for validation
+
+    const grid = new Grid(width, height);
+    let obstaclesPlaced = 0;
+    let totalAttempts = 0;
+    let attemptsReached = false;
+
+    let candidate;
+    while (
+      (candidate = candidateGenerator.next(grid)) !== null &&
+      totalAttempts < MAX_GLOBAL_ATTEMPTS
+    ) {
+      if (this.connectivityValidator.canPlaceObstacle(grid, candidate)) {
+        grid.setCell(candidate, CellState.OBSTACLE);
+        obstaclesPlaced++;
+      }
+      totalAttempts++;
+    }
+
+    if (totalAttempts >= MAX_GLOBAL_ATTEMPTS) {
+      attemptsReached = true;
+      if (options.warnOnFailure !== false) {
+        console.warn(
+          `Candidate-controlled terrain generation stopped after ${MAX_GLOBAL_ATTEMPTS} attempts. ` +
+            `Achieved density: ${grid.getObstacleDensity().toFixed(3)}`,
+        );
+      }
+    }
+
+    return {
+      grid,
+      actualDensity: grid.getObstacleDensity(),
+      targetDensity: grid.getObstacleDensity(), // For candidate-controlled, actual is the target
       obstaclesPlaced,
       attemptsReached,
     };

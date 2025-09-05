@@ -2,7 +2,7 @@ import { Coord } from './types';
 import { Grid } from './grid';
 
 export interface CandidateGenerator {
-  next(grid: Grid): Coord;
+  next(grid: Grid): Coord | null;
 }
 
 class SeededRNG {
@@ -30,7 +30,7 @@ export class RandomCandidateGenerator implements CandidateGenerator {
     this.gridHeight = height;
   }
 
-  next(grid: Grid): Coord {
+  next(grid: Grid): Coord | null {
     const x = Math.floor(this.rng.next() * this.gridWidth);
     const y = Math.floor(this.rng.next() * this.gridHeight);
     return { x, y };
