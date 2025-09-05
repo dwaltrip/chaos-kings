@@ -107,4 +107,4 @@ export const stringToCoord = (s: string): Coord => {
   return { x, y };
 };
 
-export { CellState, Coord, GridDimensions } from './types';
+export { CellState, type Coord, type GridDimensions } from './types';
