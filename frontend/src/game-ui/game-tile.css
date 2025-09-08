@@ -66,7 +66,7 @@
 
   /* This ::after is how we create the tile borders */
   &::after {
-    content: '';
+    content: none;
     position: absolute;
     pointer-events: none;
     top: 0;
@@ -74,9 +74,18 @@
     bottom: 0;
     right: 0;
     background-color: transparent;
-    border: 1px solid #333;
+    border: none;
     margin-left: -1px;
     margin-top: -1px;
+  }
+
+  &.border-top::after {
+    content: '';
+    border-top: 1px solid #333;
+  }
+  &.border-left::after {
+    content: '';
+    border-left: 1px solid #333;
   }
 
   &.selected::after {

@@ -81,6 +81,8 @@ const GameTile = React.memo(
       isSelected && 'selected',
       isValidMove && 'valid-move',
       isSelectable && 'selectable',
+      borders.top && 'border-top',
+      borders.left && 'border-left',
     );
 
     const contentClassName = clsx(
@@ -92,10 +94,6 @@ const GameTile = React.memo(
       isSelectable && 'selectable',
       isSelected && 'selected',
       isMountain && 'mountain',
-      // TODO: not sure if this is implemented correctly
-      // might have gotten messed up in refactor
-      borders.top && 'border-top',
-      borders.left && 'border-left',
     );
 
     const colorStyle =
