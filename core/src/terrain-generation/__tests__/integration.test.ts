@@ -1,9 +1,5 @@
-import {
-  generateRandomTerrain,
-  TerrainGenerator,
-  RandomCandidateGenerator,
-  Grid,
-} from '../index';
+import { generateTerrain, RandomCandidateGenerator, Grid } from '../index';
+import { generateRandomTerrain } from '../generate-random-terrain';
 import { CellState } from '../types';
 import { DebugRenderer, PerformanceProfiler } from '../debug-utils';
 
@@ -99,11 +95,9 @@ describe('Terrain Generation Integration Tests', () => {
   });
 
   test('separate components work independently', () => {
-    // Test that TerrainGenerator and CandidateGenerator can be used independently
-    const generator = new TerrainGenerator();
+    // Test that generateTerrain and CandidateGenerator can be used independently
     const candidateGenerator = new RandomCandidateGenerator(654321, 15, 15);
-
-    const result = generator.generateTerrain(15, 15, 0.25, candidateGenerator);
+    const result = generateTerrain(15, 15, 0.25, candidateGenerator);
 
     expect(DebugRenderer.verifyConnectivity(result.grid)).toBe(true);
     expect(result.actualDensity).toBeGreaterThan(0.15);

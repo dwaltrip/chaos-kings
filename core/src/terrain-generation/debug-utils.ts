@@ -1,6 +1,6 @@
 import { Grid } from './grid';
 import { CellState, Coord } from './types';
-import { BFSValidator } from './bfs-validator';
+import { BFS } from './bfs';
 
 export class DebugRenderer {
   /**
@@ -180,9 +180,7 @@ export class DebugRenderer {
 }
 
 export class PerformanceProfiler {
-  /**
-   * Simple timing wrapper for performance validation
-   */
+  // Simple timing wrapper for performance validation
   static timeGeneration<T>(generationFn: () => T): {
     result: T;
     timeMs: number;
@@ -197,9 +195,7 @@ export class PerformanceProfiler {
     };
   }
 
-  /**
-   * Profile multiple generation runs and return statistics
-   */
+  // Profile multiple generation runs and return statistics
   static profileMultipleRuns<T>(
     generationFn: () => T,
     iterations: number = 10,
@@ -232,11 +228,7 @@ export class PerformanceProfiler {
 }
 
 export class ValidationHelper {
-  private bfsValidator = new BFSValidator();
-
-  /**
-   * Test BFS validator directly with custom scenarios
-   */
+  // Test BFS findReachableTargets directly with custom scenarios
   testBFSReachability(
     grid: Grid,
     start: Coord,
@@ -247,7 +239,7 @@ export class ValidationHelper {
     unreachableCount: number;
     allReachable: boolean;
   } {
-    const reachableTargets = this.bfsValidator.findReachableTargets(
+    const reachableTargets = BFS.findReachableTargets(
       grid,
       start,
       targets,
@@ -264,9 +256,7 @@ export class ValidationHelper {
     };
   }
 
-  /**
-   * Create simple test grids for debugging
-   */
+  //Create simple test grids for debugging
   static createTestGrid(pattern: string[]): Grid {
     const height = pattern.length;
     const width = pattern[0]?.length || 0;

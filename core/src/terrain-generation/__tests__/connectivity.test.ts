@@ -1,19 +1,13 @@
-import { ConnectivityValidator } from '../connectivity-validator';
+import { canPlaceObstacle } from '../connectivity';
 import { Grid } from '../grid';
 import { CellState } from '../types';
 
 describe('ConnectivityValidator - Edge Cases', () => {
-  let validator: ConnectivityValidator;
-
-  beforeEach(() => {
-    validator = new ConnectivityValidator();
-  });
-
   test('allows obstacle in corner with one neighbor', () => {
     // 5x5 grid, try to place in corner (0,0)
     // Should always allow (only 1 neighbor)
     const grid = new Grid(5, 5);
-    const result = validator.canPlaceObstacle(grid, { x: 0, y: 0 });
+    const result = canPlaceObstacle(grid, { x: 0, y: 0 });
     expect(result).toBe(true);
   });
 
@@ -30,7 +24,7 @@ describe('ConnectivityValidator - Edge Cases', () => {
     grid.setCell({ x: 2, y: 4 }, CellState.OBSTACLE);
 
     // Try to block the middle corridor cell - should reject
-    const result = validator.canPlaceObstacle(grid, { x: 2, y: 1 });
+    const result = canPlaceObstacle(grid, { x: 2, y: 1 });
     expect(result).toBe(false);
   });
 
@@ -52,7 +46,7 @@ describe('ConnectivityValidator - Edge Cases', () => {
     grid.setCell({ x: 1, y: 2 }, CellState.OBSTACLE);
 
     // Should reject placing obstacle at (2,1) - it's an articulation point
-    const result = validator.canPlaceObstacle(grid, { x: 2, y: 1 });
+    const result = canPlaceObstacle(grid, { x: 2, y: 1 });
     expect(result).toBe(false);
   });
 
@@ -64,7 +58,7 @@ describe('ConnectivityValidator - Edge Cases', () => {
     const grid = new Grid(5, 5);
 
     // Should allow - many alternate paths exist
-    const result = validator.canPlaceObstacle(grid, { x: 2, y: 2 });
+    const result = canPlaceObstacle(grid, { x: 2, y: 2 });
     expect(result).toBe(true);
   });
 
@@ -73,7 +67,7 @@ describe('ConnectivityValidator - Edge Cases', () => {
     const grid = new Grid(5, 5);
 
     // Edge cells should generally be allowed unless they create isolation
-    const edgeResult = validator.canPlaceObstacle(grid, { x: 0, y: 1 });
+    const edgeResult = canPlaceObstacle(grid, { x: 0, y: 1 });
     expect(edgeResult).toBe(true);
   });
 
@@ -85,7 +79,7 @@ describe('ConnectivityValidator - Edge Cases', () => {
     grid.setCell({ x: 2, y: 1 }, CellState.OBSTACLE);
 
     // Cell (2,0) is now a dead-end but still connected - should allow
-    const result = validator.canPlaceObstacle(grid, { x: 1, y: 1 });
+    const result = canPlaceObstacle(grid, { x: 1, y: 1 });
     expect(result).toBe(true);
   });
 
@@ -102,7 +96,7 @@ describe('ConnectivityValidator - Edge Cases', () => {
     }
 
     // Last cell has no free neighbors - should allow
-    const result = validator.canPlaceObstacle(grid, { x: 2, y: 2 });
+    const result = canPlaceObstacle(grid, { x: 2, y: 2 });
     expect(result).toBe(true);
   });
 
@@ -124,18 +118,12 @@ describe('ConnectivityValidator - Edge Cases', () => {
 
     // Now create a single-cell bottleneck at (2,1)
     // Blocking (2,2) should disconnect the grid
-    const result = validator.canPlaceObstacle(grid, { x: 2, y: 2 });
+    const result = canPlaceObstacle(grid, { x: 2, y: 2 });
     expect(result).toBe(false);
   });
 });
 
 describe('BFS Validator - Core Behavior', () => {
-  let validator: ConnectivityValidator;
-
-  beforeEach(() => {
-    validator = new ConnectivityValidator();
-  });
-
   test('handles no neighbors case', () => {
     // Cell with no free neighbors should always be allowed
     const grid = new Grid(5, 5);
@@ -145,7 +133,7 @@ describe('BFS Validator - Core Behavior', () => {
     grid.setCell({ x: 2, y: 1 }, CellState.OBSTACLE);
     grid.setCell({ x: 2, y: 3 }, CellState.OBSTACLE);
 
-    const result = validator.canPlaceObstacle(grid, { x: 2, y: 2 });
+    const result = canPlaceObstacle(grid, { x: 2, y: 2 });
     expect(result).toBe(true);
   });
 
@@ -158,7 +146,7 @@ describe('BFS Validator - Core Behavior', () => {
     grid.setCell({ x: 2, y: 1 }, CellState.OBSTACLE);
     // Leave (2,3) free
 
-    const result = validator.canPlaceObstacle(grid, { x: 2, y: 2 });
+    const result = canPlaceObstacle(grid, { x: 2, y: 2 });
     expect(result).toBe(true);
   });
 
@@ -167,7 +155,7 @@ describe('BFS Validator - Core Behavior', () => {
     const grid = new Grid(5, 5);
 
     // All neighbors are free and can reach each other
-    const result = validator.canPlaceObstacle(grid, { x: 2, y: 2 });
+    const result = canPlaceObstacle(grid, { x: 2, y: 2 });
     expect(result).toBe(true);
   });
 });

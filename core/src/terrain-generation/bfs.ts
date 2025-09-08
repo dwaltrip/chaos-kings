@@ -1,12 +1,10 @@
 import { Coord, CellState } from './types';
 import { Grid, coordToString } from './grid';
 
-export class BFSValidator {
-  /**
-   * Finds which target coordinates are reachable from start,
-   * avoiding a specific coordinate.
-   * Uses early termination - stops when all targets found.
-   */
+// Finds which target coordinates are reachable from start,
+// avoiding a specific coordinate.
+// Uses early termination - stops when all targets found.
+const BFS = {
   findReachableTargets(
     grid: Grid,
     start: Coord,
@@ -58,5 +56,6 @@ export class BFSValidator {
     }
 
     return reachableTargets;
-  }
-}
+  },
+};
+export { BFS };

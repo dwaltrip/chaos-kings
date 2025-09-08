@@ -8,6 +8,9 @@ export interface ConversionResult {
   size: Size2d;
 }
 
+// TODO: Move this out of terrain-generation module??
+// I wanted the terrain generation to be self-contained.
+// Maybe move to @core/grid-utils or something?
 export function convertToGameGrid(
   terrainGrid: Grid,
   generals?: PlayerSquare[],

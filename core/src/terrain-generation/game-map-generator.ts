@@ -1,6 +1,6 @@
 import type { GameGrid, Size2d, PlayerSquare, Coord } from '@core/types';
 import { SquareType } from '@core/types';
-import { TerrainGenerator } from './terrain-generator';
+import { generateTerrainWithCandidates } from './generate-terrain';
 import { MountainCandidateGenerator } from './mountain-candidate-generator';
 import { convertToGameGrid } from './game-grid-converter';
 
@@ -24,14 +24,13 @@ export function generateGameMapV2(
 
   // Generate terrain using v2 system with mountain clustering
   // V2 ConnectivityValidator ensures connectivity during generation
-  const terrainGenerator = new TerrainGenerator();
   const mountainGenerator = new MountainCandidateGenerator(
     finalSeed,
     size.width,
     size.height,
   );
 
-  const terrainResult = terrainGenerator.generateTerrainWithCandidates(
+  const terrainResult = generateTerrainWithCandidates(
     size.width,
     size.height,
     mountainGenerator,
