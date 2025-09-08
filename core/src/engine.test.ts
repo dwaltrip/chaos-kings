@@ -1,10 +1,10 @@
 import { tick } from '@core/engine';
-import { generateRandomMap } from '@core/map/generate-grid';
 import { BoardState, SquareType } from '@core/types';
 import {
   GENERAL_PRODUCTION_TICKS,
   ARMY_PRODUCTION_TICKS,
 } from '@core/game-timing-config';
+import { generateGameMapV2 } from '@core/terrain-generation';
 
 describe('tick function', () => {
   let board: BoardState;
@@ -12,7 +12,7 @@ describe('tick function', () => {
 
   beforeEach(() => {
     const size = { width: 10, height: 10 };
-    const mapResult = generateRandomMap(size, 2);
+    const mapResult = generateGameMapV2(size, 2, 4);
     board = { grid: mapResult.grid, size };
     generals = mapResult.generals;
   });

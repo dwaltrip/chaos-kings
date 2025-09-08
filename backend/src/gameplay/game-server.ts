@@ -1,6 +1,5 @@
 import { GameState, BoardState, Movement, Coord } from '@core/types';
 import { tick as engineTick, applyMovement } from '@core/engine';
-import { generateRandomMap } from '@core/map/generate-grid';
 import { GameGenerationConfig } from '@core/game-generation-config';
 import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
 import { getGame } from '@/game/actions/get-game';
@@ -50,22 +49,22 @@ export class GameServer {
 
   private async initializeGame(): Promise<void> {
     try {
-      const gameData = await getGame(this.gameId);
-      if (!gameData) {
+      const game = await getGame(this.gameId);
+      if (!game) {
         throw new Error(`Game ${this.gameId} not found in database`);
       }
 
-      this.initializeGameState(gameData, DEFAULT_GAME_GENERATION_CONFIG);
-      this.setupPlayerMappings(gameData);
+      this.initializeGameState(game, DEFAULT_GAME_GENERATION_CONFIG);
+      this.setupPlayerMappings(game);
       this.initializePlayerQueues();
-      this.expectedPlayerCount = gameData.players.length;
+      this.expectedPlayerCount = game.players.length;
       this.initialized = true;
 
       // Start fallback timer to ensure countdown starts even if not all players join
       this.startFallbackTimer();
 
       console.log(
-        `[GameServer] Game ${this.gameId} initialized with ${gameData.players.length} players`,
+        `[GameServer] Game ${this.gameId} initialized with ${game.players.length} players`,
       );
     } catch (error) {
       console.error(
@@ -77,23 +76,20 @@ export class GameServer {
   }
 
   private initializeGameState(
-    gameData: GameWithPlayers,
+    game: GameWithPlayers,
     generationConfig: GameGenerationConfig,
   ): void {
-    const mapData = generateRandomMap(
-      generationConfig.mapSize,
-      gameData.players.length,
-    );
-
+    if (!game) {
+      throw new Error(`Cannot initialize game state: game data is null`);
+    }
     const boardState: BoardState = {
-      grid: mapData.grid,
+      grid: game.config.startingGrid,
       size: generationConfig.mapSize,
     };
-
     this.gameState = {
       board: boardState,
       tick: 0,
-      config: gameData.config,
+      config: game.config,
     };
   }
 

@@ -6,8 +6,8 @@ const DEFAULT_GAME_GENERATION_CONFIG: GameGenerationConfig = {
   mapSize: { width: 20, height: 20 },
   // mapSize: { width: 5, height: 5 },
   mountainDensity: 0.1,
-  // minGeneralDistance: 10,
-  minGeneralDistance: 3,
+  minGeneralDistance: 10,
+  // minGeneralDistance: 3,
 };
 
 export { DEFAULT_GAME_GENERATION_CONFIG };

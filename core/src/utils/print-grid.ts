@@ -1,5 +1,5 @@
 import { isBlankSquare, isGeneralSquare, isMountainSquare } from '@core/square';
-import { GameGrid } from '@core/types';
+import type { GameGrid } from '@core/types';
 
 function printGrid(grid: GameGrid) {
   const size = { width: grid[0].length, height: grid.length };
