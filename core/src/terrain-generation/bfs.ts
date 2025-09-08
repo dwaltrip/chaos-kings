@@ -1,5 +1,5 @@
-import { Coord, CellState } from './types';
-import { Grid, coordToString } from './grid';
+import { Coord, CellState } from '@core/terrain-generation/types';
+import { Grid, coordToString } from '@core/terrain-generation/grid';
 
 // Finds which target coordinates are reachable from start,
 // avoiding a specific coordinate.
@@ -58,4 +58,5 @@ const BFS = {
     return reachableTargets;
   },
 };
+
 export { BFS };

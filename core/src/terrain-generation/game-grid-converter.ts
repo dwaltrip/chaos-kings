@@ -1,9 +1,9 @@
-import { CellState, Coord } from './types';
-import { Grid } from './grid';
+import { CellState, Coord } from '@core/terrain-generation/types';
+import { Grid } from '@core/terrain-generation/grid';
 import type { GameGrid, Square, Size2d, PlayerSquare } from '@core/types';
 import { SquareType } from '@core/types';
 
-export interface ConversionResult {
+interface ConversionResult {
   grid: GameGrid;
   size: Size2d;
 }
@@ -11,7 +11,7 @@ export interface ConversionResult {
 // TODO: Move this out of terrain-generation module??
 // I wanted the terrain generation to be self-contained.
 // Maybe move to @core/grid-utils or something?
-export function convertToGameGrid(
+function convertToGameGrid(
   terrainGrid: Grid,
   generals?: PlayerSquare[],
 ): ConversionResult {
@@ -52,16 +52,5 @@ export function convertToGameGrid(
   };
 }
 
-export function createBlankSquare(coord: Coord): Square {
-  return {
-    coord,
-    type: SquareType.BLANK,
-  };
-}
-
-export function createMountainSquare(coord: Coord): Square {
-  return {
-    coord,
-    type: SquareType.MOUNTAIN,
-  };
-}
+export type { ConversionResult };
+export { convertToGameGrid };

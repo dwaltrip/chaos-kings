@@ -1,19 +1,19 @@
 import type { GameGrid, Size2d, PlayerSquare, Coord } from '@core/types';
 import { SquareType } from '@core/types';
-import { generateTerrainWithCandidates } from './generate-terrain';
-import { MountainCandidateGenerator } from './mountain-candidate-generator';
-import { convertToGameGrid } from './game-grid-converter';
+import { generateTerrainWithCandidates } from '@core/terrain-generation/generate-terrain';
+import { MountainCandidateGenerator } from '@core/terrain-generation/mountain-candidate-generator';
+import { convertToGameGrid } from '@core/terrain-generation/game-grid-converter';
 
-export interface GameMapResult {
+interface GameMapResult {
   grid: GameGrid;
   generals: PlayerSquare[];
 }
 
-export interface GameMapGenerationOptions {
+interface GameMapGenerationOptions {
   warnOnFailure?: boolean;
 }
 
-export function generateGameMapV2(
+function generateGameMapV2(
   size: Size2d,
   numPlayers: number,
   minGeneralDistance: number,
@@ -123,3 +123,6 @@ function isFarEnoughFromOtherGenerals(
     (general) => manhattanDistance(coord, general.coord) >= minDistance,
   );
 }
+
+export type { GameMapResult, GameMapGenerationOptions };
+export { generateGameMapV2 };

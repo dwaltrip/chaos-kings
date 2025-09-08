@@ -1,14 +1,17 @@
-export enum CellState {
+enum CellState {
   FREE = 0,
   OBSTACLE = 1,
 }
 
-export interface Coord {
+interface Coord {
   x: number;
   y: number;
 }
 
-export interface GridDimensions {
+interface GridDimensions {
   width: number;
   height: number;
 }
+
+export type { Coord, GridDimensions };
+export { CellState };

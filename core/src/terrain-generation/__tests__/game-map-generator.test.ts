@@ -1,4 +1,4 @@
-import { generateGameMapV2 } from '../game-map-generator';
+import { generateGameMapV2 } from '@core/terrain-generation/game-map-generator';
 import { SquareType } from '@core/types';
 
 describe('generateGameMapV2', () => {

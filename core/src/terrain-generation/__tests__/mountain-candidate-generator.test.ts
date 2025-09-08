@@ -1,6 +1,6 @@
-import { MountainCandidateGenerator } from '../mountain-candidate-generator';
-import { Grid } from '../grid';
-import { CellState } from '../types';
+import { MountainCandidateGenerator } from '@core/terrain-generation/mountain-candidate-generator';
+import { Grid } from '@core/terrain-generation/grid';
+import { CellState } from '@core/terrain-generation/types';
 
 describe('MountainCandidateGenerator', () => {
   it('should generate mountains systematically across the grid', () => {

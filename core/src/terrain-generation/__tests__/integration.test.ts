@@ -1,7 +1,14 @@
-import { generateTerrain, RandomCandidateGenerator, Grid } from '../index';
-import { generateRandomTerrain } from '../generate-random-terrain';
-import { CellState } from '../types';
-import { DebugRenderer, PerformanceProfiler } from '../debug-utils';
+import {
+  generateTerrain,
+  RandomCandidateGenerator,
+  Grid,
+} from '@core/terrain-generation';
+import { generateRandomTerrain } from '@core/terrain-generation/generate-random-terrain';
+import { CellState } from '@core/terrain-generation/types';
+import {
+  DebugRenderer,
+  PerformanceProfiler,
+} from '@core/terrain-generation/debug-utils';
 
 describe('Terrain Generation Integration Tests', () => {
   test('generates connected terrains reliably', () => {

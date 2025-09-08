@@ -1,14 +1,14 @@
-import { CellState } from './types';
-import { Grid } from './grid';
-import { canPlaceObstacle } from './connectivity';
-import { CandidateGenerator } from './candidate-generator';
+import { CellState } from '@core/terrain-generation/types';
+import { Grid } from '@core/terrain-generation/grid';
+import { canPlaceObstacle } from '@core/terrain-generation/connectivity';
+import { CandidateGenerator } from '@core/terrain-generation/candidate-generator';
 import {
   MAX_DENSITY,
   MAX_TOTAL_FAILURES,
   MAX_GLOBAL_ATTEMPTS,
   MIN_GRID_SIZE,
   MAX_GRID_SIZE,
-} from './constants';
+} from '@core/terrain-generation/constants';
 
 interface GenerationOptions {
   warnOnFailure?: boolean;

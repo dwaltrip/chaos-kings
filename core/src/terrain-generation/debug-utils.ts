@@ -1,8 +1,8 @@
-import { Grid } from './grid';
-import { CellState, Coord } from './types';
-import { BFS } from './bfs';
+import { Grid } from '@core/terrain-generation/grid';
+import { CellState, Coord } from '@core/terrain-generation/types';
+import { BFS } from '@core/terrain-generation/bfs';
 
-export class DebugRenderer {
+class DebugRenderer {
   /**
    * Renders grid as ASCII representation for debugging
    * '#' = obstacle, '.' = free
@@ -179,7 +179,7 @@ export class DebugRenderer {
   }
 }
 
-export class PerformanceProfiler {
+class PerformanceProfiler {
   // Simple timing wrapper for performance validation
   static timeGeneration<T>(generationFn: () => T): {
     result: T;
@@ -227,7 +227,7 @@ export class PerformanceProfiler {
   }
 }
 
-export class ValidationHelper {
+class ValidationHelper {
   // Test BFS findReachableTargets directly with custom scenarios
   testBFSReachability(
     grid: Grid,
@@ -284,3 +284,5 @@ export class ValidationHelper {
     return grid;
   }
 }
+
+export { DebugRenderer, PerformanceProfiler, ValidationHelper };

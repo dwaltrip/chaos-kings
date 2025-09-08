@@ -1,14 +1,14 @@
-import { Coord, CellState } from './types';
-import { Grid } from './grid';
-import { CandidateGenerator } from './candidate-generator';
-import { SeededRNG } from './seeded-rng';
+import { Coord, CellState } from '@core/terrain-generation/types';
+import { Grid } from '@core/terrain-generation/grid';
+import { CandidateGenerator } from '@core/terrain-generation/candidate-generator';
+import { SeededRNG } from '@core/terrain-generation/seeded-rng';
 
-export interface MountainGenerationOptions {
+interface MountainGenerationOptions {
   defaultProbability?: number;
   probabilityMap?: Map<number, number>;
 }
 
-export class MountainCandidateGenerator implements CandidateGenerator {
+class MountainCandidateGenerator implements CandidateGenerator {
   private rng: SeededRNG;
   private gridWidth: number;
   private gridHeight: number;
@@ -92,3 +92,6 @@ export class MountainCandidateGenerator implements CandidateGenerator {
     return count;
   }
 }
+
+export type { MountainGenerationOptions };
+export { MountainCandidateGenerator };

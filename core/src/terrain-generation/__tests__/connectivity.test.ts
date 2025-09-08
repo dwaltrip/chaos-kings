@@ -1,6 +1,6 @@
-import { canPlaceObstacle } from '../connectivity';
-import { Grid } from '../grid';
-import { CellState } from '../types';
+import { canPlaceObstacle } from '@core/terrain-generation/connectivity';
+import { Grid } from '@core/terrain-generation/grid';
+import { CellState } from '@core/terrain-generation/types';
 
 describe('ConnectivityValidator - Edge Cases', () => {
   test('allows obstacle in corner with one neighbor', () => {

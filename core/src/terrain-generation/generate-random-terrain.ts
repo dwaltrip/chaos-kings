@@ -1,8 +1,11 @@
-import { generateTerrain, GenerationResult } from './generate-terrain';
-import { RandomCandidateGenerator } from './candidate-generator';
+import {
+  generateTerrain,
+  GenerationResult,
+} from '@core/terrain-generation/generate-terrain';
+import { RandomCandidateGenerator } from '@core/terrain-generation/candidate-generator';
 
 // Convenience factory function for generating random terrain
-export function generateRandomTerrain(
+function generateRandomTerrain(
   width: number,
   height: number,
   density: number,
@@ -11,3 +14,5 @@ export function generateRandomTerrain(
   const candidateGenerator = new RandomCandidateGenerator(seed, width, height);
   return generateTerrain(width, height, density, candidateGenerator);
 }
+
+export { generateRandomTerrain };

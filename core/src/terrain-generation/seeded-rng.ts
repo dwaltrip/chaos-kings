@@ -1,4 +1,4 @@
-export class SeededRNG {
+class SeededRNG {
   private seed: number;
 
   constructor(seed: number) {
@@ -11,3 +11,5 @@ export class SeededRNG {
     return (this.seed - 1) / 2147483646; // [0, 1)
   }
 }
+
+export { SeededRNG };

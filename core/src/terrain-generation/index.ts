@@ -1,25 +1,28 @@
-export type { CellState, Coord, GridDimensions } from './types';
-export { Grid } from './grid';
-export type { CandidateGenerator } from './candidate-generator';
-export { RandomCandidateGenerator } from './candidate-generator';
-export type { GenerationOptions, GenerationResult } from './generate-terrain';
+export type {
+  CellState,
+  Coord,
+  GridDimensions,
+} from '@core/terrain-generation/types';
+export { Grid } from '@core/terrain-generation/grid';
+export type { CandidateGenerator } from '@core/terrain-generation/candidate-generator';
+export { RandomCandidateGenerator } from '@core/terrain-generation/candidate-generator';
+export type {
+  GenerationOptions,
+  GenerationResult,
+} from '@core/terrain-generation/generate-terrain';
 export {
   generateTerrain,
   generateTerrainWithCandidates,
-} from './generate-terrain';
-export { canPlaceObstacle } from './connectivity';
-export { BFS } from './bfs';
-export { SeededRNG } from './seeded-rng';
-export { MountainCandidateGenerator } from './mountain-candidate-generator';
-export type { MountainGenerationOptions } from './mountain-candidate-generator';
-export {
-  convertToGameGrid,
-  createBlankSquare,
-  createMountainSquare,
-} from './game-grid-converter';
-export type { ConversionResult } from './game-grid-converter';
-export { generateGameMapV2 } from './game-map-generator';
+} from '@core/terrain-generation/generate-terrain';
+export { canPlaceObstacle } from '@core/terrain-generation/connectivity';
+export { BFS } from '@core/terrain-generation/bfs';
+export { SeededRNG } from '@core/terrain-generation/seeded-rng';
+export { MountainCandidateGenerator } from '@core/terrain-generation/mountain-candidate-generator';
+export type { MountainGenerationOptions } from '@core/terrain-generation/mountain-candidate-generator';
+export { convertToGameGrid } from '@core/terrain-generation/game-grid-converter';
+export type { ConversionResult } from '@core/terrain-generation/game-grid-converter';
+export { generateGameMapV2 } from '@core/terrain-generation/game-map-generator';
 export type {
   GameMapResult,
   GameMapGenerationOptions,
-} from './game-map-generator';
+} from '@core/terrain-generation/game-map-generator';

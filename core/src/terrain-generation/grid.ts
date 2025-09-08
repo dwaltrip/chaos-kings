@@ -1,7 +1,14 @@
-import { CellState, Coord, GridDimensions } from './types';
-import { MIN_GRID_SIZE, MAX_GRID_SIZE } from './constants';
+import {
+  CellState,
+  Coord,
+  GridDimensions,
+} from '@core/terrain-generation/types';
+import {
+  MIN_GRID_SIZE,
+  MAX_GRID_SIZE,
+} from '@core/terrain-generation/constants';
 
-export class Grid {
+class Grid {
   private cells: CellState[][];
   private width: number;
   private height: number;
@@ -127,11 +134,17 @@ export class Grid {
   }
 }
 
-export const coordToString = (c: Coord): string => `${c.x},${c.y}`;
+const coordToString = (c: Coord): string => `${c.x},${c.y}`;
 
-export const stringToCoord = (s: string): Coord => {
+const stringToCoord = (s: string): Coord => {
   const [x, y] = s.split(',').map(Number);
   return { x, y };
 };
 
-export { CellState, type Coord, type GridDimensions } from './types';
+export {
+  CellState,
+  type Coord,
+  type GridDimensions,
+} from '@core/terrain-generation/types';
+
+export { Grid, coordToString, stringToCoord };

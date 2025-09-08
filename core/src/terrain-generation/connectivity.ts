@@ -1,9 +1,10 @@
-import { Coord } from './types';
-import { BFS } from './bfs';
-import { Grid } from './grid';
+import { Coord } from '@core/terrain-generation/types';
+import { BFS } from '@core/terrain-generation/bfs';
+import { Grid } from '@core/terrain-generation/grid';
 
 // Determines if placing an obstacle at pos would maintain connectivity.
-// Uses local validation - checks if neighbors remain connected to each other.
+// If the grid is currently connected, then we only need to check
+// that the neighbors of pos remain connected to each other.
 function canPlaceObstacle(grid: Grid, pos: Coord): boolean {
   const freeNeighbors = grid.getFreeNeighbors(pos);
 

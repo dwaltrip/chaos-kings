@@ -1,12 +1,12 @@
-import { Coord } from './types';
-import { Grid } from './grid';
-import { SeededRNG } from './seeded-rng';
+import { Coord } from '@core/terrain-generation/types';
+import { Grid } from '@core/terrain-generation/grid';
+import { SeededRNG } from '@core/terrain-generation/seeded-rng';
 
-export interface CandidateGenerator {
+interface CandidateGenerator {
   next(grid: Grid): Coord | null;
 }
 
-export class RandomCandidateGenerator implements CandidateGenerator {
+class RandomCandidateGenerator implements CandidateGenerator {
   private rng: SeededRNG;
   private gridWidth: number;
   private gridHeight: number;
@@ -23,3 +23,6 @@ export class RandomCandidateGenerator implements CandidateGenerator {
     return { x, y };
   }
 }
+
+export type { CandidateGenerator };
+export { RandomCandidateGenerator };
