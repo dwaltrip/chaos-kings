@@ -1,10 +1,11 @@
 #!/usr/bin/env npx ts-node
 
-import { generateRandomTerrain } from './src/terrain-generation/generate-random-terrain';
+import { generateRandomTerrain } from '@core/terrain-generation/generate-random-terrain';
 import {
   DebugRenderer,
   PerformanceProfiler,
-} from './src/terrain-generation/debug-utils';
+} from '@core/terrain-generation/debug-utils';
+import { verifyConnectivity } from '@core/terrain-generation/__tests__/helpers';
 
 console.log('🎮 Terrain Generation v2 Demo\n');
 
@@ -18,7 +19,7 @@ console.log(
   `\n📊 Stats: ${result1.obstaclesPlaced} obstacles, ${(result1.actualDensity * 100).toFixed(1)}% density`,
 );
 console.log(
-  `🔍 Connectivity verified: ${DebugRenderer.verifyConnectivity(result1.grid) ? '✅' : '❌'}`,
+  `🔍 Connectivity verified: ${verifyConnectivity(result1.grid) ? '✅' : '❌'}`,
 );
 
 // Demo 2: Different seeds comparison
@@ -66,7 +67,7 @@ console.log(
   `\n🎯 Target: 45%, Achieved: ${(challengeResult.actualDensity * 100).toFixed(1)}%`,
 );
 console.log(
-  `🔍 Connectivity: ${DebugRenderer.verifyConnectivity(challengeResult.grid) ? '✅ Maintained' : '❌ Broken'}`,
+  `🔍 Connectivity: ${verifyConnectivity(challengeResult.grid) ? '✅ Maintained' : '❌ Broken'}`,
 );
 console.log(
   `⚠️  Max failures reached: ${challengeResult.attemptsReached ? 'Yes' : 'No'}`,

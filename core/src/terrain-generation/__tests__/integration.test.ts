@@ -9,6 +9,7 @@ import {
   DebugRenderer,
   PerformanceProfiler,
 } from '@core/terrain-generation/debug-utils';
+import { verifyConnectivity } from '@core/terrain-generation/__tests__/helpers';
 
 describe('Terrain Generation Integration Tests', () => {
   test('generates connected terrains reliably', () => {
@@ -18,7 +19,7 @@ describe('Terrain Generation Integration Tests', () => {
       const result = generateRandomTerrain(20, 20, 0.3, seed);
 
       // Verify connectivity
-      expect(DebugRenderer.verifyConnectivity(result.grid)).toBe(true);
+      expect(verifyConnectivity(result.grid)).toBe(true);
 
       // Verify density is reasonable
       expect(result.actualDensity).toBeGreaterThan(0.2);
@@ -65,22 +66,22 @@ describe('Terrain Generation Integration Tests', () => {
 
       expect(result.grid.getDimensions().width).toBe(width);
       expect(result.grid.getDimensions().height).toBe(height);
-      expect(DebugRenderer.verifyConnectivity(result.grid)).toBe(true);
+      expect(verifyConnectivity(result.grid)).toBe(true);
     });
   });
 
   test('handles edge cases gracefully', () => {
     // Very small grid
     const smallResult = generateRandomTerrain(5, 5, 0.2, 777);
-    expect(DebugRenderer.verifyConnectivity(smallResult.grid)).toBe(true);
+    expect(verifyConnectivity(smallResult.grid)).toBe(true);
 
     // Very low density
     const lowDensityResult = generateRandomTerrain(20, 20, 0.05, 888);
-    expect(DebugRenderer.verifyConnectivity(lowDensityResult.grid)).toBe(true);
+    expect(verifyConnectivity(lowDensityResult.grid)).toBe(true);
 
     // Higher density (but within limits)
     const highDensityResult = generateRandomTerrain(20, 20, 0.4, 999);
-    expect(DebugRenderer.verifyConnectivity(highDensityResult.grid)).toBe(true);
+    expect(verifyConnectivity(highDensityResult.grid)).toBe(true);
   });
 
   test('performance benchmarks', () => {
@@ -106,7 +107,7 @@ describe('Terrain Generation Integration Tests', () => {
     const candidateGenerator = new RandomCandidateGenerator(654321, 15, 15);
     const result = generateTerrain(15, 15, 0.25, candidateGenerator);
 
-    expect(DebugRenderer.verifyConnectivity(result.grid)).toBe(true);
+    expect(verifyConnectivity(result.grid)).toBe(true);
     expect(result.actualDensity).toBeGreaterThan(0.15);
   });
 
@@ -117,7 +118,7 @@ describe('Terrain Generation Integration Tests', () => {
     // Should either achieve the density or provide partial result
     expect(result.actualDensity).toBeGreaterThan(0);
     expect(result.grid).toBeDefined();
-    expect(DebugRenderer.verifyConnectivity(result.grid)).toBe(true);
+    expect(verifyConnectivity(result.grid)).toBe(true);
   });
 
   test('maintains connectivity invariant throughout generation', () => {
@@ -125,7 +126,7 @@ describe('Terrain Generation Integration Tests', () => {
     const result = generateRandomTerrain(12, 12, 0.3, 321);
 
     // Final result must be connected
-    expect(DebugRenderer.verifyConnectivity(result.grid)).toBe(true);
+    expect(verifyConnectivity(result.grid)).toBe(true);
 
     // Verify no isolated regions exist
     const dimensions = result.grid.getDimensions();
@@ -153,7 +154,7 @@ describe('Terrain Generation Integration Tests', () => {
     expect(rendered.split('\n').length).toBe(7); // 6 rows + 1 header
 
     // Test connectivity verification
-    expect(DebugRenderer.verifyConnectivity(result.grid)).toBe(true);
+    expect(verifyConnectivity(result.grid)).toBe(true);
 
     // Test coordinate rendering
     const coordRendered = DebugRenderer.renderGridWithCoords(result.grid);
