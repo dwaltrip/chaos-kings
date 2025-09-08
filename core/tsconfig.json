@@ -14,5 +14,8 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true
+  },
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
   }
 }

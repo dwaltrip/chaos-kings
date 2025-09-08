@@ -1,6 +1,6 @@
 #!/usr/bin/env npx ts-node
 
-import { generateRandomTerrain } from './src/terrain-generation';
+import { generateRandomTerrain } from './src/terrain-generation/generate-random-terrain';
 import {
   DebugRenderer,
   PerformanceProfiler,
