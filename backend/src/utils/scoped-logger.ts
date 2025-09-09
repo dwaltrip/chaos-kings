@@ -13,7 +13,7 @@ interface ScopedLogger {
 
 function toMsg(args: unknown[]): string {
   return args.length > 0
-    ? args.map((a) => (typeof a === 'string' ? a : '' + a)).join(' ')
+    ? args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ')
     : '(empty_message...)';
 }
 
