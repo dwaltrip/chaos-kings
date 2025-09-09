@@ -3,10 +3,12 @@ import { TICK_RATE_MS } from '@core/game-timing-config';
 import { logger } from '@/utils/logger';
 import { createScopedLogger } from '@/utils/scoped-logger';
 
+const moduleLogger = createScopedLogger('GameCoordinator');
+
 class GameCoordinator {
   private games: Map<number, GameServer> = new Map();
   private tickInterval: NodeJS.Timeout | null = null;
-  private log = createScopedLogger('GameCoordinator');
+  private log = moduleLogger;
 
   constructor() {
     this.startGlobalTick();
@@ -100,11 +102,11 @@ export function getGameCoordinator(): GameCoordinator {
 
 export function initializeGameCoordinator(): GameCoordinator {
   if (gameCoordinator) {
-    logger.info('[GameCoordinator] Already initialized');
+    moduleLogger.info('Already initialized');
     return gameCoordinator;
   }
 
-  logger.info('[GameCoordinator] Initializing global game coordinator');
+  moduleLogger.info('Initializing global game coordinator');
   gameCoordinator = new GameCoordinator();
   return gameCoordinator;
 }

@@ -12,7 +12,7 @@ import {
   WsMessage,
 } from '@/websocket/types';
 import { handleWebSocketMessage } from '@/websocket/api';
-import { logger } from '@/utils/logger';
+import { createScopedLogger, ScopedLogger } from '@/utils/scoped-logger';
 
 type RoomId = string;
 
@@ -21,11 +21,15 @@ interface WsClient {
   ws: WebSocket;
   rooms: Set<RoomId>;
   user?: User;
+  log: ScopedLogger;
 }
+
+const moduleLogger = createScopedLogger('WsManager');
 
 function createWsClient(ws: WebSocket): WsClient {
   const id = `client-${uuidv4()}`;
-  return { id, ws, rooms: new Set() };
+  const log = createScopedLogger(() => `WsManager ws=${id.slice(0, 13)}...`);
+  return { id, ws, rooms: new Set(), log };
 }
 
 class ClientStore {
@@ -58,22 +62,14 @@ class ClientStore {
   }
 }
 
-function clientLogger(client: WsClient) {
-  const userStr = client.user ? `${client.user.username}` : 'anonymous';
-  const prefix = `[manage:${userStr}-${client.id.slice(0, 5)}..]`;
-  return {
-    log: (...args: any[]) => logger.info(`${prefix} ${args.join(' ')}`),
-    error: (...args: any[]) => logger.error(`${prefix} ${args.join(' ')}`),
-  };
-}
-
 class WebSocketManager {
   private rooms = new Map<string, Set<WsClient>>();
   clientStore = new ClientStore();
+  log = moduleLogger;
 
   constructor() {
-    logger.info('WebSocket manager initialized for Fastify integration');
-    logger.info('='.repeat(80));
+    this.log.info('WebSocket manager initialized for Fastify integration');
+    this.log.info('='.repeat(80));
   }
 
   handleConnection(connection: FastifyWebSocket, req: FastifyRequest) {
@@ -84,9 +80,8 @@ class WebSocketManager {
     // Link WebSocket to authenticated user from request
     client.user = req.currentUser;
 
-    const clientLog = clientLogger(client);
-    logger.info('-'.repeat(80));
-    clientLog.log('New client connected');
+    client.log.info('-'.repeat(80));
+    client.log.info('New client connected');
 
     ws.on('message', (buffer: Buffer) => {
       const bufferStr = buffer.toString();
@@ -95,22 +90,27 @@ class WebSocketManager {
         data.user = client.user; // Attach user info to message
         handleWebSocketMessage(data, this.actionsForClient(client));
       } catch (error) {
-        clientLog.error('Error parsing message:', error, '-- data:', bufferStr);
+        client.log.error(
+          'Error parsing message:',
+          error,
+          '-- data:',
+          bufferStr,
+        );
       }
     });
 
     ws.on('close', async () => {
-      clientLog.log('Client disconnected');
+      client.log.info('Client disconnected');
       // Remove client from all rooms before removing from store
       client.rooms.forEach((roomId) => {
         this.leaveRoom(client, roomId);
       });
       this.clientStore.removeClient(client);
-      clientLog.log('Client cleanup completed');
+      client.log.info('Client cleanup completed');
     });
 
     ws.on('error', (error: Error) => {
-      clientLog.error('WebSocket error:', error);
+      client.log.error('WebSocket error:', error);
     });
   }
 
@@ -132,7 +132,7 @@ class WebSocketManager {
     }
     this.rooms.get(roomId)!.add(client);
     client.rooms.add(roomId);
-    clientLogger(client).log(`Joined room: ${roomId}`);
+    client.log.info(`Joined room: ${roomId}`);
   }
 
   private leaveRoom(client: WsClient, roomId: string) {
@@ -144,55 +144,55 @@ class WebSocketManager {
       }
     }
     client.rooms.delete(roomId);
-    clientLogger(client).log(`Left room: ${roomId}`);
+    client.log.info(`Left room: ${roomId}`);
   }
 
+  // TODO: make it more clear the difference between this and serverBroadcastToRoom?
+  // Better naming?
+  // `serverBroadcastToRoom` is for broadcasts that have no direct connection to an
+  // incoming client message.
+  // Whereas `broadcastToRoom` occurs while handling an incoming client message.
   private broadcastToRoom(
     roomId: string,
     data: WsMessage,
     fromClient: WsClient,
   ) {
-    const clientLog = clientLogger(fromClient);
     const room = this.rooms.get(roomId);
     if (!room) {
-      logger.info(
-        '====== rooms:',
+      fromClient.log.info(
+        `Cannot broadcast to room ${roomId}: room does not exist`,
+      );
+      fromClient.log.info(
+        '====== Available rooms:',
         JSON.stringify(Array.from(this.rooms.keys())),
       );
-      clientLog.log(`Cannot broadcast to room ${roomId}: room does not exist`);
       return;
     }
 
-    clientLog.log(`Broadcasting to room ${roomId} with ${room.size} clients`);
+    fromClient.log.info(
+      `Broadcasting to room ${roomId} with ${room.size} clients`,
+    );
     const dataStr = JSON.stringify(data);
     room.forEach((client) => {
       if (client.ws.readyState === WebSocket.OPEN) {
         try {
           client.ws.send(dataStr);
         } catch (error) {
-          const userStr = client.user
-            ? `${client.user.username || client.user.id}`
-            : 'anonymous';
-          clientLog.error(
-            `Failed to send to "${userStr}" in room ${roomId}:`,
+          client.log.error(
+            `Failed to send msg (type: ${data.type}) in room ${roomId}. Error:`,
             error,
           );
         }
       }
     });
-    logger.info('-'.repeat(80));
+    fromClient.log.info('-'.repeat(80));
   }
 
   public serverBroadcastToRoom(roomId: string, data: WsMessage) {
     const room = this.rooms.get(roomId);
     if (!room) {
-      logger.info(
-        `[WebSocketManager] Cannot broadcast to room ${roomId}: room does not exist`,
-      );
-      logger.info(
-        `[WebSocketManager] Available rooms:`,
-        Array.from(this.rooms.keys()),
-      );
+      this.log.info(`Cannot broadcast to room ${roomId}: it does not exist.`);
+      this.log.info(`Available rooms:`, Array.from(this.rooms.keys()));
       return;
     }
 
@@ -202,13 +202,7 @@ class WebSocketManager {
         try {
           client.ws.send(dataStr);
         } catch (error) {
-          const userStr = client.user
-            ? `${client.user.username || client.user.id}`
-            : 'anonymous';
-          logger.error(
-            `[WebSocketManager] Failed to send to "${userStr}" in room ${roomId}:`,
-            error,
-          );
+          client.log.error(`Failed to send msg for room ${roomId}:`, error);
         }
       }
     });
@@ -222,9 +216,7 @@ class WebSocketManager {
         client.rooms.has(roomId)
       ) {
         this.leaveRoom(client, roomId);
-        logger.info(
-          `[WebSocketManager] Removed user ${userId} from room ${roomId}`,
-        );
+        client.log.info(`Removed user (id=${userId}) from room ${roomId}`);
       }
     });
   }
@@ -238,10 +230,10 @@ function validateMessage(data: unknown): WsMessage {
   // Payload can be null, some messages do not require data
   // But it should be explicitly set to null if no payload
   if (!obj.domain || !obj.type || !('payload' in obj)) {
-    logger.error('----------------------------------');
-    logger.error('Invalid message structure -- data:');
-    logger.error(JSON.stringify(data, null, 2));
-    logger.error('----------------------------------');
+    moduleLogger.error('----------------------------------');
+    moduleLogger.error('Invalid message structure -- data:');
+    moduleLogger.error(JSON.stringify(data, null, 2));
+    moduleLogger.error('----------------------------------');
   }
   return data as WsMessage;
 }

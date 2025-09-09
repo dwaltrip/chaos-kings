@@ -12,9 +12,21 @@ interface ScopedLogger {
 }
 
 function toMsg(args: unknown[]): string {
-  return args.length > 0
-    ? args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ')
-    : '(empty_message...)';
+  if (args.length === 0) {
+    return '(no message...)';
+  }
+  return args.map(stringify).join(' ');
+}
+
+function stringify(obj: unknown): string {
+  if (typeof obj === 'string') {
+    return obj;
+  }
+  try {
+    return JSON.stringify(obj, null, 2);
+  } catch (e) {
+    return String(obj);
+  }
 }
 
 function scopeToString(scope: Scope): string {
@@ -51,4 +63,5 @@ function createScopedLogger(scope: Scope): ScopedLogger {
   };
 }
 
+export type { ScopedLogger };
 export { createScopedLogger };
