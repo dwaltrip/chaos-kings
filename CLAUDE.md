@@ -79,12 +79,6 @@ Hey Claude! My name is Daniel and I'm excited to build with you :)
 - Use `bash tools/test-all.sh` to run tests in both backend and core
 - Fix any test failures before committing changes
 
-### Code Formatting
-
-- Use `bash tools/format-all.sh` to format all code with Prettier
-- Use `npm run format:check` to check formatting without changes
-- Pre-commit hooks automatically format staged files
-
 ### Git Commit Strategy
 
 - **ALWAYS** commit with succinct messages after finishing a set of changes
@@ -98,6 +92,7 @@ Hey Claude! My name is Daniel and I'm excited to build with you :)
 - All Javascript and Typescript should use 2-space indentation.
 - **ALWAYS** use kebab-case for filenames (e.g., `game-page.tsx`, not `GamePage.tsx`)
 - Files should **ALWAYS** have a single blank line at the end.
+- Pre-commit hooks automatically format staged files using Prettier
 
 ### Frontend Pages
 
