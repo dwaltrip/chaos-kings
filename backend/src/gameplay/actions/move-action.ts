@@ -28,6 +28,7 @@ export async function handleMoveRequest(
     return;
   }
 
+  // TODO: pass Player or User object instead of userId
   gameServer.queueMove(
     userId,
     data.payload.sourceCoord,

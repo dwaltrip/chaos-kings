@@ -1,9 +1,12 @@
 import { GameServer } from './game-server';
 import { TICK_RATE_MS } from '@core/game-timing-config';
+import { logger } from '@/utils/logger';
+import { createScopedLogger } from '@/utils/scoped-logger';
 
 class GameCoordinator {
   private games: Map<number, GameServer> = new Map();
   private tickInterval: NodeJS.Timeout | null = null;
+  private log = createScopedLogger('GameCoordinator');
 
   constructor() {
     this.startGlobalTick();
@@ -11,13 +14,11 @@ class GameCoordinator {
 
   private startGlobalTick(): void {
     if (this.tickInterval) {
-      console.warn('[GameCoordinator] Global tick already running');
+      this.log.info('Global tick already running');
       return;
     }
 
-    console.log(
-      `[GameCoordinator] Starting global tick system at ${TICK_RATE_MS}ms intervals`,
-    );
+    this.log.info(`Starting global tick system at ${TICK_RATE_MS}ms intervals`);
     this.tickInterval = setInterval(() => {
       this.tick();
     }, TICK_RATE_MS);
@@ -30,16 +31,11 @@ class GameCoordinator {
       try {
         const gameEnded = await gameServer.tick();
         if (gameEnded) {
-          console.log(
-            `[GameCoordinator] Game ${gameId} ended, removing from registry`,
-          );
+          this.log.info(`Game ${gameId} ended, removing from registry`);
           this.removeGame(gameId);
         }
       } catch (error) {
-        console.error(
-          `[GameCoordinator] Error processing game ${gameId}:`,
-          error,
-        );
+        this.log.error(`Error processing game ${gameId}:`, error);
         this.removeGame(gameId);
       }
     }
@@ -47,13 +43,11 @@ class GameCoordinator {
 
   addGame(gameId: number): void {
     if (this.games.has(gameId)) {
-      console.warn(
-        `[GameCoordinator] Game ${gameId} already exists in registry`,
-      );
+      this.log.info(`Game ${gameId} already exists in registry`);
       return;
     }
 
-    console.log(`[GameCoordinator] Adding game ${gameId} to registry`);
+    this.log.info(`Adding game ${gameId} to registry`);
     const gameServer = new GameServer(gameId);
     this.games.set(gameId, gameServer);
   }
@@ -61,13 +55,11 @@ class GameCoordinator {
   removeGame(gameId: number): void {
     const gameServer = this.games.get(gameId);
     if (!gameServer) {
-      console.warn(
-        `[GameCoordinator] Attempted to remove non-existent game ${gameId}`,
-      );
+      this.log.info(`Attempted to remove non-existent game ${gameId}`);
       return;
     }
 
-    console.log(`[GameCoordinator] Removing game ${gameId} from registry`);
+    this.log.info(`Removing game ${gameId} from registry`);
     gameServer.cleanup();
     this.games.delete(gameId);
   }
@@ -81,7 +73,7 @@ class GameCoordinator {
   }
 
   shutdown(): void {
-    console.log('[GameCoordinator] Shutting down game coordinator');
+    this.log.info('Shutting down game coordinator');
 
     if (this.tickInterval) {
       clearInterval(this.tickInterval);
@@ -89,9 +81,7 @@ class GameCoordinator {
     }
 
     for (const [gameId, gameServer] of this.games) {
-      console.log(
-        `[GameCoordinator] Cleaning up game ${gameId} during shutdown`,
-      );
+      this.log.info(`Cleaning up game ${gameId} during shutdown`);
       gameServer.cleanup();
     }
 
@@ -110,11 +100,11 @@ export function getGameCoordinator(): GameCoordinator {
 
 export function initializeGameCoordinator(): GameCoordinator {
   if (gameCoordinator) {
-    console.warn('[GameCoordinator] Already initialized');
+    logger.info('[GameCoordinator] Already initialized');
     return gameCoordinator;
   }
 
-  console.log('[GameCoordinator] Initializing global game coordinator');
+  logger.info('[GameCoordinator] Initializing global game coordinator');
   gameCoordinator = new GameCoordinator();
   return gameCoordinator;
 }

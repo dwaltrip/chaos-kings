@@ -17,7 +17,10 @@ import {
 interface GameUIProps {
   gameId: number | null;
 }
-function GameUI({ gameId }: GameUIProps) {
+// -----------------------------------
+// TODO: remove `gameId` if not needed
+// -----------------------------------
+function GameUI({ gameId: _gameId }: GameUIProps) {
   // Internal state management
   const gameplayState = useGameplayState();
   const boardState = useBoardState();
