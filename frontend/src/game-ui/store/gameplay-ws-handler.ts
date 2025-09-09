@@ -30,21 +30,11 @@ const GameplayWsHandler = {
         const metadataActionsStarted = gameMetadataStore.getState().actions;
         metadataActionsStarted.setCountdownActive(false);
 
-        // Update entire game object if provided by backend
-        if (gameStartedPayload.game) {
-          metadataActionsStarted.setGame(gameStartedPayload.game);
-          console.log(
-            '[gameplay] Updated game object from backend:',
-            gameStartedPayload.game,
-          );
-        } else {
-          // Fallback: manually update status if no game object provided
-          metadataActionsStarted.updateGame({
-            status: GameStatus.IN_PROGRESS,
-            updated_at: new Date().toISOString(),
-          });
-          console.log('[gameplay] Fallback: manually updated game status');
-        }
+        metadataActionsStarted.setGame(gameStartedPayload.game);
+        console.log(
+          '[gameplay] Updated game object from backend:',
+          gameStartedPayload.game,
+        );
 
         // Initialize gameplay state
         actions.setGameId(gameStartedPayload.gameId);

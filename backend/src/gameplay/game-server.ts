@@ -9,7 +9,8 @@ import { Board } from '@core/board';
 import { isPlayerSquare } from '@core/square';
 import {
   FALLBACK_TIMER_MS,
-  GAME_START_COUNTDOWN_INTERVAL_MS,
+  ONE_SECOND_MS,
+  PRE_GAME_COUNTDOWN_SECONDS,
 } from '@core/ui-timing-config';
 
 import { createScopedLogger } from '@/utils/scoped-logger';
@@ -38,7 +39,7 @@ export class GameServer {
   private gameEnded: boolean = false;
   private initialized: boolean = false;
   private countdownActive: boolean = false;
-  private countdownSeconds: number = 5;
+  private countdownSeconds: number = PRE_GAME_COUNTDOWN_SECONDS;
   private countdownInterval: NodeJS.Timeout | null = null;
   private fallbackTimer: NodeJS.Timeout | null = null;
   private log = createScopedLogger(() => `GameServer id=${this.gameId}`);
@@ -115,6 +116,14 @@ export class GameServer {
   // - broadcastGameState
   // - broadcastGameEnd
   async tick(): Promise<boolean> {
+    // --------------------------------------------------------------------
+    // TODO: Improve the flow of the entire game startup process...
+    // TODO: shouldn't check both of these, should have 1 source of truth
+    // --------------------------------------------------------------------
+    // Don't tick if game not started / countdown is still active
+    if (this.countdownActive || !this.gameStarted) {
+      return false;
+    }
     if (!this.initialized || !this.gameState || this.gameEnded) {
       return this.gameEnded;
     }
@@ -317,6 +326,12 @@ export class GameServer {
     }
   }
 
+  // ---------------------------------------------------------------------------------
+  // TODO: Revisit this entire part of the game startup flow
+  // I think we want something like:
+  //   - Game should only start if at least 2 players are connected
+  //   - Otherwise, mark game as "failed to start" after X seconds (e.g. 15 secondds)
+  // ---------------------------------------------------------------------------------
   private startFallbackTimer(): void {
     // Start countdown after fallback delay even if not all players joined
     this.fallbackTimer = setTimeout(() => {
@@ -346,7 +361,6 @@ export class GameServer {
     }
 
     this.countdownActive = true;
-    this.countdownSeconds = 5;
     this.log.debug('Starting countdown for game');
 
     this.broadcastGameStarting();
@@ -359,7 +373,7 @@ export class GameServer {
       } else {
         this.broadcastGameStarting();
       }
-    }, GAME_START_COUNTDOWN_INTERVAL_MS);
+    }, ONE_SECOND_MS);
   }
 
   private async finishCountdown(): Promise<void> {
@@ -402,17 +416,16 @@ export class GameServer {
 
       // Get the updated game object with new status
       const updatedGame = await getGame(this.gameId);
+      if (!updatedGame) {
+        throw new Error(`Game ${this.gameId} not found after starting`);
+      }
       await this.broadcastGameStart(updatedGame);
     } catch (error) {
       this.log.error(`Failed to update game status for game. Error:`, error);
-      // Fallback to broadcast without updated game object
-      await this.broadcastGameStart(null);
     }
   }
 
-  private async broadcastGameStart(
-    game: GameWithPlayers | null,
-  ): Promise<void> {
+  private async broadcastGameStart(game: GameWithPlayers): Promise<void> {
     if (!this.gameState) return;
 
     try {
