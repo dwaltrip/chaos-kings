@@ -235,9 +235,13 @@ function validateMessage(data: unknown): WsMessage {
     throw new Error('Invalid data format');
   }
   const obj = data as Record<string, unknown>;
-  if (!obj.domain || !obj.type || !obj.payload) {
-    logger.error('Invalid message structure:', JSON.stringify(data, null, 2));
-    // throw new Error('Message must have domain, payload with type and data');
+  // Payload can be null, some messages do not require data
+  // But it should be explicitly set to null if no payload
+  if (!obj.domain || !obj.type || !('payload' in obj)) {
+    logger.error('----------------------------------');
+    logger.error('Invalid message structure -- data:');
+    logger.error(JSON.stringify(data, null, 2));
+    logger.error('----------------------------------');
   }
   return data as WsMessage;
 }

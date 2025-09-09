@@ -1,4 +1,4 @@
-function getFilteredStack(label?: string) {
+function getFilteredStackTrace(label?: string) {
   const stack = new Error().stack;
   if (!stack) {
     console.log('-------------------------');
@@ -17,11 +17,9 @@ function getFilteredStack(label?: string) {
   );
 
   console.log(
-    ['======= Filtered Stack Trace', label ? `[${label}]` : '', '======='].join(
-      ' ',
-    ),
+    `======= Filtered Stack Trace ${label ? `[${label}] ` : ''}=======`,
   );
   console.log(filtered.join('\n'));
 }
 
-export { getFilteredStack };
+export { getFilteredStackTrace };
