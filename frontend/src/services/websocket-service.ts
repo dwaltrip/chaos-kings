@@ -26,9 +26,11 @@ class WebSocketService {
   private messageHandlers: Map<string, WsMessageHandler[]> = new Map();
 
   // TODO: move URL to config
-  constructor(url: string = 'ws://localhost:3131/ws') {
+  constructor(url?: string) {
     console.log('[ws-service] Initializing WebSocketService');
-    this.url = url;
+    const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const envUrl = (import.meta as any).env?.VITE_WS_URL as string | undefined;
+    this.url = url ?? envUrl ?? `${scheme}://${window.location.host}/ws`;
     this.ws = new WebSocket(this.url);
     this._store.getState().setReadyState(WebSocket.CONNECTING);
 

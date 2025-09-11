@@ -1,0 +1,15 @@
+{
+  email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+  encode zstd gzip
+
+  @api path /api* /ws*
+  reverse_proxy @api api:3131
+
+  root * /srv
+  try_files {path} /index.html
+  file_server
+}
+

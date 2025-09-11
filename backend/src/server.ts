@@ -16,7 +16,7 @@ import { initializeGameCoordinator } from '@/gameplay/game-coordinator';
 import { setGlobalWebSocketManager } from '@/websocket/global-manager';
 import { logger, fastifyLoggerConfig } from '@/utils/logger';
 
-const PORT = 3131;
+const PORT = Number(process.env.PORT) || 3131;
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -25,7 +25,9 @@ const fastify = Fastify({
 });
 
 fastify.register(cors, {
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
+    : true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
 });
@@ -57,8 +59,8 @@ fastify.register(async function (fastify) {
 
 const start = async () => {
   try {
-    await fastify.listen({ port: PORT, host: 'localhost' });
-    logger.info(`🚀 Fastify server running on http://localhost:${PORT}`);
+    await fastify.listen({ port: PORT, host: '0.0.0.0' });
+    logger.info(`🚀 Fastify server running on port ${PORT}`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

@@ -1,5 +1,5 @@
 class ApiService {
-  private baseUrl = 'http://localhost:3131';
+  private baseUrl = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
 
   async get(path: string, options?: RequestInit): Promise<Response> {
     return fetch(`${this.baseUrl}${path}`, {
