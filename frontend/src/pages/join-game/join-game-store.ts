@@ -6,6 +6,8 @@ interface GameMatchmakingState {
   isInQueue: boolean;
   gameReady: boolean;
   gameId: number | null;
+  earlyStartVoters: string[];
+  allVoted: boolean;
 
   actions: {
     setQueueSize: (size: number) => void;
@@ -13,6 +15,11 @@ interface GameMatchmakingState {
     setIsInQueue: (isInQueue: boolean) => void;
     setGameReady: (gameId: number) => void;
     resetGameState: () => void;
+    setEarlyStartStatus: (
+      voters: string[],
+      queueSize: number,
+      allVoted: boolean,
+    ) => void;
   };
 }
 
@@ -22,6 +29,8 @@ const gameMatchmakingStore = create<GameMatchmakingState>((set) => ({
   isInQueue: false,
   gameReady: false,
   gameId: null,
+  earlyStartVoters: [],
+  allVoted: false,
 
   actions: {
     setQueueSize: (size) => set({ queueSize: size }),
@@ -30,6 +39,8 @@ const gameMatchmakingStore = create<GameMatchmakingState>((set) => ({
     setGameReady: (gameId) => set({ gameReady: true, gameId }),
     resetGameState: () =>
       set({ gameReady: false, gameId: null, isInQueue: false }),
+    setEarlyStartStatus: (voters, queueSize, allVoted) =>
+      set({ earlyStartVoters: voters, queueSize, allVoted }),
   },
 }));
 

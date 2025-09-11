@@ -8,25 +8,25 @@ import { WsActions } from '@/websocket/types';
 import { spawnGameInstance } from './spawn-game-action';
 import { getGlobalWebSocketManager } from '@/websocket/global-manager';
 
-export async function handleJoinQueue(
-  data: GameMatchmaking.JoinQueueMessage,
+export async function handleEarlyStartVote(
+  data: GameMatchmaking.EarlyStartVoteMessage,
   wsActions: WsActions,
 ): Promise<void> {
   if (!data.user) {
-    console.error('No user data in join-queue message');
+    console.error('No user data in early-start-vote message');
     return;
   }
 
-  wsActions.joinRoom(MATCHMAKING_ROOM_NAME);
-
   const matchmakingService = await getMatchmakingService();
-  const game = await matchmakingService.addPlayer(data.user.id, {
-    username: data.user.username,
-  });
+  const vote = !!data.payload?.vote;
+  await matchmakingService.setEarlyStartVote(data.user.id, vote);
 
+  // Check if this triggers a match (unanimous >= 2) or full lobby
+  const game = await matchmakingService.checkForMatch();
   if (game) {
     try {
       await spawnGameInstance(game.gameId);
+
       // Broadcast game-ready to matchmaking room BEFORE removing users
       wsActions.broadcastToRoom(MATCHMAKING_ROOM_NAME, {
         domain: GAME_MATCHMAKING_DOMAIN,
@@ -42,18 +42,15 @@ export async function handleJoinQueue(
           MATCHMAKING_ROOM_NAME,
         );
       });
-      console.log(
-        `Game ${game.gameId} ready; broadcasted and removed from room`,
-      );
     } catch (error) {
       console.error(
         `Failed to spawn game instance for game ${game.gameId}:`,
         error,
       );
-      // TODO: Should probably notify players of the error
     }
   }
 
+  // Broadcast updated queue status
   const queueStatus = await matchmakingService.getQueueStatus();
   wsActions.broadcastToRoom(MATCHMAKING_ROOM_NAME, {
     domain: GAME_MATCHMAKING_DOMAIN,
@@ -64,7 +61,7 @@ export async function handleJoinQueue(
     },
   });
 
-  // Broadcast early-start status after join (votes reset on membership change)
+  // Broadcast early-start status
   const earlyStatus = await matchmakingService.getEarlyStartStatus();
   wsActions.broadcastToRoom(MATCHMAKING_ROOM_NAME, {
     domain: GAME_MATCHMAKING_DOMAIN,

@@ -1,21 +1,28 @@
 import { useState, useEffect } from 'react';
 
 import { GAME_MATCHMAKING_DOMAIN } from '@common/types/game-matchmaking';
-import { PLAYERS_PER_GAME } from '@common/constants/matchmaking';
+import { FFA_NUM_PLAYERS_MAX } from '@common/constants/matchmaking';
 import { gameMatchmakingStore } from '@/pages/join-game/join-game-store';
 import {
   joinQueue,
   leaveQueue,
 } from '@/pages/join-game/game-matchmaking-actions';
+import { sendEarlyStartVote } from '@/pages/join-game/game-matchmaking-actions';
 import { GameMatchmakingWsHandler } from '@/pages/join-game/game-matchmaking-ws-handler';
 import { useWebsocket } from '@/hooks/use-websocket';
 import { MATCHMAKING_WAITING_TIMER_INTERVAL_MS } from '@core/ui-timing-config';
+import { userStore } from '@/stores/user-store';
 
 function JoinGamePage() {
   const queueSize = gameMatchmakingStore((state) => state.queueSize);
   const playersNeeded = gameMatchmakingStore((state) => state.playersNeeded);
   const isInQueue = gameMatchmakingStore((state) => state.isInQueue);
   const gameReady = gameMatchmakingStore((state) => state.gameReady);
+  const earlyStartVoters = gameMatchmakingStore(
+    (state) => state.earlyStartVoters,
+  );
+  const allVoted = gameMatchmakingStore((state) => state.allVoted);
+  const user = userStore((state) => state.user);
   const [waitingTime, setWaitingTime] = useState(0);
   const wsService = useWebsocket(
     GAME_MATCHMAKING_DOMAIN,
@@ -38,6 +45,8 @@ function JoinGamePage() {
 
   const handleJoinQueue = () => joinQueue();
   const handleCancelQueue = () => leaveQueue();
+  const hasVoted = !!(user && earlyStartVoters.includes(user.id.toString()));
+  const toggleEarlyStartVote = () => sendEarlyStartVote(!hasVoted);
 
   return (
     <div className="p-4">
@@ -65,19 +74,38 @@ function JoinGamePage() {
         </button>
       ) : (
         <div className="space-y-4">
-          <div className="text-lg">
-            Queue Status: {queueSize}/{PLAYERS_PER_GAME} players (
-            {playersNeeded} needed)
+          <div className="space-y-2">
+            <div className="text-lg">
+              Queue Status: {queueSize}/{FFA_NUM_PLAYERS_MAX} players (
+              {playersNeeded} needed)
+            </div>
+            <div className="text-lg">
+              Start Early: {earlyStartVoters.length}/{queueSize} voted
+              {allVoted && queueSize >= 2 ? ' — Ready!' : ''}
+            </div>
           </div>
 
           <div className="text-lg">Waiting Time: {formatTime(waitingTime)}</div>
 
-          <button
-            onClick={handleCancelQueue}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-          >
-            Cancel
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={toggleEarlyStartVote}
+              disabled={queueSize < 2}
+              className={`px-4 py-2 rounded text-white ${
+                hasVoted
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+              } disabled:bg-gray-400 disabled:cursor-not-allowed`}
+            >
+              {hasVoted ? 'Unvote Early Start' : 'Start Early'}
+            </button>
+            <button
+              onClick={handleCancelQueue}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
     </div>

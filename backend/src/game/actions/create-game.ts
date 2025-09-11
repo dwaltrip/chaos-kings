@@ -2,6 +2,7 @@ import { Kysely } from 'kysely';
 
 import { PLAYER_COLORS } from '@core/colors';
 import { generateGameMapV2 } from '@core/terrain-generation';
+import { calcMapSizeForPlayers } from '@core/map/calc-map-size';
 import { GameConfig } from '@core/game-config';
 import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
 
@@ -49,9 +50,10 @@ async function createGame(
   }
 
   const playerCount = playerIds.length;
+  const dynamicSize = calcMapSizeForPlayers(playerCount);
 
   const { grid, generals } = generateGameMapV2(
-    DEFAULT_GAME_GENERATION_CONFIG.mapSize,
+    dynamicSize,
     playerCount,
     DEFAULT_GAME_GENERATION_CONFIG.minGeneralDistance,
     Date.now(), // Use current timestamp as seed for deterministic generation
@@ -66,7 +68,7 @@ async function createGame(
   const newGame: NewGame = {
     game_state: {},
     config: {
-      size: DEFAULT_GAME_GENERATION_CONFIG.mapSize,
+      size: dynamicSize,
       startingGrid: grid,
       numPlayers: playerCount,
       playerIndexToColor,

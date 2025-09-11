@@ -1,3 +1,4 @@
+import { PRE_GAME_COUNTDOWN_SECONDS } from '@core/ui-timing-config';
 import { useEffect, useState } from 'react';
 
 interface GameCountdownProps {
@@ -30,7 +31,7 @@ function GameCountdown({
 
   const radius = 45;
   const circumference = 2 * Math.PI * radius;
-  const maxCountdown = 5;
+  const maxCountdown = PRE_GAME_COUNTDOWN_SECONDS;
   const progress = ((maxCountdown - countdown) / maxCountdown) * circumference;
 
   return (

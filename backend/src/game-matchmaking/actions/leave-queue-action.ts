@@ -27,4 +27,12 @@ export async function handleLeaveQueue(
       playersNeeded: queueStatus.playersNeeded,
     },
   });
+
+  // Broadcast early-start status after leave (votes reset on membership change)
+  const earlyStatus = await matchmakingService.getEarlyStartStatus();
+  wsActions.broadcastToRoom(MATCHMAKING_ROOM_NAME, {
+    domain: GAME_MATCHMAKING_DOMAIN,
+    type: 'early-start-status',
+    payload: earlyStatus,
+  });
 }

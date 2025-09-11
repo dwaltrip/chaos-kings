@@ -56,3 +56,14 @@ function cleanup() {
 }
 
 export { websocketConnect, joinQueue, leaveQueue, requestQueueStatus, cleanup };
+
+function sendEarlyStartVote(vote: boolean) {
+  const wsService = getWebSocketService();
+  wsService.send({
+    domain: 'game-matchmaking',
+    type: 'early-start-vote',
+    payload: { vote },
+  });
+}
+
+export { sendEarlyStartVote };

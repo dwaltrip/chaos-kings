@@ -83,7 +83,7 @@ export class GameServer {
     }
     const boardState: BoardState = {
       grid: game.config.startingGrid,
-      size: generationConfig.mapSize,
+      size: game.config.size,
     };
     this.gameState = {
       board: boardState,
@@ -317,7 +317,7 @@ export class GameServer {
 
     // Start countdown when we have enough players (or at least 1)
     if (
-      this.connectedPlayers.size >= Math.min(1, this.expectedPlayerCount) &&
+      this.connectedPlayers.size >= Math.min(2, this.expectedPlayerCount) &&
       !this.countdownActive &&
       !this.gameStarted
     ) {
@@ -335,15 +335,19 @@ export class GameServer {
   private startFallbackTimer(): void {
     // Start countdown after fallback delay even if not all players joined
     this.fallbackTimer = setTimeout(() => {
-      if (
-        !this.countdownActive &&
-        !this.gameStarted &&
-        this.connectedPlayers.size > 0
-      ) {
-        this.log.error(
-          `Fallback countdown with ${this.connectedPlayers.size} players`,
-        );
-        this.startCountdown();
+      if (!this.countdownActive && !this.gameStarted) {
+        if (this.connectedPlayers.size >= 2) {
+          this.log.error(
+            `Fallback countdown with ${this.connectedPlayers.size} players`,
+          );
+          this.startCountdown();
+        } else {
+          // Not enough players, keep waiting (alpha behavior)
+          this.log.info(
+            `Fallback skipped; waiting for at least 2 players (currently ${this.connectedPlayers.size})`,
+          );
+          this.startFallbackTimer();
+        }
       }
     }, FALLBACK_TIMER_MS);
   }

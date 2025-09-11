@@ -7,7 +7,9 @@ type GameMatchmakingMessageType =
   | 'join-queue'
   | 'leave-queue'
   | 'queue-status'
-  | 'game-ready';
+  | 'game-ready'
+  | 'early-start-vote'
+  | 'early-start-status';
 
 namespace GameMatchmaking {
   export interface GameMatchmakingMessage extends WsMessage {
@@ -31,6 +33,20 @@ namespace GameMatchmaking {
     payload: {
       queueSize: number;
       playersNeeded: number;
+    };
+  }
+
+  export interface EarlyStartVoteMessage extends WsMessage {
+    payload: {
+      vote: boolean;
+    };
+  }
+
+  export interface EarlyStartStatusMessage extends WsMessage {
+    payload: {
+      voters: string[];
+      queueSize: number;
+      allVoted: boolean;
     };
   }
 

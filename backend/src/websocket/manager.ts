@@ -160,7 +160,7 @@ class WebSocketManager {
     const room = this.rooms.get(roomId);
     if (!room) {
       fromClient.log.info(
-        `Cannot broadcast to room ${roomId}: room does not exist`,
+        `Cannot broadcast to room ${roomId} - room does not exist`,
       );
       fromClient.log.info(
         '====== Available rooms:',
@@ -203,6 +203,26 @@ class WebSocketManager {
           client.ws.send(dataStr);
         } catch (error) {
           client.log.error(`Failed to send msg for room ${roomId}:`, error);
+        }
+      }
+    });
+  }
+
+  public sendToUser(userId: string, data: WsMessage): void {
+    const dataStr = JSON.stringify(data);
+    this.clientStore.forEach((client) => {
+      if (
+        client.user &&
+        client.user.id.toString() === userId &&
+        client.ws.readyState === WebSocket.OPEN
+      ) {
+        try {
+          client.ws.send(dataStr);
+        } catch (error) {
+          client.log.error(
+            `Failed to send direct msg (type: ${data.type}) to user ${userId}:`,
+            error,
+          );
         }
       }
     });

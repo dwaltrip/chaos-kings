@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import type { GameWithPlayers } from '@common/types/games';
+import { PRE_GAME_COUNTDOWN_SECONDS } from '@core/ui-timing-config';
 import {
   loadGame as apiLoadGame,
   GameNotFoundError,
@@ -51,7 +52,7 @@ const gameMetadataStore = create<GameMetadataState>((set, get) => ({
 
   // Game start countdown
   countdownActive: false,
-  countdownSeconds: 5,
+  countdownSeconds: PRE_GAME_COUNTDOWN_SECONDS,
 
   // Dynamic gameplay metadata
   isGameEnded: false,
@@ -142,7 +143,7 @@ const gameMetadataStore = create<GameMetadataState>((set, get) => ({
         loading: false,
         error: null,
         countdownActive: false,
-        countdownSeconds: 5,
+        countdownSeconds: PRE_GAME_COUNTDOWN_SECONDS,
         isGameEnded: false,
         winner: null,
         endReason: null,

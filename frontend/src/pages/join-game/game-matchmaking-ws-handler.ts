@@ -30,6 +30,22 @@ const GameMatchmakingWsHandler: WsDomainHandler = {
           actions.setPlayersNeeded(payload.playersNeeded as number);
         }
         break;
+      case 'early-start-status':
+        console.log('early-start-status message received:', payload);
+        if (
+          payload &&
+          typeof payload === 'object' &&
+          'voters' in payload &&
+          'queueSize' in payload &&
+          'allVoted' in payload
+        ) {
+          actions.setEarlyStartStatus(
+            (payload.voters as string[]) || [],
+            (payload.queueSize as number) || 0,
+            !!payload.allVoted,
+          );
+        }
+        break;
       case 'game-ready':
         console.log('game-ready message received:', payload);
         if (payload && typeof payload === 'object' && 'gameId' in payload) {

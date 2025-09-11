@@ -2,7 +2,7 @@ import React from 'react';
 import clsx from 'clsx';
 
 import type { Coord, PlayerSquare } from '@core/types';
-import { playerIndexToColor } from '@/game-ui/config/ui-constants';
+import { getPlayerColor } from '@/utils/player-colors';
 import {
   useTileQueuedMovesV2,
   useTileSquare,
@@ -98,9 +98,7 @@ const GameTile = React.memo(
 
     const colorStyle =
       isPlayer && isVisible
-        ? {
-            backgroundColor: playerIndexToColor(playerSquare.playerIndex),
-          }
+        ? { backgroundColor: getPlayerColor(playerSquare.playerIndex) }
         : undefined;
 
     return (
