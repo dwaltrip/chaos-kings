@@ -2,6 +2,34 @@
 
 This guide shows a developer how to deploy the Generals v2 prototype to a single DigitalOcean droplet using Docker Compose and Caddy. It prioritizes simplicity over robustness.
 
+## TL;DR — First Deploy Checklist
+
+- DNS: Create an A record for your domain to the droplet IP (e.g., `play.example.com -> <IP>`).
+- Droplet: Ubuntu 22.04; 1 GB RAM is fine (add 2 GB swap if needed) or use 2 GB.
+- Install Docker + firewall:
+  - `sudo apt update && sudo apt -y upgrade`
+  - `curl -fsSL https://get.docker.com | sh`
+  - `sudo usermod -aG docker $USER` (log out/in after)
+  - `sudo ufw allow OpenSSH && sudo ufw allow 80,443/tcp && sudo ufw --force enable`
+- Optional swap (1 GB droplets):
+  - `sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile`
+  - `echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab`
+- Clone + env:
+  - `git clone <YOUR_REPO_URL> generals-v2 && cd generals-v2`
+  - `cp .env.example .env` and set: `DOMAIN`, `ACME_EMAIL`, `POSTGRES_PASSWORD`, `SESSION_SECRET`
+- Build + run:
+  - `docker compose build`
+  - `docker compose up -d`
+- Migrate DB (one-off and on schema changes):
+  - `docker compose exec api npm run migrate:latest`
+- Verify:
+  - Visit `https://<DOMAIN>`; health: `curl -k https://<DOMAIN>/api/health`; WS shows `wss://<DOMAIN>/ws`
+- Updates:
+  - `git pull && docker compose build --pull && docker compose up -d --remove-orphans`
+  - If schema changed: `docker compose exec api npm run migrate:latest`
+
+Tip: You can also run `scripts/first-deploy.sh` on the server to bootstrap quickly.
+
 - Stack: React (Vite) SPA + Fastify API + PostgreSQL + Redis
 - Single domain: SPA at `/`, API at `/api/*`, WebSocket at `/ws`
 - SSL: Automatic via Caddy + Let’s Encrypt
@@ -227,4 +255,3 @@ Caddy will reload with the new domain and re-issue certificates automatically.
 ## That’s It
 
 This deployment is intentionally minimal. For production-hardening (later): off-box Postgres, backups, metrics, alerting, CI/CD, zero-downtime deploys, and auto-migrations.
-
