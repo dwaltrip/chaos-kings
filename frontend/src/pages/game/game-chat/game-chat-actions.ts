@@ -1,27 +1,14 @@
 import { type Game } from '@common/types/games';
 import { roomNameForGameChat } from '@common/domains/game/utils';
-import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
-
-const { actions } = gameChatStore.getState();
-import { getWebSocketService } from '@/services/websocket-service';
 import {
   createNewChatMessage,
   createJoinRoomMessage,
 } from '@common/types/game-chat';
 
-function websocketConnect({
-  game,
-}: {
-  game: Game;
-}): ReturnType<typeof getWebSocketService> {
-  const wsService = getWebSocketService();
+import { getWebSocketService } from '@/services/websocket-service';
+import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
 
-  // Join current room after connection is established
-  wsService.onReadyOrNow().then(() => {
-    joinRoom(roomNameForGameChat(game));
-  });
-  return wsService;
-}
+const { actions } = gameChatStore.getState();
 
 function sendChatMessage(message: string, game: Game) {
   const room = roomNameForGameChat(game);
@@ -39,4 +26,4 @@ function joinRoom(room: string) {
   wsService.send(createJoinRoomMessage(room));
 }
 
-export { websocketConnect, sendChatMessage, setNewMessage, joinRoom };
+export { sendChatMessage, setNewMessage, joinRoom };

@@ -2,7 +2,7 @@ import type { Coord, Movement, Square } from '@core/types';
 import type { BoardState } from '@core/types';
 import { getTileStore } from '@/game-ui/store/tile-store-registry';
 
-export class TileOrchestrator {
+class TileOrchestrator {
   updateTileSquare(coord: Coord, square: Square) {
     const store = getTileStore(coord);
     store.getState().updateSquare(square);
@@ -51,4 +51,6 @@ export class TileOrchestrator {
   */
 }
 
-export const tileOrchestrator = new TileOrchestrator();
+const tileOrchestrator = new TileOrchestrator();
+
+export { tileOrchestrator };

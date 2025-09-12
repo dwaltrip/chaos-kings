@@ -219,5 +219,5 @@ async function getMatchmakingService(): Promise<MatchmakingService> {
   return matchmakingService;
 }
 
-export { MatchmakingService, getMatchmakingService };
+export { getMatchmakingService };
 export type { QueueStatus, MatchmakingGame };

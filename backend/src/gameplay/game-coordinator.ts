@@ -93,14 +93,14 @@ class GameCoordinator {
 
 let gameCoordinator: GameCoordinator | null = null;
 
-export function getGameCoordinator(): GameCoordinator {
+function getGameCoordinator(): GameCoordinator {
   if (!gameCoordinator) {
     gameCoordinator = new GameCoordinator();
   }
   return gameCoordinator;
 }
 
-export function initializeGameCoordinator(): GameCoordinator {
+function initializeGameCoordinator(): GameCoordinator {
   if (gameCoordinator) {
     moduleLogger.info('Already initialized');
     return gameCoordinator;
@@ -111,4 +111,4 @@ export function initializeGameCoordinator(): GameCoordinator {
   return gameCoordinator;
 }
 
-export { GameCoordinator };
+export { getGameCoordinator, initializeGameCoordinator };

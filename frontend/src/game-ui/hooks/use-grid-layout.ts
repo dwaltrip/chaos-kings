@@ -41,4 +41,4 @@ function useGridLayout(rows: number, cols: number) {
   return { containerRef, tileSize, gridStyle };
 }
 
-export { calcTileSize, useGridLayout };
+export { useGridLayout };

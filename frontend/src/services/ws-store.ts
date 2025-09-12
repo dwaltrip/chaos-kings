@@ -29,21 +29,7 @@ const useWsStore = create<WsState>((set, get) => ({
   },
 }));
 
-const selectIsConnected = (state: WsState) =>
-  state.readyState === WebSocket.OPEN;
-const selectIsConnecting = (state: WsState) =>
-  state.readyState === WebSocket.CONNECTING;
-const selectIsConnectedOrConnecting = (state: WsState) =>
-  state.readyState === WebSocket.OPEN ||
-  state.readyState === WebSocket.CONNECTING;
-
 // "non-hook" variant
 const wsStore = useWsStore;
 
-export {
-  useWsStore,
-  wsStore,
-  selectIsConnected,
-  selectIsConnecting,
-  selectIsConnectedOrConnecting,
-};
+export { wsStore };

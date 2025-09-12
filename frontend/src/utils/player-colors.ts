@@ -4,13 +4,10 @@ import type { Player } from '@common/types/player';
 function getPlayerColor(playerIndex: number): string {
   const colorName = PLAYER_COLORS[playerIndex];
   if (!colorName) {
+    console.warn(`[getPlayerColor] Invalid index: ${playerIndex}`);
     return '#777777'; // Default gray for invalid indices
   }
   return ColorMap.get(colorName) || '#777777';
-}
-
-function getPlayerColorHex(player: Player): string {
-  return getPlayerColor(player.player_index);
 }
 
 interface PlayerDisplayInfo {
@@ -35,5 +32,5 @@ function getPlayerDisplayInfo(
   };
 }
 
-export { getPlayerColor, getPlayerColorHex, getPlayerDisplayInfo };
+export { getPlayerColor, getPlayerDisplayInfo };
 export type { PlayerDisplayInfo };

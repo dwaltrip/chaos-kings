@@ -15,14 +15,14 @@ const ONE_SECOND_MS = 1000;
 // Movement interval drives the game tick rate since it's the shortest interval.
 // Players can make one move every MOVEMENT_INTERVAL_MS milliseconds.
 // export const MOVEMENT_INTERVAL_MS = 250;
-export const MOVEMENT_INTERVAL_MS = 500;
+const MOVEMENT_INTERVAL_MS = 500;
 
 // Tick rate matches movement interval since movement is the most frequent action.
 // This ensures moves are processed at the desired rate.
-export const TICK_RATE_MS = MOVEMENT_INTERVAL_MS;
+const TICK_RATE_MS = MOVEMENT_INTERVAL_MS;
 
-export const GENERAL_PRODUCTION_INTERVAL_MS = 1 * ONE_SECOND_MS;
-export const ARMY_PRODUCTION_INTERVAL_MS = 25 * ONE_SECOND_MS;
+const GENERAL_PRODUCTION_INTERVAL_MS = 1 * ONE_SECOND_MS;
+const ARMY_PRODUCTION_INTERVAL_MS = 25 * ONE_SECOND_MS;
 
 function validateTimingConfig(): void {
   // Movement interval should be the shortest interval (drives tick rate)
@@ -57,6 +57,7 @@ function validateTimingConfig(): void {
 
 validateTimingConfig();
 
-export const GENERAL_PRODUCTION_TICKS =
-  GENERAL_PRODUCTION_INTERVAL_MS / TICK_RATE_MS;
-export const ARMY_PRODUCTION_TICKS = ARMY_PRODUCTION_INTERVAL_MS / TICK_RATE_MS;
+const GENERAL_PRODUCTION_TICKS = GENERAL_PRODUCTION_INTERVAL_MS / TICK_RATE_MS;
+const ARMY_PRODUCTION_TICKS = ARMY_PRODUCTION_INTERVAL_MS / TICK_RATE_MS;
+
+export { TICK_RATE_MS, GENERAL_PRODUCTION_TICKS, ARMY_PRODUCTION_TICKS };

@@ -1,22 +1,13 @@
 import { gameMatchmakingStore } from '@/pages/join-game/join-game-store';
 import { getWebSocketService } from '@/services/websocket-service';
-import { MATCHMAKING_ROOM_NAME } from '@common/constants/matchmaking';
+import { GAME_MATCHMAKING_DOMAIN } from '@common/types/game-matchmaking';
 
 const { actions } = gameMatchmakingStore.getState();
-
-function websocketConnect(): ReturnType<typeof getWebSocketService> {
-  const wsService = getWebSocketService();
-
-  wsService.onReadyOrNow().then(() => {
-    joinRoom(MATCHMAKING_ROOM_NAME);
-  });
-  return wsService;
-}
 
 function joinQueue() {
   const wsService = getWebSocketService();
   wsService.send({
-    domain: 'game-matchmaking',
+    domain: GAME_MATCHMAKING_DOMAIN,
     type: 'join-queue',
     payload: null,
   });
@@ -26,44 +17,20 @@ function joinQueue() {
 function leaveQueue() {
   const wsService = getWebSocketService();
   wsService.send({
-    domain: 'game-matchmaking',
+    domain: GAME_MATCHMAKING_DOMAIN,
     type: 'leave-queue',
     payload: null,
   });
   actions.setIsInQueue(false);
 }
 
-function requestQueueStatus() {
-  const wsService = getWebSocketService();
-  wsService.send({
-    domain: 'game-matchmaking',
-    type: 'queue-status',
-    payload: null,
-  });
-}
-
-function joinRoom(room: string) {
-  const wsService = getWebSocketService();
-  wsService.send({
-    domain: 'game-chat',
-    type: 'join-room',
-    payload: { room },
-  });
-}
-
-function cleanup() {
-  actions.setIsInQueue(false);
-}
-
-export { websocketConnect, joinQueue, leaveQueue, requestQueueStatus, cleanup };
-
 function sendEarlyStartVote(vote: boolean) {
   const wsService = getWebSocketService();
   wsService.send({
-    domain: 'game-matchmaking',
+    domain: GAME_MATCHMAKING_DOMAIN,
     type: 'early-start-vote',
     payload: { vote },
   });
 }
 
-export { sendEarlyStartVote };
+export { joinQueue, leaveQueue, sendEarlyStartVote };

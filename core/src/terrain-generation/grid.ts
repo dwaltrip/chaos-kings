@@ -142,7 +142,6 @@ const stringToCoord = (s: string): Coord => {
 };
 
 export {
-  CellState,
   type Coord,
   type GridDimensions,
 } from '@core/terrain-generation/types';
