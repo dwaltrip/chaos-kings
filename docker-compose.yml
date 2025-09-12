@@ -25,7 +25,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3131
-      DATABASE_URL: postgres://${POSTGRES_USER:-appuser}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-appdb}
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379/0
       SESSION_SECRET: ${SESSION_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN}

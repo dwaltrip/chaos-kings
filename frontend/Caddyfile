@@ -5,11 +5,19 @@
 {$DOMAIN} {
   encode zstd gzip
 
-  @api path /api* /ws*
-  reverse_proxy @api api:3131
+  # Ensure proxy routes run before SPA fallback
+  handle /api* {
+    reverse_proxy api:3131
+  }
 
-  root * /srv
-  try_files {path} /index.html
-  file_server
+  handle /ws* {
+    reverse_proxy api:3131
+  }
+
+  # SPA static files with index.html fallback
+  handle {
+    root * /srv
+    try_files {path} /index.html
+    file_server
+  }
 }
-
