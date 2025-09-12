@@ -1,10 +1,14 @@
 import type { KnipConfig } from 'knip';
 
 const config: KnipConfig = {
+  // Path mapping to resolve @common and @core imports
+  paths: {
+    '@common/*': ['common/*'],
+    '@core/*': ['core/src/*'],
+  },
   workspaces: {
     '.': {
       ignoreBinaries: ['husky'],
-      ignoreExportsUsedInFile: true,
     },
     backend: {
       entry: [
@@ -18,33 +22,36 @@ const config: KnipConfig = {
         'scripts/**/*.ts',
         'migrations/**/*.ts',
         'seeds/**/*.ts',
+        '../common/**/*.ts',
+        '../core/src/**/*.ts',
       ],
+      paths: {
+        '@common/*': ['../common/*'],
+        '@core/*': ['../core/src/*'],
+      },
       ignore: ['dist/**', 'node_modules/**'],
       ignoreBinaries: ['kysely', 'pino-pretty'],
-      ignoreExportsUsedInFile: true,
     },
     frontend: {
       entry: ['src/main.tsx', 'vite.config.ts'],
-      project: ['src/**/*.{ts,tsx}', 'vite.config.ts'],
+      project: [
+        'src/**/*.{ts,tsx}',
+        'vite.config.ts',
+        '../common/**/*.ts',
+        '../core/src/**/*.ts',
+      ],
+      paths: {
+        '@common/*': ['../common/*'],
+        '@core/*': ['../core/src/*'],
+      },
       ignore: ['dist/**', 'node_modules/**'],
       ignoreBinaries: ['vite', 'eslint'],
-      ignoreExportsUsedInFile: true,
     },
     core: {
       // Entry points that are imported by BE/FE - knip will trace from these
       entry: [],
       project: ['src/**/*.ts'],
       ignore: ['node_modules/**'],
-      ignoreExportsUsedInFile: true,
-      // Allow knip to report unused exports since we want to find them
-    },
-    common: {
-      // Entry points that are imported by BE/FE - knip will trace from these
-      entry: [],
-      project: ['**/*.ts'],
-      ignore: ['node_modules/**'],
-      ignoreExportsUsedInFile: true,
-      // Allow knip to report unused exports since we want to find them
     },
   },
   // Global ignores
