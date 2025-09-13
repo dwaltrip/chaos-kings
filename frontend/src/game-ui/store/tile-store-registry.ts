@@ -1,5 +1,7 @@
 import { create } from 'zustand';
+
 import type { Coord, Movement, Square } from '@core/types';
+import { serializeCoord } from '@core/utils/coordinate-utils';
 import { blankSquare, isGeneralSquare, isMountainSquare } from '@core/square';
 
 // ------------------------------------------------------
@@ -42,7 +44,7 @@ function createTileStore(coord: Coord) {
 const tileStoreRegistry = new Map<string, ReturnType<typeof createTileStore>>();
 
 export const getTileStore = (coord: Coord) => {
-  const key = `${coord.x},${coord.y}`;
+  const key = serializeCoord(coord);
   if (!tileStoreRegistry.has(key)) {
     tileStoreRegistry.set(key, createTileStore(coord));
   }

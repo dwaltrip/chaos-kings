@@ -18,9 +18,12 @@ import {
   getUserGame,
 } from '@/gameplay/actions';
 import { getGameCoordinator } from '@/gameplay/game-coordinator';
+import { handleUndoMoveRequest } from './actions/undo-move-request';
 
 const GameplayWsAPI = new DomainAPI<GameplayMessageType>(GAMEPLAY_DOMAIN, {
   'move-request': handleMoveRequest,
+
+  'undo-move-request': handleUndoMoveRequest,
 
   'cancel-moves-request': handleCancelMovesRequest,
 

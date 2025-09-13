@@ -6,6 +6,7 @@ const GAMEPLAY_DOMAIN = 'gameplay';
 
 type GameplayMessageType =
   | 'move-request'
+  | 'undo-move-request'
   | 'cancel-moves-request'
   | 'game-state-update'
   | 'game-starting'
@@ -19,6 +20,12 @@ namespace Gameplay {
     payload: {
       sourceCoord: Coord;
       direction: Movement;
+    };
+  }
+
+  export interface UndoMoveRequest extends WsMessage {
+    payload: {
+      gameId: number;
     };
   }
 

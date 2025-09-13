@@ -1,3 +1,5 @@
+import type { Movement } from '@core/types';
+
 import { useKeyboardControls } from '@/game-ui/hooks/use-keyboard-controls';
 import {
   useBoardState,
@@ -21,25 +23,22 @@ interface GameUIProps {
 // TODO: remove `gameId` if not needed
 // -----------------------------------
 function GameUI({ gameId: _gameId }: GameUIProps) {
-  // Internal state management
   const gameplayState = useGameplayState();
   const boardState = useBoardState();
   const currentPlayerIndex = useCurrentPlayerIndex();
   const gameplayActions = useGameplay();
 
-  // Derived state
   const selectedTile = useGameplayStoreV2(useSelectedTile);
   const game = gameplayState.game;
   const disabled = gameplayState.gameEnded;
 
-  const handleMoveRequest = (direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') =>
+  const handleMoveRequest = (direction: Movement) =>
     gameplayActions.handleMoveRequest(direction, selectedTile);
-
-  const handleCancelMoves = () => gameplayActions.handleCancelMoves();
 
   useKeyboardControls({
     onMoveRequest: handleMoveRequest,
-    onCancelMoves: handleCancelMoves,
+    onUndoMove: () => gameplayActions.handleUndoMove(),
+    onCancelMoves: () => gameplayActions.handleCancelMoves(),
     disabled,
   });
 

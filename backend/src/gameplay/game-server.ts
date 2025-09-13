@@ -275,7 +275,7 @@ export class GameServer {
     // Basic validation at queue time - only check bounds, not ownership
     if (!this.gameState || !Board.isCoordValid(this.gameState.board, source)) {
       this.log.error(
-        `Invalid coords ${source.x},${source.y} for move request from user ${userId}`,
+        `Invalid coords ${source.x},${source.y} for move request from user id=${userId}`,
       );
       return;
     }
@@ -294,7 +294,7 @@ export class GameServer {
   clearMoves(userId: string): void {
     const playerIndex = this.playerMapping.get(userId);
     if (playerIndex === undefined) {
-      this.log.error(`Clear moves request from unknown user ${userId}`);
+      this.log.error(`Clear moves request from unknown user id=${userId}`);
       return;
     }
 
@@ -303,6 +303,19 @@ export class GameServer {
       queue.length = 0;
       this.log.debug(`Cleared move queue for player ${playerIndex}`);
     }
+  }
+
+  undoMove(userId: string): void {
+    const playerIndex = this.playerMapping.get(userId);
+    if (playerIndex === undefined) {
+      this.log.error(`Undo move request from unknown user id=${userId}`);
+      return;
+    }
+    const queue = this.getPlayerQueue(playerIndex);
+    if (!queue || queue.length === 0) {
+      return;
+    }
+    queue.pop();
   }
 
   onPlayerJoinedRoom(userId: string): void {

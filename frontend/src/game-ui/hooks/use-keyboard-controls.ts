@@ -7,12 +7,14 @@ import {
 interface UseKeyboardControlsParams {
   onMoveRequest: (direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => void;
   onCancelMoves: () => void;
+  onUndoMove: () => void;
   disabled: boolean;
 }
 
 export function useKeyboardControls({
   onMoveRequest,
   onCancelMoves,
+  onUndoMove,
   disabled,
 }: UseKeyboardControlsParams) {
   const keyStatesRef = useRef<Map<string, boolean>>(new Map());
@@ -45,6 +47,7 @@ export function useKeyboardControls({
       }
     };
 
+    // TODO: Refactor to use a map. Don't use if / else chains.
     const handleKeyDown = (event: KeyboardEvent) => {
       if (disabled) return;
 
@@ -55,7 +58,9 @@ export function useKeyboardControls({
         event.preventDefault();
 
         // If this key is already being held, do nothing
-        if (keyStates.get(key)) return;
+        if (keyStates.get(key)) {
+          return;
+        }
 
         // Stop any existing repeats (last key wins)
         clearAllIntervals();
@@ -84,6 +89,9 @@ export function useKeyboardControls({
       } else if (key === 'q') {
         onCancelMoves();
         event.preventDefault();
+      } else if (key === 'e') {
+        event.preventDefault();
+        onUndoMove();
       }
     };
 

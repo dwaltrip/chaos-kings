@@ -15,13 +15,8 @@ class TileOrchestrator {
       const store = getTileStore(coord);
       store.getState().updateQueuedMoves(moves);
     });
-
-    // Clear moves for tiles not in the map
-    // Note: In Phase 1, we'll be conservative and only update tiles that have moves
-    // In Phase 2, we might need to clear all tiles when moves are reset
   }
 
-  // Phase 1: Update general status across all tiles when board state changes
   updateTileSquares(boardState: BoardState) {
     if (!boardState?.grid) return;
 
@@ -34,21 +29,10 @@ class TileOrchestrator {
     }
   }
 
-  // Helper to get all board coordinates from board state
-  // TODO: this might be dead code now
-  /*
-  private getAllBoardCoords(boardState: BoardState): Coord[] {
-    if (!boardState?.grid) return [];
-
-    const coords: Coord[] = [];
-    for (let y = 0; y < boardState.grid.length; y++) {
-      for (let x = 0; x < boardState.grid[y].length; x++) {
-        coords.push({ x, y });
-      }
-    }
-    return coords;
+  updateQueuedMovesForTile(pos: Coord, moves: Set<Movement>) {
+    const store = getTileStore(pos);
+    store.getState().updateQueuedMoves(moves);
   }
-  */
 }
 
 const tileOrchestrator = new TileOrchestrator();

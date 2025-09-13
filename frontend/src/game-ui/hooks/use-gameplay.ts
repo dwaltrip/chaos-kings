@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { type Coord } from '@core/types';
+import { Movement, type Coord } from '@core/types';
 import { Board } from '@core/board';
 import { getWebSocketService } from '@/services/websocket-service';
 import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
@@ -8,14 +8,12 @@ import { getCurrentPlayerIndex } from '@/stores/game-metadata-store';
 import { gameMetadataStore } from '@/stores/game-metadata-store';
 import { userStore } from '@/stores/user-store';
 
+// TODO: rename to useGameplayActions??
 export function useGameplay() {
   const { actions } = gameplayStore.getState();
 
   const handleMoveRequest = useCallback(
-    (
-      direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT',
-      selectedTile: Coord | null,
-    ) => {
+    (direction: Movement, selectedTile: Coord | null) => {
       if (!selectedTile) {
         console.warn('Cannot move: no tile selected');
         return;
@@ -66,6 +64,25 @@ export function useGameplay() {
     [actions],
   );
 
+  const handleUndoMove = useCallback(() => {
+    const state = gameplayStore.getState();
+    const { queuedMoves } = state;
+    if (queuedMoves.length === 0) {
+      return;
+    }
+    actions.undoQueuedMove();
+
+    const wsService = getWebSocketService();
+    wsService.send({
+      domain: GAMEPLAY_DOMAIN,
+      type: 'undo-move-request',
+      // TODO: this is not being types properly, it allows any??
+      payload: {
+        gameId: gameplayStore.getState().gameId,
+      },
+    });
+  }, []);
+
   const handleCancelMoves = useCallback(() => {
     const wsService = getWebSocketService();
     wsService.send({
@@ -77,6 +94,7 @@ export function useGameplay() {
 
   return {
     handleMoveRequest,
+    handleUndoMove,
     handleCancelMoves,
   };
 }

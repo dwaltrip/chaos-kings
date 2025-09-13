@@ -1,6 +1,9 @@
 import { create } from 'zustand';
+
 import type { BoardState, Coord, Movement } from '@core/types';
 import { Board } from '@core/board';
+import { areCoordsEqual, serializeCoord } from '@core/utils/coordinate-utils';
+
 import { gameMetadataStore } from '@/stores/game-metadata-store';
 import { tileOrchestrator } from './tile-orchestrator';
 import { getTileStore } from './tile-store-registry';
@@ -39,6 +42,7 @@ interface GameplayState {
       moves: Array<{ sourceCoord: Coord; direction: Movement }>,
     ) => void;
     addQueuedMove: (sourceCoord: Coord, direction: Movement) => void;
+    undoQueuedMove: () => void;
     clearAllQueuedMoves: () => void;
     reset: () => void;
   };
@@ -144,18 +148,58 @@ const gameplayStore = create<GameplayState>((set, get) => ({
       }),
     addQueuedMove: (sourceCoord, direction) =>
       set((state) => {
-        const key = `${sourceCoord.x},${sourceCoord.y}`;
+        const key = serializeCoord(sourceCoord);
         const directionForTile = state.queuedMovesByCoord.get(key) || new Set();
         directionForTile.add(direction);
         state.queuedMovesByCoord.set(key, directionForTile);
-
-        // Phase 1: Update tile stores with new queued moves
         tileOrchestrator.updateQueuedMoves(state.queuedMovesByCoord);
 
         return {
           queuedMoves: [...state.queuedMoves, { sourceCoord, direction }],
           // TODO: is this idiomatic?
           // Seems dumb to create a new Map each time.
+          queuedMovesByCoord: state.queuedMovesByCoord,
+        };
+      }),
+    // TODO: I'd like move logic like this into dedicated "action" files,
+    // with 1 action per file, mostly decoupled from the store / zustand
+    // Similar to how the backend actions are structured.
+    // Need to look into this more.
+    undoQueuedMove: () =>
+      set((state) => {
+        const lastMove = state.queuedMoves[state.queuedMoves.length - 1];
+        if (!lastMove) {
+          return state;
+        }
+        const key = serializeCoord(lastMove.sourceCoord);
+        const directionsForTile = state.queuedMovesByCoord.get(key);
+        const selectedTile = useGameplayStoreV2.getState().selectedTile;
+
+        if (directionsForTile) {
+          directionsForTile.delete(lastMove.direction);
+          if (directionsForTile.size === 0) {
+            state.queuedMovesByCoord.delete(key);
+          }
+        }
+
+        const destCoord = Board.applyDirection(
+          lastMove.sourceCoord,
+          lastMove.direction,
+        );
+
+        if (selectedTile && areCoordsEqual(selectedTile, destCoord)) {
+          useGameplayStoreV2
+            .getState()
+            .actions.setSelectedTileV2(lastMove.sourceCoord);
+        }
+
+        tileOrchestrator.updateQueuedMovesForTile(
+          lastMove.sourceCoord,
+          directionsForTile || new Set(),
+        );
+
+        return {
+          queuedMoves: state.queuedMoves.slice(0, -1),
           queuedMovesByCoord: state.queuedMovesByCoord,
         };
       }),

@@ -1,7 +1,6 @@
-import { GameServer } from './game-server';
 import { TICK_RATE_MS } from '@core/game-timing-config';
-import { logger } from '@/utils/logger';
 import { createScopedLogger } from '@/utils/scoped-logger';
+import { GameServer } from '@/gameplay/game-server';
 
 const moduleLogger = createScopedLogger('GameCoordinator');
 
@@ -68,6 +67,14 @@ class GameCoordinator {
 
   getGame(gameId: number): GameServer | undefined {
     return this.games.get(gameId);
+  }
+
+  requireGame(gameId: number): GameServer {
+    const game = this.games.get(gameId);
+    if (!game) {
+      throw new Error(`Game server for game=${gameId} not found`);
+    }
+    return game;
   }
 
   getActiveGameCount(): number {
