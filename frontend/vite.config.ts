@@ -13,4 +13,13 @@ export default defineConfig({
       '@core': path.resolve(__dirname, '../core/src'),
     },
   },
+  server: {
+    proxy: {
+      '/api': 'http://localhost:3131',
+      '/ws': {
+        target: 'http://localhost:3131',
+        ws: true,
+      },
+    },
+  },
 });
