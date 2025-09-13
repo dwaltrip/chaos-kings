@@ -65,14 +65,11 @@ const GameTile = React.memo(
     const isPlayer = 'playerIndex' in square;
     const isValidMove = isNeighborOfSelected && !isMountain;
 
-    const isOnTopEdge = coord.y === 0;
-    const isOnLeftEdge = coord.x === 0;
-    const borders = !isVisible
-      ? { top: false, left: false }
-      : {
-          top: neighborVisibility.top && !isOnTopEdge,
-          left: neighborVisibility.left && !isOnLeftEdge,
-        };
+    // const isOnTopEdge = coord.y === 0;
+    // const isOnLeftEdge = coord.x === 0;
+    const hasTopBorder = isVisible || neighborVisibility.top;
+    const hasLeftBorder = isVisible || neighborVisibility.left;
+    const borders = { top: hasTopBorder, left: hasLeftBorder };
 
     const tileClassName = clsx(
       'game-tile',
