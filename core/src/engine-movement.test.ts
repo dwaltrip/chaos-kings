@@ -156,15 +156,15 @@ describe('applyMovement function', () => {
 
       applyMovement(board, { x: 2, y: 0 }, Movement.DOWN);
 
-      // Attacker should have 0 units
+      // Attacker should have 1 unit surviving (as you always leave one behind)
       expect(board.grid[0][2]).toMatchObject({
-        units: 0,
+        units: 1,
       });
 
       // Defender should have reduced units but keep ownership
       expect(board.grid[1][2]).toMatchObject({
         playerIndex: 1,
-        units: 2, // 5 - 3
+        units: 3, // 5 - 2 (attacker leaves 1 behind)
       });
     });
 
@@ -306,15 +306,15 @@ describe('applyMovement function', () => {
 
       applyMovement(board, { x: 0, y: 0 }, Movement.RIGHT);
 
-      // Check that odd units are rounded up when halved
+      // Check that odd units are rounded down when halved
       expect(board.grid[1][0]).toMatchObject({
         playerIndex: 0,
-        units: 3, // Math.ceil(5 / 2)
+        units: 2, // Math.floor(5 / 2)
       });
 
       expect(board.grid[2][0]).toMatchObject({
         playerIndex: 0,
-        units: 2, // Math.ceil(3 / 2)
+        units: 1, // Math.floor(3 / 2)
       });
     });
 
@@ -347,14 +347,14 @@ describe('applyMovement function', () => {
 
       // Attack should fail
       expect(board.grid[1][1]).toMatchObject({
-        units: 0,
+        units: 1,
       });
 
       // General should survive with reduced units
       expect(board.grid[1][2]).toMatchObject({
         type: SquareType.GENERAL,
         playerIndex: 1,
-        units: 3, // 5 - 2
+        units: 4, // 5 - 1 (attacker leaves 1 behind)
       });
 
       // Other territory should remain unchanged

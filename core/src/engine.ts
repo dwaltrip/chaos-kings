@@ -108,9 +108,11 @@ function applyMovement(
   // Case 3: dest is enemy
   else if (dest.playerIndex !== source.playerIndex) {
     // Case 3a: Enemy defends successfully
-    if (source.units <= dest.units) {
-      dest.units -= source.units;
-      source.units = 0;
+    // You need 2 units more than the enemy to capture
+    // As you leave 1 unit behind in the source tile, and defender wins ties
+    if (source.units <= dest.units + 1) {
+      dest.units -= source.units - 1;
+      source.units = 1;
       return;
     }
     // Case 3b: Regular enemy square is captured
@@ -139,7 +141,7 @@ function applyMovement(
         for (let square of defeatedPlayerSquares) {
           square.playerIndex = source.playerIndex;
           if (square != dest) {
-            square.units = Math.ceil(square.units / 2);
+            square.units = Math.max(1, Math.floor(square.units / 2));
           }
         }
       }
