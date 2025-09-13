@@ -9,6 +9,7 @@ const RENDER_COUNTER_LOG_INTERVAL_MS = 1000;
 let counts = new Map<string, RenderCount>();
 
 function useRenderCounter(key: string) {
+  // TODO: why are returning a function, instead of just directly running the code?
   return () => {
     const now = Date.now();
     const info = counts.get(key) || { count: 0, lastLogged: now };

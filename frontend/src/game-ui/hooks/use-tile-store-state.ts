@@ -19,7 +19,6 @@ function useTileSquare(coord: Coord): Square {
   return { ...squareWithoutCoord, coord };
 }
 
-// Phase 1: Individual hooks for each piece of state
 function useTileQueuedMovesV2(coord: Coord): Set<Movement> {
   const store = getTileStore(coord);
   return store(useShallow((state) => state.queuedMoves));

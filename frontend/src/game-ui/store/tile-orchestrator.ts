@@ -1,13 +1,8 @@
-import type { Coord, Movement, Square } from '@core/types';
+import type { Movement } from '@core/types';
 import type { BoardState } from '@core/types';
 import { getTileStore } from '@/game-ui/store/tile-store-registry';
 
 class TileOrchestrator {
-  updateTileSquare(coord: Coord, square: Square) {
-    const store = getTileStore(coord);
-    store.getState().updateSquare(square);
-  }
-
   updateQueuedMoves(queuedMovesByCoord: Map<string, Set<Movement>>) {
     queuedMovesByCoord.forEach((moves, key) => {
       const [x, y] = key.split(',').map(Number);
@@ -27,11 +22,6 @@ class TileOrchestrator {
         store.getState().updateSquare(grid[y][x]);
       }
     }
-  }
-
-  updateQueuedMovesForTile(pos: Coord, moves: Set<Movement>) {
-    const store = getTileStore(pos);
-    store.getState().updateQueuedMoves(moves);
   }
 }
 

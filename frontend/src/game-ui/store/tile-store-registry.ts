@@ -24,6 +24,7 @@ interface TileStoreState {
   // Actions
   updateSquare: (square: Square) => void;
   updateQueuedMoves: (moves: Set<Movement>) => void;
+  addQueuedMove: (move: Movement) => void;
 }
 
 function createTileStore(coord: Coord) {
@@ -37,6 +38,13 @@ function createTileStore(coord: Coord) {
 
     updateSquare: (square) => set({ square }),
     updateQueuedMoves: (moves) => set({ queuedMoves: moves }),
+    addQueuedMove: (move) => {
+      set((state) => {
+        const newMoves = new Set(state.queuedMoves);
+        newMoves.add(move);
+        return { queuedMoves: newMoves };
+      });
+    },
   }));
 }
 

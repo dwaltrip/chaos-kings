@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 import type { BoardState, Coord, Movement } from '@core/types';
 import { Board } from '@core/board';
-import { areCoordsEqual, serializeCoord } from '@core/utils/coordinate-utils';
+import { areCoordsEqual } from '@core/utils/coordinate-utils';
 
 import { gameMetadataStore } from '@/stores/game-metadata-store';
 import { tileOrchestrator } from './tile-orchestrator';
@@ -19,7 +19,6 @@ interface GameplayState {
   winner: number | null;
   endReason: 'general_captured' | 'timeout' | 'disconnect' | null;
   queuedMoves: Array<{ sourceCoord: Coord; direction: Movement }>;
-  queuedMovesByCoord: Map<string, Set<Movement>>;
   actions: {
     setBoardState: (
       boardState: BoardState,
@@ -34,7 +33,6 @@ interface GameplayState {
       winner: number,
       reason: 'general_captured' | 'timeout' | 'disconnect',
     ) => void;
-    followArmyMovement: (sourceCoord: Coord, direction: Movement) => void;
     setQueuedMoves: (
       moves: Array<{ sourceCoord: Coord; direction: Movement }>,
     ) => void;
@@ -58,7 +56,6 @@ const gameplayStore = create<GameplayState>((set, get) => ({
   winner: null,
   endReason: null,
   queuedMoves: [],
-  queuedMovesByCoord: new Map(),
   actions: {
     setBoardState: (boardState, currentPlayerIndex) => {
       // Compute visible squares if we have the required data
@@ -91,27 +88,6 @@ const gameplayStore = create<GameplayState>((set, get) => ({
       // Bridge to metadata store for GamePage header display
       gameMetadataStore.getState().actions.setGameEnded(winner, reason);
     },
-    followArmyMovement: (sourceCoord, direction) =>
-      set((state) => {
-        if (!state.boardState) return state;
-
-        const destinationCoord = Board.applyDirection(sourceCoord, direction);
-
-        // Only update selection if the destination is valid and the source matches current selection
-        const selectedTile = useGameplayStoreV2.getState().selectedTile;
-        if (
-          Board.isCoordValid(state.boardState, destinationCoord) &&
-          selectedTile &&
-          selectedTile.x === sourceCoord.x &&
-          selectedTile.y === sourceCoord.y
-        ) {
-          useGameplayStoreV2
-            .getState()
-            .actions.setSelectedTileV2(destinationCoord);
-        }
-
-        return state;
-      }),
     setQueuedMoves: (moves) =>
       set(() => {
         return { queuedMoves: moves };
@@ -119,47 +95,30 @@ const gameplayStore = create<GameplayState>((set, get) => ({
     setQueuedMovesFromArray: (moves) =>
       set(() => {
         const grid = get().boardState?.grid;
+        // TODO: there should always be a grid.. fix this, shoulnd not need this check
         if (!grid) {
-          return { queuedMoves: [], queuedMovesByCoord: new Map() };
+          return { queuedMoves: [] };
         }
 
         // TODO: resetting the state should happen all in one place
         // Clear all existing moves in tile store
+        // TODO: use helper for iterating over all coords
         for (let y = 0; y < grid.length; y++) {
           for (let x = 0; x < grid[y].length; x++) {
             getTileStore({ x, y }).getState().updateQueuedMoves(new Set());
           }
         }
 
-        // Convert array to coordinate-keyed Record
-        const queuedMovesByCoord: Map<string, Set<Movement>> = new Map();
         for (const move of moves) {
-          const key = `${move.sourceCoord.x},${move.sourceCoord.y}`;
-          if (!queuedMovesByCoord.has(key)) {
-            queuedMovesByCoord.set(key, new Set());
-          }
-          queuedMovesByCoord.get(key)?.add(move.direction);
+          const store = getTileStore(move.sourceCoord);
+          store.getState().addQueuedMove(move.direction);
         }
-
-        // Phase 1: Update tile stores with queued moves
-        tileOrchestrator.updateQueuedMoves(queuedMovesByCoord);
-
-        return { queuedMoves: moves, queuedMovesByCoord };
+        return { queuedMoves: moves };
       }),
     addQueuedMove: (sourceCoord, direction) =>
       set((state) => {
-        const key = serializeCoord(sourceCoord);
-        const directionForTile = state.queuedMovesByCoord.get(key) || new Set();
-        directionForTile.add(direction);
-        state.queuedMovesByCoord.set(key, directionForTile);
-        tileOrchestrator.updateQueuedMoves(state.queuedMovesByCoord);
-
-        return {
-          queuedMoves: [...state.queuedMoves, { sourceCoord, direction }],
-          // TODO: is this idiomatic?
-          // Seems dumb to create a new Map each time.
-          queuedMovesByCoord: state.queuedMovesByCoord,
-        };
+        const newMove = { sourceCoord, direction };
+        return { queuedMoves: [...state.queuedMoves, newMove] };
       }),
     // TODO: I'd like move logic like this into dedicated "action" files,
     // with 1 action per file, mostly decoupled from the store / zustand
@@ -167,40 +126,30 @@ const gameplayStore = create<GameplayState>((set, get) => ({
     // Need to look into this more.
     undoQueuedMove: () =>
       set((state) => {
-        const lastMove = state.queuedMoves[state.queuedMoves.length - 1];
-        if (!lastMove) {
+        const { queuedMoves } = state;
+        if (queuedMoves.length === 0) {
           return state;
         }
-        const key = serializeCoord(lastMove.sourceCoord);
-        const directionsForTile = state.queuedMovesByCoord.get(key);
+        const lastMove = queuedMoves[queuedMoves.length - 1];
+
+        const tileStore = getTileStore(lastMove.sourceCoord);
+        const newMoves = new Set(tileStore.getState().queuedMoves);
+        newMoves.delete(lastMove.direction);
+        tileStore.getState().updateQueuedMoves(newMoves);
+
         const selectedTile = useGameplayStoreV2.getState().selectedTile;
-
-        if (directionsForTile) {
-          directionsForTile.delete(lastMove.direction);
-          if (directionsForTile.size === 0) {
-            state.queuedMovesByCoord.delete(key);
-          }
-        }
-
         const destCoord = Board.applyDirection(
           lastMove.sourceCoord,
           lastMove.direction,
         );
-
         if (selectedTile && areCoordsEqual(selectedTile, destCoord)) {
           useGameplayStoreV2
             .getState()
             .actions.setSelectedTileV2(lastMove.sourceCoord);
         }
 
-        tileOrchestrator.updateQueuedMovesForTile(
-          lastMove.sourceCoord,
-          directionsForTile || new Set(),
-        );
-
         return {
           queuedMoves: state.queuedMoves.slice(0, -1),
-          queuedMovesByCoord: state.queuedMovesByCoord,
         };
       }),
     clearAllQueuedMoves: () =>
@@ -227,7 +176,6 @@ const gameplayStore = create<GameplayState>((set, get) => ({
         winner: null,
         endReason: null,
         queuedMoves: [],
-        queuedMovesByCoord: new Map(),
       }),
   },
 }));

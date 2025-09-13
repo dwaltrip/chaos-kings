@@ -163,14 +163,8 @@ const useGameLoadingState = () => {
   );
 };
 
-// ----------------------------------------------------------------
-// TODO: I never actually used these...
-// ----------------------------------------------------------------
-// TODO: move this when we refactor game-metadata-store
-const useGameplayGame = (state: GameMetadataState) => state.game;
-const useIsGameEnded = (state: GameMetadataState) => state.isGameEnded;
-// ----------------------------------------------------------------
-
+// TODO: move this somewhere more central / shared
+// core part of game
 const getCurrentPlayerIndex = (
   game: GameWithPlayers | null,
   userId: number | null,
@@ -196,6 +190,4 @@ export {
   useGameLoadingState,
   useCurrentPlayerIndex,
   getCurrentPlayerIndex,
-  useGameplayGame,
-  useIsGameEnded,
 };

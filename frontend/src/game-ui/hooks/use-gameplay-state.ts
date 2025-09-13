@@ -1,5 +1,5 @@
-import type { BoardState, Coord } from '@core/types';
-import { GameStatus, type GameWithPlayers } from '@common/types/games';
+import type { BoardState } from '@core/types';
+import { GameStatus } from '@common/types/games';
 import { gameplayStore } from '@/game-ui/store/gameplay-store';
 import { gameMetadataStore } from '@/stores/game-metadata-store';
 import { hasCompletedGameState } from '@core/game';
@@ -8,37 +8,7 @@ import {
   useSelectedTile,
 } from '@/game-ui/store/gameplay-store-v2';
 
-interface GameplayState {
-  boardState: BoardState | null;
-  selectedTile: Coord | null;
-  playerMapping: { playerId: string; playerIndex: number }[] | null;
-  gameEnded: boolean;
-  winner: number | null;
-  endReason: 'general_captured' | 'timeout' | 'disconnect' | null;
-  game: GameWithPlayers | null;
-  actions: {
-    setBoardState: (
-      boardState: BoardState,
-      currentPlayerIndex?: number | null,
-    ) => void;
-    setPlayerMapping: (
-      mapping: { playerId: string; playerIndex: number }[],
-    ) => void;
-    setGameId: (gameId: number) => void;
-    setTick: (tick: number) => void;
-    setGameEnded: (
-      winner: number,
-      reason: 'general_captured' | 'timeout' | 'disconnect',
-    ) => void;
-    followArmyMovement: (
-      sourceCoord: Coord,
-      direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT',
-    ) => void;
-    reset: () => void;
-  };
-}
-
-function useGameplayState(): GameplayState {
+function useGameplayState() {
   const boardState = gameplayStore((state) => state.boardState);
   const selectedTile = useGameplayStoreV2(useSelectedTile);
   const playerMapping = gameplayStore((state) => state.playerMapping);

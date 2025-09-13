@@ -61,6 +61,7 @@ type Square = NeutralSquare | PlayerSquare;
 
 type GameGrid = Square[][];
 
+// TODO: rename to "Direction"
 const Movement = {
   UP: 'UP',
   DOWN: 'DOWN',

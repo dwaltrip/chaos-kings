@@ -2,6 +2,8 @@ import React from 'react';
 import clsx from 'clsx';
 
 import type { Coord, PlayerSquare } from '@core/types';
+import { areCoordsEqual } from '@core/utils/coordinate-utils';
+
 import { getPlayerColor } from '@/utils/player-colors';
 import {
   useTileQueuedMovesV2,
@@ -35,15 +37,15 @@ function TileOverlay({
 
 interface GameTileProps {
   coord: Coord;
-  row: number;
-  col: number;
 }
 
 const { setSelectedTileV2 } = useGameplayStoreV2.getState().actions;
 
 const GameTile = React.memo(
-  ({ coord, row, col }: GameTileProps) => {
+  ({ coord }: GameTileProps) => {
     useRenderCounter('game-tile')();
+    const row = coord.y;
+    const col = coord.x;
 
     const square = useTileSquare(coord);
     const isSelected = useGameplayStoreV2(useIsTileSelected(coord));
@@ -129,12 +131,7 @@ const GameTile = React.memo(
   // TODO: Do I need this? or is there a nicer way to do it?
   (prevProps, nextProps) => {
     // Only re-render if coordinate actually changed
-    return (
-      prevProps.coord.x === nextProps.coord.x &&
-      prevProps.coord.y === nextProps.coord.y &&
-      prevProps.row === nextProps.row &&
-      prevProps.col === nextProps.col
-    );
+    return areCoordsEqual(prevProps.coord, nextProps.coord);
   },
 );
 

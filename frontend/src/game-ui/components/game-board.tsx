@@ -3,6 +3,7 @@ import { useGridLayout } from '@/game-ui/hooks/use-grid-layout';
 import { GameTile } from '@/game-ui/components/game-tile';
 
 import '@/game-ui/game-board.css';
+import { serializeCoord } from '@core/utils/coordinate-utils';
 
 interface GameBoardProps {
   boardState: BoardState;
@@ -17,9 +18,9 @@ function GameBoard({ boardState }: GameBoardProps) {
   return (
     <div ref={containerRef} className="game-grid-container">
       <div className="game-grid" style={gridStyle}>
-        {boardState.grid.flatMap((row, y) =>
-          row.map((_, x) => (
-            <GameTile key={`${x}-${y}`} coord={{ x, y }} row={y} col={x} />
+        {boardState.grid.flatMap((row) =>
+          row.map(({ coord }) => (
+            <GameTile coord={coord} key={serializeCoord(coord)} />
           )),
         )}
       </div>
