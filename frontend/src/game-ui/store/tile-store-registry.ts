@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import type { Coord, Movement, Square } from '@core/types';
+import type { Coord, Direction, Square } from '@core/types';
 import { serializeCoord } from '@core/utils/coordinate-utils';
 import { blankSquare, isGeneralSquare, isMountainSquare } from '@core/square';
 
@@ -15,7 +15,7 @@ import { blankSquare, isGeneralSquare, isMountainSquare } from '@core/square';
 interface TileStoreState {
   square: Square;
   isSelected: boolean;
-  queuedMoves: Set<Movement>; // Already useShallow compatible
+  queuedMoves: Set<Direction>; // Already useShallow compatible
 
   // Helpers
   getIsGeneral: () => boolean;
@@ -23,8 +23,8 @@ interface TileStoreState {
 
   // Actions
   updateSquare: (square: Square) => void;
-  updateQueuedMoves: (moves: Set<Movement>) => void;
-  addQueuedMove: (move: Movement) => void;
+  updateQueuedMoves: (moves: Set<Direction>) => void;
+  addQueuedMove: (move: Direction) => void;
 }
 
 function createTileStore(coord: Coord) {

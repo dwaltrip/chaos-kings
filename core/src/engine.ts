@@ -1,7 +1,7 @@
 import {
   BoardState,
   Coord,
-  Movement,
+  Direction,
   PlayerSquareType,
   SquareType,
 } from '@core/types';
@@ -66,11 +66,11 @@ function applyTroopProduction(board: BoardState): void {
   }
 }
 
-// function handleMove(game: Game, sourceCoord: Coord, direction: Movement) {
+// function handleMove(game: Game, sourceCoord: Coord, direction: Direction) {
 function applyMovement(
   board: BoardState,
   sourceCoord: Coord,
-  movement: Movement,
+  movement: Direction,
 ): void {
   // const board = game.board;
   if (!Board.canMove(board, sourceCoord, movement)) {

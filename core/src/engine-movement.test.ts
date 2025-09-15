@@ -2,7 +2,7 @@ import { applyMovement } from '@core/engine';
 import { Board } from '@core/board';
 import {
   BoardState,
-  Movement,
+  Direction,
   SquareType,
   PlayerSquareType,
 } from '@core/types';
@@ -37,7 +37,7 @@ describe('applyMovement function', () => {
         units: 5,
       };
 
-      applyMovement(board, { x: 1, y: 1 }, Movement.RIGHT);
+      applyMovement(board, { x: 1, y: 1 }, Direction.RIGHT);
 
       // Source should have 1 unit left
       expect(board.grid[1][1]).toMatchObject({
@@ -62,7 +62,7 @@ describe('applyMovement function', () => {
         units: 8,
       };
 
-      applyMovement(board, { x: 2, y: 2 }, Movement.UP);
+      applyMovement(board, { x: 2, y: 2 }, Direction.UP);
 
       // Source should have 1 unit left
       expect(board.grid[2][2]).toMatchObject({
@@ -98,7 +98,7 @@ describe('applyMovement function', () => {
         units: 3,
       };
 
-      applyMovement(board, { x: 0, y: 0 }, Movement.RIGHT);
+      applyMovement(board, { x: 0, y: 0 }, Direction.RIGHT);
 
       // Source should have 1 unit left
       expect(board.grid[0][0]).toMatchObject({
@@ -126,7 +126,7 @@ describe('applyMovement function', () => {
         units: 2,
       };
 
-      applyMovement(board, { x: 1, y: 1 }, Movement.RIGHT);
+      applyMovement(board, { x: 1, y: 1 }, Direction.RIGHT);
 
       expect(board.grid[1][1]).toMatchObject({ units: 1 });
       expect(board.grid[1][2]).toMatchObject({
@@ -154,7 +154,7 @@ describe('applyMovement function', () => {
         units: 5,
       };
 
-      applyMovement(board, { x: 2, y: 0 }, Movement.DOWN);
+      applyMovement(board, { x: 2, y: 0 }, Direction.DOWN);
 
       // Attacker should have 1 unit surviving (as you always leave one behind)
       expect(board.grid[0][2]).toMatchObject({
@@ -185,7 +185,7 @@ describe('applyMovement function', () => {
         units: 4,
       };
 
-      applyMovement(board, { x: 3, y: 3 }, Movement.DOWN);
+      applyMovement(board, { x: 3, y: 3 }, Direction.DOWN);
 
       // Source should have 1 unit left
       expect(board.grid[3][3]).toMatchObject({
@@ -241,7 +241,7 @@ describe('applyMovement function', () => {
       };
 
       // Execute the general capture
-      applyMovement(board, { x: 2, y: 1 }, Movement.DOWN);
+      applyMovement(board, { x: 2, y: 1 }, Direction.DOWN);
 
       // Source should have 1 unit left
       expect(board.grid[1][2]).toMatchObject({
@@ -304,7 +304,7 @@ describe('applyMovement function', () => {
         units: 3,
       };
 
-      applyMovement(board, { x: 0, y: 0 }, Movement.RIGHT);
+      applyMovement(board, { x: 0, y: 0 }, Direction.RIGHT);
 
       // Check that odd units are rounded down when halved
       expect(board.grid[1][0]).toMatchObject({
@@ -343,7 +343,7 @@ describe('applyMovement function', () => {
         units: 4,
       };
 
-      applyMovement(board, { x: 1, y: 1 }, Movement.RIGHT);
+      applyMovement(board, { x: 1, y: 1 }, Direction.RIGHT);
 
       // Attack should fail
       expect(board.grid[1][1]).toMatchObject({

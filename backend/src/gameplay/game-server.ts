@@ -1,4 +1,4 @@
-import { GameState, BoardState, Movement, Coord } from '@core/types';
+import { GameState, BoardState, Direction, Coord } from '@core/types';
 import { tick as engineTick, applyMovement } from '@core/engine';
 import { GameGenerationConfig } from '@core/game-generation-config';
 import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
@@ -24,7 +24,7 @@ const MAX_QUEUED_MOVES_PER_PLAYER = 200;
 
 interface QueuedMove {
   sourceCoord: Coord;
-  movement: Movement;
+  movement: Direction;
 }
 
 export class GameServer {
@@ -211,11 +211,11 @@ export class GameServer {
 
   private getPlayerQueuesForBroadcast(): Record<
     number,
-    Array<{ sourceCoord: Coord; direction: Movement }>
+    Array<{ sourceCoord: Coord; direction: Direction }>
   > {
     const result: Record<
       number,
-      Array<{ sourceCoord: Coord; direction: Movement }>
+      Array<{ sourceCoord: Coord; direction: Direction }>
     > = {};
     for (const [playerIndex, queue] of this.playerQueues) {
       result[playerIndex] = queue.map((move) => ({
@@ -264,7 +264,7 @@ export class GameServer {
     }
   }
 
-  queueMove(userId: string, source: Coord, movement: Movement): void {
+  queueMove(userId: string, source: Coord, movement: Direction): void {
     const playerIndex = this.playerMapping.get(userId);
     if (playerIndex === undefined) {
       this.log.info(`Move request from unknown user ${userId}`);

@@ -1,6 +1,6 @@
 import { invariant } from '@common/utils/invariant';
 import type { BoardState, Coord, Square, PlayerSquare } from '@core/types';
-import { Movement, SquareType } from '@core/types';
+import { Direction, SquareType } from '@core/types';
 import { isPlayerSquare } from '@core/square';
 import { serializeCoord } from '@core/utils/coordinate-utils';
 
@@ -8,7 +8,7 @@ import { serializeCoord } from '@core/utils/coordinate-utils';
 function canMove(
   board: BoardState,
   source: Coord,
-  direction: Movement,
+  direction: Direction,
 ): boolean {
   const destCoord = applyDirection(source, direction);
   if (!isCoordValid(board, destCoord)) {
@@ -25,7 +25,7 @@ function canMove(
 function getSquare(
   board: BoardState,
   coord: Coord,
-  movement?: Movement,
+  movement?: Direction,
 ): Square {
   if (movement !== undefined) {
     coord = applyDirection(coord, movement);
@@ -48,15 +48,15 @@ function replaceSquare(board: BoardState, coord: Coord, square: Square) {
   board.grid[y][x] = square;
 }
 
-function applyDirection(coord: Coord, direction: Movement): Coord {
+function applyDirection(coord: Coord, direction: Direction): Coord {
   switch (direction) {
-    case Movement.UP:
+    case Direction.UP:
       return { x: coord.x, y: coord.y - 1 };
-    case Movement.DOWN:
+    case Direction.DOWN:
       return { x: coord.x, y: coord.y + 1 };
-    case Movement.LEFT:
+    case Direction.LEFT:
       return { x: coord.x - 1, y: coord.y };
-    case Movement.RIGHT:
+    case Direction.RIGHT:
       return { x: coord.x + 1, y: coord.y };
   }
 }

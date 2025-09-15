@@ -1,4 +1,4 @@
-import type { BoardState, Coord, Movement } from '@core/types';
+import type { BoardState, Coord, Direction } from '@core/types';
 import {
   gameMetadataStore,
   getCurrentPlayerIndex,
@@ -22,7 +22,7 @@ const { actions } = gameplayStore.getState();
 // TODO: temp wrapper while we refactor
 // the frontend stores / actions
 // on gameplay page
-function queueMove(direction: Movement, selectedTile: Coord | null) {
+function queueMove(direction: Direction, selectedTile: Coord | null) {
   const state = gameplayStore.getState();
   const { boardState } = state;
   const game = gameMetadataStore.getState().game;
@@ -34,7 +34,7 @@ function queueMove(direction: Movement, selectedTile: Coord | null) {
 }
 
 function _queueMove(
-  direction: Movement,
+  direction: Direction,
   selectedTile: Coord | null,
   boardState: BoardState,
   game: GameWithPlayers,
@@ -80,7 +80,7 @@ const {
   actions: { setSelectedTileV2 },
 } = useGameplayStoreV2.getState();
 
-function followArmyMovement(src: Coord, direction: Movement): void {
+function followArmyMovement(src: Coord, direction: Direction): void {
   const { boardState } = gameplayStore.getState();
   if (!boardState) {
     return;

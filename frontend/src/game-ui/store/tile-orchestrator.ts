@@ -1,9 +1,9 @@
-import type { Movement } from '@core/types';
+import type { Direction } from '@core/types';
 import type { BoardState } from '@core/types';
 import { getTileStore } from '@/game-ui/store/tile-store-registry';
 
 class TileOrchestrator {
-  updateQueuedMoves(queuedMovesByCoord: Map<string, Set<Movement>>) {
+  updateQueuedMoves(queuedMovesByCoord: Map<string, Set<Direction>>) {
     queuedMovesByCoord.forEach((moves, key) => {
       const [x, y] = key.split(',').map(Number);
       const coord = { x, y };

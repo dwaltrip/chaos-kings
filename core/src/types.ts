@@ -61,16 +61,15 @@ type Square = NeutralSquare | PlayerSquare;
 
 type GameGrid = Square[][];
 
-// TODO: rename to "Direction"
-const Movement = {
+const Direction = {
   UP: 'UP',
   DOWN: 'DOWN',
   LEFT: 'LEFT',
   RIGHT: 'RIGHT',
 } as const;
-type Movement = (typeof Movement)[keyof typeof Movement];
+type Direction = (typeof Direction)[keyof typeof Direction];
 
-export { Movement, PlayerSquareType, NeutralSquareType, SquareType };
+export { Direction, PlayerSquareType, NeutralSquareType, SquareType };
 
 export type {
   GameState,

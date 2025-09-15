@@ -1,5 +1,5 @@
 import type { WsMessage } from '@common/types/websockets';
-import type { BoardState, Movement, Coord } from '@core/types';
+import type { BoardState, Direction, Coord } from '@core/types';
 import type { GameWithPlayers } from '@common/types/games';
 
 const GAMEPLAY_DOMAIN = 'gameplay';
@@ -19,7 +19,7 @@ namespace Gameplay {
   export interface MoveRequest extends WsMessage {
     payload: {
       sourceCoord: Coord;
-      direction: Movement;
+      direction: Direction;
     };
   }
 
@@ -39,7 +39,7 @@ namespace Gameplay {
       boardState: BoardState;
       playerQueues?: Record<
         number,
-        Array<{ sourceCoord: Coord; direction: Movement }>
+        Array<{ sourceCoord: Coord; direction: Direction }>
       >;
     };
   }

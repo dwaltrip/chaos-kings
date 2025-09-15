@@ -1,7 +1,7 @@
-import type { Movement } from '@core/types';
+import type { Direction } from '@core/types';
 
 interface MoveArrowProps {
-  direction: Movement;
+  direction: Direction;
 }
 
 const THIN_ARROWS = {
@@ -20,7 +20,7 @@ const _ARROWS = {
   UP: '↑',
 };
 
-const getArrowSymbol = (direction: Movement): string => {
+const getArrowSymbol = (direction: Direction): string => {
   switch (direction) {
     case 'UP':
       return THIN_ARROWS.UP;
@@ -35,7 +35,7 @@ const getArrowSymbol = (direction: Movement): string => {
   }
 };
 
-const getArrowClass = (direction: Movement): string => {
+const getArrowClass = (direction: Direction): string => {
   switch (direction) {
     case 'UP':
       return 'move-arrow-top';

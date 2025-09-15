@@ -1,4 +1,4 @@
-import type { Movement } from '@core/types';
+import type { Direction } from '@core/types';
 
 import { useKeyboardControls } from '@/game-ui/hooks/use-keyboard-controls';
 import {
@@ -34,7 +34,7 @@ function GameUI({ gameId: _gameId }: GameUIProps) {
   const disabled = gameplayState.gameEnded;
 
   useKeyboardControls({
-    onMoveRequest: (dir: Movement) => queueMove(dir, selectedTile),
+    onMoveRequest: (dir: Direction) => queueMove(dir, selectedTile),
     onUndoMove: () => undoLastQueuedMove(),
     onCancelMoves: () => cancelQueuedMoves(),
     disabled,

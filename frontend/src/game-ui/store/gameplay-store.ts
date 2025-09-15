@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import type { BoardState, Coord, Movement } from '@core/types';
+import type { BoardState, Coord, Direction } from '@core/types';
 import { Board } from '@core/board';
 import { areCoordsEqual } from '@core/utils/coordinate-utils';
 
@@ -18,7 +18,7 @@ interface GameplayState {
   gameEnded: boolean;
   winner: number | null;
   endReason: 'general_captured' | 'timeout' | 'disconnect' | null;
-  queuedMoves: Array<{ sourceCoord: Coord; direction: Movement }>;
+  queuedMoves: Array<{ sourceCoord: Coord; direction: Direction }>;
   actions: {
     setBoardState: (
       boardState: BoardState,
@@ -34,12 +34,12 @@ interface GameplayState {
       reason: 'general_captured' | 'timeout' | 'disconnect',
     ) => void;
     setQueuedMoves: (
-      moves: Array<{ sourceCoord: Coord; direction: Movement }>,
+      moves: Array<{ sourceCoord: Coord; direction: Direction }>,
     ) => void;
     setQueuedMovesFromArray: (
-      moves: Array<{ sourceCoord: Coord; direction: Movement }>,
+      moves: Array<{ sourceCoord: Coord; direction: Direction }>,
     ) => void;
-    addQueuedMove: (sourceCoord: Coord, direction: Movement) => void;
+    addQueuedMove: (sourceCoord: Coord, direction: Direction) => void;
     undoQueuedMove: () => void;
     clearAllQueuedMoves: () => void;
     reset: () => void;

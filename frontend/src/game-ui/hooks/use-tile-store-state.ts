@@ -1,5 +1,5 @@
 import { useShallow } from 'zustand/shallow';
-import type { Coord, Movement, Square } from '@core/types';
+import type { Coord, Direction, Square } from '@core/types';
 import { getTileStore } from '@/game-ui/store/tile-store-registry';
 
 function useTileSquare(coord: Coord): Square {
@@ -19,7 +19,7 @@ function useTileSquare(coord: Coord): Square {
   return { ...squareWithoutCoord, coord };
 }
 
-function useTileQueuedMovesV2(coord: Coord): Set<Movement> {
+function useTileQueuedMovesV2(coord: Coord): Set<Direction> {
   const store = getTileStore(coord);
   return store(useShallow((state) => state.queuedMoves));
 }
