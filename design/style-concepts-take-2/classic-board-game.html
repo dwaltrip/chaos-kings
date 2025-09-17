@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classic Board Game - Generals</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Crimson Text', serif;
+            background:
+                linear-gradient(45deg, rgba(139, 90, 43, 0.1) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(139, 90, 43, 0.1) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(139, 90, 43, 0.1) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(139, 90, 43, 0.1) 75%),
+                radial-gradient(circle at center, #f5e6d3 0%, #e8d5b7 50%, #d4b896 100%);
+            background-size: 40px 40px, 40px 40px, 40px 40px, 40px 40px, 100% 100%;
+            background-position: 0 0, 0 20px, 20px -20px, -20px 0px, 0 0;
+            color: #3e2723;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><defs><filter id="wood"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="4" result="noise"/><feDiffuseLighting in="noise" lighting-color="%23d4b896" surfaceScale="2"><feDistantLight azimuth="45" elevation="60"/></feDiffuseLighting></filter></defs><rect width="200" height="200" fill="%23f5e6d3" filter="url(%23wood)" opacity="0.3"/></svg>');
+            opacity: 0.5;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .wood-frame {
+            background:
+                linear-gradient(135deg, #8b5a2b 0%, #a0522d 25%, #cd853f 50%, #daa520 75%, #8b5a2b 100%);
+            border: 8px solid #654321;
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .wood-frame::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            background:
+                linear-gradient(45deg, #654321, #8b4513, #654321);
+            border-radius: 16px;
+            z-index: -1;
+        }
+
+        .wood-frame::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            right: 4px;
+            bottom: 4px;
+            border: 2px solid rgba(139, 69, 19, 0.3);
+            border-radius: 8px;
+        }
+
+        .header {
+            background:
+                linear-gradient(135deg, #8b4513 0%, #a0522d 50%, #8b4513 100%);
+            border-bottom: 4px solid #654321;
+            padding: 1.5rem 2rem;
+            position: relative;
+            box-shadow:
+                inset 0 2px 4px rgba(255, 255, 255, 0.2),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, #daa520 50%, transparent 100%);
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #f5e6d3;
+            text-shadow:
+                2px 2px 0px #654321,
+                4px 4px 8px rgba(0, 0, 0, 0.3);
+            letter-spacing: 2px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: #f5deb3;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 0.75rem 1.5rem;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            position: relative;
+            text-transform: capitalize;
+            background: rgba(139, 69, 19, 0.2);
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            background: linear-gradient(135deg, rgba(245, 222, 179, 0.1), rgba(218, 165, 32, 0.1));
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-link:hover::before {
+            opacity: 1;
+        }
+
+        .nav-link:hover {
+            color: #3e2723;
+            background: #f5deb3;
+            border-color: #8b4513;
+            box-shadow:
+                inset 0 2px 4px rgba(139, 69, 19, 0.2),
+                0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .main-content {
+            padding: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .game-table {
+            background:
+                radial-gradient(ellipse at center, #f5e6d3 0%, #e8d5b7 70%, #d4b896 100%);
+            border: 6px solid #8b4513;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            box-shadow:
+                0 8px 32px rgba(62, 39, 35, 0.3),
+                inset 0 0 20px rgba(245, 230, 211, 0.8);
+        }
+
+        .game-table::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            right: -8px;
+            bottom: -8px;
+            background:
+                linear-gradient(45deg, #654321, #8b4513, #a0522d, #8b4513, #654321);
+            border-radius: 20px;
+            z-index: -1;
+        }
+
+        .page-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            color: #3e2723;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(139, 69, 19, 0.3);
+            position: relative;
+        }
+
+        .page-subtitle {
+            text-align: center;
+            color: #5d4037;
+            font-style: italic;
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: #3e2723;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .section-title::before,
+        .section-title::after {
+            content: '❦';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8b4513;
+            font-size: 1.2rem;
+        }
+
+        .section-title::before {
+            left: -3rem;
+        }
+
+        .section-title::after {
+            right: -3rem;
+        }
+
+        .stats-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background:
+                linear-gradient(135deg, #f5deb3 0%, #e8d5b7 100%);
+            border: 3px solid #8b4513;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            box-shadow:
+                0 4px 8px rgba(62, 39, 35, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            right: 8px;
+            bottom: 8px;
+            border: 1px solid rgba(139, 69, 19, 0.2);
+            border-radius: 8px;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow:
+                0 8px 16px rgba(62, 39, 35, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .stat-label {
+            color: #5d4037;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            color: #3e2723;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-note {
+            color: #6d4c41;
+            font-size: 0.8rem;
+            font-style: italic;
+        }
+
+        .game-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-btn {
+            background:
+                linear-gradient(135deg, #d4b896 0%, #c8a882 50%, #d4b896 100%);
+            border: 3px solid #8b4513;
+            color: #3e2723;
+            padding: 1rem 1.5rem;
+            font-family: 'Crimson Text', serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+            text-transform: capitalize;
+            box-shadow:
+                0 4px 8px rgba(62, 39, 35, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            right: 3px;
+            bottom: 3px;
+            border: 1px solid rgba(139, 69, 19, 0.2);
+            border-radius: 5px;
+        }
+
+        .action-btn:hover {
+            background:
+                linear-gradient(135deg, #e8d5b7 0%, #d4b896 50%, #e8d5b7 100%);
+            transform: translateY(-2px);
+            box-shadow:
+                0 6px 12px rgba(62, 39, 35, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .action-btn.primary {
+            background:
+                linear-gradient(135deg, #cd853f 0%, #b8860b 50%, #cd853f 100%);
+            color: #f5e6d3;
+            text-shadow: 1px 1px 2px rgba(62, 39, 35, 0.5);
+        }
+
+        .action-btn.primary:hover {
+            background:
+                linear-gradient(135deg, #daa520 0%, #cd853f 50%, #daa520 100%);
+        }
+
+        .game-status {
+            background:
+                linear-gradient(135deg, #f5deb3 0%, #e8d5b7 100%);
+            border: 3px solid #8b4513;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(139, 69, 19, 0.1);
+            border: 1px solid rgba(139, 69, 19, 0.2);
+            border-radius: 6px;
+        }
+
+        .status-label {
+            color: #5d4037;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .status-value {
+            color: #3e2723;
+            font-weight: 700;
+        }
+
+        .game-log {
+            background:
+                linear-gradient(135deg, #f5deb3 0%, #e8d5b7 100%);
+            border: 3px solid #8b4513;
+            border-radius: 12px;
+            padding: 2rem;
+            max-height: 300px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .log-entry {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: rgba(245, 230, 211, 0.5);
+            border-left: 4px solid #8b4513;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .log-entry::before {
+            content: attr(data-turn);
+            position: absolute;
+            top: 0;
+            right: 1rem;
+            background: #8b4513;
+            color: #f5e6d3;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0 0 4px 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .log-time {
+            color: #6d4c41;
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+            font-style: italic;
+        }
+
+        .log-text {
+            color: #3e2723;
+            line-height: 1.5;
+        }
+
+        .ornamental-corner {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background:
+                radial-gradient(circle, #daa520 30%, transparent 30%),
+                linear-gradient(45deg, #8b4513 50%, transparent 50%);
+            border: 2px solid #654321;
+        }
+
+        .ornamental-corner.top-left {
+            top: -20px;
+            left: -20px;
+            border-radius: 0 0 100% 0;
+        }
+
+        .ornamental-corner.top-right {
+            top: -20px;
+            right: -20px;
+            border-radius: 0 0 0 100%;
+        }
+
+        .ornamental-corner.bottom-left {
+            bottom: -20px;
+            left: -20px;
+            border-radius: 0 100% 0 0;
+        }
+
+        .ornamental-corner.bottom-right {
+            bottom: -20px;
+            right: -20px;
+            border-radius: 100% 0 0 0;
+        }
+
+        .vintage-border {
+            border-image:
+                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><defs><pattern id="vintage" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="3" fill="%238b4513"/><circle cx="8" cy="8" r="2" fill="%23654321"/><circle cx="32" cy="8" r="2" fill="%23654321"/><circle cx="8" cy="32" r="2" fill="%23654321"/><circle cx="32" cy="32" r="2" fill="%23654321"/></pattern></defs><rect width="40" height="40" fill="url(%23vintage)"/></svg>') 10;
+        }
+
+        .player-info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background:
+                linear-gradient(135deg, #f5deb3 0%, #e8d5b7 100%);
+            border: 3px solid #8b4513;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 4px 12px rgba(62, 39, 35, 0.3);
+            z-index: 1000;
+        }
+
+        .player-name {
+            font-weight: 700;
+            color: #3e2723;
+            margin-bottom: 0.25rem;
+        }
+
+        .player-title {
+            font-size: 0.8rem;
+            color: #5d4037;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">Generals</div>
+            <div class="nav-links">
+                <a href="#" class="nav-link">New Game</a>
+                <a href="#" class="nav-link">Campaigns</a>
+                <a href="#" class="nav-link">Records</a>
+                <a href="#" class="nav-link">Rules</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <section class="game-table">
+            <div class="ornamental-corner top-left"></div>
+            <div class="ornamental-corner top-right"></div>
+            <div class="ornamental-corner bottom-left"></div>
+            <div class="ornamental-corner bottom-right"></div>
+
+            <h1 class="page-title">The Art of War</h1>
+            <p class="page-subtitle">A gentleman's game of strategy and cunning</p>
+
+            <h2 class="section-title">Campaign Statistics</h2>
+
+            <div class="stats-display">
+                <div class="stat-card">
+                    <div class="stat-label">Games Played</div>
+                    <div class="stat-value">127</div>
+                    <div class="stat-note">Since joining the academy</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Victories</div>
+                    <div class="stat-value">89</div>
+                    <div class="stat-note">Honorable conquests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Win Percentage</div>
+                    <div class="stat-value">70%</div>
+                    <div class="stat-note">Distinguished record</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Current Streak</div>
+                    <div class="stat-value">7</div>
+                    <div class="stat-note">Consecutive victories</div>
+                </div>
+            </div>
+
+            <div class="game-actions">
+                <button class="action-btn primary">Start New Game</button>
+                <button class="action-btn">Continue Campaign</button>
+                <button class="action-btn">Practice Tactics</button>
+                <button class="action-btn">Study Maps</button>
+                <button class="action-btn">Review Games</button>
+                <button class="action-btn">Player Settings</button>
+            </div>
+        </section>
+
+        <section class="game-status">
+            <h3 class="section-title">Current Match Details</h3>
+
+            <div class="status-grid">
+                <div class="status-item">
+                    <span class="status-label">Match Number:</span>
+                    <span class="status-value">Game #127</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Opponent:</span>
+                    <span class="status-value">Colonel Hartwell</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Battlefield:</span>
+                    <span class="status-value">Autumn Valley</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Turn Number:</span>
+                    <span class="status-value">Turn 23</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Time Elapsed:</span>
+                    <span class="status-value">47 minutes</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Current Player:</span>
+                    <span class="status-value">Your Move</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="game-log">
+            <h3 class="section-title">Match Chronicle</h3>
+
+            <div class="log-entry" data-turn="Turn 23">
+                <div class="log-time">3:47 PM - Current Turn</div>
+                <div class="log-text">Your infantry battalion has successfully captured the eastern hill position. Enemy cavalry retreats to defensive positions near the river crossing.</div>
+            </div>
+
+            <div class="log-entry" data-turn="Turn 22">
+                <div class="log-time">3:44 PM</div>
+                <div class="log-text">Colonel Hartwell advances artillery to support his central position. A masterful tactical maneuver, though it leaves his flanks exposed.</div>
+            </div>
+
+            <div class="log-entry" data-turn="Turn 21">
+                <div class="log-time">3:41 PM</div>
+                <div class="log-text">Your cavalry charge proves effective against enemy supply lines. The opponent's reinforcements are delayed by two turns.</div>
+            </div>
+
+            <div class="log-entry" data-turn="Turn 20">
+                <div class="log-time">3:38 PM</div>
+                <div class="log-text">A well-executed flanking maneuver allows your forces to gain control of the strategic bridge. The tide of battle begins to shift.</div>
+            </div>
+
+            <div class="log-entry" data-turn="Turn 19">
+                <div class="log-time">3:35 PM</div>
+                <div class="log-text">Enemy forces consolidate their position. Colonel Hartwell demonstrates admirable defensive acumen with his fortress placement.</div>
+            </div>
+
+            <div class="log-entry" data-turn="Turn 18">
+                <div class="log-time">3:32 PM</div>
+                <div class="log-text">Your opening gambit with the northern advance proves prescient. Early territorial gains establish a strong foundation for the campaign.</div>
+            </div>
+        </section>
+    </main>
+
+    <div class="player-info">
+        <div class="player-name">General Montgomery</div>
+        <div class="player-title">Master Tactician</div>
+    </div>
+</body>
+</html>

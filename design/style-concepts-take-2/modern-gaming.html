@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Gaming - Generals</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background:
+                radial-gradient(ellipse at top, #1a1a2e 0%, #16213e 50%, #0f3460 100%),
+                linear-gradient(135deg, #0f0f23 0%, #1a1a2e 25%, #16213e 50%, #0f3460 100%);
+            color: #e94560;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(233, 69, 96, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 173, 181, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(15, 52, 96, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .neon-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                linear-gradient(rgba(0, 173, 181, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 173, 181, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 1;
+            animation: grid-pulse 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes grid-pulse {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.6; }
+        }
+
+        .header {
+            background:
+                linear-gradient(135deg, rgba(15, 15, 35, 0.95) 0%, rgba(26, 26, 46, 0.95) 100%);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid;
+            border-image: linear-gradient(90deg, #e94560, #00adb5, #e94560) 1;
+            padding: 1rem 2rem;
+            position: relative;
+            z-index: 100;
+            box-shadow: 0 4px 32px rgba(233, 69, 96, 0.3);
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #e94560, #00adb5, #e94560);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: logo-glow 3s ease-in-out infinite alternate;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+
+        @keyframes logo-glow {
+            0% {
+                background-position: 0% 50%;
+                filter: drop-shadow(0 0 20px rgba(233, 69, 96, 0.8));
+            }
+            100% {
+                background-position: 100% 50%;
+                filter: drop-shadow(0 0 20px rgba(0, 173, 181, 0.8));
+            }
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: #00adb5;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(233, 69, 96, 0.2), rgba(0, 173, 181, 0.2));
+            transition: width 0.3s ease;
+            z-index: -1;
+        }
+
+        .nav-link:hover::before {
+            width: 100%;
+        }
+
+        .nav-link:hover {
+            color: #ffffff;
+            border-color: #00adb5;
+            text-shadow: 0 0 10px rgba(0, 173, 181, 0.8);
+            box-shadow: 0 0 20px rgba(0, 173, 181, 0.3);
+        }
+
+        .main-content {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .hero-section {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .page-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #e94560, #ffffff, #00adb5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+        }
+
+        .page-subtitle {
+            color: #00adb5;
+            font-size: 1.2rem;
+            font-weight: 400;
+            margin-bottom: 2rem;
+        }
+
+        .gaming-arena {
+            background:
+                linear-gradient(135deg, rgba(15, 15, 35, 0.9) 0%, rgba(26, 26, 46, 0.9) 100%);
+            backdrop-filter: blur(15px);
+            border: 2px solid;
+            border-image: linear-gradient(45deg, #e94560, #00adb5, #e94560) 1;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            box-shadow:
+                0 8px 32px rgba(233, 69, 96, 0.3),
+                inset 0 0 50px rgba(0, 173, 181, 0.1);
+        }
+
+        .gaming-arena::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #e94560, #00adb5, #e94560);
+            border-radius: 16px;
+            z-index: -1;
+            animation: border-glow 3s linear infinite;
+        }
+
+        @keyframes border-glow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .section-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            color: #ffffff;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, #e94560, #00adb5);
+            box-shadow: 0 0 10px rgba(233, 69, 96, 0.8);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-panel {
+            background:
+                linear-gradient(135deg, rgba(233, 69, 96, 0.1) 0%, rgba(0, 173, 181, 0.1) 100%);
+            border: 1px solid rgba(0, 173, 181, 0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .stat-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 173, 181, 0.2), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .stat-panel:hover::before {
+            left: 100%;
+        }
+
+        .stat-panel:hover {
+            transform: translateY(-5px);
+            box-shadow:
+                0 10px 40px rgba(0, 173, 181, 0.4),
+                inset 0 0 20px rgba(233, 69, 96, 0.1);
+            border-color: #00adb5;
+        }
+
+        .stat-label {
+            color: #00adb5;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            color: #ffffff;
+            font-weight: 700;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.8);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-change {
+            color: #00adb5;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.1) 0%, rgba(0, 173, 181, 0.1) 100%);
+            border: 2px solid #00adb5;
+            color: #ffffff;
+            padding: 1rem 1.5rem;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.3) 0%, rgba(0, 173, 181, 0.3) 100%);
+            border-color: #e94560;
+            transform: translateY(-2px);
+            box-shadow:
+                0 10px 30px rgba(233, 69, 96, 0.4),
+                0 0 20px rgba(0, 173, 181, 0.3);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, #e94560 0%, #00adb5 100%);
+            border-color: #e94560;
+            animation: pulse-primary 2s ease-in-out infinite alternate;
+        }
+
+        .btn.primary:hover {
+            background: linear-gradient(135deg, #00adb5 0%, #e94560 100%);
+        }
+
+        @keyframes pulse-primary {
+            0% {
+                box-shadow: 0 0 20px rgba(233, 69, 96, 0.6);
+            }
+            100% {
+                box-shadow: 0 0 40px rgba(233, 69, 96, 0.9);
+            }
+        }
+
+        .match-info {
+            background:
+                linear-gradient(135deg, rgba(15, 15, 35, 0.9) 0%, rgba(26, 26, 46, 0.9) 100%);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 173, 181, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .match-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .match-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(0, 173, 181, 0.1);
+            border: 1px solid rgba(0, 173, 181, 0.2);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .match-item:hover {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: rgba(233, 69, 96, 0.3);
+            box-shadow: 0 4px 20px rgba(233, 69, 96, 0.2);
+        }
+
+        .match-label {
+            color: #00adb5;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .match-value {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .activity-stream {
+            background:
+                linear-gradient(135deg, rgba(15, 15, 35, 0.9) 0%, rgba(26, 26, 46, 0.9) 100%);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 173, 181, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: rgba(0, 173, 181, 0.05);
+            border-left: 3px solid #00adb5;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .activity-item:hover {
+            background: rgba(233, 69, 96, 0.1);
+            border-left-color: #e94560;
+            transform: translateX(5px);
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #e94560, #00adb5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1.2rem;
+            color: #ffffff;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-text {
+            color: #ffffff;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-time {
+            color: #00adb5;
+            font-size: 0.8rem;
+        }
+
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #00adb5;
+            border-radius: 50%;
+            animation: float 20s linear infinite;
+        }
+
+        .particle:nth-child(odd) {
+            background: #e94560;
+            animation-duration: 25s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .performance-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, rgba(233, 69, 96, 0.9), rgba(0, 173, 181, 0.9));
+            border: 1px solid #00adb5;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.9rem;
+            animation: performance-pulse 2s ease-in-out infinite;
+            z-index: 1000;
+        }
+
+        @keyframes performance-pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 20px rgba(0, 173, 181, 0.6);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 30px rgba(233, 69, 96, 0.8);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="neon-grid"></div>
+
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">GENERALS</div>
+            <div class="nav-links">
+                <a href="#" class="nav-link">Arena</a>
+                <a href="#" class="nav-link">Ranked</a>
+                <a href="#" class="nav-link">Esports</a>
+                <a href="#" class="nav-link">Profile</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <h1 class="page-title">BATTLE ARENA</h1>
+            <p class="page-subtitle">Dominate the battlefield in competitive strategy warfare</p>
+        </section>
+
+        <section class="gaming-arena">
+            <h2 class="section-title">PERFORMANCE METRICS</h2>
+
+            <div class="stats-grid">
+                <div class="stat-panel">
+                    <div class="stat-label">Skill Rating</div>
+                    <div class="stat-value">2847</div>
+                    <div class="stat-change">+127 this season</div>
+                </div>
+                <div class="stat-panel">
+                    <div class="stat-label">Win Streak</div>
+                    <div class="stat-value">12</div>
+                    <div class="stat-change">Personal best: 18</div>
+                </div>
+                <div class="stat-panel">
+                    <div class="stat-label">League Rank</div>
+                    <div class="stat-value">#89</div>
+                    <div class="stat-change">Diamond III</div>
+                </div>
+                <div class="stat-panel">
+                    <div class="stat-label">K/D Ratio</div>
+                    <div class="stat-value">3.2</div>
+                    <div class="stat-change">Above average</div>
+                </div>
+            </div>
+
+            <div class="button-grid">
+                <button class="btn primary">FIND MATCH</button>
+                <button class="btn">RANKED QUEUE</button>
+                <button class="btn">TOURNAMENT</button>
+                <button class="btn">PRACTICE</button>
+                <button class="btn">REPLAYS</button>
+                <button class="btn">SETTINGS</button>
+            </div>
+        </section>
+
+        <section class="match-info">
+            <h3 class="section-title">ACTIVE MATCH</h3>
+
+            <div class="match-grid">
+                <div class="match-item">
+                    <span class="match-label">Match ID:</span>
+                    <span class="match-value">GM-X7742</span>
+                </div>
+                <div class="match-item">
+                    <span class="match-label">Opponent:</span>
+                    <span class="match-value">xX_StrategicMind_Xx</span>
+                </div>
+                <div class="match-item">
+                    <span class="match-label">Map:</span>
+                    <span class="match-value">Cyber Wasteland</span>
+                </div>
+                <div class="match-item">
+                    <span class="match-label">Game Mode:</span>
+                    <span class="match-value">Ranked 1v1</span>
+                </div>
+                <div class="match-item">
+                    <span class="match-label">Turn Timer:</span>
+                    <span class="match-value">00:15:42</span>
+                </div>
+                <div class="match-item">
+                    <span class="match-label">Status:</span>
+                    <span class="match-value">YOUR TURN</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="activity-stream">
+            <h3 class="section-title">MATCH HISTORY</h3>
+
+            <div class="activity-item">
+                <div class="activity-icon">🏆</div>
+                <div class="activity-content">
+                    <div class="activity-text">VICTORY vs. CommanderAlpha - Ranked Match</div>
+                    <div class="activity-time">2 hours ago • +24 SR</div>
+                </div>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-icon">⚡</div>
+                <div class="activity-content">
+                    <div class="activity-text">PERFECT GAME - 100% territory control</div>
+                    <div class="activity-time">4 hours ago • Achievement unlocked</div>
+                </div>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-icon">🔥</div>
+                <div class="activity-content">
+                    <div class="activity-text">WIN STREAK MILESTONE - 10 consecutive victories</div>
+                    <div class="activity-time">6 hours ago • Bonus XP awarded</div>
+                </div>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-icon">📈</div>
+                <div class="activity-content">
+                    <div class="activity-text">RANK UP - Promoted to Diamond III</div>
+                    <div class="activity-time">1 day ago • New rank privileges unlocked</div>
+                </div>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-icon">⭐</div>
+                <div class="activity-content">
+                    <div class="activity-text">WEEKLY CHALLENGE COMPLETE - Strategic Genius</div>
+                    <div class="activity-time">2 days ago • 500 XP + exclusive skin</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="floating-particles">
+        <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+        <div class="particle" style="left: 20%; animation-delay: 2s;"></div>
+        <div class="particle" style="left: 30%; animation-delay: 4s;"></div>
+        <div class="particle" style="left: 40%; animation-delay: 6s;"></div>
+        <div class="particle" style="left: 50%; animation-delay: 8s;"></div>
+        <div class="particle" style="left: 60%; animation-delay: 10s;"></div>
+        <div class="particle" style="left: 70%; animation-delay: 12s;"></div>
+        <div class="particle" style="left: 80%; animation-delay: 14s;"></div>
+        <div class="particle" style="left: 90%; animation-delay: 16s;"></div>
+    </div>
+
+    <div class="performance-indicator">98ms</div>
+</body>
+</html>

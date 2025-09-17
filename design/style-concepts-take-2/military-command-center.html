@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Military Command Center - Generals</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: linear-gradient(135deg, #0a0f0a 0%, #1a1f1a 100%);
+            color: #00ff41;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .scan-lines::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 255, 65, 0.03) 2px,
+                rgba(0, 255, 65, 0.03) 4px
+            );
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #001100 0%, #002200 50%, #001100 100%);
+            border-bottom: 2px solid #00ff41;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, #00ff41 50%, transparent 100%);
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #00ff41;
+            text-shadow: 0 0 10px #00ff41;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: #66ff66;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .nav-link:hover::before {
+            left: 100%;
+        }
+
+        .nav-link:hover {
+            border-color: #00ff41;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+            color: #00ff41;
+        }
+
+        .main-content {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .game-lobby {
+            background: linear-gradient(135deg, #0f1f0f 0%, #1a2a1a 100%);
+            border: 2px solid #00ff41;
+            border-radius: 0;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+        }
+
+        .game-lobby::before {
+            content: 'CLASSIFIED';
+            position: absolute;
+            top: 10px;
+            right: 30px;
+            font-size: 0.7rem;
+            color: #ff4444;
+            opacity: 0.6;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            color: #00ff41;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background: #00ff41;
+            box-shadow: 0 0 5px #00ff41;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #001a00 0%, #003300 100%);
+            border: 1px solid #00ff41;
+            padding: 1rem;
+            position: relative;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #66ff66;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            color: #00ff41;
+            font-weight: 700;
+            text-shadow: 0 0 5px #00ff41;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #003300 0%, #006600 100%);
+            border: 2px solid #00ff41;
+            color: #00ff41;
+            padding: 0.75rem 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%, 10px 50%);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.3), transparent);
+            transition: left 0.3s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+            text-shadow: 0 0 10px #00ff41;
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, #004400 0%, #008800 100%);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 5px rgba(0, 255, 65, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(0, 255, 65, 0.6); }
+        }
+
+        .game-metadata {
+            background: linear-gradient(135deg, #001100 0%, #002200 100%);
+            border: 1px solid #00ff41;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metadata-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+        }
+
+        .metadata-row:last-child {
+            border-bottom: none;
+        }
+
+        .metadata-label {
+            color: #66ff66;
+            font-size: 0.9rem;
+        }
+
+        .metadata-value {
+            color: #00ff41;
+            font-weight: 500;
+        }
+
+        .terminal {
+            background: #000;
+            border: 2px solid #00ff41;
+            padding: 1rem;
+            font-size: 0.8rem;
+            height: 200px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .terminal::before {
+            content: 'COMBAT LOG';
+            position: absolute;
+            top: -30px;
+            left: 0;
+            background: #000;
+            color: #00ff41;
+            padding: 0 10px;
+            font-size: 0.7rem;
+        }
+
+        .terminal-line {
+            margin-bottom: 0.5rem;
+            animation: typewriter 0.1s;
+        }
+
+        .terminal-line.error {
+            color: #ff4444;
+        }
+
+        .terminal-line.warning {
+            color: #ffaa00;
+        }
+
+        @keyframes typewriter {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .radar {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 150px;
+            height: 150px;
+            border: 2px solid #00ff41;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 255, 65, 0.1) 0%, transparent 70%);
+            position: relative;
+        }
+
+        .radar::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 50%;
+            background: #00ff41;
+            transform-origin: bottom center;
+            transform: translate(-50%, -100%) rotate(0deg);
+            animation: radar-sweep 3s linear infinite;
+        }
+
+        @keyframes radar-sweep {
+            0% { transform: translate(-50%, -100%) rotate(0deg); }
+            100% { transform: translate(-50%, -100%) rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="scan-lines">
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">>>> GENERALS.CMD</div>
+            <div class="nav-links">
+                <a href="#" class="nav-link">LOBBY</a>
+                <a href="#" class="nav-link">GAMES</a>
+                <a href="#" class="nav-link">STATS</a>
+                <a href="#" class="nav-link">CONFIG</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <section class="game-lobby">
+            <h2 class="section-title">Mission Briefing</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Active Operations</div>
+                    <div class="stat-value">147</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Combat Rating</div>
+                    <div class="stat-value">2,847</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Victories</div>
+                    <div class="stat-value">089</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Territory Held</div>
+                    <div class="stat-value">64.2%</div>
+                </div>
+            </div>
+
+            <div class="button-grid">
+                <button class="btn primary">Deploy Forces</button>
+                <button class="btn">Intelligence</button>
+                <button class="btn">Logistics</button>
+                <button class="btn">Communications</button>
+                <button class="btn">Reconnaissance</button>
+                <button class="btn">Exit Mission</button>
+            </div>
+        </section>
+
+        <section class="game-metadata">
+            <h3 class="section-title">Operation Status</h3>
+            <div class="metadata-row">
+                <span class="metadata-label">MISSION ID:</span>
+                <span class="metadata-value">OP-7742-ALPHA</span>
+            </div>
+            <div class="metadata-row">
+                <span class="metadata-label">COMMANDER:</span>
+                <span class="metadata-value">GEN.PLAYER_01</span>
+            </div>
+            <div class="metadata-row">
+                <span class="metadata-label">THREAT LEVEL:</span>
+                <span class="metadata-value">MODERATE</span>
+            </div>
+            <div class="metadata-row">
+                <span class="metadata-label">ETA:</span>
+                <span class="metadata-value">00:15:42</span>
+            </div>
+            <div class="metadata-row">
+                <span class="metadata-label">UPLINK STATUS:</span>
+                <span class="metadata-value">SECURE</span>
+            </div>
+        </section>
+
+        <section class="terminal">
+            <div class="terminal-line">[12:34:01] >>> Establishing secure connection...</div>
+            <div class="terminal-line">[12:34:02] >>> Connection established. Welcome, Commander.</div>
+            <div class="terminal-line">[12:34:15] >>> Enemy movement detected in sector 7-G</div>
+            <div class="terminal-line warning">[12:34:23] >>> WARNING: Low ammunition in forward units</div>
+            <div class="terminal-line">[12:34:31] >>> Reinforcements deployed to grid reference Alpha-4</div>
+            <div class="terminal-line error">[12:34:45] >>> ALERT: Communication lost with Bravo squad</div>
+            <div class="terminal-line">[12:34:52] >>> Tactical advantage gained in eastern territory</div>
+            <div class="terminal-line">[12:35:01] >>> Awaiting orders...</div>
+        </section>
+    </main>
+
+    <div class="radar"></div>
+</body>
+</html>

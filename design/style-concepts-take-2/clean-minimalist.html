@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clean Minimalist - Generals</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #fafbfc;
+            color: #2d3748;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a202c;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: #4a5568;
+            text-decoration: none;
+            font-weight: 400;
+            transition: color 0.2s ease;
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #4299e1;
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: #2d3748;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 1rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            color: #718096;
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+        }
+
+        .game-lobby {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #718096;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            color: #2d3748;
+            font-weight: 600;
+        }
+
+        .stat-trend {
+            font-size: 0.75rem;
+            color: #38a169;
+            margin-top: 0.25rem;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .btn {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            color: #4a5568;
+            padding: 0.75rem 1.5rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+        }
+
+        .btn:hover {
+            background: #f7fafc;
+            border-color: #cbd5e0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn.primary {
+            background: #4299e1;
+            color: #ffffff;
+            border-color: #4299e1;
+        }
+
+        .btn.primary:hover {
+            background: #3182ce;
+            border-color: #3182ce;
+        }
+
+        .btn.secondary {
+            background: #38a169;
+            color: #ffffff;
+            border-color: #38a169;
+        }
+
+        .btn.secondary:hover {
+            background: #2f855a;
+            border-color: #2f855a;
+        }
+
+        .game-metadata {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .metadata-item {
+            padding: 1rem;
+            border-radius: 6px;
+            background: #f7fafc;
+        }
+
+        .metadata-label {
+            color: #718096;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .metadata-value {
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .activity-feed {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e6fffa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .activity-icon.success {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .activity-icon.warning {
+            background: #fefcbf;
+            color: #d69e2e;
+        }
+
+        .activity-icon.info {
+            background: #bee3f8;
+            color: #3182ce;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-text {
+            color: #2d3748;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-time {
+            color: #a0aec0;
+            font-size: 0.75rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-indicator.online {
+            background: #38a169;
+        }
+
+        .status-indicator.away {
+            background: #d69e2e;
+        }
+
+        .status-indicator.offline {
+            background: #a0aec0;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-action {
+            color: #4299e1;
+            font-size: 0.875rem;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .card-action:hover {
+            color: #3182ce;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4299e1;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">Generals</div>
+            <div class="nav-links">
+                <a href="#" class="nav-link">Play</a>
+                <a href="#" class="nav-link">Matches</a>
+                <a href="#" class="nav-link">Leaderboard</a>
+                <a href="#" class="nav-link">Profile</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <h1 class="page-title">Game Lobby</h1>
+        <p class="page-subtitle">Join a match or create your own game to start playing</p>
+
+        <section class="game-lobby">
+            <div class="card-header">
+                <h2 class="section-title">Quick Stats</h2>
+                <a href="#" class="card-action">View detailed stats →</a>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Games Played</div>
+                    <div class="stat-value">142</div>
+                    <div class="stat-trend">+12 this week</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Win Rate</div>
+                    <div class="stat-value">68%</div>
+                    <div class="stat-trend">+5% this month</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Current Rank</div>
+                    <div class="stat-value">#247</div>
+                    <div class="stat-trend">↑ 15 positions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Territory Avg</div>
+                    <div class="stat-value">62.4%</div>
+                    <div class="stat-trend">+2.1% improvement</div>
+                </div>
+            </div>
+
+            <div class="button-grid">
+                <button class="btn primary">Quick Match</button>
+                <button class="btn secondary">Create Game</button>
+                <button class="btn">Browse Games</button>
+                <button class="btn">Practice vs AI</button>
+                <button class="btn">Tutorial</button>
+                <button class="btn">Settings</button>
+            </div>
+        </section>
+
+        <section class="game-metadata">
+            <div class="card-header">
+                <h3 class="section-title">Active Games</h3>
+                <a href="#" class="card-action">View all →</a>
+            </div>
+
+            <div class="metadata-grid">
+                <div class="metadata-item">
+                    <div class="metadata-label">Game ID</div>
+                    <div class="metadata-value">GM-7742</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">Opponent</div>
+                    <div class="metadata-value">
+                        <span class="status-indicator online"></span>
+                        Player_2847
+                    </div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">Map</div>
+                    <div class="metadata-value">Highlands Valley</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">Turn Timer</div>
+                    <div class="metadata-value">00:15:42</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 68%"></div>
+                    </div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">Status</div>
+                    <div class="metadata-value">Your Turn</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">Started</div>
+                    <div class="metadata-value">5 minutes ago</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="activity-feed">
+            <div class="card-header">
+                <h3 class="section-title">Recent Activity</h3>
+                <a href="#" class="card-action">View all activity →</a>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-icon success">✓</div>
+                <div class="activity-content">
+                    <div class="activity-text">Victory against Commander_Alpha in ranked match</div>
+                    <div class="activity-time">2 hours ago</div>
+                </div>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-icon info">⚡</div>
+                <div class="activity-content">
+                    <div class="activity-text">New personal best: 89% territory controlled</div>
+                    <div class="activity-time">5 hours ago</div>
+                </div>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-icon warning">⚠</div>
+                <div class="activity-content">
+                    <div class="activity-text">Timeout loss against Strategic_Mind - connection issues</div>
+                    <div class="activity-time">1 day ago</div>
+                </div>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-icon success">🏆</div>
+                <div class="activity-content">
+                    <div class="activity-text">Achieved rank milestone: Top 250 players</div>
+                    <div class="activity-time">2 days ago</div>
+                </div>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-icon info">📊</div>
+                <div class="activity-content">
+                    <div class="activity-text">Weekly stats: 12 games played, 8 victories</div>
+                    <div class="activity-time">3 days ago</div>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
