@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/shallow';
 
+import { isEnded } from '@core/game';
 import type { GameWithPlayers } from '@common/types/games';
 import type { PlayerIndex } from '@common/types/player';
 import { PRE_GAME_COUNTDOWN_SECONDS } from '@core/ui-timing-config';
+
 import {
   loadGame as apiLoadGame,
   GameNotFoundError,
@@ -19,10 +21,12 @@ interface GameMetadataState {
   countdownActive: boolean;
   countdownSeconds: number;
 
-  // Dynamic gameplay metadata (updated by GameUI)
-  isGameEnded: boolean;
+  // TODO: should derive `winner` from game object instead of separate state
   winner: number | null;
   playerMapping: { playerId: string; playerIndex: PlayerIndex }[] | null;
+
+  // helpers
+  isGameEnded: () => boolean;
 
   // Actions
   actions: {
@@ -32,7 +36,7 @@ interface GameMetadataState {
     setError: (error: string | null) => void;
     setCountdownActive: (active: boolean) => void;
     setCountdownSeconds: (seconds: number) => void;
-    setGameEnded: (winner: number) => void;
+    setWinner: (winner: number) => void;
     setPlayerMapping: (
       mapping: { playerId: string; playerIndex: PlayerIndex }[],
     ) => void;
@@ -50,9 +54,14 @@ const gameMetadataStore = create<GameMetadataState>((set, get) => ({
   countdownSeconds: PRE_GAME_COUNTDOWN_SECONDS,
 
   // Dynamic gameplay metadata
-  isGameEnded: false,
   winner: null,
   playerMapping: null,
+
+  // helpers
+  isGameEnded: () => {
+    const game = get().game;
+    return game ? isEnded(game) : false;
+  },
 
   actions: {
     loadGame: async (gameId: string) => {
@@ -115,7 +124,7 @@ const gameMetadataStore = create<GameMetadataState>((set, get) => ({
       set({ countdownSeconds: seconds });
     },
 
-    setGameEnded: (winner: number) => set({ isGameEnded: true, winner }),
+    setWinner: (winner: number) => set({ winner }),
 
     setPlayerMapping: (
       mapping: { playerId: string; playerIndex: number }[],
@@ -136,6 +145,16 @@ const useGameLoadingState = () => {
   );
 };
 
+// TODO: resolve duplication of this in gameplay-store-v2
+function useIsGameEnded(state: GameMetadataState): boolean {
+  return state.isGameEnded();
+}
+
 const useGameMetadataStore = gameMetadataStore;
 
-export { gameMetadataStore, useGameMetadataStore, useGameLoadingState };
+export {
+  gameMetadataStore,
+  useGameMetadataStore,
+  useGameLoadingState,
+  useIsGameEnded,
+};

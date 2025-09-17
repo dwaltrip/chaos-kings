@@ -5,6 +5,7 @@ import { userStore } from '@/stores/user-store';
 import {
   gameMetadataStore,
   useGameLoadingState,
+  useIsGameEnded,
 } from '@/stores/game-metadata-store';
 import { GameChat } from '@/pages/game/game-chat/game-chat';
 import { PlayerColors } from '@/pages/game/player-colors';
@@ -38,7 +39,7 @@ function GamePageContent({ gameId }: { gameId: string }) {
 
   const countdownActive = gameMetadataStore((state) => state.countdownActive);
   const countdownSeconds = gameMetadataStore((state) => state.countdownSeconds);
-  const isGameEnded = gameMetadataStore((state) => state.isGameEnded);
+  const isGameEnded = gameMetadataStore(useIsGameEnded);
   const winner = gameMetadataStore((state) => state.winner);
   const playerMapping = gameMetadataStore((state) => state.playerMapping);
   const { actions } = gameMetadataStore.getState();

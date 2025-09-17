@@ -23,6 +23,7 @@ function updateForGameEnded(finalBoardState: BoardState, winner: PlayerIndex) {
   setWinner(winner);
 
   // All squares visible at end of game, so we reset to empty set (slightly counterintuitive)
+  // maybe there's a better way to do this.
   setVisibleSquares(new Set<string>());
   useGameplayStoreV2.getState().actions.clearSelectedTile();
 }
