@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Esports Dashboard – Generals v2 UI Concept</title>
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --panel: #12141a;
+      --card: #171a21;
+      --line: #232733;
+      --text: #f1f5f9;
+      --muted: #9aa4b2;
+      --blue: #4f46e5;
+      --pink: #ec4899;
+      --green: #10b981;
+    }
+    * { box-sizing: border-box }
+    html, body { height: 100% }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans";
+      color: var(--text);
+      background: var(--bg);
+    }
+    .topbar {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 18px; border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #0d0f15, #0b0c10);
+    }
+    .brand { font-weight: 800; letter-spacing: .02em }
+    .nav { display: flex; gap: 10px }
+    .pill {
+      padding: 8px 12px; border-radius: 999px;
+      border: 1px solid var(--line); background: #12141a; color: var(--text);
+      letter-spacing: .02em; cursor: pointer;
+      transition: border-color .12s ease, background .12s ease;
+    }
+    .pill:hover { border-color: #343a46; background: #151822 }
+    .pill.primary { background: var(--blue); border-color: #3e38c7 }
+    .content { max-width: 1200px; margin: 18px auto; padding: 0 18px }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px;
+    }
+    .card h3 { margin: 0 0 8px; font-size: 16px }
+    .tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 4px 8px; border-radius: 999px; font-size: 12px;
+      border: 1px solid var(--line); color: var(--muted);
+    }
+    .tag.pink { color: var(--pink); border-color: rgba(236,72,153,.5) }
+    .tag.green { color: var(--green); border-color: rgba(16,185,129,.5) }
+    .actions { display: flex; gap: 8px; margin-top: 10px }
+    .kbd { padding: 2px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; font-size: 12px; color: var(--muted) }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Generals v2</div>
+    <nav class="nav" aria-label="Primary">
+      <button class="pill">Play</button>
+      <button class="pill">Leaderboard</button>
+      <button class="pill">Teams</button>
+      <button class="pill">Profile</button>
+      <button class="pill primary">Go Live</button>
+    </nav>
+  </header>
+
+  <main class="content">
+    <section class="grid">
+      <div class="card">
+        <h3>Live Match</h3>
+        <div class="tag pink">LIVE</div>
+        <div style="margin-top:8px; color: var(--muted)">Best of 3 • 1v1 • <span id="match-time">00:00</span></div>
+        <div class="actions">
+          <button class="pill">Spectators: <span id="spec">12</span></button>
+          <button class="pill">Watch</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Party</h3>
+        <div style="color: var(--muted)">Invite friends and queue together</div>
+        <div class="actions">
+          <button class="pill">Invite</button>
+          <button class="pill">Copy Link</button>
+        </div>
+        <div style="margin-top: 8px">
+          <span class="tag green">2 / 4</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>News</h3>
+        <ul style="padding-left: 18px; margin: 8px 0 0; color: var(--muted)">
+          <li>Patch 0.2.1 improves city growth pacing.</li>
+          <li>New stats page with per-tile heatmaps.</li>
+          <li>Queue stability updates and bug fixes.</li>
+        </ul>
+      </div>
+    </section>
+    <section style="margin-top: 14px" class="grid">
+      <div class="card">
+        <h3>Quick Actions</h3>
+        <div class="actions">
+          <button class="pill">Start Queue <span class="kbd">Q</span></button>
+          <button class="pill">Custom Lobby <span class="kbd">C</span></button>
+          <button class="pill">Practice <span class="kbd">P</span></button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Stats</h3>
+        <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:8px; margin-top:8px">
+          <div><div class="tag">ELO</div><div style="margin-top:6px; font-size:20px">1473</div></div>
+          <div><div class="tag">WR</div><div style="margin-top:6px; font-size:20px">58%</div></div>
+          <div><div class="tag">Matches</div><div style="margin-top:6px; font-size:20px">122</div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Tiny demo to simulate live-updating metadata
+    (function(){
+      const t0 = Date.now();
+      const timeEl = document.getElementById('match-time');
+      const specEl = document.getElementById('spec');
+      let spectators = 12;
+      setInterval(() => {
+        const d = Math.floor((Date.now() - t0) / 1000);
+        const m = String(Math.floor(d / 60)).padStart(2,'0');
+        const s = String(d % 60).padStart(2,'0');
+        if (timeEl) timeEl.textContent = `${m}:${s}`;
+        spectators = spectators + (Math.random() > 0.6 ? 1 : 0);
+        if (specEl) specEl.textContent = String(spectators);
+      }, 1000);
+    })();
+  </script>
+</body>
+</html>
+

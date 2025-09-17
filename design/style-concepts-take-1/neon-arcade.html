@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neon Arcade – Generals v2 UI Concept</title>
+  <style>
+    :root {
+      --bg: #0a0d14;
+      --panel: rgba(20, 24, 35, 0.6);
+      --neon-cyan: #00e5ff;
+      --neon-pink: #ff3bf0;
+      --text: #e6f1ff;
+      --muted: #8aa0b7;
+    }
+    * { box-sizing: border-box }
+    html, body { height: 100% }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 20% -10%, rgba(0, 229, 255, 0.12), transparent 60%),
+        radial-gradient(1200px 600px at 80% 110%, rgba(255, 59, 240, 0.12), transparent 60%),
+        var(--bg);
+    }
+    .container { max-width: 1100px; margin: 40px auto 90px; padding: 0 20px }
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-radius: 14px;
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.2), 0 10px 30px rgba(0,0,0,0.35);
+    }
+    .logo { font-weight: 700; letter-spacing: 0.5px }
+    .actions { display: flex; gap: 10px }
+    .btn {
+      position: relative;
+      padding: 10px 14px; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.2));
+      backdrop-filter: blur(6px);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.03) inset, 0 8px 20px rgba(0,0,0,0.35);
+      cursor: pointer;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+    .btn:focus { outline: none; box-shadow: 0 0 0 2px rgba(0,229,255,0.4) }
+    .btn:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.2) }
+    .btn.primary {
+      color: #001015;
+      background: linear-gradient(180deg, rgba(0,229,255,0.9), rgba(0,178,216,0.9));
+      border-color: rgba(0,229,255,0.6);
+      box-shadow: 0 0 20px rgba(0,229,255,0.35), 0 10px 30px rgba(0,229,255,0.15);
+    }
+    .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px }
+    .chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 10px; border-radius: 999px;
+      background: rgba(10, 20, 35, 0.6);
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(6px);
+      font-size: 13px; color: var(--muted);
+    }
+    .chip.glow-cyan { box-shadow: 0 0 14px rgba(0,229,255,0.35); color: var(--neon-cyan); border-color: rgba(0,229,255,0.5) }
+    .chip.glow-pink { box-shadow: 0 0 14px rgba(255,59,240,0.35); color: var(--neon-pink); border-color: rgba(255,59,240,0.5) }
+    .section {
+      margin-top: 22px; padding: 18px 20px; border-radius: 14px;
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(10px);
+    }
+    .section h2 { margin: 0 0 10px; font-size: 16px; letter-spacing: 0.4px }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 14px }
+    .card {
+      padding: 14px; border-radius: 12px; background: rgba(13,17,27,0.7);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .bottom-dock {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      bottom: 16px; display: flex; gap: 10px; align-items: center;
+      padding: 10px 12px; border-radius: 999px;
+      background: rgba(12,16,24,0.7);
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 30px rgba(0,229,255,0.12);
+    }
+    .dock-btn {
+      width: 46px; height: 46px; border-radius: 999px; display: grid; place-items: center;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.25));
+      cursor: pointer;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+    .dock-btn:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.2) }
+    .dock-btn.active {
+      color: #001015;
+      background: linear-gradient(180deg, rgba(255,59,240,0.95), rgba(194,0,171,0.95));
+      border-color: rgba(255,59,240,0.6);
+      box-shadow: 0 0 18px rgba(255,59,240,0.4);
+    }
+    .small { font-size: 12px; color: var(--muted) }
+  </style>
+  <!-- No external assets required; emojis used for icons -->
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="logo">Generals v2</div>
+        <div class="actions">
+          <button class="btn">Settings</button>
+          <button class="btn primary">Find Match</button>
+        </div>
+      </div>
+
+      <div class="meta">
+        <span class="chip glow-cyan">⚔️ Rank: Diamond IV</span>
+        <span class="chip glow-pink">📈 ELO: 1473</span>
+        <span class="chip">⏳ Queue ETA: 00:24</span>
+        <span class="chip">👥 Party: 2/2</span>
+      </div>
+
+      <div class="section">
+        <h2>Featured</h2>
+        <div class="card-grid">
+          <div class="card">
+            <div style="font-weight:600">Season Rewards</div>
+            <div class="small">Unlock skins by winning 10 matches.</div>
+          </div>
+          <div class="card">
+            <div style="font-weight:600">Daily Challenge</div>
+            <div class="small">Capture 30 tiles in under 2 minutes.</div>
+          </div>
+          <div class="card">
+            <div style="font-weight:600">Patch 0.2.1</div>
+            <div class="small">Balance tuned for city growth rates.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="bottom-dock" aria-label="Primary">
+      <button class="dock-btn active" title="Home">🏠</button>
+      <button class="dock-btn" title="Play">🎮</button>
+      <button class="dock-btn" title="Friends">👥</button>
+      <button class="dock-btn" title="Profile">👤</button>
+    </nav>
+  </body>
+</html>
+
