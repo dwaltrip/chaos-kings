@@ -11,11 +11,11 @@ import { blankSquare, isGeneralSquare, isMountainSquare } from '@core/square';
 // Could be a TS utility type
 // ------------------------------------------------------
 
-// Phase 1: Only primitive state (no objects requiring useShallow)
 interface TileStoreState {
   square: Square;
   isSelected: boolean;
-  queuedMoves: Set<Direction>; // Already useShallow compatible
+  // TODO: rename to queuedDirections?
+  queuedMoves: Set<Direction>;
 
   // Helpers
   getIsGeneral: () => boolean;
@@ -27,9 +27,9 @@ interface TileStoreState {
   addQueuedMove: (move: Direction) => void;
 }
 
-function createTileStore(coord: Coord) {
+function createTileStore(pos: Coord) {
   return create<TileStoreState>((set, get) => ({
-    square: blankSquare(coord),
+    square: blankSquare(pos),
     isSelected: false,
     queuedMoves: new Set(),
 
@@ -51,12 +51,18 @@ function createTileStore(coord: Coord) {
 // Global registry
 const tileStoreRegistry = new Map<string, ReturnType<typeof createTileStore>>();
 
-export const getTileStore = (coord: Coord) => {
-  const key = serializeCoord(coord);
+const getTileStore = (pos: Coord) => {
+  const key = serializeCoord(pos);
   if (!tileStoreRegistry.has(key)) {
-    tileStoreRegistry.set(key, createTileStore(coord));
+    tileStoreRegistry.set(key, createTileStore(pos));
   }
   return tileStoreRegistry.get(key)!;
 };
 
+const cleanupTileStore = (pos: Coord) => {
+  const key = serializeCoord(pos);
+  tileStoreRegistry.delete(key);
+};
+
+export { getTileStore, cleanupTileStore };
 export type { TileStoreState };

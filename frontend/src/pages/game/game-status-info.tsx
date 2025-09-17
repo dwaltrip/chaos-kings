@@ -6,20 +6,17 @@ interface GameStatusInfoProps {
   game: GameWithPlayers;
   isGameEnded: boolean;
   winner: number | null;
-  endReason: 'general_captured' | 'timeout' | 'disconnect' | null;
   playerMapping: { playerId: string; playerIndex: number }[] | null;
 }
 
 interface WinnerInfo {
   playerName: string;
-  reason: string;
 }
 
 function GameStatusInfo({
   game,
   isGameEnded,
   winner,
-  endReason,
   playerMapping,
 }: GameStatusInfoProps) {
   const gameStatus = useMemo(() => {
@@ -45,9 +42,8 @@ function GameStatusInfo({
       playerName: winnerPlayer
         ? `Player ${winnerPlayer.player_id}`
         : `Player ${winner}`,
-      reason: endReason || 'unknown',
     };
-  }, [isGameEnded, winner, playerMapping, game.players, endReason]);
+  }, [isGameEnded, winner, playerMapping, game.players]);
 
   return (
     <>
@@ -56,7 +52,7 @@ function GameStatusInfo({
       </span>
       {winnerInfo && (
         <span>
-          <strong>Winner:</strong> {winnerInfo.playerName} ({winnerInfo.reason})
+          <strong>Winner:</strong> {winnerInfo.playerName}
         </span>
       )}
     </>

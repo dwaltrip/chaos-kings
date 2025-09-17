@@ -1,53 +1,20 @@
 import type { BoardState, Coord, Direction } from '@core/types';
-import {
-  gameMetadataStore,
-  getCurrentPlayerIndex,
-} from '@/stores/game-metadata-store';
 import { Board } from '@core/board';
-import type { GameWithPlayers } from '@common/types/games';
-
-// ---------------------------------------------------------
-// TODO: User.id is a different type in @common vs this type
-// Need to fix / clean up id types
-// ---------------------------------------------------------
-import type { User } from '@/services/user-service';
-import { getWebSocketService } from '@/services/websocket-service';
 import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
-import { gameplayStore } from '@/game-ui/store/gameplay-store';
-import { userStore } from '@/stores/user-store';
+
+import { getWebSocketService } from '@/services/websocket-service';
 import { useGameplayStoreV2 } from '@/game-ui/store/gameplay-store-v2';
 
-const { actions } = gameplayStore.getState();
+const { setSelectedTileV2, addQueuedMove } =
+  useGameplayStoreV2.getState().actions;
 
-// TODO: temp wrapper while we refactor
-// the frontend stores / actions
-// on gameplay page
-function queueMove(direction: Direction, selectedTile: Coord | null) {
-  const state = gameplayStore.getState();
-  const { boardState } = state;
-  const game = gameMetadataStore.getState().game;
-  const user = userStore.getState().user;
-  if (!boardState || !game || !user) {
-    throw Error('Missing required state for move request');
-  }
-  _queueMove(direction, selectedTile, boardState, game, user);
-}
-
-function _queueMove(
+function queueMove(
   direction: Direction,
   selectedTile: Coord | null,
-  boardState: BoardState,
-  game: GameWithPlayers,
-  user: User,
+  board: BoardState,
 ) {
   if (!selectedTile) {
-    console.warn('Cannot move: no tile selected');
-    return;
-  }
-
-  const currentPlayerIndex = getCurrentPlayerIndex(game, user.id);
-  if (currentPlayerIndex === null) {
-    console.warn('Cannot move: unable to determine current player');
+    console.debug('Cannot move: no tile selected');
     return;
   }
 
@@ -55,14 +22,14 @@ function _queueMove(
   // 1. The UI should prevent invalid moves
   // 2. The server will reject invalid moves anyway
   // TODO: remove it?
-  if (!Board.canMove(boardState, selectedTile, direction)) {
+  if (!Board.canMove(board, selectedTile, direction)) {
     return;
   }
 
   // Immediately add to local queue for instant arrow feedback
-  actions.addQueuedMove(selectedTile, direction);
-  // Follow the army to its destination
-  followArmyMovement(selectedTile, direction);
+  addQueuedMove({ sourceCoord: selectedTile, direction });
+  // Move selected tile to the new target tile
+  setSelectedTileV2(Board.applyDirection(selectedTile, direction));
 
   // Send to server
   const wsService = getWebSocketService();
@@ -74,30 +41,6 @@ function _queueMove(
       direction,
     },
   });
-}
-
-const {
-  actions: { setSelectedTileV2 },
-} = useGameplayStoreV2.getState();
-
-function followArmyMovement(src: Coord, direction: Direction): void {
-  const { boardState } = gameplayStore.getState();
-  if (!boardState) {
-    return;
-  }
-  const dest = Board.applyDirection(src, direction);
-
-  // Only update selection if the destination is valid and the source matches current selection
-  const selectedTile = useGameplayStoreV2.getState().selectedTile;
-  // TODO: we don't need the entire board state to do a bounds check...
-  if (
-    Board.isCoordValid(boardState, dest) &&
-    selectedTile &&
-    selectedTile.x === src.x &&
-    selectedTile.y === src.y
-  ) {
-    setSelectedTileV2(dest);
-  }
 }
 
 export { queueMove };

@@ -1,13 +1,10 @@
 import type { WsMessage } from '@common/types/websockets';
 import type { GameplayMessageType, Gameplay } from '@common/types/gameplay';
-import { GameStatus } from '@common/types/games';
-import { gameplayStore } from '@/game-ui/store/gameplay-store';
-import { gameMetadataStore } from '@/stores/game-metadata-store';
-import { getCurrentPlayerIndex } from '@/stores/game-metadata-store';
-import { userStore } from '@/stores/user-store';
-import { useGameplayStoreV2 } from '@/game-ui/store/gameplay-store-v2';
 
-const { actions } = gameplayStore.getState();
+import { updateForGameStarting } from '@/game-ui/actions/update-for-game-starting';
+import { updateForGameStart } from '@/game-ui/actions/update-for-game-start';
+import { updateGameplayState } from '@/game-ui/actions/update-gameplay-state';
+import { updateForGameEnded } from '@/game-ui/actions/update-for-game-ended';
 
 const GameplayWsHandler = {
   handleMessage: (data: WsMessage) => {
@@ -17,118 +14,34 @@ const GameplayWsHandler = {
       case 'game-starting':
         const gameStartingPayload =
           data.payload as Gameplay.GameStarting['payload'];
-        const metadataActions = gameMetadataStore.getState().actions;
-        metadataActions.setCountdownActive(true);
-        metadataActions.setCountdownSeconds(gameStartingPayload.countdown);
-        console.log('[gameplay] Game countdown:', gameStartingPayload);
+        updateForGameStarting(gameStartingPayload.countdown);
+        console.log(
+          '[gameplay-ws-handler] Game starting update (countdown seconds)',
+        );
         break;
 
       case 'game-started':
         const gameStartedPayload =
           data.payload as Gameplay.GameStarted['payload'];
-        // Stop countdown when game actually starts
-        const metadataActionsStarted = gameMetadataStore.getState().actions;
-        metadataActionsStarted.setCountdownActive(false);
-
-        metadataActionsStarted.setGame(gameStartedPayload.game);
-        console.log(
-          '[gameplay] Updated game object from backend:',
+        console.log('[gameplay-ws-handler] Game started');
+        updateForGameStart(
           gameStartedPayload.game,
-        );
-
-        // Initialize gameplay state
-        actions.setGameId(gameStartedPayload.gameId);
-        actions.setPlayerMapping(gameStartedPayload.playerMapping);
-
-        // Get currentPlayerIndex for visible squares computation
-        const gameForStarted = gameMetadataStore.getState().game;
-        const userForStarted = userStore.getState().user;
-        const currentPlayerIndex = getCurrentPlayerIndex(
-          gameForStarted,
-          userForStarted?.id ?? null,
-        );
-
-        actions.setBoardState(
           gameStartedPayload.boardState,
-          currentPlayerIndex,
+          gameStartedPayload.playerMapping,
         );
-        // Also update v2 store
-        useGameplayStoreV2
-          .getState()
-          .actions.setBoardState(
-            gameStartedPayload.boardState,
-            currentPlayerIndex,
-          );
-        console.log('[gameplay] Game started:', gameStartedPayload);
         break;
 
       case 'game-state-update':
-        const updatePayload =
+        const { boardState, tick, playerQueues } =
           data.payload as Gameplay.GameStateUpdate['payload'];
-
-        // Get currentPlayerIndex for both visible squares and queue updates
-        const gameForUpdate = gameMetadataStore.getState().game;
-        const userForUpdate = userStore.getState().user;
-        const currentPlayerIndexUpdate = getCurrentPlayerIndex(
-          gameForUpdate,
-          userForUpdate?.id ?? null,
-        );
-
-        actions.setBoardState(
-          updatePayload.boardState,
-          currentPlayerIndexUpdate,
-        );
-        // Also update v2 store
-        useGameplayStoreV2
-          .getState()
-          .actions.setBoardState(
-            updatePayload.boardState,
-            currentPlayerIndexUpdate,
-          );
-        actions.setTick(updatePayload.tick);
-
-        // Handle queue updates
-        if (updatePayload.playerQueues) {
-          const myQueue =
-            currentPlayerIndexUpdate !== null
-              ? updatePayload.playerQueues[currentPlayerIndexUpdate] || []
-              : [];
-          actions.setQueuedMovesFromArray(myQueue);
-        }
+        updateGameplayState(tick, boardState, playerQueues || {});
         break;
 
       case 'game-ended':
-        const endedPayload = data.payload as Gameplay.GameEnded['payload'];
-        // Update game status to complete and timestamp
-        const metadataActionsEnded = gameMetadataStore.getState().actions;
-        metadataActionsEnded.updateGame({
-          status: GameStatus.COMPLETE,
-          updated_at: new Date().toISOString(),
-        });
-
-        // Get currentPlayerIndex for visible squares computation
-        const gameForEnded = gameMetadataStore.getState().game;
-        const userForEnded = userStore.getState().user;
-        const currentPlayerIndexEnded = getCurrentPlayerIndex(
-          gameForEnded,
-          userForEnded?.id ?? null,
-        );
-
-        actions.setBoardState(
-          endedPayload.finalBoardState,
-          currentPlayerIndexEnded,
-        );
-        // Also update v2 store
-        useGameplayStoreV2
-          .getState()
-          .actions.setBoardState(
-            endedPayload.finalBoardState,
-            currentPlayerIndexEnded,
-          );
-        actions.setGameEnded(endedPayload.winner, endedPayload.reason);
-        // woot woot
-        useGameplayStoreV2.getState().actions.clearSelectedTile();
-        console.log('[gameplay] Game ended:', endedPayload);
+        const { finalBoardState, winner } =
+          data.payload as Gameplay.GameEnded['payload'];
+        updateForGameEnded(finalBoardState, winner);
+        console.log('[gameplay-ws-handler] Game ended');
         break;
 
       default:

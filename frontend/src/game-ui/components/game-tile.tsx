@@ -13,6 +13,7 @@ import {
 import {
   useGameplayStoreV2,
   useIsAdjacentToSelected,
+  useIsGameEnded,
   useIsTileSelected,
 } from '@/game-ui/store/gameplay-store-v2';
 import {
@@ -47,6 +48,7 @@ const GameTile = React.memo(
     const row = coord.y;
     const col = coord.x;
 
+    const isGameEnded = useGameplayStoreV2(useIsGameEnded);
     const square = useTileSquare(coord);
     const isSelected = useGameplayStoreV2(useIsTileSelected(coord));
     const selectTileV2 = () => setSelectedTileV2(coord);
@@ -55,14 +57,12 @@ const GameTile = React.memo(
     );
 
     const queuedMoves = useTileQueuedMovesV2(coord);
-
     const isVisible = useGameplayStoreV2(useIsVisible(coord));
     const neighborVisibility = useGameplayStoreV2(useNeighborVisibility(coord));
 
     const playerSquare = square as PlayerSquare;
     const { isMountain, isGeneral } = useTileSquareTypes(coord);
 
-    const isGameEnded = useGameplayStoreV2((state) => state.isGameEnded);
     const isSelectable = !isGameEnded && !(isMountain || isSelected);
     const isPlayer = 'playerIndex' in square;
     const isValidMove = isNeighborOfSelected && !isMountain;

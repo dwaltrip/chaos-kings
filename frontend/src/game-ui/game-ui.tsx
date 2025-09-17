@@ -1,22 +1,20 @@
 import type { Direction } from '@core/types';
+import { isEnded } from '@core/game';
 
 import { useKeyboardControls } from '@/game-ui/hooks/use-keyboard-controls';
-import {
-  useBoardState,
-  useGameplayState,
-} from '@/game-ui/hooks/use-gameplay-state';
 import { GameBoard } from '@/game-ui/components/game-board';
 import { queueMove } from '@/game-ui/actions/queue-move';
 import { undoLastQueuedMove } from '@/game-ui/actions/undo-last-queued-move';
 import { cancelQueuedMoves } from '@/game-ui/actions/cancel-queued-moves';
 import {
+  useBoardState,
+  useGameplayGame,
   useGameplayStoreV2,
   useSelectedTile,
 } from '@/game-ui/store/gameplay-store-v2';
 
 import '@/game-ui/game-page.css';
 import '@/game-ui/game-tile.css';
-import { useCurrentPlayerIndex } from '@/stores/game-metadata-store';
 
 interface GameUIProps {
   gameId: number | null;
@@ -25,28 +23,27 @@ interface GameUIProps {
 // TODO: remove `gameId` if not needed
 // -----------------------------------
 function GameUI({ gameId: _gameId }: GameUIProps) {
-  const gameplayState = useGameplayState();
-  const boardState = useBoardState();
-  const currentPlayerIndex = useCurrentPlayerIndex();
-
+  const game = useGameplayStoreV2(useGameplayGame);
+  const board = useGameplayStoreV2(useBoardState);
   const selectedTile = useGameplayStoreV2(useSelectedTile);
-  const game = gameplayState.game;
-  const disabled = gameplayState.gameEnded;
+
+  // UI is only enabled if game is in progress
+  const isDisabled = game ? isEnded(game) : true;
 
   useKeyboardControls({
-    onMoveRequest: (dir: Direction) => queueMove(dir, selectedTile),
+    onMoveRequest: (dir: Direction) => {
+      board && queueMove(dir, selectedTile, board);
+    },
     onUndoMove: () => undoLastQueuedMove(),
     onCancelMoves: () => cancelQueuedMoves(),
-    disabled,
+    disabled: isDisabled,
   });
 
-  // const shouldShowGameBoard = boardState && game && currentPlayerIndex !== null;
-  const shouldShowGameBoard = boardState && game;
+  const shouldShowGameBoard = board && game;
   if (!shouldShowGameBoard) {
     console.log('[DEBUG GameUI] Not showing game board', {
-      boardState,
+      board,
       game,
-      currentPlayerIndex,
     });
   }
 
@@ -54,7 +51,7 @@ function GameUI({ gameId: _gameId }: GameUIProps) {
     return <div>Loading game...</div>;
   }
 
-  return <GameBoard boardState={boardState} disabled={disabled} />;
+  return <GameBoard boardState={board} disabled={isDisabled} />;
 }
 
 export { GameUI };

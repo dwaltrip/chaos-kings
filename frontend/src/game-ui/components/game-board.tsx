@@ -1,9 +1,10 @@
 import type { BoardState } from '@core/types';
+import { serializeCoord } from '@core/utils/coordinate-utils';
+
 import { useGridLayout } from '@/game-ui/hooks/use-grid-layout';
 import { GameTile } from '@/game-ui/components/game-tile';
 
 import '@/game-ui/game-board.css';
-import { serializeCoord } from '@core/utils/coordinate-utils';
 
 interface GameBoardProps {
   boardState: BoardState;

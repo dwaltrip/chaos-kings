@@ -15,6 +15,13 @@ type GameplayMessageType =
   | 'join-room'
   | 'leave-room';
 
+type PlayerIndex = number;
+interface Movement {
+  sourceCoord: Coord;
+  direction: Direction;
+}
+type PlayerQueuesMap = Record<PlayerIndex, Array<Movement>>;
+
 namespace Gameplay {
   export interface MoveRequest extends WsMessage {
     payload: {
@@ -37,10 +44,7 @@ namespace Gameplay {
     payload: {
       tick: number;
       boardState: BoardState;
-      playerQueues?: Record<
-        number,
-        Array<{ sourceCoord: Coord; direction: Direction }>
-      >;
+      playerQueues?: PlayerQueuesMap;
     };
   }
 
@@ -54,7 +58,7 @@ namespace Gameplay {
   export interface GameStarted extends WsMessage {
     payload: {
       gameId: number;
-      playerMapping: { playerId: string; playerIndex: number }[];
+      playerMapping: { playerId: string; playerIndex: PlayerIndex }[];
       boardState: BoardState;
       game: GameWithPlayers;
     };
@@ -62,11 +66,11 @@ namespace Gameplay {
 
   export interface GameEnded extends WsMessage {
     payload: {
-      winner: number;
-      reason: 'general_captured' | 'timeout' | 'disconnect';
+      winner: PlayerIndex;
       finalBoardState: BoardState;
     };
   }
 }
 
-export { GAMEPLAY_DOMAIN, type Gameplay, type GameplayMessageType };
+export type { Gameplay, GameplayMessageType, Movement, PlayerQueuesMap };
+export { GAMEPLAY_DOMAIN };

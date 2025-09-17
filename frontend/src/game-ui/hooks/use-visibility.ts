@@ -12,8 +12,8 @@ interface NeighborVisibility {
 }
 
 const useNeighborVisibility = (coord: Coord) =>
-  useShallow((state: GameplayStateV2) => {
-    return state.isGameEnded
+  useShallow((state: GameplayStateV2): NeighborVisibility => {
+    return state.isGameEnded()
       ? {
           top: true,
           bottom: true,
@@ -26,8 +26,8 @@ const useNeighborVisibility = (coord: Coord) =>
 const useIsVisible = (coord: Coord) =>
   useShallow((state: GameplayStateV2) => {
     return (
-      state.isGameEnded ||
-      isSquareVisible(coord, state.visibleSquares, state.currentPlayerIndex)
+      state.isGameEnded() ||
+      isSquareVisible(coord, state.visibleSquares, state.currentPlayerIndex())
     );
   });
 

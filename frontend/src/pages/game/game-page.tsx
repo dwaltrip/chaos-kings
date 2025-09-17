@@ -40,7 +40,6 @@ function GamePageContent({ gameId }: { gameId: string }) {
   const countdownSeconds = gameMetadataStore((state) => state.countdownSeconds);
   const isGameEnded = gameMetadataStore((state) => state.isGameEnded);
   const winner = gameMetadataStore((state) => state.winner);
-  const endReason = gameMetadataStore((state) => state.endReason);
   const playerMapping = gameMetadataStore((state) => state.playerMapping);
   const { actions } = gameMetadataStore.getState();
 
@@ -96,7 +95,6 @@ function GamePageContent({ gameId }: { gameId: string }) {
             game={game}
             isGameEnded={isGameEnded}
             winner={winner}
-            endReason={endReason}
             playerMapping={playerMapping}
           />
           <PlayerColors

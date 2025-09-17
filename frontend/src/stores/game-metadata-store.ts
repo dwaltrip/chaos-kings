@@ -1,13 +1,13 @@
 import { create } from 'zustand';
+import { useShallow } from 'zustand/shallow';
 
 import type { GameWithPlayers } from '@common/types/games';
+import type { PlayerIndex } from '@common/types/player';
 import { PRE_GAME_COUNTDOWN_SECONDS } from '@core/ui-timing-config';
 import {
   loadGame as apiLoadGame,
   GameNotFoundError,
 } from '@/pages/game/games-api';
-import { useShallow } from 'zustand/shallow';
-import { userStore } from '@/stores/user-store';
 
 interface GameMetadataState {
   // Static metadata from API
@@ -22,8 +22,7 @@ interface GameMetadataState {
   // Dynamic gameplay metadata (updated by GameUI)
   isGameEnded: boolean;
   winner: number | null;
-  endReason: 'general_captured' | 'timeout' | 'disconnect' | null;
-  playerMapping: { playerId: string; playerIndex: number }[] | null;
+  playerMapping: { playerId: string; playerIndex: PlayerIndex }[] | null;
 
   // Actions
   actions: {
@@ -33,14 +32,10 @@ interface GameMetadataState {
     setError: (error: string | null) => void;
     setCountdownActive: (active: boolean) => void;
     setCountdownSeconds: (seconds: number) => void;
-    setGameEnded: (
-      winner: number,
-      reason: 'general_captured' | 'timeout' | 'disconnect',
-    ) => void;
+    setGameEnded: (winner: number) => void;
     setPlayerMapping: (
-      mapping: { playerId: string; playerIndex: number }[],
+      mapping: { playerId: string; playerIndex: PlayerIndex }[],
     ) => void;
-    reset: () => void;
   };
 }
 
@@ -57,7 +52,6 @@ const gameMetadataStore = create<GameMetadataState>((set, get) => ({
   // Dynamic gameplay metadata
   isGameEnded: false,
   winner: null,
-  endReason: null,
   playerMapping: null,
 
   actions: {
@@ -106,6 +100,7 @@ const gameMetadataStore = create<GameMetadataState>((set, get) => ({
       set((state) => ({
         game: state.game ? { ...state.game, ...updates } : null,
       }));
+      console.log('[game-metadata-store] Updated game object:', get().game);
     },
 
     setError: (error: string | null) => {
@@ -120,39 +115,17 @@ const gameMetadataStore = create<GameMetadataState>((set, get) => ({
       set({ countdownSeconds: seconds });
     },
 
-    setGameEnded: (
-      winner: number,
-      reason: 'general_captured' | 'timeout' | 'disconnect',
-    ) => {
-      set({
-        isGameEnded: true,
-        winner,
-        endReason: reason,
-      });
-    },
+    setGameEnded: (winner: number) => set({ isGameEnded: true, winner }),
 
     setPlayerMapping: (
       mapping: { playerId: string; playerIndex: number }[],
     ) => {
       set({ playerMapping: mapping });
     },
-
-    reset: () => {
-      set({
-        game: null,
-        loading: false,
-        error: null,
-        countdownActive: false,
-        countdownSeconds: PRE_GAME_COUNTDOWN_SECONDS,
-        isGameEnded: false,
-        winner: null,
-        endReason: null,
-        playerMapping: null,
-      });
-    },
   },
 }));
 
+// TODO: REFACTOR
 const useGameLoadingState = () => {
   return gameMetadataStore(
     useShallow((state) => ({
@@ -163,31 +136,6 @@ const useGameLoadingState = () => {
   );
 };
 
-// TODO: move this somewhere more central / shared
-// core part of game
-const getCurrentPlayerIndex = (
-  game: GameWithPlayers | null,
-  userId: number | null,
-): number | null => {
-  if (!game || !userId) return null;
-
-  const player = game.players.find((p) => p.player_id === userId);
-  return player ? player.player_index : null;
-};
-
-const useCurrentPlayerIndex = () => {
-  const game = gameMetadataStore((state) => state.game);
-  const user = userStore((state) => state.user);
-
-  return getCurrentPlayerIndex(game, user?.id ?? null);
-};
-
 const useGameMetadataStore = gameMetadataStore;
 
-export {
-  gameMetadataStore,
-  useGameMetadataStore,
-  useGameLoadingState,
-  useCurrentPlayerIndex,
-  getCurrentPlayerIndex,
-};
+export { gameMetadataStore, useGameMetadataStore, useGameLoadingState };
