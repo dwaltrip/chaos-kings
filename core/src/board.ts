@@ -61,6 +61,24 @@ function applyDirection(coord: Coord, direction: Direction): Coord {
   }
 }
 
+function* iterCoords(board: BoardState): IterableIterator<Coord> {
+  const { height, width } = board.size;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      yield { x, y };
+    }
+  }
+}
+
+function forEachCoord(
+  board: BoardState,
+  fn: (coord: Coord, square: Square) => void,
+): void {
+  for (const coord of iterCoords(board)) {
+    fn(coord, getSquare(board, coord));
+  }
+}
+
 function* iterPlayerSquares(
   board: BoardState,
   playerIndex: number,
@@ -119,6 +137,8 @@ const Board = {
   replaceSquare,
   applyDirection,
   isPlayerSquare,
+  iterCoords,
+  forEachCoord,
   iterPlayerSquares,
   getVisibleSquares,
 };
