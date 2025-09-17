@@ -14,8 +14,7 @@ import { blankSquare, isGeneralSquare, isMountainSquare } from '@core/square';
 interface TileStoreState {
   square: Square;
   isSelected: boolean;
-  // TODO: rename to queuedDirections?
-  queuedMoves: Set<Direction>;
+  queuedDirections: Set<Direction>;
 
   // Helpers
   getIsGeneral: () => boolean;
@@ -23,26 +22,26 @@ interface TileStoreState {
 
   // Actions
   updateSquare: (square: Square) => void;
-  updateQueuedMoves: (moves: Set<Direction>) => void;
-  addQueuedMove: (move: Direction) => void;
+  updateQueuedDirections: (directions: Set<Direction>) => void;
+  addQueuedDirection: (direction: Direction) => void;
 }
 
 function createTileStore(pos: Coord) {
   return create<TileStoreState>((set, get) => ({
     square: blankSquare(pos),
     isSelected: false,
-    queuedMoves: new Set(),
+    queuedDirections: new Set(),
 
     getIsGeneral: () => isGeneralSquare(get().square),
     getIsMountain: () => isMountainSquare(get().square),
 
     updateSquare: (square) => set({ square }),
-    updateQueuedMoves: (moves) => set({ queuedMoves: moves }),
-    addQueuedMove: (move) => {
+    updateQueuedDirections: (queuedDirections) => set({ queuedDirections }),
+    addQueuedDirection: (direction) => {
       set((state) => {
-        const newMoves = new Set(state.queuedMoves);
-        newMoves.add(move);
-        return { queuedMoves: newMoves };
+        const queuedDirections = new Set(state.queuedDirections);
+        queuedDirections.add(direction);
+        return { queuedDirections };
       });
     },
   }));

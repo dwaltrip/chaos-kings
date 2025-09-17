@@ -1,14 +1,16 @@
-import { getWebSocketService } from '@/services/websocket-service';
 import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
-import { tileOrchestrator } from '../store/tile-orchestrator';
-import { useGameplayStoreV2 } from '../store/gameplay-store-v2';
+
+import { getWebSocketService } from '@/services/websocket-service';
+import { tileOrchestrator } from '@/game-ui/store/tile-orchestrator';
+import { gameplayActions } from '@/game-ui/store/gameplay-store-v2';
 
 function cancelQueuedMoves() {
+  const { setQueuedMoves } = gameplayActions();
   const wsService = getWebSocketService();
 
   // Optimistically clear FE state
-  tileOrchestrator.updateQueuedMoves(new Map());
-  useGameplayStoreV2.getState().actions.setQueuedMoves([]);
+  tileOrchestrator.updateQueuedDirections(new Map());
+  setQueuedMoves([]);
 
   wsService.send({
     domain: GAMEPLAY_DOMAIN,

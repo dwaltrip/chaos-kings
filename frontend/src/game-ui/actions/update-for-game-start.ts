@@ -3,9 +3,7 @@ import type { BoardState } from '@core/types';
 import type { PlayerIndex } from '@common/types/player';
 
 import { gameMetadataStore } from '@/stores/game-metadata-store';
-import { useGameplayStoreV2 } from '@/game-ui/store/gameplay-store-v2';
-
-const { updateBoard } = useGameplayStoreV2.getState().actions;
+import { gameplayActions } from '@/game-ui/store/gameplay-store-v2';
 
 const { setCountdownActive, setGame, setPlayerMapping } =
   gameMetadataStore.getState().actions;
@@ -21,6 +19,7 @@ function updateForGameStart(
   boardState: BoardState,
   mapping: UserToPlayerMapping[],
 ) {
+  const { updateBoard } = gameplayActions();
   // Stop countdown when game actually starts
   setCountdownActive(false);
   // TODO: set game on gameplay store v2 also?

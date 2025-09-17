@@ -3,16 +3,14 @@ import { Board } from '@core/board';
 import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
 
 import { getWebSocketService } from '@/services/websocket-service';
-import { useGameplayStoreV2 } from '@/game-ui/store/gameplay-store-v2';
-
-const { setSelectedTileV2, addQueuedMove } =
-  useGameplayStoreV2.getState().actions;
+import { gameplayActions } from '@/game-ui/store/gameplay-store-v2';
 
 function queueMove(
   direction: Direction,
   selectedTile: Coord | null,
   board: BoardState,
 ) {
+  const { addQueuedMove, setSelectedTileV2 } = gameplayActions();
   if (!selectedTile) {
     console.debug('Cannot move: no tile selected');
     return;

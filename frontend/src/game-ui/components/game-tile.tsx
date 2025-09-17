@@ -6,7 +6,7 @@ import { areCoordsEqual } from '@core/utils/coordinate-utils';
 
 import { getPlayerColor } from '@/utils/player-colors';
 import {
-  useTileQueuedMovesV2,
+  useTileQueuedDirections,
   useTileSquare,
   useTileSquareTypes,
 } from '@/game-ui/hooks/use-tile-store-state';
@@ -56,7 +56,7 @@ const GameTile = React.memo(
       useIsAdjacentToSelected(coord),
     );
 
-    const queuedMoves = useTileQueuedMovesV2(coord);
+    const queuedDirections = useTileQueuedDirections(coord);
     const isVisible = useGameplayStoreV2(useIsVisible(coord));
     const neighborVisibility = useGameplayStoreV2(useNeighborVisibility(coord));
 
@@ -121,7 +121,7 @@ const GameTile = React.memo(
           {!isVisible && <TileOverlay className="fog-of-war" />}
 
           {/* Render move arrows for queued moves */}
-          {Array.from(queuedMoves, (direction) => (
+          {Array.from(queuedDirections, (direction) => (
             <MoveArrow key={direction} direction={direction} />
           ))}
         </div>

@@ -165,9 +165,18 @@ function useCurrentPlayerIndex(state: GameplayStateV2) {
 
 // ---------------------------------
 
+// Trying out a new pattern for accessing zustand actions
+// We were extracting actions at the module level before,
+// which would usually work in most situations but is not 100% safe.
+// This helper makes it more ergonomic to access actions locally in functions.
+const gameplayActions = () => useGameplayStoreV2.getState().actions;
+
+// ---------------------------------
+
 export {
   type GameplayStateV2,
   useGameplayStoreV2,
+  gameplayActions,
   useGameplayGame,
   useIsGameEnded,
   useBoardState,

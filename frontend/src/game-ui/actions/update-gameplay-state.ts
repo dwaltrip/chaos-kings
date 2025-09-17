@@ -2,17 +2,19 @@ import type { BoardState } from '@core/types';
 import { Board } from '@core/board';
 import type { Movement, PlayerQueuesMap } from '@common/types/gameplay';
 
-import { useGameplayStoreV2 } from '@/game-ui/store/gameplay-store-v2';
+import {
+  gameplayActions,
+  useGameplayStoreV2,
+} from '@/game-ui/store/gameplay-store-v2';
 import { getTileStore } from '@/game-ui/store/tile-store-registry';
-
-const { setVisibleSquares, updateBoard, setTick, setQueuedMoves } =
-  useGameplayStoreV2.getState().actions;
+import { tileOrchestrator } from '@/game-ui/store/tile-orchestrator';
 
 function updateGameplayState(
   tick: number,
   board: BoardState,
   playerQueues: PlayerQueuesMap,
 ) {
+  const { setVisibleSquares, updateBoard, setTick } = gameplayActions();
   // Get currentPlayerIndex for both visible squares and queue updates
   const playerIndex = useGameplayStoreV2.getState().currentPlayerIndex();
   if (playerIndex === null) {
@@ -37,21 +39,14 @@ function updateGameplayState(
 }
 
 function updateQueuedMoves(board: BoardState, moves: Movement[]) {
-  const grid = board.grid;
-
-  // TODO: resetting the state should happen all in one place
-  // Clear all existing moves in tile store
-  // TODO: use helper for iterating over all coords
-  for (let y = 0; y < grid.length; y++) {
-    for (let x = 0; x < grid[y].length; x++) {
-      getTileStore({ x, y }).getState().updateQueuedMoves(new Set());
-    }
-  }
+  // Clear all existing directions before applying state from server
+  tileOrchestrator.clearAllQueuedDirections(board);
 
   for (const move of moves) {
     const store = getTileStore(move.sourceCoord);
-    store.getState().addQueuedMove(move.direction);
+    store.getState().addQueuedDirection(move.direction);
   }
+  const { setQueuedMoves } = gameplayActions();
   setQueuedMoves(moves);
 }
 

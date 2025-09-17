@@ -3,14 +3,13 @@ import type { PlayerIndex } from '@common/types/player';
 import { GameStatus } from '@common/types/games';
 
 import { gameMetadataStore } from '@/stores/game-metadata-store';
-import { useGameplayStoreV2 } from '@/game-ui/store/gameplay-store-v2';
+import { gameplayActions } from '@/game-ui/store/gameplay-store-v2';
 
 const { updateGame } = gameMetadataStore.getState().actions;
 
-const { updateBoard, setWinner, setVisibleSquares } =
-  useGameplayStoreV2.getState().actions;
-
 function updateForGameEnded(finalBoardState: BoardState, winner: PlayerIndex) {
+  const { updateBoard, setWinner, setVisibleSquares, clearSelectedTile } =
+    gameplayActions();
   // -----------------------------------------------------------
   // TODO: Use data from server, dont manually set these values
   // -----------------------------------------------------------
@@ -25,7 +24,7 @@ function updateForGameEnded(finalBoardState: BoardState, winner: PlayerIndex) {
   // All squares visible at end of game, so we reset to empty set (slightly counterintuitive)
   // maybe there's a better way to do this.
   setVisibleSquares(new Set<string>());
-  useGameplayStoreV2.getState().actions.clearSelectedTile();
+  clearSelectedTile();
 }
 
 export { updateForGameEnded };

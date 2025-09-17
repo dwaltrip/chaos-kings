@@ -19,9 +19,9 @@ function useTileSquare(coord: Coord): Square {
   return { ...squareWithoutCoord, coord };
 }
 
-function useTileQueuedMovesV2(coord: Coord): Set<Direction> {
+function useTileQueuedDirections(coord: Coord): Set<Direction> {
   const store = getTileStore(coord);
-  return store(useShallow((state) => state.queuedMoves));
+  return store(useShallow((state) => state.queuedDirections));
 }
 
 function useTileSquareTypes(coord: Coord) {
@@ -34,4 +34,4 @@ function useTileSquareTypes(coord: Coord) {
   );
 }
 
-export { useTileSquare, useTileQueuedMovesV2, useTileSquareTypes };
+export { useTileSquare, useTileQueuedDirections, useTileSquareTypes };
