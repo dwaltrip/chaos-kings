@@ -222,6 +222,7 @@ export class GameServer {
         domain: GAMEPLAY_DOMAIN,
         type: 'game-state-update',
         payload: {
+          gameId: this.gameId,
           tick: this.gameState.tick,
           boardState: this.gameState.board,
           playerQueues: this.getPlayerQueuesForBroadcast(),
@@ -241,6 +242,7 @@ export class GameServer {
         domain: GAMEPLAY_DOMAIN,
         type: 'game-ended',
         payload: {
+          gameId: this.gameId,
           winner: winnerPlayerIndex,
           reason: 'general_captured',
           finalBoardState: this.gameState.board,
@@ -490,6 +492,8 @@ export class GameServer {
       removeUserFromGame(userId);
     }
 
+    // Final move-history flush on cleanup
+    void this.flushMoveHistory(true);
     this.playerQueues.clear();
     this.gameEnded = true;
     this.stopMoveFlushTimer();
