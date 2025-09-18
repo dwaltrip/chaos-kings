@@ -5,6 +5,9 @@ interface GameState {
   config?: any;
 }
 
+type PlayerIndex = number;
+type PlayerMapping = { playerId: string; playerIndex: PlayerIndex }[];
+
 interface CompletedGameState {
   board: BoardState;
   tick: number;
@@ -73,6 +76,8 @@ export { Direction, PlayerSquareType, NeutralSquareType, SquareType };
 
 export type {
   GameState,
+  PlayerIndex,
+  PlayerMapping,
   CompletedGameState,
   BoardState,
   Coord,
