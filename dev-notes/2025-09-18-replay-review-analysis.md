@@ -165,7 +165,7 @@ Phase 4 — Gameplay Correctness (Defeated Players)
 - Track defeated players and clear queues
   - Approach A (preferred): Extend core `processStep` return `{ defeatedPlayers?: number[] }` for steps where generals are captured.
   - Approach B: Server computes defeated by diffing generals before/after the step.
-  - Action: Implement chosen approach; when a player is defeated, clear their queue and ignore subsequent submissions.
+  - Action: Implemented Approach B to minimize surface change for MVP; when a player is defeated, clear their queue and ignore subsequent submissions.
   - Acceptance: Manual test scenario where general is captured results in that player’s queue cleared; server ignores new moves from defeated players; builds pass.
 
 Phase 5 — Tests, Tooling, and Docs
@@ -222,3 +222,8 @@ Out-of-Scope (for now)
 - Extracted buffer: Added `backend/src/gameplay/move-history-buffer.ts` encapsulating events, lastFlushedCount, and a generic `flush(save, force?)`.
 - Refactor: `game-server` now appends via `moveHistory.append()` and flushes via buffer, preserving 1s cadence and final flush semantics.
 - Determinism/behavior: No changes to event ordering or flush payload; still `{ version: 1, events: ... }`.
+
+## Phase 4 — Implementation Notes (2025-09-18)
+- Defeat detection: Implemented server-side diff of generals before/after each `processStep`.
+- Behavior on defeat: Queues are cleared for newly defeated players; `queueMove` ignores future submissions from those players.
+- Rationale: Chose Approach B to avoid expanding core API during MVP; keeps blast radius minimal and preserves determinism.

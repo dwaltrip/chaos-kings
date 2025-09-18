@@ -45,6 +45,7 @@ export class GameServer {
   private fallbackTimer: NodeJS.Timeout | null = null;
   private moveFlushTimer: NodeJS.Timeout | null = null;
   private moveHistory = new MoveHistoryBuffer();
+  private defeatedPlayers: Set<number> = new Set();
   private log = createScopedLogger(() => `GameServer id=${this.gameId}`);
 
   constructor(gameId: number) {
@@ -147,6 +148,9 @@ export class GameServer {
       }
 
       const { timing } = this.gameState.config as GameConfig;
+
+      // Capture generals pre-step to detect newly defeated players
+      const generalsBefore = this.getPlayersWithGenerals(this.gameState.board);
       const { appliedEvents, gameEnded, winnerPlayerIndex } = coreProcessStep(
         this.gameState.board,
         step,
@@ -157,6 +161,23 @@ export class GameServer {
         this.moveHistory.append(appliedEvents);
       }
       this.gameState.tick = step;
+
+      // Detect players who lost their general this step
+      const generalsAfter = this.getPlayersWithGenerals(this.gameState.board);
+      const newlyDefeated: number[] = [];
+      for (const p of generalsBefore) {
+        if (!generalsAfter.has(p)) newlyDefeated.push(p);
+      }
+      if (newlyDefeated.length) {
+        for (const p of newlyDefeated) {
+          this.defeatedPlayers.add(p);
+          const q = this.playerQueues.get(p);
+          if (q) q.length = 0; // clear their queue
+        }
+        this.log.info(
+          `Defeated players this step ${step}: ${newlyDefeated.join(', ')}`,
+        );
+      }
 
       if (gameEnded) {
         await this.handleGameEnd(winnerPlayerIndex!);
@@ -173,6 +194,16 @@ export class GameServer {
   }
 
   // Movement now processed in core step-processor
+
+  private getPlayersWithGenerals(board: BoardState): Set<number> {
+    const s = new Set<number>();
+    for (const row of board.grid) {
+      for (const sq of row) {
+        if (sq.type === 'GENERAL') s.add(sq.playerIndex);
+      }
+    }
+    return s;
+  }
 
   private async handleGameEnd(winnerPlayerIndex: number): Promise<void> {
     this.log.info(`Game ended, winner: player ${winnerPlayerIndex}`);
@@ -257,6 +288,12 @@ export class GameServer {
     const playerIndex = this.playerMapping.get(userId);
     if (playerIndex === undefined) {
       this.log.info(`Move request from unknown user ${userId}`);
+      return;
+    }
+    if (this.defeatedPlayers.has(playerIndex)) {
+      this.log.debug(
+        `Ignoring move from defeated player ${playerIndex} (user ${userId})`,
+      );
       return;
     }
     const queue = this.getPlayerQueue(playerIndex);
