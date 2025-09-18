@@ -119,3 +119,87 @@ The replay MVP design—append-only event log of applied moves, deterministic re
 ## Notes on Alignment with MVP Docs
 - The current code largely matches the MVP plan. The follow-ups doc correctly highlights the immediate next steps—especially defeated player tracking and determinism checks. The proposals above extend that with structural cleanups and type consolidation to keep the codebase cohesive as replay features expand.
 
+## Detailed Execution Plan (Prioritized)
+
+Principles:
+- Start with low-risk, high-value fixes that improve determinism and type-safety.
+- Consolidate types and naming before architectural extraction.
+- Extract infrastructure (move-history buffer) before gameplay additions (defeat handling).
+- Add tests and docs once core surfaces settle.
+
+Phase 1 — Quick Wins (Determinism, Type Hygiene)
+- Unify map generation seed
+  - Action: In `create-game.ts`, define `const seed = Date.now()`; pass to `generateGameMapV2(..., seed)` and set `generation.seed = seed`.
+  - Acceptance: Single seed used for both generation and stored config; backend build passes.
+- Narrow types and remove `any`
+  - Action: Use `import type { GameConfig }` where only types are needed; in `game-server.ts` narrow with `const { timing } = this.gameState.config as GameConfig`.
+  - Acceptance: No `any` usage for timing; FE/BE builds pass.
+- Isolate `validateMove`
+  - Action: Move to `core/src/moves/validate-move.ts`; export named; update imports in `step-processor`.
+  - Acceptance: Core build passes; no behavior change.
+- Bound replayer iteration
+  - Action: Add optional params to `replayFrames`—`maxSteps?: number`, `stopAfterLastEvent?: boolean` (default false). Document 1-based steps.
+  - Acceptance: Replayer stays backward-compatible (default behavior unchanged); unit tests to follow in Phase 5.
+
+Phase 2 — Naming and Type Consolidation
+- Centralize `TimingConfig`
+  - Action: Create `core/src/timing/types.ts` exporting `TimingConfig`.
+  - Action: Update `core/src/game-config.ts` to reference `TimingConfig`; update `core/src/replay/types.ts` to import and re-export if needed.
+  - Acceptance: Single source of truth for timing; builds pass across core/backend/frontend.
+- Introduce step-first API naming (no aliases)
+  - Action: Rename `processTick` → `processStep` (rename function + export) and update all usages (core, backend, replayer). Remove `processTick` export entirely.
+  - Action: Rename internal helper `tickWithTiming` → `stepWithTiming`. Keep timing field names in config for now to minimize blast radius; avoid introducing new `tick` identifiers anywhere.
+  - Acceptance: No remaining references to `processTick` or `tickWithTiming`; builds pass across FE/BE; no behavioral changes.
+  - Note: A later refactor can rename `GameState.tick` → `step` and timing field names (e.g., `generalProductionSteps`)—deferred to avoid churn; ensure no new code uses `tick`.
+
+Phase 3 — Server Architecture (Move-History Extraction)
+- Extract `MoveHistoryBuffer`
+  - Action: Add `backend/src/gameplay/move-history-buffer.ts` with an in-memory buffer that:
+    - Appends applied events, tracks lastFlushCount, exposes `flush(repo, gameId, force?: boolean)`.
+    - Has no DB knowledge except via injected repo method.
+  - Action: Replace inline buffering/flush logic in `game-server` with this helper; keep cadence (1s) and final flush on cleanup.
+  - Action: Make cleanup async in callers or ensure final flush is awaited.
+  - Acceptance: No observable behavior change; code easier to test/extend (swap to Redis later if desired).
+
+Phase 4 — Gameplay Correctness (Defeated Players)
+- Track defeated players and clear queues
+  - Approach A (preferred): Extend core `processStep` return `{ defeatedPlayers?: number[] }` for steps where generals are captured.
+  - Approach B: Server computes defeated by diffing generals before/after the step.
+  - Action: Implement chosen approach; when a player is defeated, clear their queue and ignore subsequent submissions.
+  - Acceptance: Manual test scenario where general is captured results in that player’s queue cleared; server ignores new moves from defeated players; builds pass.
+
+Phase 5 — Tests, Tooling, and Docs
+- Core unit tests
+  - Action: Add tests for `validateMove` (bounds, ownership, insufficient units, blocked destination).
+  - Action: Add tests for `processStep` ordering and conflict behavior (playerIndex sort).
+  - Acceptance: Tests pass locally; cover key branches.
+- Determinism replay check
+  - Action: Add a backend or core script/CLI to load a finished game by `gameId`, re-simulate using `config` + `move_history`, and assert final board equals saved state. Print diff on mismatch.
+  - Acceptance: Script runs and returns non-zero on mismatch; useful for regression checks.
+- Import order policy
+  - Action: Update `AGENTS.md` with import order: third-party → `@common` → `@core` → local (`@/`).
+  - Optional: Add eslint import-order rule to enforce.
+  - Acceptance: Lint/build pass; contributors aligned.
+
+Phase 6 — Nice-to-Haves (Safe Enhancements)
+- Robust board cloning
+  - Action: Add a `cloneBoardState` utility in core that deep-copies grid/squares safely; replace `deepCloneBoard` in replayer.
+  - Acceptance: No regressions; replayer uses the new utility.
+- EndGameParams.moveHistory
+  - Decision: Keep optional for now (allows aborted/incomplete games). Consider adding an invariant for completed games to include it.
+
+Dependencies & Sequencing
+- Phase 1 has no dependencies; execute first.
+- Phase 2 should follow Phase 1 (to avoid refactoring in-flight files).
+- Phase 3 can proceed after Phase 2 (rename imports first), but is logically independent of Phase 4.
+- Phase 4 depends on Phase 2 if we add fields to `processStep`.
+- Phase 5 should follow Phases 1–4 to test stabilized surfaces.
+- Phase 6 is optional and can be done anytime after Phase 1.
+
+Risk Notes
+- Naming/type consolidation touches import surfaces; mitigate with temporary aliases (e.g., keep `processTick` export) and run FE/BE builds frequently.
+- Replay bounds default must preserve current behavior to avoid breaking existing consumers.
+- Move-history buffer extraction should be behavior-preserving; keep flush cadence and final flush semantics identical during refactor.
+
+Out-of-Scope (for now)
+- Engine versioning support in config. TODO(engine-versioning): Consider adding `engineVersion` to the snapshot in a future iteration to lock replay determinism across engine changes.
