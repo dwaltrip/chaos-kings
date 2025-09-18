@@ -1,9 +1,8 @@
+import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
+import type { GameWithPlayers } from '@common/types/games';
 import { GameState, BoardState, Direction, Coord } from '@core/types';
 import { GameGenerationConfig } from '@core/game-generation-config';
 import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
-import { getGame } from '@/game/actions/get-game';
-import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
-import type { GameWithPlayers } from '@common/types/games';
 import { Board } from '@core/board';
 import type { GameConfig } from '@core/game-config';
 import {
@@ -11,15 +10,15 @@ import {
   ONE_SECOND_MS,
   PRE_GAME_COUNTDOWN_SECONDS,
 } from '@core/ui-timing-config';
-
+import { processTick as coreProcessTick } from '@core/step-processor';
+import type { MoveEvent, MoveHistoryV1 } from '@core/replay/types';
+import { getGame } from '@/game/actions/get-game';
 import { createScopedLogger } from '@/utils/scoped-logger';
 import { getGlobalWebSocketManager } from '@/websocket/global-manager';
 import { removeUserFromGame } from '@/gameplay/gameplay-ws-api';
 import { GameRepository } from '@/game/game-repository';
 import { GameStatus } from '@/game/types';
 import { endGame } from '@/game/actions/end-game';
-import { processTick as coreProcessTick } from '@core/step-processor';
-import type { MoveEvent, MoveHistoryV1 } from '@core/replay/types';
 
 const MAX_QUEUED_MOVES_PER_PLAYER = 200;
 

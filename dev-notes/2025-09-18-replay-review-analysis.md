@@ -203,3 +203,11 @@ Risk Notes
 
 Out-of-Scope (for now)
 - Engine versioning support in config. TODO(engine-versioning): Consider adding `engineVersion` to the snapshot in a future iteration to lock replay determinism across engine changes.
+
+## Phase 1 — Implementation Notes (2025-09-18)
+- Unify map generation seed: Added single `seed` in `create-game.ts` for both map gen and stored config.
+- Narrow types: Replaced `any` timing access with `const { timing } = this.gameState.config as GameConfig` in `game-server.ts`; switched to type-only import in `create-game.ts`.
+- Isolate `validateMove`: Moved to `core/src/moves/validate-move.ts`; `step-processor` now imports it; behavior unchanged.
+- Bound replayer iteration: `replayFrames` now supports optional `{ maxSteps, stopAfterLastEvent }` with defaults preserving current behavior.
+- Build status: Backend and frontend builds passed via `tools/build-all.sh`.
+- Test status: Backend tests require Postgres and are blocked in this environment; core tests run and pass locally.
