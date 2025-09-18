@@ -217,3 +217,8 @@ Out-of-Scope (for now)
 - Step-first naming: Renamed `processTick`→`processStep` and `tickWithTiming`→`stepWithTiming`; updated backend `game-server` and replayer.
 - Import order: Confirmed third-party → `@common/...` → `@core/...` → local `@/...` in modified files; updated AGENTS.md/CLAUDE.md.
 - Build status: Backend and frontend builds pass; core tests run (backend Jest blocked by DB in this environment).
+
+## Phase 3 — Implementation Notes (2025-09-18)
+- Extracted buffer: Added `backend/src/gameplay/move-history-buffer.ts` encapsulating events, lastFlushedCount, and a generic `flush(save, force?)`.
+- Refactor: `game-server` now appends via `moveHistory.append()` and flushes via buffer, preserving 1s cadence and final flush semantics.
+- Determinism/behavior: No changes to event ordering or flush payload; still `{ version: 1, events: ... }`.

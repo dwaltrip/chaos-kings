@@ -19,6 +19,7 @@ import { removeUserFromGame } from '@/gameplay/gameplay-ws-api';
 import { GameRepository } from '@/game/game-repository';
 import { GameStatus } from '@/game/types';
 import { endGame } from '@/game/actions/end-game';
+import { MoveHistoryBuffer } from '@/gameplay/move-history-buffer';
 
 const MAX_QUEUED_MOVES_PER_PLAYER = 200;
 
@@ -43,8 +44,7 @@ export class GameServer {
   private countdownInterval: NodeJS.Timeout | null = null;
   private fallbackTimer: NodeJS.Timeout | null = null;
   private moveFlushTimer: NodeJS.Timeout | null = null;
-  private appliedEvents: MoveEvent[] = [];
-  private lastFlushedCount: number = 0;
+  private moveHistory = new MoveHistoryBuffer();
   private log = createScopedLogger(() => `GameServer id=${this.gameId}`);
 
   constructor(gameId: number) {
@@ -154,7 +154,7 @@ export class GameServer {
         timing,
       );
       if (appliedEvents.length) {
-        this.appliedEvents.push(...appliedEvents);
+        this.moveHistory.append(appliedEvents);
       }
       this.gameState.tick = step;
 
@@ -187,7 +187,7 @@ export class GameServer {
         winnerPlayerIndex,
         finalGameState: this.gameState,
         reason: 'general_captured',
-        moveHistory: { version: 1, events: this.appliedEvents },
+        moveHistory: this.moveHistory.buildHistory(),
       });
     } else {
       throw new Error(`Game ${this.gameId} has no state to end`);
@@ -516,12 +516,11 @@ export class GameServer {
 
   private async flushMoveHistory(force: boolean = false): Promise<void> {
     try {
-      const count = this.appliedEvents.length;
-      if (!force && count === this.lastFlushedCount) return;
       const repo = new GameRepository();
-      const history: MoveHistoryV1 = { version: 1, events: this.appliedEvents };
-      await repo.updateMoveHistory(this.gameId, history);
-      this.lastFlushedCount = count;
+      await this.moveHistory.flush(
+        (history) => repo.updateMoveHistory(this.gameId, history),
+        force,
+      );
     } catch (error) {
       this.log.error('Failed to flush move history', error);
     }
