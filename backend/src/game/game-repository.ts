@@ -119,6 +119,27 @@ class GameRepository {
       .where('id', '=', id)
       .execute();
   }
+
+  async updateMoveHistory(id: number, moveHistory: object): Promise<void> {
+    await this.dbInstance
+      .updateTable('games')
+      .set({ move_history: moveHistory })
+      .where('id', '=', id)
+      .execute();
+  }
+
+  async updateStatusGameStateAndMoveHistory(
+    id: number,
+    status: string,
+    gameState: object,
+    moveHistory: object,
+  ): Promise<void> {
+    await this.dbInstance
+      .updateTable('games')
+      .set({ status, game_state: gameState, move_history: moveHistory })
+      .where('id', '=', id)
+      .execute();
+  }
 }
 
 export { GameRepository, GamePlayer };

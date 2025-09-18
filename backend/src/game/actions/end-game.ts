@@ -2,12 +2,14 @@ import { GameRepository } from '@/game/game-repository';
 import { GameStatus } from '@/game/types';
 import { GameState } from '@core/types';
 import { logger } from '@/utils/logger';
+import type { MoveHistoryV1 } from '@core/replay/types';
 
 interface EndGameParams {
   gameId: number;
   winnerPlayerIndex: number;
   finalGameState: GameState;
   reason: 'general_captured' | 'timeout' | 'forfeit';
+  moveHistory?: MoveHistoryV1;
 }
 
 async function endGame({
@@ -15,6 +17,7 @@ async function endGame({
   winnerPlayerIndex,
   finalGameState,
   reason,
+  moveHistory,
 }: EndGameParams): Promise<void> {
   logger.info(
     `Ending game ${gameId}, winner: player ${winnerPlayerIndex}, reason: ${reason}`,
@@ -33,12 +36,21 @@ async function endGame({
       endReason: reason,
     };
 
-    // Update both status and game_state in a single operation
-    await gameRepository.updateStatusAndGameState(
-      gameId,
-      GameStatus.COMPLETE,
-      gameStateToSave,
-    );
+    // Update status, game_state and move_history in a single operation
+    if (moveHistory) {
+      await gameRepository.updateStatusGameStateAndMoveHistory(
+        gameId,
+        GameStatus.COMPLETE,
+        gameStateToSave,
+        moveHistory,
+      );
+    } else {
+      await gameRepository.updateStatusAndGameState(
+        gameId,
+        GameStatus.COMPLETE,
+        gameStateToSave,
+      );
+    }
 
     logger.info(`Successfully ended game ${gameId} and saved final state`);
   } catch (error) {

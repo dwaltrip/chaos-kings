@@ -1,12 +1,10 @@
 import { GameState, BoardState, Direction, Coord } from '@core/types';
-import { tick as engineTick, applyMovement } from '@core/engine';
 import { GameGenerationConfig } from '@core/game-generation-config';
 import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
 import { getGame } from '@/game/actions/get-game';
 import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
 import type { GameWithPlayers } from '@common/types/games';
 import { Board } from '@core/board';
-import { isPlayerSquare } from '@core/square';
 import {
   FALLBACK_TIMER_MS,
   ONE_SECOND_MS,
@@ -19,6 +17,8 @@ import { removeUserFromGame } from '@/gameplay/gameplay-ws-api';
 import { GameRepository } from '@/game/game-repository';
 import { GameStatus } from '@/game/types';
 import { endGame } from '@/game/actions/end-game';
+import { processTick as coreProcessTick } from '@core/step-processor';
+import type { MoveEvent, MoveHistoryV1 } from '@core/replay/types';
 
 const MAX_QUEUED_MOVES_PER_PLAYER = 200;
 
@@ -42,6 +42,9 @@ export class GameServer {
   private countdownSeconds: number = PRE_GAME_COUNTDOWN_SECONDS;
   private countdownInterval: NodeJS.Timeout | null = null;
   private fallbackTimer: NodeJS.Timeout | null = null;
+  private moveFlushTimer: NodeJS.Timeout | null = null;
+  private appliedEvents: MoveEvent[] = [];
+  private lastFlushedCount: number = 0;
   private log = createScopedLogger(() => `GameServer id=${this.gameId}`);
 
   constructor(gameId: number) {
@@ -129,13 +132,34 @@ export class GameServer {
     }
 
     try {
-      this.processPlayerMoves();
+      // Build at most 1 event per player for the upcoming step (1-based)
+      const step = this.gameState.tick + 1;
+      const eventsForStep: MoveEvent[] = [];
+      for (const [playerIndex, moveQueue] of this.playerQueues) {
+        if (moveQueue.length === 0) continue;
+        const queuedMove = moveQueue.shift()!;
+        eventsForStep.push({
+          step,
+          playerIndex,
+          sourceCoord: queuedMove.sourceCoord,
+          direction: queuedMove.movement,
+        });
+      }
 
-      const tickResult = engineTick(this.gameState.board, this.gameState.tick);
-      this.gameState.tick++;
+      const timing = (this.gameState.config as any)?.timing;
+      const { appliedEvents, gameEnded, winnerPlayerIndex } = coreProcessTick(
+        this.gameState.board,
+        step,
+        eventsForStep,
+        timing,
+      );
+      if (appliedEvents.length) {
+        this.appliedEvents.push(...appliedEvents);
+      }
+      this.gameState.tick = step;
 
-      if (tickResult.gameEnded) {
-        await this.handleGameEnd(tickResult.winnerPlayerIndex!);
+      if (gameEnded) {
+        await this.handleGameEnd(winnerPlayerIndex!);
         return true;
       }
 
@@ -148,47 +172,7 @@ export class GameServer {
     }
   }
 
-  private processPlayerMoves(): void {
-    if (!this.gameState) return;
-
-    for (const [playerIndex, moveQueue] of this.playerQueues) {
-      if (moveQueue.length === 0) continue;
-
-      const queuedMove = moveQueue.shift()!;
-      const { sourceCoord: source, movement } = queuedMove;
-
-      try {
-        // Validate at tick time - deferred validation allows queuing moves from future conquests
-        if (!Board.isCoordValid(this.gameState.board, source)) {
-          this.log.error(
-            `Invalid source coords ${source.x},${source.y} for player ${playerIndex}`,
-          );
-          continue;
-        }
-
-        const sourceSquare = Board.getSquare(this.gameState.board, source);
-
-        // Check if player owns this tile (deferred validation)
-        // TODO: make this if check cleaner, maybe w/ some helper
-        if (
-          !isPlayerSquare(sourceSquare) ||
-          sourceSquare.playerIndex !== playerIndex
-        ) {
-          continue;
-        }
-
-        if (sourceSquare.units <= 1) {
-          continue;
-        }
-        applyMovement(this.gameState.board, source, movement);
-      } catch (error) {
-        this.log.error(
-          `Invalid move ${movement} from ${source.x},${source.y} for player ${playerIndex}`,
-          error,
-        );
-      }
-    }
-  }
+  // Movement now processed in core step-processor
 
   private async handleGameEnd(winnerPlayerIndex: number): Promise<void> {
     this.log.info(`Game ended, winner: player ${winnerPlayerIndex}`);
@@ -196,11 +180,14 @@ export class GameServer {
 
     // Update game status and save final game state to database
     if (this.gameState) {
+      // Flush any remaining buffered move events first
+      await this.flushMoveHistory(true);
       await endGame({
         gameId: this.gameId,
         winnerPlayerIndex,
         finalGameState: this.gameState,
         reason: 'general_captured',
+        moveHistory: { version: 1, events: this.appliedEvents },
       });
     } else {
       throw new Error(`Game ${this.gameId} has no state to end`);
@@ -437,6 +424,7 @@ export class GameServer {
         throw new Error(`Game ${this.gameId} not found after starting`);
       }
       await this.broadcastGameStart(updatedGame);
+      this.startMoveFlushTimer();
     } catch (error) {
       this.log.error(`Failed to update game status for game. Error:`, error);
     }
@@ -504,5 +492,34 @@ export class GameServer {
 
     this.playerQueues.clear();
     this.gameEnded = true;
+    this.stopMoveFlushTimer();
+  }
+
+  // ------------------- Move history flush helpers -------------------
+  private startMoveFlushTimer(): void {
+    if (this.moveFlushTimer) return;
+    this.moveFlushTimer = setInterval(() => {
+      void this.flushMoveHistory();
+    }, 1000);
+  }
+
+  private stopMoveFlushTimer(): void {
+    if (this.moveFlushTimer) {
+      clearInterval(this.moveFlushTimer);
+      this.moveFlushTimer = null;
+    }
+  }
+
+  private async flushMoveHistory(force: boolean = false): Promise<void> {
+    try {
+      const count = this.appliedEvents.length;
+      if (!force && count === this.lastFlushedCount) return;
+      const repo = new GameRepository();
+      const history: MoveHistoryV1 = { version: 1, events: this.appliedEvents };
+      await repo.updateMoveHistory(this.gameId, history);
+      this.lastFlushedCount = count;
+    } catch (error) {
+      this.log.error('Failed to flush move history', error);
+    }
   }
 }
