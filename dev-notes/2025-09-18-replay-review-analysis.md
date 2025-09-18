@@ -174,7 +174,7 @@ Phase 5 — Tests, Tooling, and Docs
   - Action: Add tests for `processStep` ordering and conflict behavior (playerIndex sort).
   - Acceptance: Tests pass locally; cover key branches.
 - Determinism replay check
-  - Action: Add a backend or core script/CLI to load a finished game by `gameId`, re-simulate using `config` + `move_history`, and assert final board equals saved state. Print diff on mismatch.
+  - Action: Add a backend script/CLI to load a finished game by `gameId`, re-simulate using `config` + `move_history`, and assert final board equals saved state. Print diff on mismatch.
   - Acceptance: Script runs and returns non-zero on mismatch; useful for regression checks.
 - Import order policy
   - Action: Update `AGENTS.md` with import order: third-party → `@common` → `@core` → local (`@/`).
@@ -227,3 +227,8 @@ Out-of-Scope (for now)
 - Defeat detection: Implemented server-side diff of generals before/after each `processStep`.
 - Behavior on defeat: Queues are cleared for newly defeated players; `queueMove` ignores future submissions from those players.
 - Rationale: Chose Approach B to avoid expanding core API during MVP; keeps blast radius minimal and preserves determinism.
+
+## Phase 5 — Implementation Notes (2025-09-18)
+- Core tests: Added `core/src/moves/validate-move.test.ts` and `core/src/step-processor-ordering.test.ts` covering validation reasons and playerIndex ordering on contested moves.
+- Determinism check: Added `backend/scripts/replay-verify.ts` and npm script `npm run replay:verify -- --gameId=<id>` to verify final board matches replay result; prints coordinate-level diffs on mismatch.
+- Status: Builds green; core tests pass. Backend CLI requires DB available to run.
