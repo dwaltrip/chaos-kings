@@ -32,9 +32,9 @@ describe('createGame', () => {
 
       expect(game.id).toBeDefined();
       expect(game.status).toBe(GameStatus.NOT_STARTED);
-      expect(game.config.numPlayers).toBe(2);
-      expect(game.config.playerIndexToColor['0']).toBe(PLAYER_COLORS[0]);
-      expect(game.config.playerIndexToColor['1']).toBe(PLAYER_COLORS[1]);
+      expect(game.config.players.count).toBe(2);
+      expect(game.config.players.colors[0]).toBe(PLAYER_COLORS[0]);
+      expect(game.config.players.colors[1]).toBe(PLAYER_COLORS[1]);
       expect(game.config.startingGrid).toBeDefined();
       expect(game.created_at).toBeDefined();
     });
@@ -51,11 +51,11 @@ describe('createGame', () => {
 
       const game = await createGame(playerIds, testDb);
 
-      expect(game.config.numPlayers).toBe(4);
-      expect(game.config.playerIndexToColor['0']).toBe(PLAYER_COLORS[0]);
-      expect(game.config.playerIndexToColor['1']).toBe(PLAYER_COLORS[1]);
-      expect(game.config.playerIndexToColor['2']).toBe(PLAYER_COLORS[2]);
-      expect(game.config.playerIndexToColor['3']).toBe(PLAYER_COLORS[3]);
+      expect(game.config.players.count).toBe(4);
+      expect(game.config.players.colors[0]).toBe(PLAYER_COLORS[0]);
+      expect(game.config.players.colors[1]).toBe(PLAYER_COLORS[1]);
+      expect(game.config.players.colors[2]).toBe(PLAYER_COLORS[2]);
+      expect(game.config.players.colors[3]).toBe(PLAYER_COLORS[3]);
     });
 
     test('should assign correct player indices', async () => {
@@ -192,9 +192,9 @@ describe('createGame', () => {
 
       expect(game.config.size).toBeDefined();
       expect(game.config.startingGrid).toBeDefined();
-      expect(game.config.numPlayers).toBe(2);
-      expect(game.config.playerIndexToColor).toBeDefined();
-      expect(Object.keys(game.config.playerIndexToColor)).toHaveLength(2);
+      expect(game.config.players.count).toBe(2);
+      expect(game.config.players.colors).toBeDefined();
+      expect(game.config.players.colors).toHaveLength(2);
     });
 
     test('should not create game when user validation fails', async () => {

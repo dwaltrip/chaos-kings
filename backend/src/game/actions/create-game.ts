@@ -5,6 +5,11 @@ import { generateGameMapV2 } from '@core/terrain-generation';
 import { calcMapSizeForPlayers } from '@core/map/calc-map-size';
 import { GameConfig } from '@core/game-config';
 import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
+import {
+  TICK_RATE_MS,
+  GENERAL_PRODUCTION_TICKS,
+  ARMY_PRODUCTION_TICKS,
+} from '@core/game-timing-config';
 
 import { logger } from '@/utils/logger';
 import { GameRepository } from '@/game/game-repository';
@@ -59,19 +64,31 @@ async function createGame(
     Date.now(), // Use current timestamp as seed for deterministic generation
   );
 
-  const playerIndexToColor: GameConfig['playerIndexToColor'] = {};
-  for (let i = 0; i < playerCount; i++) {
-    // Map player indices (0-based) to colors
-    playerIndexToColor[i.toString()] = PLAYER_COLORS[i];
-  }
+  const colors: GameConfig['players']['colors'] = Array.from(
+    { length: playerCount },
+    (_, i) => PLAYER_COLORS[i],
+  );
 
   const newGame: NewGame = {
     game_state: {},
     config: {
       size: dynamicSize,
       startingGrid: grid,
-      numPlayers: playerCount,
-      playerIndexToColor,
+      players: {
+        count: playerCount,
+        colors,
+      },
+      generation: {
+        seed: Date.now(),
+        minGeneralDistance: DEFAULT_GAME_GENERATION_CONFIG.minGeneralDistance,
+        mountainDensity: DEFAULT_GAME_GENERATION_CONFIG.mountainDensity,
+        // algoVersion: 'v2', // optional for future debugging
+      },
+      timing: {
+        tickRateMs: TICK_RATE_MS,
+        generalProductionTicks: GENERAL_PRODUCTION_TICKS,
+        armyProductionTicks: ARMY_PRODUCTION_TICKS,
+      },
     },
     status: GameStatus.NOT_STARTED,
   };
