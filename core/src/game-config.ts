@@ -1,5 +1,6 @@
 import type { GameGrid, Size2d } from '@core/types';
 import type { PlayerColor } from '@core/colors';
+import type { TimingConfig } from '@core/timing/types';
 
 interface GameConfig {
   size: Size2d;
@@ -14,11 +15,7 @@ interface GameConfig {
     mountainDensity?: number;
     algoVersion?: string;
   };
-  timing: {
-    tickRateMs: number;
-    generalProductionTicks: number;
-    armyProductionTicks: number;
-  };
+  timing: TimingConfig;
   // TODO(engine-versioning): engineVersion?: string
 }
 

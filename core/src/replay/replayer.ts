@@ -1,7 +1,7 @@
 import type { BoardState } from '@core/types';
 import type { GameConfig } from '@core/game-config';
 import type { MoveHistoryV1, MoveEvent } from '@core/replay/types';
-import { processTick } from '@core/step-processor';
+import { processStep } from '@core/step-processor';
 
 function deepCloneBoard(starting: BoardState): BoardState {
   return {
@@ -51,7 +51,7 @@ function* replayFrames(
   // Iterate until game end, or bounds reached
   while (step <= maxSteps) {
     const events = byStep.get(step) ?? [];
-    const result = processTick(board, step, events, config.timing);
+    const result = processStep(board, step, events, config.timing);
     yield {
       step,
       board,

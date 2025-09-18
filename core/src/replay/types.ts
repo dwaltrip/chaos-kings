@@ -1,4 +1,5 @@
 import type { Coord, Direction } from '@core/types';
+import type { TimingConfig } from '@core/timing/types';
 
 interface MoveEvent {
   step: number; // 1-based step index
@@ -10,12 +11,6 @@ interface MoveEvent {
 interface MoveHistoryV1 {
   version: 1;
   events: MoveEvent[];
-}
-
-interface TimingConfig {
-  tickRateMs: number;
-  generalProductionTicks: number;
-  armyProductionTicks: number;
 }
 
 export type { MoveEvent, MoveHistoryV1, TimingConfig };

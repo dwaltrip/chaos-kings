@@ -10,7 +10,7 @@ import {
   ONE_SECOND_MS,
   PRE_GAME_COUNTDOWN_SECONDS,
 } from '@core/ui-timing-config';
-import { processTick as coreProcessTick } from '@core/step-processor';
+import { processStep as coreProcessStep } from '@core/step-processor';
 import type { MoveEvent, MoveHistoryV1 } from '@core/replay/types';
 import { getGame } from '@/game/actions/get-game';
 import { createScopedLogger } from '@/utils/scoped-logger';
@@ -147,7 +147,7 @@ export class GameServer {
       }
 
       const { timing } = this.gameState.config as GameConfig;
-      const { appliedEvents, gameEnded, winnerPlayerIndex } = coreProcessTick(
+      const { appliedEvents, gameEnded, winnerPlayerIndex } = coreProcessStep(
         this.gameState.board,
         step,
         eventsForStep,

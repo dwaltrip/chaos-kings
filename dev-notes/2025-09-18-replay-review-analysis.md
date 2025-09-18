@@ -211,3 +211,9 @@ Out-of-Scope (for now)
 - Bound replayer iteration: `replayFrames` now supports optional `{ maxSteps, stopAfterLastEvent }` with defaults preserving current behavior.
 - Build status: Backend and frontend builds passed via `tools/build-all.sh`.
 - Test status: Backend tests require Postgres and are blocked in this environment; core tests run and pass locally.
+
+## Phase 2 — Implementation Notes (2025-09-18)
+- Centralized timing: Added `core/src/timing/types.ts` and updated `GameConfig.timing` to use it; `replay/types` now imports and re-exports `TimingConfig`.
+- Step-first naming: Renamed `processTick`→`processStep` and `tickWithTiming`→`stepWithTiming`; updated backend `game-server` and replayer.
+- Import order: Confirmed third-party → `@common/...` → `@core/...` → local `@/...` in modified files; updated AGENTS.md/CLAUDE.md.
+- Build status: Backend and frontend builds pass; core tests run (backend Jest blocked by DB in this environment).

@@ -37,13 +37,14 @@ Hey AI assistant! My name is Daniel and I'm excited to build with you :)
 ### Core (`/core`)
 
 - Pure game domain logic (board state, game rules, etc.)
-- Separate from shared utilities and types
+- All game-specific logic and types live here
+- Separate from generic shared utilities and types
 - Has its own Jest test suite for game logic validation
 - Isn't built directly, just included in BE + FE builds
 
 ### Shared (`/common`)
 
-- Shared TypeScript types and utilities between frontend/backend
+- Generic shared TypeScript types and utilities between frontend/backend
 - Validation, constants, and cross-cutting concerns
 - Isn't built directly, just included in BE + FE builds
 
@@ -103,6 +104,7 @@ Hey AI assistant! My name is Daniel and I'm excited to build with you :)
 ### Import/Export Patterns
 
 - Use `@/path/to/file` for all local imports (both FE and BE)
+- Import order: third-party → `@common/...` → `@core/...` → local `@/...`
 - **ALWAYS** place all exports at the end of files using named export syntax: `export { ... }`
 
 ## Debugging & Troubleshooting

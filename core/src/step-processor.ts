@@ -2,10 +2,11 @@ import { Board } from '@core/board';
 import { isPlayerSquare } from '@core/square';
 import { applyMovement } from '@core/engine';
 import type { BoardState } from '@core/types';
-import type { MoveEvent, TimingConfig } from '@core/replay/types';
+import type { MoveEvent } from '@core/replay/types';
+import type { TimingConfig } from '@core/timing/types';
 import { validateMove } from '@core/moves/validate-move';
 
-function processTick(
+function processStep(
   board: BoardState,
   step: number, // 1-based
   events: MoveEvent[],
@@ -28,7 +29,7 @@ function processTick(
     }
   }
 
-  const tickResult = tickWithTiming(board, step, timing);
+  const tickResult = stepWithTiming(board, step, timing);
   return {
     appliedEvents: applied,
     gameEnded: tickResult.gameEnded,
@@ -36,7 +37,7 @@ function processTick(
   };
 }
 
-function tickWithTiming(
+function stepWithTiming(
   board: BoardState,
   tickNumber: number,
   timing: TimingConfig,
@@ -85,4 +86,4 @@ function applyTroopProduction(board: BoardState): void {
   }
 }
 
-export { processTick };
+export { processStep };
