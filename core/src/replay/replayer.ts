@@ -25,6 +25,7 @@ function groupEventsByStep(events: MoveEvent[]): Map<number, MoveEvent[]> {
 function* replayFrames(
   config: GameConfig,
   history: MoveHistoryV1,
+  opts?: { maxSteps?: number; stopAfterLastEvent?: boolean },
 ): Iterable<{
   step: number;
   board: BoardState;
@@ -37,9 +38,18 @@ function* replayFrames(
   });
   const byStep = groupEventsByStep(history.events);
 
-  // Assume steps begin at 1 and advance until game end or no more events
+  // Assume steps begin at 1 (1-based)
   let step = 1;
-  while (true) {
+  let lastEventStep = 0;
+  for (const e of history.events) {
+    if (e.step > lastEventStep) lastEventStep = e.step;
+  }
+
+  const maxSteps = opts?.maxSteps ?? Infinity;
+  const stopAfterLastEvent = opts?.stopAfterLastEvent ?? false;
+
+  // Iterate until game end, or bounds reached
+  while (step <= maxSteps) {
     const events = byStep.get(step) ?? [];
     const result = processTick(board, step, events, config.timing);
     yield {
@@ -52,8 +62,9 @@ function* replayFrames(
     if (result.gameEnded && result.winnerPlayerIndex !== undefined) {
       break;
     }
-    // Stop when we have no more events to apply for a long time? For MVP, run until game end.
-    // In practice the caller decides how many frames to iterate.
+    if (stopAfterLastEvent && step >= lastEventStep) {
+      break;
+    }
     step += 1;
   }
 }

@@ -3,7 +3,7 @@ import { Kysely } from 'kysely';
 import { PLAYER_COLORS } from '@core/colors';
 import { generateGameMapV2 } from '@core/terrain-generation';
 import { calcMapSizeForPlayers } from '@core/map/calc-map-size';
-import { GameConfig } from '@core/game-config';
+import type { GameConfig } from '@core/game-config';
 import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
 import {
   TICK_RATE_MS,
@@ -57,11 +57,12 @@ async function createGame(
   const playerCount = playerIds.length;
   const dynamicSize = calcMapSizeForPlayers(playerCount);
 
-  const { grid, generals } = generateGameMapV2(
+  const seed = Date.now();
+  const { grid } = generateGameMapV2(
     dynamicSize,
     playerCount,
     DEFAULT_GAME_GENERATION_CONFIG.minGeneralDistance,
-    Date.now(), // Use current timestamp as seed for deterministic generation
+    seed, // Use single timestamp seed for deterministic generation
   );
 
   const colors: GameConfig['players']['colors'] = Array.from(
@@ -79,7 +80,7 @@ async function createGame(
         colors,
       },
       generation: {
-        seed: Date.now(),
+        seed,
         minGeneralDistance: DEFAULT_GAME_GENERATION_CONFIG.minGeneralDistance,
         mountainDensity: DEFAULT_GAME_GENERATION_CONFIG.mountainDensity,
         // algoVersion: 'v2', // optional for future debugging

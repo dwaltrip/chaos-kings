@@ -5,6 +5,7 @@ import { getGame } from '@/game/actions/get-game';
 import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
 import type { GameWithPlayers } from '@common/types/games';
 import { Board } from '@core/board';
+import type { GameConfig } from '@core/game-config';
 import {
   FALLBACK_TIMER_MS,
   ONE_SECOND_MS,
@@ -146,7 +147,7 @@ export class GameServer {
         });
       }
 
-      const timing = (this.gameState.config as any)?.timing;
+      const { timing } = this.gameState.config as GameConfig;
       const { appliedEvents, gameEnded, winnerPlayerIndex } = coreProcessTick(
         this.gameState.board,
         step,
