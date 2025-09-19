@@ -12,5 +12,10 @@
     "format:check": "prettier --check .",
     "prepare": "husky install",
     "knip": "knip"
+  },
+  "dependencies": {
+    "commander": "^14.0.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.6.2"
   }
 }
