@@ -2,9 +2,11 @@ import { execSync } from 'child_process';
 import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
+import { createTypedCommand } from './helpers/typed-command';
 
-interface CommitRewrite {
-  [hash: string]: string;
+interface CommitRewriteEntry {
+  hash: string;
+  'new-message': string | string[];
 }
 
 interface CommitInfo {
@@ -26,19 +28,19 @@ interface RewriteResult {
   error?: string;
 }
 
-interface RewriteOptions {
-  stopOnError?: boolean;
-  preserveAuthorship?: boolean;
-  verbose?: boolean;
+interface CommandOptions {
+  sourceBranch: string;
+  outputBranch: string;
+  rewriteFile: string;
+  baseBranch: string;
   dryRun?: boolean;
+  outputResults?: string;
 }
 
 class GitCommitRewriter {
-  private verbose: boolean;
   private dryRun: boolean;
 
-  constructor(options: { verbose?: boolean; dryRun?: boolean } = {}) {
-    this.verbose = options.verbose || false;
+  constructor(options: { dryRun?: boolean } = {}) {
     this.dryRun = options.dryRun || false;
   }
 
@@ -49,7 +51,7 @@ class GitCommitRewriter {
       this.dryRun &&
       (command.includes('cherry-pick') || command.includes('commit'))
     ) {
-      this.log(chalk.yellow(`[DRY RUN] Would execute: ${fullCommand}`));
+      console.log(chalk.yellow(`[DRY RUN] Would execute: ${fullCommand}`));
       return '';
     }
 
@@ -114,13 +116,63 @@ class GitCommitRewriter {
     };
   }
 
+  private formatCommitMessage(newMessage: string | string[]): string {
+    if (typeof newMessage === 'string') {
+      return newMessage;
+    }
+
+    if (!Array.isArray(newMessage)) {
+      throw new Error(
+        `new-message must be a string or array. Found: ${typeof newMessage}`,
+      );
+    }
+
+    if (newMessage.length === 0) {
+      throw new Error('new-message array cannot be empty');
+    }
+
+    // First element is subject, remaining are body lines
+    const subject = newMessage[0];
+    const bodyLines = newMessage.slice(1);
+
+    if (bodyLines.length === 0) {
+      return subject;
+    }
+
+    return `${subject}\n\n${bodyLines.join('\n')}`;
+  }
+
+  private rewriteCommitMessage(
+    sha: string,
+    commitInfo: CommitInfo,
+    newMessage: string,
+  ): void {
+    // Write the new message to a temporary file to avoid shell injection
+    const tempFile = path.join(process.cwd(), '.git', 'COMMIT_EDITMSG_TEMP');
+
+    try {
+      fs.writeFileSync(tempFile, newMessage, 'utf8');
+
+      // Amend with new message from file, preserving authorship
+      this.gitExec(
+        `commit --amend --file="${tempFile}" --author="${commitInfo.author.name} <${commitInfo.author.email}>"`,
+        { silent: true },
+      );
+    } finally {
+      // Clean up temp file
+      if (fs.existsSync(tempFile)) {
+        fs.unlinkSync(tempFile);
+      }
+    }
+  }
+
   private loadNewMessagesFromFile(filePath: string): Map<string, string> {
     if (!fs.existsSync(filePath)) {
       throw new Error(`Rewrite file not found: ${filePath}`);
     }
 
     const content = fs.readFileSync(filePath, 'utf8');
-    let data: CommitRewrite[];
+    let data: CommitRewriteEntry[];
 
     try {
       data = JSON.parse(content);
@@ -133,16 +185,46 @@ class GitCommitRewriter {
     }
 
     const rewriteMap = new Map<string, string>();
+    const seenHashes = new Set<string>();
 
-    for (const item of data) {
-      const keys = Object.keys(item);
-      if (keys.length !== 1) {
+    for (let i = 0; i < data.length; i++) {
+      const item = data[i];
+
+      // Validate required properties
+      if (!item || typeof item !== 'object') {
         throw new Error(
-          `Each rewrite object must have exactly one key-value pair. Found: ${JSON.stringify(item)}`,
+          `Item ${i} must be an object. Found: ${JSON.stringify(item)}`,
         );
       }
-      const [hash, message] = Object.entries(item)[0];
-      rewriteMap.set(hash, message);
+
+      if (!item.hash || typeof item.hash !== 'string') {
+        throw new Error(
+          `Item ${i} must have a 'hash' property (string). Found: ${JSON.stringify(item)}`,
+        );
+      }
+
+      if (!item['new-message']) {
+        throw new Error(
+          `Item ${i} must have a 'new-message' property. Found: ${JSON.stringify(item)}`,
+        );
+      }
+
+      // Validate hash format (basic SHA pattern)
+      if (!/^[a-f0-9]{7,40}$/i.test(item.hash)) {
+        throw new Error(
+          `Item ${i} has invalid hash format: ${item.hash}. Must be 7-40 hex characters.`,
+        );
+      }
+
+      // Check for duplicate hashes
+      if (seenHashes.has(item.hash)) {
+        throw new Error(`Duplicate hash found: ${item.hash}`);
+      }
+      seenHashes.add(item.hash);
+
+      // Format the new message
+      const formattedMessage = this.formatCommitMessage(item['new-message']);
+      rewriteMap.set(item.hash, formattedMessage);
     }
 
     return rewriteMap;
@@ -198,10 +280,7 @@ class GitCommitRewriter {
     outputBranch: string,
     newMessagesFilepath: string,
     baseBranch: string = 'dev',
-    options: RewriteOptions = {},
   ): Promise<RewriteResult[]> {
-    const preserveAuthorship = options.preserveAuthorship !== false;
-
     console.log(chalk.blue('🚀 Starting commit rewrite process'));
 
     const rewriteMap = this.loadNewMessagesFromFile(newMessagesFilepath);
@@ -281,28 +360,12 @@ class GitCommitRewriter {
         const newMessage = rewriteMap.get(sha) || rewriteMap.get(info.shortSha);
 
         if (newMessage) {
-          // Prepare the full message (subject + body if exists)
-          const fullMessage = info.body
-            ? `${newMessage}\n\n${info.body}`
-            : newMessage;
-
-          // Amend with new message, preserving authorship
-          if (preserveAuthorship) {
-            this.gitExec(
-              `commit --amend -m "${fullMessage.replace(/"/g, '\\"')}" ` +
-                `--author="${info.author.name} <${info.author.email}>"`,
-              { silent: true },
-            );
-          } else {
-            this.gitExec(
-              `commit --amend -m "${fullMessage.replace(/"/g, '\\"')}"`,
-              { silent: true },
-            );
-          }
+          // Rewrite the commit message (completely replaces original)
+          this.rewriteCommitMessage(sha, info, newMessage);
 
           console.log(
             chalk.yellow(
-              `${progress} ✏️ ${info.shortSha}: "${info.subject}" → "${newMessage}"`,
+              `${progress} ✏️ ${info.shortSha}: "${info.subject}" → "${newMessage.split('\n')[0]}"`,
             ),
           );
         } else {
@@ -336,10 +399,8 @@ class GitCommitRewriter {
           );
         }
 
-        // Decide whether to continue or abort
-        if (options.stopOnError) {
-          throw new Error(`Stopped at commit ${info.shortSha}`);
-        }
+        // Stop on any error to prevent corrupting the rewrite process
+        throw new Error(`Stopped at commit ${info.shortSha}`);
       }
     }
 
@@ -378,62 +439,77 @@ class GitCommitRewriter {
 
     return results;
   }
-
-  private log(msg: string): void {
-    if (this.verbose) console.log(chalk.gray(msg));
-  }
 }
 
 // Main execution
 async function main() {
-  const args = process.argv.slice(2);
+  const program = createTypedCommand<CommandOptions>()
+    .name('rewrite-commit-messages')
+    .description(
+      'Rewrite commit messages for a selection of commits on a branch',
+    )
+    .requiredOption('-s, --source-branch <branch>', 'source branch to rewrite')
+    .requiredOption(
+      '-o, --output-branch <branch>',
+      'output branch name (must not exist)',
+    )
+    .requiredOption(
+      '-f, --rewrite-file <file>',
+      'JSON file containing commit rewrites',
+    )
+    .option('-b, --base-branch <branch>', 'base branch', 'dev')
+    .option('--dry-run', 'show what would be done without making changes')
+    .option(
+      '-r, --output-results <file>',
+      'results output file',
+      'rewrite-results.json',
+    )
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ npx tsx rewrite-commit-messages.ts -s my-branch -o my-branch-v2 -f rewrites.json
+  $ npx tsx rewrite-commit-messages.ts -s feat-123 -o feat-123-v2 -f rewrites.json -b main --dry-run
 
-  if (args.length < 4) {
-    console.error(
-      chalk.red(
-        'Usage: ts-node rewrite-commits.ts <source-branch> <output-branch> <rewrite-file> <base-branch>',
-      ),
-    );
-    console.error(
-      chalk.gray(
-        '\nExample: ts-node rewrite-commits.ts my-branch my-branch-v2 rewrites.json dev',
-      ),
-    );
-    console.error(chalk.gray('\nRewrite file format:'));
-    console.error(chalk.gray('['));
-    console.error(chalk.gray('  { "abc123": "feat: new message" },'));
-    console.error(chalk.gray('  { "def456": "fix: another message" }'));
-    console.error(chalk.gray(']'));
-    process.exit(1);
+Rewrite file format:
+[
+  {
+    "hash": "abc1234",
+    "new-message": ["feat: new subject", "body line 1", "body line 2"]
+  },
+  {
+    "hash": "def5678",
+    "new-message": "fix: simple subject only"
   }
+]
+`,
+    )
+    .action(async (options) => {
+      const rewriter = new GitCommitRewriter({
+        dryRun: options.dryRun,
+      });
 
-  const [sourceBranch, outputBranch, rewriteFile, baseBranch] = args;
+      try {
+        const results = await rewriter.rewriteCommitMessages(
+          options.sourceBranch,
+          options.outputBranch,
+          options.rewriteFile,
+          options.baseBranch,
+        );
 
-  const rewriter = new GitCommitRewriter({
-    verbose: true,
-    dryRun: false,
-  });
+        // Save results for inspection
+        fs.writeFileSync(
+          options.outputResults,
+          JSON.stringify(results, null, 2),
+        );
+        console.log(chalk.gray(`\nResults saved to ${options.outputResults}`));
+      } catch (error: any) {
+        console.error(chalk.red('Fatal error:'), error.message);
+        process.exit(1);
+      }
+    });
 
-  try {
-    const results = await rewriter.rewriteCommitMessages(
-      sourceBranch,
-      outputBranch,
-      rewriteFile,
-      baseBranch,
-      {
-        stopOnError: false,
-        preserveAuthorship: true,
-      },
-    );
-
-    // Save results for inspection
-    const resultsPath = 'rewrite-results.json';
-    fs.writeFileSync(resultsPath, JSON.stringify(results, null, 2));
-    console.log(chalk.gray(`\nResults saved to ${resultsPath}`));
-  } catch (error: any) {
-    console.error(chalk.red('Fatal error:'), error.message);
-    process.exit(1);
-  }
+  await program.parseAsync();
 }
 
 // Run if this is the main module
