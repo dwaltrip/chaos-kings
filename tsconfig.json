@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2020",
+    "downlevelIteration": true,
+    "moduleResolution": "node",
+    "module": "commonjs",
+    "lib": ["ES2020"]
+  },
+  "include": ["scripts/**/*"]
+}

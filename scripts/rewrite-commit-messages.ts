@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import chalk from 'chalk';
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 import { createTypedCommand } from './helpers/typed-command';
 
 interface CommitRewriteEntry {
@@ -245,7 +245,7 @@ class GitCommitRewriter {
     const commitSet = new Set(commits);
     const missingHashes: string[] = [];
 
-    for (const hash of hashes) {
+    hashes.forEach((hash) => {
       // Check if it's a full SHA or abbreviated
       let found = false;
 
@@ -265,7 +265,7 @@ class GitCommitRewriter {
       if (!found) {
         missingHashes.push(hash);
       }
-    }
+    });
 
     if (missingHashes.length > 0) {
       throw new Error(
