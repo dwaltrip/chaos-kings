@@ -11,7 +11,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky install",
-    "knip": "knip"
+    "knip": "knip",
+    "tool:example": "npx tsx scripts/example-tool.ts"
   },
   "dependencies": {
     "commander": "^14.0.1",
