@@ -15,6 +15,7 @@
     "tool:example": "npx tsx scripts/example-tool.ts"
   },
   "dependencies": {
+    "chalk": "^5.6.2",
     "commander": "^14.0.1",
     "tsx": "^4.20.5",
     "typescript": "^5.6.2"
