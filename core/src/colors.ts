@@ -23,4 +23,15 @@ const ColorMap: Map<PlayerColor, string> = new Map([
   ['SILVER', '#95a5a6'],
 ]);
 
-export { PlayerColor, PLAYER_COLORS, ColorMap };
+function colorsForPlayerCount(count: number): PlayerColor[] {
+  if (count < 1 || count > PLAYER_COLORS.length) {
+    throw new Error(
+      `Player count must be between 1 and ${PLAYER_COLORS.length}`,
+    );
+  }
+  return Array.from({ length: count }, (_, i) => PLAYER_COLORS[i]);
+}
+
+export type { PlayerColor };
+
+export { PLAYER_COLORS, ColorMap, colorsForPlayerCount };

@@ -32,9 +32,9 @@ describe('createGame', () => {
 
       expect(game.id).toBeDefined();
       expect(game.status).toBe(GameStatus.NOT_STARTED);
-      expect(game.config.players.count).toBe(2);
-      expect(game.config.players.colors[0]).toBe(PLAYER_COLORS[0]);
-      expect(game.config.players.colors[1]).toBe(PLAYER_COLORS[1]);
+      expect(game.config.map.numPlayers).toBe(2);
+      expect(game.config.playerColors[0]).toBe(PLAYER_COLORS[0]);
+      expect(game.config.playerColors[1]).toBe(PLAYER_COLORS[1]);
       expect(game.config.startingGrid).toBeDefined();
       expect(game.created_at).toBeDefined();
     });
@@ -51,11 +51,11 @@ describe('createGame', () => {
 
       const game = await createGame(playerIds, testDb);
 
-      expect(game.config.players.count).toBe(4);
-      expect(game.config.players.colors[0]).toBe(PLAYER_COLORS[0]);
-      expect(game.config.players.colors[1]).toBe(PLAYER_COLORS[1]);
-      expect(game.config.players.colors[2]).toBe(PLAYER_COLORS[2]);
-      expect(game.config.players.colors[3]).toBe(PLAYER_COLORS[3]);
+      expect(game.config.map.numPlayers).toBe(4);
+      expect(game.config.playerColors[0]).toBe(PLAYER_COLORS[0]);
+      expect(game.config.playerColors[1]).toBe(PLAYER_COLORS[1]);
+      expect(game.config.playerColors[2]).toBe(PLAYER_COLORS[2]);
+      expect(game.config.playerColors[3]).toBe(PLAYER_COLORS[3]);
     });
 
     test('should assign correct player indices', async () => {
@@ -89,7 +89,7 @@ describe('createGame', () => {
   describe('validation errors', () => {
     test('should reject empty player array', async () => {
       await expect(createGame([], testDb)).rejects.toThrow(
-        'At least two player IDs are required to create a game.',
+        'At least two players are required',
       );
     });
 
@@ -97,7 +97,7 @@ describe('createGame', () => {
       const user = await createUser('player1', testDb);
 
       await expect(createGame([user.id], testDb)).rejects.toThrow(
-        'At least two player IDs are required to create a game.',
+        'At least two players are required',
       );
     });
 
@@ -192,9 +192,9 @@ describe('createGame', () => {
 
       expect(game.config.map.size).toBeDefined();
       expect(game.config.startingGrid).toBeDefined();
-      expect(game.config.players.count).toBe(2);
-      expect(game.config.players.colors).toBeDefined();
-      expect(game.config.players.colors).toHaveLength(2);
+      expect(game.config.map.numPlayers).toBe(2);
+      expect(game.config.playerColors).toBeDefined();
+      expect(game.config.playerColors).toHaveLength(2);
     });
 
     test('should not create game when user validation fails', async () => {

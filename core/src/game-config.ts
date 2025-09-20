@@ -6,10 +6,7 @@ import type { MapGenerationParams } from '@core/terrain-generation';
 // TODO: num players is duplicated between `players.count` and `map.numPlayers`...
 interface GameConfig {
   startingGrid: GameGrid;
-  players: {
-    count: number;
-    colors: PlayerColor[];
-  };
+  playerColors: PlayerColor[];
   map: MapGenerationParams;
   timing: TimingConfig;
   // TODO(engine-versioning): engineVersion?: string

@@ -1,20 +1,20 @@
 import { Kysely } from 'kysely';
 
-import { PLAYER_COLORS } from '@core/colors';
 import {
   // TODO: TS wasn't complainining when I didn't have `type` here??
   // probably different ts configs in core vs backend vs frontend
   type MapGenerationParams,
   generateGameMapV2,
 } from '@core/terrain-generation';
-import { calcMapSizeForPlayers } from '@core/map/calc-map-size';
-import type { GameConfig } from '@core/game-config';
 import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
 import {
   TICK_RATE_MS,
   GENERAL_PRODUCTION_TICKS,
   ARMY_PRODUCTION_TICKS,
 } from '@core/game-timing-config';
+import { isValidForCreateGame } from '@core/game/validation';
+import { calcMapSizeForPlayers } from '@core/map/calc-map-size';
+import { colorsForPlayerCount } from '@core/colors';
 
 import { logger } from '@/utils/logger';
 import { GameRepository } from '@/game/game-repository';
@@ -27,24 +27,20 @@ async function createGame(
   playerIds: number[],
   dbInstance: Kysely<Database> = db,
 ): Promise<Game> {
-  logger.info(`Creating game with players: ${playerIds.join(', ')}`);
-  // Validate player count first
-  if (playerIds.length < 2) {
-    throw new Error('At least two player IDs are required to create a game.');
+  const playerCount = playerIds.length;
+  logger.info(
+    `Creating game with ${playerCount} players: ${playerIds.join(', ')}`,
+  );
+
+  const { valid, errors } = isValidForCreateGame({
+    playerCount,
+    playerIds: playerIds,
+  });
+  if (!valid) {
+    throw new Error(`Invalid game configuration:\n${errors?.join('\n  -')}`);
   }
 
-  if (playerIds.length > PLAYER_COLORS.length) {
-    throw new Error(
-      `Too many players. Maximum allowed: ${PLAYER_COLORS.length}`,
-    );
-  }
-
-  // Check for duplicate player IDs
-  const uniquePlayerIds = new Set(playerIds);
-  if (uniquePlayerIds.size !== playerIds.length) {
-    throw new Error('Duplicate player IDs are not allowed.');
-  }
-
+  // TODO: Should be fetching via UsersRepository
   // Validate that all player IDs exist in the database
   const existingUsers = await dbInstance
     .selectFrom('users')
@@ -54,36 +50,23 @@ async function createGame(
 
   const existingUserIds = new Set(existingUsers.map((user) => user.id));
   const invalidUserIds = playerIds.filter((id) => !existingUserIds.has(id));
-
   if (invalidUserIds.length > 0) {
     throw new Error(`Invalid user IDs: ${invalidUserIds.join(', ')}`);
   }
 
-  const playerCount = playerIds.length;
-  const dynamicSize = calcMapSizeForPlayers(playerCount);
-
-  const seed = Date.now();
   const mapParams: MapGenerationParams = {
-    size: dynamicSize,
+    size: calcMapSizeForPlayers(playerCount),
     numPlayers: playerCount,
     minGeneralDistance: DEFAULT_GAME_GENERATION_CONFIG.minGeneralDistance,
-    seed, // Use single timestamp seed for deterministic generation
+    seed: createMapGenSeed(),
   };
   const { grid } = generateGameMapV2(mapParams, true);
-
-  const colors: GameConfig['players']['colors'] = Array.from(
-    { length: playerCount },
-    (_, i) => PLAYER_COLORS[i],
-  );
 
   const newGame: NewGame = {
     game_state: {},
     config: {
       startingGrid: grid,
-      players: {
-        count: playerCount,
-        colors,
-      },
+      playerColors: colorsForPlayerCount(playerCount),
       map: mapParams,
       timing: {
         tickRateMs: TICK_RATE_MS,
@@ -106,6 +89,11 @@ async function createGame(
 
   await gamePlayersRepository.bulkCreate(gamePlayersData);
   return game;
+}
+
+// TODO: look into if this is an acceptable way to generate seeds
+function createMapGenSeed(): number {
+  return Date.now();
 }
 
 export { createGame };
