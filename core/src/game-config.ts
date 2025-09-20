@@ -1,20 +1,16 @@
-import type { GameGrid, Size2d } from '@core/types';
+import type { GameGrid } from '@core/types';
 import type { PlayerColor } from '@core/colors';
 import type { TimingConfig } from '@core/timing/types';
+import type { MapGenerationParams } from '@core/terrain-generation';
 
+// TODO: num players is duplicated between `players.count` and `map.numPlayers`...
 interface GameConfig {
-  size: Size2d;
   startingGrid: GameGrid;
   players: {
     count: number;
     colors: PlayerColor[];
   };
-  generation: {
-    seed: number;
-    minGeneralDistance: number;
-    mountainDensity?: number;
-    algoVersion?: string;
-  };
+  map: MapGenerationParams;
   timing: TimingConfig;
   // TODO(engine-versioning): engineVersion?: string
 }

@@ -12,7 +12,13 @@ describe('tick function', () => {
 
   beforeEach(() => {
     const size = { width: 10, height: 10 };
-    const mapResult = generateGameMapV2(size, 2, 4);
+    const seed = Date.now();
+    const mapResult = generateGameMapV2({
+      size,
+      numPlayers: 2,
+      minGeneralDistance: 4,
+      seed,
+    });
     board = { grid: mapResult.grid, size };
     generals = mapResult.generals;
   });

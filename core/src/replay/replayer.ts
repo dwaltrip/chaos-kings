@@ -33,7 +33,7 @@ function* replayFrames(
   winner?: number;
 }> {
   const board = deepCloneBoard({
-    size: config.size,
+    size: config.map.size,
     grid: config.startingGrid,
   });
   const byStep = groupEventsByStep(history.events);

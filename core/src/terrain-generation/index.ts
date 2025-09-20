@@ -19,5 +19,5 @@ export type { ConversionResult } from '@core/terrain-generation/game-grid-conver
 export { generateGameMapV2 } from '@core/terrain-generation/game-map-generator';
 export type {
   GameMapResult,
-  GameMapGenerationOptions,
+  MapGenerationParams,
 } from '@core/terrain-generation/game-map-generator';

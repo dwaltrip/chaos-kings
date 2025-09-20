@@ -1,7 +1,9 @@
-enum CellState {
-  FREE = 0,
-  OBSTACLE = 1,
-}
+const CellState = {
+  FREE: 0,
+  OBSTACLE: 1,
+} as const;
+
+type CellState = (typeof CellState)[keyof typeof CellState];
 
 interface Coord {
   x: number;

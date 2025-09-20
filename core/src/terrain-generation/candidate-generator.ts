@@ -1,5 +1,5 @@
-import { Coord } from '@core/terrain-generation/types';
-import { Grid } from '@core/terrain-generation/grid';
+import type { Coord } from '@core/terrain-generation/types';
+import type { Grid } from '@core/terrain-generation/grid';
 import { SeededRNG } from '@core/terrain-generation/seeded-rng';
 
 interface CandidateGenerator {
@@ -17,7 +17,7 @@ class RandomCandidateGenerator implements CandidateGenerator {
     this.gridHeight = height;
   }
 
-  next(grid: Grid): Coord | null {
+  next(): Coord | null {
     const x = Math.floor(this.rng.next() * this.gridWidth);
     const y = Math.floor(this.rng.next() * this.gridHeight);
     return { x, y };

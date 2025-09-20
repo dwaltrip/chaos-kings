@@ -1,6 +1,6 @@
-import { Coord, CellState } from '@core/terrain-generation/types';
-import { Grid } from '@core/terrain-generation/grid';
-import { CandidateGenerator } from '@core/terrain-generation/candidate-generator';
+import { type Coord, CellState } from '@core/terrain-generation/types';
+import type { Grid } from '@core/terrain-generation/grid';
+import type { CandidateGenerator } from '@core/terrain-generation/candidate-generator';
 import { SeededRNG } from '@core/terrain-generation/seeded-rng';
 
 interface MountainGenerationOptions {

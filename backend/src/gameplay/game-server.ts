@@ -87,7 +87,7 @@ export class GameServer {
     }
     const boardState: BoardState = {
       grid: game.config.startingGrid,
-      size: game.config.size,
+      size: game.config.map.size,
     };
     this.gameState = {
       board: boardState,

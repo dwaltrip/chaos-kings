@@ -1,4 +1,4 @@
-import { Coord, CellState } from '@core/terrain-generation/types';
+import { type Coord, CellState } from '@core/terrain-generation/types';
 import { Grid, coordToString } from '@core/terrain-generation/grid';
 
 // Finds which target coordinates are reachable from start,

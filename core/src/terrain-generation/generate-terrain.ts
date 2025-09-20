@@ -1,7 +1,7 @@
 import { CellState } from '@core/terrain-generation/types';
 import { Grid } from '@core/terrain-generation/grid';
 import { canPlaceObstacle } from '@core/terrain-generation/connectivity';
-import { CandidateGenerator } from '@core/terrain-generation/candidate-generator';
+import type { CandidateGenerator } from '@core/terrain-generation/candidate-generator';
 import {
   MAX_DENSITY,
   MAX_TOTAL_FAILURES,

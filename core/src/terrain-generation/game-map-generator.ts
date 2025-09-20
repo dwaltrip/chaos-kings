@@ -1,3 +1,7 @@
+// --------------------------------------------------------------------------
+// TODO: rename this file or something.
+// It's not obvious that this is the main entry point for terrain-generation
+// --------------------------------------------------------------------------
 import type { GameGrid, Size2d, PlayerSquare, Coord } from '@core/types';
 import { SquareType } from '@core/types';
 import { generateTerrainWithCandidates } from '@core/terrain-generation/generate-terrain';
@@ -9,23 +13,23 @@ interface GameMapResult {
   generals: PlayerSquare[];
 }
 
-interface GameMapGenerationOptions {
-  warnOnFailure?: boolean;
+interface MapGenerationParams {
+  size: Size2d;
+  numPlayers: number;
+  minGeneralDistance: number;
+  seed: number;
+  // NOTE: Unused. But in future, can use to replicate old map behavior
+  algoVersion?: string;
 }
 
 function generateGameMapV2(
-  size: Size2d,
-  numPlayers: number,
-  minGeneralDistance: number,
-  seed?: number,
-  options: GameMapGenerationOptions = {},
+  { size, numPlayers, minGeneralDistance, seed }: MapGenerationParams,
+  warnOnFailure: boolean = false,
 ): GameMapResult {
-  const finalSeed = seed || Date.now();
-
   // Generate terrain using v2 system with mountain clustering
   // V2 ConnectivityValidator ensures connectivity during generation
   const mountainGenerator = new MountainCandidateGenerator(
-    finalSeed,
+    seed,
     size.width,
     size.height,
   );
@@ -34,7 +38,7 @@ function generateGameMapV2(
     size.width,
     size.height,
     mountainGenerator,
-    { warnOnFailure: options.warnOnFailure },
+    { warnOnFailure },
   );
 
   // Convert to GameGrid format
@@ -45,7 +49,8 @@ function generateGameMapV2(
     grid,
     numPlayers,
     minGeneralDistance,
-    finalSeed + 1000, // Different seed for general placement
+    // TODO: do we actually want a different seed here?
+    seed + 1000, // Different seed for general placement
   );
 
   return { grid, generals };
@@ -124,5 +129,5 @@ function isFarEnoughFromOtherGenerals(
   );
 }
 
-export type { GameMapResult, GameMapGenerationOptions };
+export type { GameMapResult, MapGenerationParams };
 export { generateGameMapV2 };

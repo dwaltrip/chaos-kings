@@ -1,7 +1,12 @@
 import { Kysely } from 'kysely';
 
 import { PLAYER_COLORS } from '@core/colors';
-import { generateGameMapV2 } from '@core/terrain-generation';
+import {
+  // TODO: TS wasn't complainining when I didn't have `type` here??
+  // probably different ts configs in core vs backend vs frontend
+  type MapGenerationParams,
+  generateGameMapV2,
+} from '@core/terrain-generation';
 import { calcMapSizeForPlayers } from '@core/map/calc-map-size';
 import type { GameConfig } from '@core/game-config';
 import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
@@ -58,12 +63,13 @@ async function createGame(
   const dynamicSize = calcMapSizeForPlayers(playerCount);
 
   const seed = Date.now();
-  const { grid } = generateGameMapV2(
-    dynamicSize,
-    playerCount,
-    DEFAULT_GAME_GENERATION_CONFIG.minGeneralDistance,
+  const mapParams: MapGenerationParams = {
+    size: dynamicSize,
+    numPlayers: playerCount,
+    minGeneralDistance: DEFAULT_GAME_GENERATION_CONFIG.minGeneralDistance,
     seed, // Use single timestamp seed for deterministic generation
-  );
+  };
+  const { grid } = generateGameMapV2(mapParams, true);
 
   const colors: GameConfig['players']['colors'] = Array.from(
     { length: playerCount },
@@ -73,18 +79,12 @@ async function createGame(
   const newGame: NewGame = {
     game_state: {},
     config: {
-      size: dynamicSize,
       startingGrid: grid,
       players: {
         count: playerCount,
         colors,
       },
-      generation: {
-        seed,
-        minGeneralDistance: DEFAULT_GAME_GENERATION_CONFIG.minGeneralDistance,
-        mountainDensity: DEFAULT_GAME_GENERATION_CONFIG.mountainDensity,
-        // algoVersion: 'v2', // optional for future debugging
-      },
+      map: mapParams,
       timing: {
         tickRateMs: TICK_RATE_MS,
         generalProductionTicks: GENERAL_PRODUCTION_TICKS,

@@ -1,7 +1,7 @@
 import {
   CellState,
-  Coord,
-  GridDimensions,
+  type Coord,
+  type GridDimensions,
 } from '@core/terrain-generation/types';
 import {
   MIN_GRID_SIZE,

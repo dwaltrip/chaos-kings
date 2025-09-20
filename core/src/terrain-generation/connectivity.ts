@@ -1,6 +1,6 @@
-import { Coord } from '@core/terrain-generation/types';
+import type { Coord } from '@core/terrain-generation/types';
+import type { Grid } from '@core/terrain-generation/grid';
 import { BFS } from '@core/terrain-generation/bfs';
-import { Grid } from '@core/terrain-generation/grid';
 
 // Determines if placing an obstacle at pos would maintain connectivity.
 // If the grid is currently connected, then we only need to check

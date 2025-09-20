@@ -1,9 +1,23 @@
 import { generateGameMapV2 } from '@core/terrain-generation/game-map-generator';
-import { SquareType } from '@core/types';
+import { Size2d, SquareType } from '@core/types';
+
+const genMap = (
+  size: Size2d,
+  numPlayers = 2,
+  minGeneralDistance = 4,
+  seed = 42,
+) => {
+  return generateGameMapV2({
+    size,
+    numPlayers,
+    minGeneralDistance,
+    seed,
+  });
+};
 
 describe('generateGameMapV2', () => {
   it('should generate a valid game map with correct structure', () => {
-    const result = generateGameMapV2(
+    const result = genMap(
       { width: 10, height: 10 },
       2,
       5,
@@ -44,7 +58,7 @@ describe('generateGameMapV2', () => {
   });
 
   it('should enforce minimum general distance', () => {
-    const result = generateGameMapV2(
+    const result = genMap(
       { width: 20, height: 20 },
       3,
       8, // Minimum distance of 8
@@ -67,8 +81,8 @@ describe('generateGameMapV2', () => {
   });
 
   it('should be deterministic with same seed', () => {
-    const result1 = generateGameMapV2({ width: 8, height: 8 }, 2, 4, 555);
-    const result2 = generateGameMapV2({ width: 8, height: 8 }, 2, 4, 555);
+    const result1 = genMap({ width: 8, height: 8 }, 2, 4, 555);
+    const result2 = genMap({ width: 8, height: 8 }, 2, 4, 555);
 
     // Grids should be identical
     for (let y = 0; y < 8; y++) {
@@ -98,7 +112,7 @@ describe('generateGameMapV2', () => {
 
   it('should throw error if unable to place generals', () => {
     expect(() => {
-      generateGameMapV2(
+      genMap(
         { width: 3, height: 3 }, // Very small map
         4, // Too many players
         5, // Large minimum distance

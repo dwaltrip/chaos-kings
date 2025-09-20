@@ -1,5 +1,5 @@
-import { CellState, Coord } from '@core/terrain-generation/types';
-import { Grid } from '@core/terrain-generation/grid';
+import { CellState } from '@core/terrain-generation/types';
+import type { Grid } from '@core/terrain-generation/grid';
 import type { GameGrid, Square, Size2d, PlayerSquare } from '@core/types';
 import { SquareType } from '@core/types';
 

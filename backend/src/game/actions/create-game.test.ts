@@ -190,7 +190,7 @@ describe('createGame', () => {
 
       const game = await createGame(playerIds, testDb);
 
-      expect(game.config.size).toBeDefined();
+      expect(game.config.map.size).toBeDefined();
       expect(game.config.startingGrid).toBeDefined();
       expect(game.config.players.count).toBe(2);
       expect(game.config.players.colors).toBeDefined();
