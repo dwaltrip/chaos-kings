@@ -4,8 +4,9 @@
   "main": "src/index.ts",
   "scripts": {
     "terrain-demo": "npx ts-node terrain-demo.ts",
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "test": "jest --silent --verbose=false --reporters=summary",
+    "test:verbose": "jest --verbose",
+    "test:watch": "jest --watch --silent --verbose=false --reporters=summary"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

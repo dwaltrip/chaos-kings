@@ -1,5 +1,6 @@
 import pino from 'pino';
 
+const isTest = process.env.NODE_ENV === 'test';
 const isDev = process.env.NODE_ENV !== 'production';
 
 const baseLoggerOptions = {
@@ -10,7 +11,7 @@ const baseLoggerOptions = {
 };
 
 export const loggerConfig = {
-  level: isDev ? 'debug' : 'info',
+  level: isTest ? 'error' : isDev ? 'debug' : 'info',
   transport: isDev
     ? {
         target: 'pino-pretty',
