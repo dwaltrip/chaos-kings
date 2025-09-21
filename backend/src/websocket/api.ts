@@ -1,4 +1,5 @@
 import { WsActions, WsMessageHandler, WsMessage } from '@/websocket/types';
+import { WsServerMessage } from '@common/types/websockets';
 
 function injectDomain(domain: string, actions: WsActions): WsActions {
   return {
@@ -38,7 +39,7 @@ class DomainAPI<TMessageType extends string = string> {
 class WebSocketAPI {
   private domains = new Map<string, DomainAPI>();
 
-  handleMessage(data: WsMessage, actions: WsActions) {
+  handleMessage(data: WsServerMessage, actions: WsActions) {
     const { domain, type } = data;
     const domainAPI = this.requireDomainAPI(domain);
     domainAPI.handleMessage(type, data, actions);
@@ -63,7 +64,7 @@ class WebSocketAPI {
 
 const websocketAPI = new WebSocketAPI();
 
-function handleWebSocketMessage(data: WsMessage, wsActions: WsActions) {
+function handleWebSocketMessage(data: WsServerMessage, wsActions: WsActions) {
   websocketAPI.handleMessage(data, wsActions);
 }
 

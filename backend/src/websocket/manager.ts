@@ -13,6 +13,7 @@ import {
 } from '@/websocket/types';
 import { handleWebSocketMessage } from '@/websocket/api';
 import { createScopedLogger, ScopedLogger } from '@/utils/scoped-logger';
+import { WsServerMessage } from '@common/types/websockets';
 
 type RoomId = string;
 
@@ -85,9 +86,17 @@ class WebSocketManager {
 
     ws.on('message', (buffer: Buffer) => {
       const bufferStr = buffer.toString();
+      if (!client.user) {
+        client.log.error(
+          'Received message but no user is associated with this client -- ignoring message',
+        );
+        return;
+      }
       try {
-        const data: WsMessage = validateMessage(JSON.parse(bufferStr));
-        data.user = client.user; // Attach user info to message
+        const data: WsServerMessage = {
+          ...validateMessage(JSON.parse(bufferStr)),
+          user: client.user, // Attach user info to message
+        };
         handleWebSocketMessage(data, this.actionsForClient(client));
       } catch (error) {
         client.log.error(

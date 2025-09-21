@@ -11,7 +11,6 @@ namespace GameChat {
       content: string;
       room: string;
       timestamp: number;
-      user?: User;
     };
   }
 

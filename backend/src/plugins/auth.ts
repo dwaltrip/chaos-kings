@@ -53,7 +53,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
         sessionId,
       );
       request.currentUser = {
-        id: user.id.toString(),
+        id: user.id,
         username: user.username,
         session_id: sessionId!,
         user_key: userKey!,
