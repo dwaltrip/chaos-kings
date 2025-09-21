@@ -30,7 +30,7 @@ interface QueuedMove {
 
 export class GameServer {
   private gameId: number;
-  private gameState: GameState | null = null;
+  private gameState!: GameState;
   private playerQueues: Map<number, QueuedMove[]> = new Map();
   private roomName: string;
   private playerMapping: Map<string, number> = new Map(); // userId -> playerIndex
@@ -48,34 +48,21 @@ export class GameServer {
   private defeatedPlayers: Set<number> = new Set();
   private log = createScopedLogger(() => `GameServer id=${this.gameId}`);
 
-  constructor(gameId: number) {
-    this.gameId = gameId;
-    this.roomName = `gameplay-${gameId}`;
+  constructor(game: GameWithPlayers) {
+    this.gameId = game.id;
+    this.roomName = `gameplay-${this.gameId}`;
     this.log.debug('New GameServer');
-    this.initializeGame();
-  }
 
-  private async initializeGame(): Promise<void> {
-    try {
-      const game = await getGame(this.gameId);
-      if (!game) {
-        throw new Error(`Game ${this.gameId} not found in database`);
-      }
+    this.initializeGameState(game, DEFAULT_GAME_GENERATION_CONFIG);
+    this.setupPlayerMappings(game);
+    this.initializePlayerQueues();
+    this.expectedPlayerCount = game.players.length;
+    this.initialized = true;
 
-      this.initializeGameState(game, DEFAULT_GAME_GENERATION_CONFIG);
-      this.setupPlayerMappings(game);
-      this.initializePlayerQueues();
-      this.expectedPlayerCount = game.players.length;
-      this.initialized = true;
+    // Start fallback timer to ensure countdown starts even if not all players join
+    this.startFallbackTimer();
 
-      // Start fallback timer to ensure countdown starts even if not all players join
-      this.startFallbackTimer();
-
-      this.log.debug('Game initialized with ${game.players.length} players');
-    } catch (error) {
-      this.log.error('Failed to initialize game. Error:', error);
-      throw error;
-    }
+    this.log.debug(`Game initialized with ${game.players.length} players`);
   }
 
   private initializeGameState(
@@ -128,7 +115,7 @@ export class GameServer {
     if (this.countdownActive || !this.gameStarted) {
       return false;
     }
-    if (!this.initialized || !this.gameState || this.gameEnded) {
+    if (!this.initialized || this.gameEnded) {
       return this.gameEnded;
     }
 
@@ -187,7 +174,7 @@ export class GameServer {
       this.broadcastGameState();
       return false;
     } catch (error) {
-      this.log.error(`Error during tick ${this.gameState?.tick}:`, error);
+      this.log.error(`Error during tick ${this.gameState.tick}:`, error);
       this.gameEnded = true;
       return true;
     }
@@ -210,19 +197,14 @@ export class GameServer {
     this.gameEnded = true;
 
     // Update game status and save final game state to database
-    if (this.gameState) {
-      // Flush any remaining buffered move events first
-      await this.flushMoveHistory(true);
-      await endGame({
-        gameId: this.gameId,
-        winnerPlayerIndex,
-        finalGameState: this.gameState,
-        reason: 'general_captured',
-        moveHistory: this.moveHistory.buildHistory(),
-      });
-    } else {
-      throw new Error(`Game ${this.gameId} has no state to end`);
-    }
+    // Flush any remaining buffered move events first
+    await endGame({
+      gameId: this.gameId,
+      winnerPlayerIndex,
+      finalGameState: this.gameState,
+      reason: 'general_captured',
+      moveHistory: this.moveHistory.buildHistory(),
+    });
 
     this.broadcastGameEnd(winnerPlayerIndex);
   }
@@ -245,8 +227,6 @@ export class GameServer {
   }
 
   private broadcastGameState(): void {
-    if (!this.gameState) return;
-
     try {
       const wsManager = getGlobalWebSocketManager();
       wsManager.serverBroadcastToRoom(this.roomName, {
@@ -265,8 +245,6 @@ export class GameServer {
   }
 
   private broadcastGameEnd(winnerPlayerIndex: number): void {
-    if (!this.gameState) return;
-
     try {
       const wsManager = getGlobalWebSocketManager();
       wsManager.serverBroadcastToRoom(this.roomName, {
@@ -299,7 +277,7 @@ export class GameServer {
     const queue = this.getPlayerQueue(playerIndex);
 
     // Basic validation at queue time - only check bounds, not ownership
-    if (!this.gameState || !Board.isCoordValid(this.gameState.board, source)) {
+    if (!Board.isCoordValid(this.gameState.board, source)) {
       this.log.error(
         `Invalid coords ${source.x},${source.y} for move request from user id=${userId}`,
       );
@@ -445,7 +423,7 @@ export class GameServer {
   }
 
   async startGame(): Promise<void> {
-    if (this.gameStarted || !this.initialized || !this.gameState) {
+    if (this.gameStarted || !this.initialized) {
       return;
     }
 
@@ -470,8 +448,6 @@ export class GameServer {
   }
 
   private async broadcastGameStart(game: GameWithPlayers): Promise<void> {
-    if (!this.gameState) return;
-
     try {
       const wsManager = getGlobalWebSocketManager();
       const payload: any = {

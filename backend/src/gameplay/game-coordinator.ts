@@ -1,6 +1,7 @@
 import { TICK_RATE_MS } from '@core/game-timing-config';
 import { createScopedLogger } from '@/utils/scoped-logger';
 import { GameServer } from '@/gameplay/game-server';
+import type { GameWithPlayers } from '@common/types/games';
 
 const moduleLogger = createScopedLogger('GameCoordinator');
 
@@ -42,14 +43,15 @@ class GameCoordinator {
     }
   }
 
-  addGame(gameId: number): void {
+  addGame(game: GameWithPlayers): void {
+    const gameId = game.id;
     if (this.games.has(gameId)) {
       this.log.info(`Game ${gameId} already exists in registry`);
       return;
     }
 
     this.log.info(`Adding game ${gameId} to registry`);
-    const gameServer = new GameServer(gameId);
+    const gameServer = new GameServer(game);
     this.games.set(gameId, gameServer);
   }
 

@@ -7,21 +7,21 @@ export async function spawnGameInstance(gameId: number): Promise<void> {
   console.log(`Spawning game instance for game ${gameId}`);
 
   // Get game data with players
-  const gameData = await getGame(gameId);
-  if (!gameData) {
+  const game = await getGame(gameId);
+  if (!game) {
     throw new Error(`Game ${gameId} not found when spawning instance`);
   }
 
   // Add game to coordinator (this creates the GameServer instance)
   const gameCoordinator = getGameCoordinator();
-  gameCoordinator.addGame(gameId);
+  gameCoordinator.addGame(game);
 
   // Set up user-game mappings for WebSocket API
-  gameData.players.forEach((player) => {
+  game.players.forEach((player) => {
     addUserToGame(player.user_id.toString(), gameId);
   });
 
   console.log(
-    `Game ${gameId} instance spawned with ${gameData.players.length} players`,
+    `Game ${gameId} instance spawned with ${game.players.length} players`,
   );
 }
