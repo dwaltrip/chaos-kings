@@ -83,7 +83,7 @@ async function createGame(
   const gamePlayersRepository = new GamePlayersRepository(dbInstance);
   const gamePlayersData = playerIds.map((playerId, index) => ({
     game_id: game.id,
-    player_id: playerId,
+    user_id: playerId,
     player_index: index, // 0-based indexing
   }));
 

@@ -22,11 +22,11 @@ function PlayerColors({
       <div className="flex gap-2">
         {game.players.map((player) => {
           const mapping = playerMapping?.find(
-            (m) => m.playerId === player.player_id.toString(),
+            (m) => m.playerId === player.user_id.toString(),
           );
           const playerIndex = mapping?.playerIndex ?? player.player_index;
           const color = getPlayerColor(playerIndex);
-          const isCurrentUser = player.player_id === currentUserId;
+          const isCurrentUser = player.user_id === currentUserId;
 
           return (
             <div key={player.id} className="flex items-center gap-1">
@@ -36,7 +36,7 @@ function PlayerColors({
                 title={`Player ${playerIndex + 1}`}
               />
               <span className={`text-xs ${isCurrentUser ? 'font-bold' : ''}`}>
-                {isCurrentUser ? 'You' : `Player ${player.player_id}`}
+                {isCurrentUser ? 'You' : `Player ${player.user_id}`}
               </span>
             </div>
           );

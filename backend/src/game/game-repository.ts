@@ -19,11 +19,11 @@ class GameRepository {
       games.map(async (game) => {
         const players = await this.dbInstance
           .selectFrom('game_players')
-          .innerJoin('users', 'users.id', 'game_players.player_id')
+          .innerJoin('users', 'users.id', 'game_players.user_id')
           .select([
             'game_players.id',
             'game_players.game_id',
-            'game_players.player_id',
+            'game_players.user_id',
             'game_players.joined_at',
             'game_players.status',
             'game_players.player_index',
@@ -79,11 +79,11 @@ class GameRepository {
 
     const players = await this.dbInstance
       .selectFrom('game_players')
-      .innerJoin('users', 'users.id', 'game_players.player_id')
+      .innerJoin('users', 'users.id', 'game_players.user_id')
       .select([
         'game_players.id',
         'game_players.game_id',
-        'game_players.player_id',
+        'game_players.user_id',
         'game_players.joined_at',
         'game_players.status',
         'game_players.player_index',

@@ -11,7 +11,7 @@ type NewGamePlayer = Insertable<GamePlayersTable>;
 
 interface CreateGamePlayerData {
   game_id: number;
-  player_id: number;
+  user_id: number;
   player_index: number;
   status?: GamePlayerStatus;
   data?: object;
@@ -34,7 +34,7 @@ class GamePlayersRepository {
   async createGamePlayer(data: CreateGamePlayerData): Promise<GamePlayer> {
     const gamePlayerData: NewGamePlayer = {
       game_id: data.game_id,
-      player_id: data.player_id,
+      user_id: data.user_id,
       player_index: data.player_index,
       status: data.status || 'active',
       data: data.data || null,
@@ -52,7 +52,7 @@ class GamePlayersRepository {
   async bulkCreate(players: CreateGamePlayerData[]): Promise<GamePlayer[]> {
     const gamePlayersData: NewGamePlayer[] = players.map((data) => ({
       game_id: data.game_id,
-      player_id: data.player_id,
+      user_id: data.user_id,
       player_index: data.player_index,
       status: data.status || 'active',
       data: data.data || null,

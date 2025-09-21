@@ -77,11 +77,11 @@ describe('createGame', () => {
         .execute();
 
       expect(gamePlayers).toHaveLength(3);
-      expect(gamePlayers[0].player_id).toBe(playerIds[0]);
+      expect(gamePlayers[0].user_id).toBe(playerIds[0]);
       expect(gamePlayers[0].player_index).toBe(0);
-      expect(gamePlayers[1].player_id).toBe(playerIds[1]);
+      expect(gamePlayers[1].user_id).toBe(playerIds[1]);
       expect(gamePlayers[1].player_index).toBe(1);
-      expect(gamePlayers[2].player_id).toBe(playerIds[2]);
+      expect(gamePlayers[2].user_id).toBe(playerIds[2]);
       expect(gamePlayers[2].player_index).toBe(2);
     });
   });
@@ -177,8 +177,8 @@ describe('createGame', () => {
         .execute();
 
       expect(savedGamePlayers).toHaveLength(2);
-      expect(savedGamePlayers[0].player_id).toBe(playerIds[0]);
-      expect(savedGamePlayers[1].player_id).toBe(playerIds[1]);
+      expect(savedGamePlayers[0].user_id).toBe(playerIds[0]);
+      expect(savedGamePlayers[1].user_id).toBe(playerIds[1]);
     });
 
     test('should generate valid game configuration', async () => {

@@ -7,7 +7,7 @@ type GamePlayerStatus = 'active' | 'captured' | 'inactive';
 interface Player {
   id: number;
   game_id: number;
-  player_id: number;
+  user_id: number;
   joined_at: Date | string | undefined;
   status: GamePlayerStatus;
   player_index: PlayerIndex;

@@ -18,7 +18,7 @@ export async function spawnGameInstance(gameId: number): Promise<void> {
 
   // Set up user-game mappings for WebSocket API
   gameData.players.forEach((player) => {
-    addUserToGame(player.player_id.toString(), gameId);
+    addUserToGame(player.user_id.toString(), gameId);
   });
 
   console.log(

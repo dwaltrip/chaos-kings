@@ -24,7 +24,7 @@ function getPlayerDisplayInfo(
 ): PlayerDisplayInfo {
   return {
     id: player.id,
-    playerId: player.player_id,
+    playerId: player.user_id,
     playerIndex: player.player_index,
     username: player.username,
     color: getPlayerColor(player.player_index),

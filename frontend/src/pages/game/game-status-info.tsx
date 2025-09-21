@@ -34,13 +34,13 @@ function GameStatusInfo({
     const winnerMapping = playerMapping.find((p) => p.playerIndex === winner);
     const winnerPlayer = winnerMapping
       ? game.players.find(
-          (p) => p.player_id.toString() === winnerMapping.playerId,
+          (p) => p.user_id.toString() === winnerMapping.playerId,
         )
       : null;
 
     return {
       playerName: winnerPlayer
-        ? `Player ${winnerPlayer.player_id}`
+        ? `Player ${winnerPlayer.user_id}`
         : `Player ${winner}`,
     };
   }, [isGameEnded, winner, playerMapping, game.players]);

@@ -98,7 +98,7 @@ export class GameServer {
 
   private setupPlayerMappings(gameData: GameWithPlayers): void {
     gameData.players.forEach((player, index) => {
-      this.playerMapping.set(player.player_id.toString(), index);
+      this.playerMapping.set(player.user_id.toString(), index);
     });
   }
 

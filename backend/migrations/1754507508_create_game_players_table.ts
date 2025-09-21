@@ -8,7 +8,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('game_id', 'integer', (col) =>
       col.notNull().references('games.id'),
     )
-    .addColumn('player_id', 'integer', (col) =>
+    .addColumn('user_id', 'integer', (col) =>
       col.notNull().references('users.id'),
     )
     .addColumn('joined_at', 'timestamp', (col) =>
@@ -19,7 +19,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('data', 'json')
     .addUniqueConstraint('game_players_game_id_player_id_unique', [
       'game_id',
-      'player_id',
+      'user_id',
     ])
     .execute();
 
@@ -32,7 +32,7 @@ export async function up(db: Kysely<any>): Promise<void> {
   await db.schema
     .createIndex('game_players_player_id_index')
     .on('game_players')
-    .column('player_id')
+    .column('user_id')
     .execute();
 }
 
