@@ -13,7 +13,10 @@ async function handleUndoMoveRequest(
   const gameCoordinator = getGameCoordinator();
   // TODO: update handleCancelMovesRequest to have `gameId` in payload
   const gameServer = gameCoordinator.requireGame(data.payload.gameId);
-  gameServer.undoMove(user.id.toString());
+
+  // TODO (user-id-type-issue): Fix this. Should be number already.
+  const userId = Number(user.id);
+  gameServer.undoMove(userId);
 }
 
 export { handleUndoMoveRequest };

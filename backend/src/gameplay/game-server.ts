@@ -1,8 +1,11 @@
-import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
-import type { GameWithPlayers } from '@common/types/games';
-import { GameState, BoardState, Direction, Coord } from '@core/types';
-import { GameGenerationConfig } from '@core/game-generation-config';
-import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
+import { UserId } from '@core/db-types';
+import {
+  GameState,
+  BoardState,
+  Direction,
+  Coord,
+  PlayerIndex,
+} from '@core/types';
 import { Board } from '@core/board';
 import type { GameConfig } from '@core/game-config';
 import {
@@ -11,7 +14,10 @@ import {
   PRE_GAME_COUNTDOWN_SECONDS,
 } from '@core/ui-timing-config';
 import { processStep as coreProcessStep } from '@core/step-processor';
-import type { MoveEvent, MoveHistoryV1 } from '@core/replay/types';
+import type { MoveEvent } from '@core/replay/types';
+import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
+import type { GameWithPlayers } from '@common/types/games';
+
 import { getGame } from '@/game/actions/get-game';
 import { createScopedLogger } from '@/utils/scoped-logger';
 import { getGlobalWebSocketManager } from '@/websocket/global-manager';
@@ -29,12 +35,12 @@ interface QueuedMove {
 }
 
 export class GameServer {
-  private gameId: number;
-  private gameState!: GameState;
-  private playerQueues: Map<number, QueuedMove[]> = new Map();
+  private game: GameWithPlayers;
+  private gameState: GameState;
+  private playerQueues: Map<PlayerIndex, QueuedMove[]> = new Map();
   private roomName: string;
-  private playerMapping: Map<string, number> = new Map(); // userId -> playerIndex
-  private connectedPlayers: Set<string> = new Set(); // userIds who joined gameplay room
+  private playerMapping: Map<UserId, PlayerIndex> = new Map(); // userId -> playerIndex
+  private connectedPlayers: Set<UserId> = new Set(); // userIds who joined gameplay room
   private expectedPlayerCount: number = 0;
   private gameStarted: boolean = false;
   private gameEnded: boolean = false;
@@ -46,32 +52,25 @@ export class GameServer {
   private moveFlushTimer: NodeJS.Timeout | null = null;
   private moveHistory = new MoveHistoryBuffer();
   private defeatedPlayers: Set<number> = new Set();
-  private log = createScopedLogger(() => `GameServer id=${this.gameId}`);
+  private log = createScopedLogger(() => `GameServer id=${this.game.id}`);
 
   constructor(game: GameWithPlayers) {
-    this.gameId = game.id;
-    this.roomName = `gameplay-${this.gameId}`;
+    this.game = game;
+    this.roomName = `gameplay-${this.game.id}`;
     this.log.debug('New GameServer');
 
-    this.initializeGameState(game, DEFAULT_GAME_GENERATION_CONFIG);
-    this.setupPlayerMappings(game);
-    this.initializePlayerQueues();
+    // setup player mappings and move queues
+    game.players.forEach((player, playerIndex) => {
+      this.playerMapping.set(player.user_id, playerIndex);
+      this.playerQueues.set(playerIndex, []);
+    });
+
     this.expectedPlayerCount = game.players.length;
     this.initialized = true;
 
     // Start fallback timer to ensure countdown starts even if not all players join
     this.startFallbackTimer();
 
-    this.log.debug(`Game initialized with ${game.players.length} players`);
-  }
-
-  private initializeGameState(
-    game: GameWithPlayers,
-    generationConfig: GameGenerationConfig,
-  ): void {
-    if (!game) {
-      throw new Error(`Cannot initialize game state: game data is null`);
-    }
     const boardState: BoardState = {
       grid: game.config.startingGrid,
       size: game.config.map.size,
@@ -79,23 +78,13 @@ export class GameServer {
     this.gameState = {
       board: boardState,
       tick: 0,
-      config: game.config,
     };
+    this.log.debug(
+      `GameServer initialized with ${game.players.length} players`,
+    );
   }
 
-  private setupPlayerMappings(gameData: GameWithPlayers): void {
-    gameData.players.forEach((player, index) => {
-      this.playerMapping.set(player.user_id.toString(), index);
-    });
-  }
-
-  private initializePlayerQueues(): void {
-    for (const playerIndex of this.playerMapping.values()) {
-      this.playerQueues.set(playerIndex, []);
-    }
-  }
-
-  private getPlayerQueue(playerIndex: number): QueuedMove[] {
+  private getPlayerQueue(playerIndex: PlayerIndex): QueuedMove[] {
     const queue = this.playerQueues.get(playerIndex);
     if (!queue) {
       throw new Error(`No move queue found for player index ${playerIndex}`);
@@ -134,7 +123,7 @@ export class GameServer {
         });
       }
 
-      const { timing } = this.gameState.config as GameConfig;
+      const { timing } = this.game.config as GameConfig;
 
       // Capture generals pre-step to detect newly defeated players
       const generalsBefore = this.getPlayersWithGenerals(this.gameState.board);
@@ -197,9 +186,8 @@ export class GameServer {
     this.gameEnded = true;
 
     // Update game status and save final game state to database
-    // Flush any remaining buffered move events first
     await endGame({
-      gameId: this.gameId,
+      game: this.game,
       winnerPlayerIndex,
       finalGameState: this.gameState,
       reason: 'general_captured',
@@ -233,7 +221,7 @@ export class GameServer {
         domain: GAMEPLAY_DOMAIN,
         type: 'game-state-update',
         payload: {
-          gameId: this.gameId,
+          gameId: this.game.id,
           tick: this.gameState.tick,
           boardState: this.gameState.board,
           playerQueues: this.getPlayerQueuesForBroadcast(),
@@ -251,7 +239,7 @@ export class GameServer {
         domain: GAMEPLAY_DOMAIN,
         type: 'game-ended',
         payload: {
-          gameId: this.gameId,
+          gameId: this.game.id,
           winner: winnerPlayerIndex,
           reason: 'general_captured',
           finalBoardState: this.gameState.board,
@@ -262,7 +250,7 @@ export class GameServer {
     }
   }
 
-  queueMove(userId: string, source: Coord, movement: Direction): void {
+  queueMove(userId: UserId, source: Coord, movement: Direction): void {
     const playerIndex = this.playerMapping.get(userId);
     if (playerIndex === undefined) {
       this.log.info(`Move request from unknown user ${userId}`);
@@ -295,7 +283,7 @@ export class GameServer {
     queue.push(queuedMove);
   }
 
-  clearMoves(userId: string): void {
+  clearMoves(userId: UserId): void {
     const playerIndex = this.playerMapping.get(userId);
     if (playerIndex === undefined) {
       this.log.error(`Clear moves request from unknown user id=${userId}`);
@@ -309,7 +297,7 @@ export class GameServer {
     }
   }
 
-  undoMove(userId: string): void {
+  undoMove(userId: UserId): void {
     const playerIndex = this.playerMapping.get(userId);
     if (playerIndex === undefined) {
       this.log.error(`Undo move request from unknown user id=${userId}`);
@@ -322,7 +310,7 @@ export class GameServer {
     queue.pop();
   }
 
-  onPlayerJoinedRoom(userId: string): void {
+  onPlayerJoinedRoom(userId: UserId): void {
     if (!this.playerMapping.has(userId)) {
       this.log.error(`User ${userId} not part of game, ignoring join`);
       return;
@@ -413,7 +401,7 @@ export class GameServer {
         domain: GAMEPLAY_DOMAIN,
         type: 'game-starting',
         payload: {
-          gameId: this.gameId,
+          gameId: this.game.id,
           countdown: this.countdownSeconds,
         },
       });
@@ -433,12 +421,12 @@ export class GameServer {
     // Update game status to IN_PROGRESS in database
     try {
       const gameRepository = new GameRepository();
-      await gameRepository.updateStatus(this.gameId, GameStatus.IN_PROGRESS);
+      await gameRepository.updateStatus(this.game.id, GameStatus.IN_PROGRESS);
 
       // Get the updated game object with new status
-      const updatedGame = await getGame(this.gameId);
+      const updatedGame = await getGame(this.game.id);
       if (!updatedGame) {
-        throw new Error(`Game ${this.gameId} not found after starting`);
+        throw new Error(`Game ${this.game.id} not found after starting`);
       }
       await this.broadcastGameStart(updatedGame);
       this.startMoveFlushTimer();
@@ -451,7 +439,7 @@ export class GameServer {
     try {
       const wsManager = getGlobalWebSocketManager();
       const payload: any = {
-        gameId: this.gameId,
+        gameId: this.game.id,
         playerMapping: this.getPlayerMapping(),
         boardState: this.gameState.board,
       };
@@ -475,12 +463,9 @@ export class GameServer {
     return this.roomName;
   }
 
-  getPlayerMapping(): Array<{ playerId: string; playerIndex: number }> {
+  getPlayerMapping(): Array<{ userId: UserId; playerIndex: PlayerIndex }> {
     return Array.from(this.playerMapping.entries()).map(
-      ([playerId, playerIndex]) => ({
-        playerId,
-        playerIndex,
-      }),
+      ([userId, playerIndex]) => ({ userId, playerIndex }),
     );
   }
 
@@ -531,7 +516,7 @@ export class GameServer {
     try {
       const repo = new GameRepository();
       await this.moveHistory.flush(
-        (history) => repo.updateMoveHistory(this.gameId, history),
+        (history) => repo.updateMoveHistory(this.game.id, history),
         force,
       );
     } catch (error) {

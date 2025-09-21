@@ -29,12 +29,13 @@ const GameplayWsAPI = new DomainAPI<GameplayMessageType>(GAMEPLAY_DOMAIN, {
 
   'join-room': (data: JoinRoomMessage, wsActions: WsActions) => {
     const room = data.payload.room;
-    const userId = data.user?.id?.toString();
+    // TODO (user-id-type-issue): Fix this. Should be number already.
+    const userId = data.user ? Number(data.user.id) : null;
 
     wsActions.joinRoom(room);
 
     // Notify GameServer that player joined the room
-    if (data.user?.id && userId) {
+    if (data.user && userId !== null) {
       const gameId = getUserGame(userId);
 
       if (gameId) {

@@ -1,26 +1,28 @@
-import { GameRepository } from '@/game/game-repository';
-import { GameStatus } from '@/game/types';
 import { GameState } from '@core/types';
-import { logger } from '@/utils/logger';
+import { GameWithPlayers } from '@common/types/games';
 import type { MoveHistoryV1 } from '@core/replay/types';
 
+import { logger } from '@/utils/logger';
+import { GameRepository } from '@/game/game-repository';
+import { GameStatus } from '@/game/types';
+
 interface EndGameParams {
-  gameId: number;
+  game: GameWithPlayers;
   winnerPlayerIndex: number;
   finalGameState: GameState;
   reason: 'general_captured' | 'timeout' | 'forfeit';
-  moveHistory?: MoveHistoryV1;
+  moveHistory: MoveHistoryV1;
 }
 
 async function endGame({
-  gameId,
+  game,
   winnerPlayerIndex,
   finalGameState,
   reason,
   moveHistory,
 }: EndGameParams): Promise<void> {
   logger.info(
-    `Ending game ${gameId}, winner: player ${winnerPlayerIndex}, reason: ${reason}`,
+    `Ending game ${game.id}, winner: player ${winnerPlayerIndex}, reason: ${reason}`,
   );
 
   try {
@@ -30,31 +32,22 @@ async function endGame({
     const gameStateToSave = {
       board: finalGameState.board,
       tick: finalGameState.tick,
-      config: finalGameState.config,
       endedAt: new Date().toISOString(),
       winner: winnerPlayerIndex,
       endReason: reason,
     };
 
     // Update status, game_state and move_history in a single operation
-    if (moveHistory) {
-      await gameRepository.updateStatusGameStateAndMoveHistory(
-        gameId,
-        GameStatus.COMPLETE,
-        gameStateToSave,
-        moveHistory,
-      );
-    } else {
-      await gameRepository.updateStatusAndGameState(
-        gameId,
-        GameStatus.COMPLETE,
-        gameStateToSave,
-      );
-    }
+    await gameRepository.updateStatusGameStateAndMoveHistory(
+      game.id,
+      GameStatus.COMPLETE,
+      gameStateToSave,
+      moveHistory,
+    );
 
-    logger.info(`Successfully ended game ${gameId} and saved final state`);
+    logger.info(`Successfully ended game ${game.id} and saved final state`);
   } catch (error) {
-    logger.error(`Failed to end game ${gameId}:`, error);
+    logger.error(`Failed to end game ${game.id}:`, error);
     throw error;
   }
 }

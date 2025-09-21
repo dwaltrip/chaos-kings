@@ -14,7 +14,8 @@ export async function handleCancelMovesRequest(
     return;
   }
 
-  const userId = data.user.id.toString();
+  // TODO (user-id-type-issue): Fix this. Should be number already.
+  const userId = Number(data.user.id);
   const gameId = getUserGame(userId);
 
   if (!gameId) {

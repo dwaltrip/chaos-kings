@@ -2,7 +2,6 @@ interface GameState {
   board: BoardState;
   tick: number;
   // TODO: define / implement game config
-  config?: any;
 }
 
 type PlayerIndex = number;
@@ -11,7 +10,6 @@ type PlayerMapping = { playerId: string; playerIndex: PlayerIndex }[];
 interface CompletedGameState {
   board: BoardState;
   tick: number;
-  config?: any;
   endedAt: string;
   winner: number;
   endReason: 'general_captured' | 'timeout' | 'forfeit';
