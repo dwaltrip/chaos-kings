@@ -58,7 +58,7 @@ namespace GameMatchmakingServer {
   export interface GameReadyMessage extends WsServerOutbound {
     type: 'game-ready';
     payload: {
-      gameId: string;
+      gameId: number;
     };
   }
 }

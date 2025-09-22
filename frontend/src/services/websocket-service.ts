@@ -1,10 +1,13 @@
-import { type WsMessage } from '@common/types/websockets';
+import {
+  type WsClientEnvelope,
+  type WsServerOutbound,
+} from '@common/types/websockets';
 import { createJoinRoomMessage } from '@common/websockets/message-types';
 import { invariant } from '@common/utils/invariant';
 import { wsStore } from '@/services/ws-store';
 
 interface WsMessageHandler {
-  handleMessage: (message: WsMessage) => void;
+  handleMessage: (message: WsServerOutbound) => void;
 }
 
 // Exclude 'message' event as it is handled separately
@@ -42,8 +45,8 @@ class WebSocketService {
 
     this.ws.onmessage = (event) => {
       try {
-        const message = JSON.parse(event.data);
-        const wsMessage = message as WsMessage;
+        const message = JSON.parse(event.data) as WsServerOutbound;
+        const wsMessage = message;
         invariant(
           'domain' in message,
           'WebSocket message must have a domain property',
@@ -89,7 +92,7 @@ class WebSocketService {
     });
   }
 
-  send(message: WsMessage) {
+  send(message: WsClientEnvelope) {
     // TODO: queue messages if not connected
     if (!this.isConnected) {
       console.error(`[ws-service] cannot send message: Not connected`, message);
@@ -171,4 +174,4 @@ function getWebSocketService(url?: string): WebSocketService {
   return globalWebSocketService;
 }
 
-export { getWebSocketService, type WsMessage };
+export { getWebSocketService };

@@ -1,23 +1,23 @@
-import type { WsMessage } from '@common/types/websockets';
+import type { WsClientEnvelope } from '@common/types/websockets';
 
 const JoinRoomMessageType = 'join-room';
 const LeaveRoomMessageType = 'leave-room';
 
-interface JoinRoomMessage extends WsMessage {
+interface JoinRoomMessage extends WsClientEnvelope {
   payload: {
     room: string;
     timestamp: number;
   };
 }
 
-interface LeaveRoomMessage extends WsMessage {
+interface LeaveRoomMessage extends WsClientEnvelope {
   payload: {
     room: string;
     timestamp: number;
   };
 }
 
-function createJoinRoomMessage(domain: string, room: string): WsMessage {
+function createJoinRoomMessage(domain: string, room: string): WsClientEnvelope {
   return {
     domain,
     type: JoinRoomMessageType,
@@ -28,7 +28,10 @@ function createJoinRoomMessage(domain: string, room: string): WsMessage {
   };
 }
 
-function createLeaveRoomMessage(domain: string, room: string): WsMessage {
+function createLeaveRoomMessage(
+  domain: string,
+  room: string,
+): WsClientEnvelope {
   return {
     domain,
     type: LeaveRoomMessageType,
