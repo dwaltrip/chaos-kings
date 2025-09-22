@@ -5,6 +5,7 @@ import {
 } from '@common/types/game-matchmaking';
 import { joinQueue, leaveQueue } from './actions';
 import { earlyStartVote } from './actions/early-start-vote-action';
+import { createMatchmakingEffects } from '@/game-matchmaking/ws-effects';
 
 // -----------------------------------------------------------------------
 // TODO: Message types can be client -> server and / or server -> client.
@@ -14,21 +15,24 @@ import { earlyStartVote } from './actions/early-start-vote-action';
 const GameMatchmakingWsAPI = new DomainAPI<GameMatchmakingClientMessageType>(
   GAME_MATCHMAKING_DOMAIN,
   {
-    'join-queue': (data, wsActions) => {
+    'join-queue': async (data, wsActions) => {
       const user = data.user;
       if (!user) return;
-      return joinQueue(Number(user.id), user.username, wsActions);
+      const effects = createMatchmakingEffects(wsActions);
+      return joinQueue(Number(user.id), user.username, effects);
     },
-    'leave-queue': (data, wsActions) => {
+    'leave-queue': async (data, wsActions) => {
       const user = data.user;
       if (!user) return;
-      return leaveQueue(Number(user.id), wsActions);
+      const effects = createMatchmakingEffects(wsActions);
+      return leaveQueue(Number(user.id), effects);
     },
-    'early-start-vote': (data, wsActions) => {
+    'early-start-vote': async (data, wsActions) => {
       const user = data.user;
       if (!user) return;
       const vote = !!(data as any).payload?.vote;
-      return earlyStartVote(Number(user.id), vote, wsActions);
+      const effects = createMatchmakingEffects(wsActions);
+      return earlyStartVote(Number(user.id), vote, effects);
     },
   },
 );
