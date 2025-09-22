@@ -1,64 +1,60 @@
-import type { WsMessage } from '@common/types/websockets';
-import type { User } from '@common/types/user';
+import type {
+  WsClientEnvelope,
+  WsServerOutbound,
+} from '@common/types/websockets';
 
 const GAME_CHAT_DOMAIN = 'game-chat';
 
-type GameChatMessageType = 'new-message' | 'join-room' | 'leave-room';
+// Directional message types
+type GameChatClientMessageType = 'join-room' | 'leave-room' | 'post-message';
+type GameChatServerMessageType = 'new-message';
 
-namespace GameChat {
-  export interface ChatMessage extends WsMessage {
+// Client → Server messages (sent by clients)
+namespace GameChatClient {
+  export interface JoinRoomMessage extends WsClientEnvelope {
+    type: 'join-room';
     payload: {
+      room: string;
+      timestamp: number;
+    };
+  }
+
+  export interface LeaveRoomMessage extends WsClientEnvelope {
+    type: 'leave-room';
+    payload: {
+      room: string;
+      timestamp: number;
+    };
+  }
+
+  export interface PostMessage extends WsClientEnvelope {
+    type: 'post-message';
+    payload: {
+      room: string;
       content: string;
-      room: string;
-      timestamp: number;
-    };
-  }
-
-  export interface JoinRoomMessage extends WsMessage {
-    payload: {
-      room: string;
-      timestamp: number;
-    };
-  }
-
-  export interface LeaveRoomMessage extends WsMessage {
-    payload: {
-      room: string;
       timestamp: number;
     };
   }
 }
 
-function createNewChatMessage(
-  content: string,
-  room: string,
-): GameChat.ChatMessage {
-  return {
-    domain: GAME_CHAT_DOMAIN,
-    type: 'new-message',
+// Server → Client messages (emitted by server)
+namespace GameChatServer {
+  export interface NewMessageMessage extends WsServerOutbound {
+    type: 'new-message';
     payload: {
-      content,
-      room,
-      timestamp: Date.now(),
-    },
-  };
-}
-
-function createJoinRoomMessage(room: string): WsMessage {
-  return {
-    domain: GAME_CHAT_DOMAIN,
-    type: 'join-room',
-    payload: {
-      room,
-      timestamp: Date.now(),
-    },
-  };
+      room: string;
+      content: string;
+      userId: number;
+      username: string;
+      timestamp: number;
+    };
+  }
 }
 
 export {
   GAME_CHAT_DOMAIN,
-  createNewChatMessage,
-  createJoinRoomMessage,
-  type GameChat,
-  type GameChatMessageType,
+  type GameChatClientMessageType,
+  type GameChatServerMessageType,
+  type GameChatClient,
+  type GameChatServer,
 };

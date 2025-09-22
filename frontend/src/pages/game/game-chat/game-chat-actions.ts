@@ -1,9 +1,7 @@
 import { type Game } from '@common/types/games';
-import { roomNameForGameChat } from '@common/domains/game/utils';
-import {
-  createNewChatMessage,
-  createJoinRoomMessage,
-} from '@common/types/game-chat';
+import { bareRoomForGameChat } from '@common/domains/game/utils';
+import { GAME_CHAT_DOMAIN } from '@common/types/game-chat';
+import { createJoinRoomMessage } from '@common/websockets/message-types';
 
 import { getWebSocketService } from '@/services/websocket-service';
 import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
@@ -11,9 +9,17 @@ import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
 const { actions } = gameChatStore.getState();
 
 function sendChatMessage(message: string, game: Game) {
-  const room = roomNameForGameChat(game);
+  const room = bareRoomForGameChat(game);
   const wsService = getWebSocketService();
-  wsService.send(createNewChatMessage(message.trim(), room));
+  wsService.send({
+    domain: GAME_CHAT_DOMAIN,
+    type: 'post-message',
+    payload: {
+      room,
+      content: message.trim(),
+      timestamp: Date.now(),
+    },
+  });
   actions.setNewMessage('');
 }
 
@@ -23,7 +29,7 @@ function setNewMessage(message: string) {
 
 function joinRoom(room: string) {
   const wsService = getWebSocketService();
-  wsService.send(createJoinRoomMessage(room));
+  wsService.send(createJoinRoomMessage(GAME_CHAT_DOMAIN, room));
 }
 
 export { sendChatMessage, setNewMessage, joinRoom };

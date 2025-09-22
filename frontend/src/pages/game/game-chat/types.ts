@@ -1,5 +1,5 @@
-import { type GameChat } from '@common/types/game-chat';
+import { type GameChatServer } from '@common/types/game-chat';
 
-type ChatMessage = GameChat.ChatMessage['payload'];
+type ChatMessage = GameChatServer.NewMessageMessage['payload'];
 
 export { type ChatMessage };

@@ -27,7 +27,7 @@ function GameChat({ game }: { game: Game }) {
       <div>
         {messages.map((msg, i) => (
           <div key={i}>
-            <strong>{msg.user?.username || 'Unknown'}:</strong> {msg.content}
+            <strong>{msg.username || 'Unknown'}:</strong> {msg.content}
             <small>{new Date(msg.timestamp).toLocaleTimeString()}</small>
           </div>
         ))}
