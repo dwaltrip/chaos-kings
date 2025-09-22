@@ -3,12 +3,8 @@ import {
   GAME_MATCHMAKING_DOMAIN,
   type GameMatchmakingClientMessageType,
 } from '@common/types/game-matchmaking';
-import {
-  handleJoinQueue,
-  handleLeaveQueue,
-  handleQueueStatus,
-} from './actions';
-import { handleEarlyStartVote } from './actions/early-start-vote-action';
+import { joinQueue, leaveQueue } from './actions';
+import { earlyStartVote } from './actions/early-start-vote-action';
 
 // -----------------------------------------------------------------------
 // TODO: Message types can be client -> server and / or server -> client.
@@ -18,9 +14,22 @@ import { handleEarlyStartVote } from './actions/early-start-vote-action';
 const GameMatchmakingWsAPI = new DomainAPI<GameMatchmakingClientMessageType>(
   GAME_MATCHMAKING_DOMAIN,
   {
-    'join-queue': handleJoinQueue,
-    'leave-queue': handleLeaveQueue,
-    'early-start-vote': handleEarlyStartVote,
+    'join-queue': (data, wsActions) => {
+      const user = data.user;
+      if (!user) return;
+      return joinQueue(Number(user.id), user.username, wsActions);
+    },
+    'leave-queue': (data, wsActions) => {
+      const user = data.user;
+      if (!user) return;
+      return leaveQueue(Number(user.id), wsActions);
+    },
+    'early-start-vote': (data, wsActions) => {
+      const user = data.user;
+      if (!user) return;
+      const vote = !!(data as any).payload?.vote;
+      return earlyStartVote(Number(user.id), vote, wsActions);
+    },
   },
 );
 

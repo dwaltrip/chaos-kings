@@ -1,12 +1,8 @@
-import {
-  GameMatchmaking,
-  GAME_MATCHMAKING_DOMAIN,
-} from '@common/types/game-matchmaking';
+import { GAME_MATCHMAKING_DOMAIN } from '@common/types/game-matchmaking';
 import { getMatchmakingService } from '@/game-matchmaking/matchmaking-service';
 import { WsActions } from '@/websocket/types';
 
-export async function handleQueueStatus(
-  data: GameMatchmaking.QueueStatusMessage,
+export async function sendQueueStatusToSelf(
   wsActions: WsActions,
 ): Promise<void> {
   const matchmakingService = await getMatchmakingService();

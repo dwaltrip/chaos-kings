@@ -1,27 +1,20 @@
-import {
-  GameMatchmaking,
-  GAME_MATCHMAKING_DOMAIN,
-} from '@common/types/game-matchmaking';
+import { GAME_MATCHMAKING_DOMAIN } from '@common/types/game-matchmaking';
 import { MATCHMAKING_ROOM_NAME } from '@common/constants/matchmaking';
 import { getMatchmakingService } from '@/game-matchmaking/matchmaking-service';
 import { WsActions } from '@/websocket/types';
 import { spawnGameInstance } from './spawn-game-action';
 import { getGlobalWebSocketManager } from '@/websocket/global-manager';
 
-export async function handleJoinQueue(
-  data: GameMatchmaking.JoinQueueMessage,
+export async function joinQueue(
+  userId: number,
+  username: string,
   wsActions: WsActions,
 ): Promise<void> {
-  if (!data.user) {
-    console.error('No user data in join-queue message');
-    return;
-  }
-
   wsActions.joinRoom(MATCHMAKING_ROOM_NAME);
 
   const matchmakingService = await getMatchmakingService();
-  const game = await matchmakingService.addPlayer(data.user.id, {
-    username: data.user.username,
+  const game = await matchmakingService.addPlayer(userId, {
+    username,
   });
 
   if (game) {

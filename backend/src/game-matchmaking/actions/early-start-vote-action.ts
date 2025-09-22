@@ -1,25 +1,17 @@
-import {
-  GameMatchmaking,
-  GAME_MATCHMAKING_DOMAIN,
-} from '@common/types/game-matchmaking';
+import { GAME_MATCHMAKING_DOMAIN } from '@common/types/game-matchmaking';
 import { MATCHMAKING_ROOM_NAME } from '@common/constants/matchmaking';
 import { getMatchmakingService } from '@/game-matchmaking/matchmaking-service';
 import { WsActions } from '@/websocket/types';
 import { spawnGameInstance } from './spawn-game-action';
 import { getGlobalWebSocketManager } from '@/websocket/global-manager';
 
-export async function handleEarlyStartVote(
-  data: GameMatchmaking.EarlyStartVoteMessage,
+export async function earlyStartVote(
+  userId: number,
+  vote: boolean,
   wsActions: WsActions,
 ): Promise<void> {
-  if (!data.user) {
-    console.error('No user data in early-start-vote message');
-    return;
-  }
-
   const matchmakingService = await getMatchmakingService();
-  const vote = !!data.payload?.vote;
-  await matchmakingService.setEarlyStartVote(data.user.id, vote);
+  await matchmakingService.setEarlyStartVote(userId, vote);
 
   // Check if this triggers a match (unanimous >= 2) or full lobby
   const game = await matchmakingService.checkForMatch();

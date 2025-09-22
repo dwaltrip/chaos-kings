@@ -1,22 +1,14 @@
-import {
-  GameMatchmaking,
-  GAME_MATCHMAKING_DOMAIN,
-} from '@common/types/game-matchmaking';
+import { GAME_MATCHMAKING_DOMAIN } from '@common/types/game-matchmaking';
 import { MATCHMAKING_ROOM_NAME } from '@common/constants/matchmaking';
 import { getMatchmakingService } from '@/game-matchmaking/matchmaking-service';
 import { WsActions } from '@/websocket/types';
 
-export async function handleLeaveQueue(
-  data: GameMatchmaking.LeaveQueueMessage,
+export async function leaveQueue(
+  userId: number,
   wsActions: WsActions,
 ): Promise<void> {
-  if (!data.user) {
-    console.error('No user data in leave-queue message');
-    return;
-  }
-
   const matchmakingService = await getMatchmakingService();
-  await matchmakingService.removePlayer(data.user.id);
+  await matchmakingService.removePlayer(userId);
 
   const queueStatus = await matchmakingService.getQueueStatus();
   wsActions.broadcastToRoom(MATCHMAKING_ROOM_NAME, {

@@ -1,4 +1,4 @@
-export { handleJoinQueue } from './join-queue-action';
-export { handleLeaveQueue } from './leave-queue-action';
-export { handleQueueStatus } from './queue-status-action';
+export { joinQueue } from './join-queue-action';
+export { leaveQueue } from './leave-queue-action';
+// export { sendQueueStatusToSelf } from './queue-status-action';
 export { spawnGameInstance } from './spawn-game-action';
