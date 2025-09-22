@@ -21,7 +21,7 @@ class DomainAPI<TMessageType extends string = string> {
     private handlers: Record<TMessageType, WsMessageHandler>,
   ) {}
 
-  handleMessage(type: string, data: WsMessage, actions: WsActions) {
+  handleMessage(type: string, data: WsServerInbound, actions: WsActions) {
     if (type in this.handlers) {
       this.handlers[type as TMessageType](
         data,

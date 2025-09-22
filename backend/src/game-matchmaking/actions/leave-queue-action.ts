@@ -8,7 +8,7 @@ export async function leaveQueue(
   effects: GameMatchmakingEffects,
 ): Promise<void> {
   const matchmakingService = await getMatchmakingService();
-  await matchmakingService.removePlayer(userId);
+  await matchmakingService.removePlayer(String(userId));
 
   const queueStatus = await matchmakingService.getQueueStatus();
   effects.broadcastQueueStatus(

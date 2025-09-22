@@ -12,7 +12,7 @@ export async function joinQueue(
   effects.joinMatchmakingRoom();
 
   const matchmakingService = await getMatchmakingService();
-  const game = await matchmakingService.addPlayer(userId, {
+  const game = await matchmakingService.addPlayer(String(userId), {
     username,
   });
 
@@ -24,7 +24,7 @@ export async function joinQueue(
 
       // Now remove users from matchmaking room
       effects.removeUsersFromMatchmakingRoom(
-        game.players.map((p) => p.playerId),
+        game.players.map((p) => parseInt(p.playerId, 10)),
       );
       console.log(
         `Game ${game.gameId} ready; broadcasted and removed from room`,

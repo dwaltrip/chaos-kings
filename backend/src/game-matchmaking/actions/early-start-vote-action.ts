@@ -11,7 +11,7 @@ export async function earlyStartVote(
   effects: GameMatchmakingEffects,
 ): Promise<void> {
   const matchmakingService = await getMatchmakingService();
-  await matchmakingService.setEarlyStartVote(userId, vote);
+  await matchmakingService.setEarlyStartVote(String(userId), vote);
 
   // Check if this triggers a match (unanimous >= 2) or full lobby
   const game = await matchmakingService.checkForMatch();
@@ -24,7 +24,7 @@ export async function earlyStartVote(
 
       // Now remove users from matchmaking room
       effects.removeUsersFromMatchmakingRoom(
-        game.players.map((p) => p.playerId),
+        game.players.map((p) => parseInt(p.playerId, 10)),
       );
     } catch (error) {
       console.error(
