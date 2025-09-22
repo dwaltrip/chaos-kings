@@ -1,8 +1,7 @@
 import { DomainAPI } from '@/websocket/api';
 import {
-  GameMatchmaking,
-  GameMatchmakingMessageType,
   GAME_MATCHMAKING_DOMAIN,
+  type GameMatchmakingClientMessageType,
 } from '@common/types/game-matchmaking';
 import {
   handleJoinQueue,
@@ -16,26 +15,12 @@ import { handleEarlyStartVote } from './actions/early-start-vote-action';
 // The current architecture doens't reflect the "or" part.
 // The "...MessagType" type defs should be split into two.
 // -----------------------------------------------------------------------
-const GameMatchmakingWsAPI = new DomainAPI<GameMatchmakingMessageType>(
+const GameMatchmakingWsAPI = new DomainAPI<GameMatchmakingClientMessageType>(
   GAME_MATCHMAKING_DOMAIN,
   {
     'join-queue': handleJoinQueue,
     'leave-queue': handleLeaveQueue,
-    'queue-status': handleQueueStatus,
     'early-start-vote': handleEarlyStartVote,
-    // TODO: remove this once we fix the types.
-    'game-ready': (data: GameMatchmaking.GameReadyMessage, wsActions) => {
-      // NOT NEEDED! (This is sent by the server to clients when a game is ready)
-      // Clients do not send this message.
-      // See the TODO at the top of this file.
-    },
-    // TODO: remove this once we fix the types.
-    'early-start-status': (
-      data: GameMatchmaking.EarlyStartStatusMessage,
-      wsActions,
-    ) => {
-      // NOT NEEDED! (server -> client only)
-    },
   },
 );
 

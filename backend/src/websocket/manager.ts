@@ -5,15 +5,14 @@ import type { WebSocket as FastifyWebSocket } from '@fastify/websocket';
 
 import { invariant } from '@common/utils/invariant';
 import { User } from '@common/types/user';
-import {
-  WsClientId,
-  WsActions,
-  WsMessageHandler,
-  WsMessage,
-} from '@/websocket/types';
+import { WsClientId, WsActions } from '@/websocket/types';
 import { handleWebSocketMessage } from '@/websocket/api';
 import { createScopedLogger, ScopedLogger } from '@/utils/scoped-logger';
-import { WsServerMessage } from '@common/types/websockets';
+import {
+  WsServerInbound,
+  WsClientEnvelope,
+  WsServerOutbound,
+} from '@common/types/websockets';
 
 type RoomId = string;
 
@@ -93,8 +92,8 @@ class WebSocketManager {
         return;
       }
       try {
-        const data: WsServerMessage = {
-          ...validateMessage(JSON.parse(bufferStr)),
+        const data: WsServerInbound = {
+          ...validateClientEnvelope(JSON.parse(bufferStr)),
           user: client.user, // Attach user info to message
         };
         handleWebSocketMessage(data, this.actionsForClient(client));
@@ -127,10 +126,11 @@ class WebSocketManager {
     return {
       joinRoom: (roomId: string) => this.joinRoom(client, roomId),
       leaveRoom: (roomId: string) => this.leaveRoom(client, roomId),
-      broadcastToRoom: (roomId: string, data: WsMessage) => {
+      broadcastToRoom: (roomId: string, data: WsServerOutbound) => {
         this.broadcastToRoom(roomId, data, client);
       },
-      sendToSelf: (data: WsMessage) => client.ws.send(JSON.stringify(data)),
+      sendToSelf: (data: WsServerOutbound) =>
+        client.ws.send(JSON.stringify(data)),
     };
   }
 
@@ -163,7 +163,7 @@ class WebSocketManager {
   // Whereas `broadcastToRoom` occurs while handling an incoming client message.
   private broadcastToRoom(
     roomId: string,
-    data: WsMessage,
+    data: WsServerOutbound,
     fromClient: WsClient,
   ) {
     const room = this.rooms.get(roomId);
@@ -197,7 +197,7 @@ class WebSocketManager {
     fromClient.log.info('-'.repeat(80));
   }
 
-  public serverBroadcastToRoom(roomId: string, data: WsMessage) {
+  public serverBroadcastToRoom(roomId: string, data: WsServerOutbound) {
     const room = this.rooms.get(roomId);
     if (!room) {
       this.log.info(`Cannot broadcast to room ${roomId}: it does not exist.`);
@@ -217,7 +217,7 @@ class WebSocketManager {
     });
   }
 
-  public sendToUser(userId: string, data: WsMessage): void {
+  public sendToUser(userId: string, data: WsServerOutbound): void {
     const dataStr = JSON.stringify(data);
     this.clientStore.forEach((client) => {
       if (
@@ -251,7 +251,7 @@ class WebSocketManager {
   }
 }
 
-function validateMessage(data: unknown): WsMessage {
+function validateClientEnvelope(data: unknown): WsClientEnvelope {
   if (!data || typeof data !== 'object') {
     throw new Error('Invalid data format');
   }
@@ -264,7 +264,7 @@ function validateMessage(data: unknown): WsMessage {
     moduleLogger.error(JSON.stringify(data, null, 2));
     moduleLogger.error('----------------------------------');
   }
-  return data as WsMessage;
+  return data as WsClientEnvelope;
 }
 
 export { WebSocketManager };

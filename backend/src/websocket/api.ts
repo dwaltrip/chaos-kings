@@ -1,10 +1,10 @@
-import { WsActions, WsMessageHandler, WsMessage } from '@/websocket/types';
-import { WsServerMessage } from '@common/types/websockets';
+import { WsActions, WsMessageHandler } from '@/websocket/types';
+import { WsServerInbound, WsServerOutbound } from '@common/types/websockets';
 
 function injectDomain(domain: string, actions: WsActions): WsActions {
   return {
     ...actions,
-    broadcastToRoom: (roomId, data) => {
+    broadcastToRoom: (roomId, data: WsServerOutbound) => {
       actions.broadcastToRoom(roomId, { ...data, domain });
     },
   };
@@ -39,7 +39,7 @@ class DomainAPI<TMessageType extends string = string> {
 class WebSocketAPI {
   private domains = new Map<string, DomainAPI>();
 
-  handleMessage(data: WsServerMessage, actions: WsActions) {
+  handleMessage(data: WsServerInbound, actions: WsActions) {
     const { domain, type } = data;
     const domainAPI = this.requireDomainAPI(domain);
     domainAPI.handleMessage(type, data, actions);
@@ -64,7 +64,7 @@ class WebSocketAPI {
 
 const websocketAPI = new WebSocketAPI();
 
-function handleWebSocketMessage(data: WsServerMessage, wsActions: WsActions) {
+function handleWebSocketMessage(data: WsServerInbound, wsActions: WsActions) {
   websocketAPI.handleMessage(data, wsActions);
 }
 

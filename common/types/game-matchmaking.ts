@@ -1,48 +1,53 @@
-import type { WsMessage } from '@common/types/websockets';
-import type { User } from '@common/types/user';
+import type {
+  WsClientEnvelope,
+  WsServerOutbound,
+} from '@common/types/websockets';
 
 const GAME_MATCHMAKING_DOMAIN = 'game-matchmaking';
 
-type GameMatchmakingMessageType =
+// Directional message types
+type GameMatchmakingClientMessageType =
   | 'join-queue'
   | 'leave-queue'
-  | 'queue-status'
-  | 'game-ready'
-  | 'early-start-vote'
-  | 'early-start-status';
+  | 'early-start-vote';
 
-namespace GameMatchmaking {
-  export interface GameMatchmakingMessage extends WsMessage {
+type GameMatchmakingServerMessageType =
+  | 'queue-status'
+  | 'early-start-status'
+  | 'game-ready';
+
+// Client → Server messages (sent by clients)
+namespace GameMatchmakingClient {
+  export interface JoinQueueMessage extends WsClientEnvelope {
+    type: 'join-queue';
+    payload: null;
+  }
+
+  export interface LeaveQueueMessage extends WsClientEnvelope {
+    type: 'leave-queue';
+    payload: null;
+  }
+
+  export interface EarlyStartVoteMessage extends WsClientEnvelope {
+    type: 'early-start-vote';
     payload: {
-      content: string;
-      room: string;
-      timestamp: number;
-      user?: User;
+      vote: boolean;
     };
   }
+}
 
-  export interface JoinQueueMessage extends WsMessage {
-    payload: null;
-  }
-
-  export interface LeaveQueueMessage extends WsMessage {
-    payload: null;
-  }
-
-  export interface QueueStatusMessage extends WsMessage {
+// Server → Client messages (emitted by server)
+namespace GameMatchmakingServer {
+  export interface QueueStatusMessage extends WsServerOutbound {
+    type: 'queue-status';
     payload: {
       queueSize: number;
       playersNeeded: number;
     };
   }
 
-  export interface EarlyStartVoteMessage extends WsMessage {
-    payload: {
-      vote: boolean;
-    };
-  }
-
-  export interface EarlyStartStatusMessage extends WsMessage {
+  export interface EarlyStartStatusMessage extends WsServerOutbound {
+    type: 'early-start-status';
     payload: {
       voters: string[];
       queueSize: number;
@@ -50,7 +55,8 @@ namespace GameMatchmaking {
     };
   }
 
-  export interface GameReadyMessage extends WsMessage {
+  export interface GameReadyMessage extends WsServerOutbound {
+    type: 'game-ready';
     payload: {
       gameId: string;
     };
@@ -59,6 +65,8 @@ namespace GameMatchmaking {
 
 export {
   GAME_MATCHMAKING_DOMAIN,
-  type GameMatchmaking,
-  type GameMatchmakingMessageType,
+  type GameMatchmakingClientMessageType,
+  type GameMatchmakingServerMessageType,
+  type GameMatchmakingClient,
+  type GameMatchmakingServer,
 };

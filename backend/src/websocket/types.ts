@@ -1,19 +1,20 @@
-import { WsMessage } from '@common/types/websockets';
+import { WsServerInbound, WsServerOutbound } from '@common/types/websockets';
 
 type WsClientId = string;
 
 interface WsActions {
   joinRoom: (roomId: string) => void;
   leaveRoom: (roomId: string) => void;
-  sendToSelf: (data: WsMessage) => void;
-  broadcastToRoom: (roomId: string, data: WsMessage) => void;
+  sendToSelf: (data: WsServerOutbound) => void;
+  broadcastToRoom: (roomId: string, data: WsServerOutbound) => void;
 }
 
-type WsMessageHandler = (data: WsMessage, actions: WsActions) => void;
+type WsMessageHandler = (data: WsServerInbound, actions: WsActions) => void;
 
 export {
   type WsClientId,
   type WsActions,
   type WsMessageHandler,
-  type WsMessage,
+  type WsServerInbound,
+  type WsServerOutbound,
 };

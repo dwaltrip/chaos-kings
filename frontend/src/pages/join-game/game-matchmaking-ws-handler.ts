@@ -1,23 +1,18 @@
-import type { WsDomainHandler, WsMessage } from '@common/types/websockets';
-import type { GameMatchmakingMessageType } from '@common/types/game-matchmaking';
+import type {
+  WsDomainHandler,
+  WsServerOutbound,
+} from '@common/types/websockets';
+import type { GameMatchmakingServerMessageType } from '@common/types/game-matchmaking';
 import { gameMatchmakingStore } from '@/pages/join-game/join-game-store';
 import { NAVIGATION_DELAY_MS } from '@core/ui-timing-config';
 
 const { actions } = gameMatchmakingStore.getState();
 
 const GameMatchmakingWsHandler: WsDomainHandler = {
-  handleMessage: (data: WsMessage) => {
+  handleMessage: (data: WsServerOutbound) => {
     const { type, payload } = data;
 
-    switch (type as GameMatchmakingMessageType) {
-      // TODO: this is only client -> server, need to fix the typing and remove this case.
-      case 'join-queue':
-        console.log('join-queue message received');
-        break;
-      // TODO: this is only client -> server, need to fix the typing and remove this case.
-      case 'leave-queue':
-        console.log('leave-queue message received');
-        break;
+    switch (type as GameMatchmakingServerMessageType) {
       case 'queue-status':
         console.log('queue-status message received:', payload);
         if (

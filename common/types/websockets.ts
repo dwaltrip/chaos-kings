@@ -1,21 +1,32 @@
 import type { User } from '@common/types/user';
 
-// TODO: Differentaite between client and server messages???
-// Client messsages never contain user info, we get it from connection info
-// ON the backend the manager hydrates the user info into the message
-interface WsMessage {
+// Base envelopes with clear direction semantics
+// - WsClientEnvelope: client → server messages (no user attached)
+// - WsServerInbound: hydrated on server (client → server + user)
+// - WsServerOutbound: server → client messages
+interface WsClientEnvelope {
   domain: string;
   type: string;
   payload: any;
 }
 
-interface WsServerMessage extends WsMessage {
+interface WsServerInbound extends WsClientEnvelope {
   user: User;
 }
-interface WsClientMessage extends WsMessage {}
 
-interface WsDomainHandler {
-  handleMessage: (data: WsMessage) => void;
+interface WsServerOutbound {
+  domain: string;
+  type: string;
+  payload: any;
 }
 
-export type { WsMessage, WsServerMessage, WsClientMessage, WsDomainHandler };
+interface WsDomainHandler {
+  handleMessage: (data: WsServerOutbound) => void;
+}
+
+export type {
+  WsClientEnvelope,
+  WsServerInbound,
+  WsServerOutbound,
+  WsDomainHandler,
+};
