@@ -6,13 +6,9 @@ import type { WebSocket as FastifyWebSocket } from '@fastify/websocket';
 import { invariant } from '@common/utils/invariant';
 import { User } from '@common/types/user';
 import { WsClientId, WsActions } from '@/websocket/types';
-import { dispatchWebSocketMessage } from '@/websocket/router';
+import type { WsServerInbound } from '@common/types/websockets';
 import { createScopedLogger, ScopedLogger } from '@/utils/scoped-logger';
-import {
-  WsServerInbound,
-  WsClientEnvelope,
-  WsServerOutbound,
-} from '@common/types/websockets';
+import { WsClientEnvelope, WsServerOutbound } from '@common/types/websockets';
 
 type RoomId = string;
 
@@ -66,8 +62,9 @@ class WebSocketManager {
   private rooms = new Map<string, Set<WsClient>>();
   clientStore = new ClientStore();
   log = moduleLogger;
-
-  constructor() {
+  private dispatchFn: (data: WsServerInbound, actions: WsActions) => void;
+  constructor(dispatchFn: (data: WsServerInbound, actions: WsActions) => void) {
+    this.dispatchFn = dispatchFn;
     this.log.info('WebSocket manager initialized for Fastify integration');
     this.log.info('='.repeat(80));
   }
@@ -96,7 +93,7 @@ class WebSocketManager {
           ...validateClientEnvelope(JSON.parse(bufferStr)),
           user: client.user, // Attach user info to message
         };
-        dispatchWebSocketMessage(data, this.actionsForClient(client));
+        this.dispatchFn(data, this.actionsForClient(client));
       } catch (error) {
         client.log.error(
           'Error parsing message:',

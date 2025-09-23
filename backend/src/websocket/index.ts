@@ -1,13 +1,5 @@
 import { WebSocketManager } from '@/websocket/manager';
-import {
-  registerDomainHandler,
-  dispatchWebSocketMessage,
-} from '@/websocket/router';
+import { setupWebsocket } from '@/websocket/setup';
 import { WsMessageHandler } from '@/websocket/types';
 
-export {
-  WebSocketManager,
-  registerDomainHandler,
-  dispatchWebSocketMessage,
-  type WsMessageHandler,
-};
+export { WebSocketManager, setupWebsocket, type WsMessageHandler };

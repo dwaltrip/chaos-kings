@@ -15,26 +15,9 @@ class WsRouter {
 
   dispatch(data: WsServerInbound, actions: WsActions): void {
     const handler = this.domains.get(data.domain);
-    if (!handler) {
-      // Keep quiet in prod; dev can add logs as needed
-      // console.debug('[ws-router] No handler for domain', data.domain, 'types:', Array.from(this.domains.keys()));
-      return;
-    }
+    if (!handler) return;
     handler(data, actions);
   }
 }
 
-const wsRouter = new WsRouter();
-
-function registerDomainHandler(domain: string, handler: DomainHandler): void {
-  wsRouter.register(domain, handler);
-}
-
-function dispatchWebSocketMessage(
-  data: WsServerInbound,
-  actions: WsActions,
-): void {
-  wsRouter.dispatch(data, actions);
-}
-
-export { registerDomainHandler, dispatchWebSocketMessage };
+export { WsRouter, type DomainHandler };
