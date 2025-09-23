@@ -5,7 +5,7 @@ import type { WebSocket as FastifyWebSocket } from '@fastify/websocket';
 
 import { invariant } from '@common/utils/invariant';
 import { User } from '@common/types/user';
-import { WsClientId, WsActions } from '@/websocket/types';
+import { WsClientId, ClientWsActions } from '@/websocket/types';
 import type { WsServerInbound } from '@common/types/websockets';
 import { createScopedLogger, ScopedLogger } from '@/utils/scoped-logger';
 import { WsClientEnvelope, WsServerOutbound } from '@common/types/websockets';
@@ -62,8 +62,10 @@ class WebSocketManager {
   private rooms = new Map<string, Set<WsClient>>();
   clientStore = new ClientStore();
   log = moduleLogger;
-  private dispatchFn: (data: WsServerInbound, actions: WsActions) => void;
-  constructor(dispatchFn: (data: WsServerInbound, actions: WsActions) => void) {
+  private dispatchFn: (data: WsServerInbound, actions: ClientWsActions) => void;
+  constructor(
+    dispatchFn: (data: WsServerInbound, actions: ClientWsActions) => void,
+  ) {
     this.dispatchFn = dispatchFn;
     this.log.info('WebSocket manager initialized for Fastify integration');
     this.log.info('='.repeat(80));
@@ -119,15 +121,14 @@ class WebSocketManager {
     });
   }
 
-  private actionsForClient(client: WsClient): WsActions {
+  private actionsForClient(client: WsClient): ClientWsActions {
     return {
-      joinRoom: (roomId: string) => this.joinRoom(client, roomId),
-      leaveRoom: (roomId: string) => this.leaveRoom(client, roomId),
-      broadcastToRoom: (roomId: string, data: WsServerOutbound) => {
+      join: (roomId: string) => this.joinRoom(client, roomId),
+      leave: (roomId: string) => this.leaveRoom(client, roomId),
+      broadcast: (roomId: string, data: WsServerOutbound) => {
         this.broadcastToRoom(roomId, data, client);
       },
-      sendToSelf: (data: WsServerOutbound) =>
-        client.ws.send(JSON.stringify(data)),
+      reply: (data: WsServerOutbound) => client.ws.send(JSON.stringify(data)),
     };
   }
 

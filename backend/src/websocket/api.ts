@@ -1,4 +1,4 @@
-import { WsActions, WsMessageHandler } from '@/websocket/types';
+import { ClientWsActions, WsMessageHandler } from '@/websocket/types';
 import { WsServerInbound } from '@common/types/websockets';
 
 // -----------------------------------------------------------------------
@@ -12,7 +12,7 @@ class DomainAPI<TMessageType extends string = string> {
     private handlers: Record<TMessageType, WsMessageHandler>,
   ) {}
 
-  handleMessage(type: string, data: WsServerInbound, actions: WsActions) {
+  handleMessage(type: string, data: WsServerInbound, actions: ClientWsActions) {
     if (type in this.handlers) {
       this.handlers[type as TMessageType](data, actions);
     } else {
@@ -27,7 +27,7 @@ class DomainAPI<TMessageType extends string = string> {
 class WebSocketAPI {
   private domains = new Map<string, DomainAPI>();
 
-  handleMessage(data: WsServerInbound, actions: WsActions) {
+  handleMessage(data: WsServerInbound, actions: ClientWsActions) {
     const { domain, type } = data;
     const domainAPI = this.requireDomainAPI(domain);
     domainAPI.handleMessage(type, data, actions);
@@ -52,7 +52,10 @@ class WebSocketAPI {
 
 const websocketAPI = new WebSocketAPI();
 
-function handleWebSocketMessage(data: WsServerInbound, wsActions: WsActions) {
+function handleWebSocketMessage(
+  data: WsServerInbound,
+  wsActions: ClientWsActions,
+) {
   websocketAPI.handleMessage(data, wsActions);
 }
 

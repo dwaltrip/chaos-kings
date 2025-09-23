@@ -1,4 +1,4 @@
-import type { WsActions } from '@/websocket/types';
+import type { ClientWsActions } from '@/websocket/types';
 import { GAME_MATCHMAKING_DOMAIN } from '@common/types/game-matchmaking';
 import { roomKey } from '@common/utils/room-key';
 import { getGlobalWebSocketManager } from '@/websocket/global-manager';
@@ -16,29 +16,29 @@ interface GameMatchmakingEffects {
 }
 
 function createMatchmakingEffects(
-  wsActions: WsActions,
+  wsActions: ClientWsActions,
 ): GameMatchmakingEffects {
   const ROOM = roomKey(GAME_MATCHMAKING_DOMAIN, 'queue');
   return {
     joinMatchmakingRoom() {
-      wsActions.joinRoom(ROOM);
+      wsActions.join(ROOM);
     },
     broadcastQueueStatus(queueSize, playersNeeded) {
-      wsActions.broadcastToRoom(ROOM, {
+      wsActions.broadcast(ROOM, {
         domain: GAME_MATCHMAKING_DOMAIN,
         type: 'queue-status',
         payload: { queueSize, playersNeeded },
       });
     },
     broadcastEarlyStartStatus(status) {
-      wsActions.broadcastToRoom(ROOM, {
+      wsActions.broadcast(ROOM, {
         domain: GAME_MATCHMAKING_DOMAIN,
         type: 'early-start-status',
         payload: status,
       });
     },
     broadcastGameReady(gameId) {
-      wsActions.broadcastToRoom(ROOM, {
+      wsActions.broadcast(ROOM, {
         domain: GAME_MATCHMAKING_DOMAIN,
         type: 'game-ready',
         payload: { gameId },

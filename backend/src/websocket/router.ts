@@ -1,7 +1,7 @@
 import type { WsServerInbound } from '@common/types/websockets';
-import type { WsActions } from '@/websocket/types';
+import type { ClientWsActions } from '@/websocket/types';
 
-type DomainHandler = (data: WsServerInbound, actions: WsActions) => void;
+type DomainHandler = (data: WsServerInbound, actions: ClientWsActions) => void;
 
 class WsRouter {
   private domains = new Map<string, DomainHandler>();
@@ -13,7 +13,7 @@ class WsRouter {
     this.domains.set(domain, handler);
   }
 
-  dispatch(data: WsServerInbound, actions: WsActions): void {
+  dispatch(data: WsServerInbound, actions: ClientWsActions): void {
     const handler = this.domains.get(data.domain);
     if (!handler) return;
     handler(data, actions);
