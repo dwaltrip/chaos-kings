@@ -4,159 +4,239 @@ Date: 2025-09-22
 
 ## Executive Summary
 
-We completed the envelope-based WebSocket refactor for Chat and Gameplay after establishing the groundwork and migrating Matchmaking. Directionality is now explicit, backend actions are transport-agnostic via domain-specific effects, and room naming is standardized with a `roomKey(domain, room)` helper. Frontend handlers consume server-only unions, and sending uses client envelopes. Builds are green for FE and stable for BE pending broader tests. This document summarizes what changed, key decisions, ergonomics/type observations, and proposes a focused “final tightening” phase, plus a backlog of follow-ups.
+We completed the envelope-based WebSocket refactor for Chat and Gameplay after establishing the groundwork and migrating Matchmaking. Directionality is explicit across the stack, backend domain actions are decoupled from the transport via domain-specific effects, and room naming is standardized with a `roomKey(domain, room)` helper to prevent collisions. On the frontend, domain handlers now consume server-only unions and all client sends are envelope-based. The result is a clearer, more robust WS architecture that’s easier to reason about, safer to extend, and simpler to test.
+
+This document expands on what changed, why it changed, and how it currently behaves. It includes concrete examples, an explicit code review checklist, observations on ergonomics and type-safety, and a proposed final tightening plan. It should be usable as a standalone reference for a fresh review session.
+
+## Goals & Rationale
+
+- Make message direction explicit and unambiguous.
+  - Previous `WsMessage` mixed flow introduced subtle errors (e.g., client handlers accidentally reading server fields like `user`).
+  - Separate C→S and S→C unions force correct usage through the type system.
+- Decouple domain logic from the transport.
+  - Domain actions should operate on plain arguments and collaborate via minimal, domain-scoped effects (join/leave/broadcast).
+  - This increases testability and reduces coupling to the WS manager.
+- Standardize room naming and avoid cross-domain collisions.
+  - Using `roomKey(domain, room)` ensures `game-chat:game-123` and `gameplay:game-123` are distinct.
+- Improve developer ergonomics.
+  - Frontend handlers consume a single outbound union per domain.
+  - Backend WS APIs are thin and focused, with clear user hydration and action delegation.
 
 ## Scope & Outcomes to Date
 
 - Directional envelopes in common types:
-  - `WsClientEnvelope` (client → server), `WsServerInbound` (hydrated with `user`), `WsServerOutbound` (server → client).
-- Domains migrated off mixed `WsMessage` usage:
-  - Matchmaking (earlier), Chat (Phase 2), Gameplay (now).
-- Backend domains use effects to join/leave/broadcast; actions receive plain args (no transport coupling).
-- Room naming standardized with `roomKey(domain, room)` to prevent cross-domain collisions.
-- Frontend WebSocketService sends envelopes and dispatches by `domain`; domain handlers consume outbound-only unions.
+  - `WsClientEnvelope` (client → server): `{ domain, type, payload }` with no `user`.
+  - `WsServerInbound` (server-side hydrated): `WsClientEnvelope + { user }`.
+  - `WsServerOutbound` (server → client): `{ domain, type, payload }`.
+- Domains migrated off `WsMessage`:
+  - Matchmaking (earlier), Chat (Phase 2), Gameplay (Phase 3).
+- Backend actions are transport-agnostic and use domain effects for WS ops.
+- Room naming standardized via `roomKey(domain, room)`.
+- Frontend sends are envelopes; receives are dispatched by domain to server-only handlers.
+
+## Concrete Examples
+
+1) Chat: Client sending a message
+```
+// FE → BE
+{
+  domain: 'game-chat',
+  type: 'post-message',
+  payload: { room: 'game-42', content: 'gg wp' }
+}
+
+// BE WS API:
+// - hydrates user → { id, username }
+// - effects.broadcastNewMessage('game-42', { content, userId, username, timestamp })
+
+// BE → FE broadcast
+{
+  domain: 'game-chat',
+  type: 'new-message',
+  payload: { room: 'game-42', content: 'gg wp', userId: 17, username: 'alice', timestamp: 1695400000000 }
+}
+```
+
+2) Gameplay: Client queuing a move
+```
+// FE → BE
+{
+  domain: 'gameplay',
+  type: 'move-request',
+  payload: { sourceCoord: {x: 4, y: 2}, direction: 'right' }
+}
+
+// BE WS API:
+// - hydrates user
+// - queueMove(user.id, sourceCoord, direction)
+
+// BE → FE later (state update)
+{
+  domain: 'gameplay',
+  type: 'game-state-update',
+  payload: { tick: 37, boardState: { ... }, playerQueues: { ... } }
+}
+```
 
 ## Implemented Changes (By Area)
 
-- Common
-  - `@common/types/websockets`: Envelopes + FE `WsDomainHandler` signature.
-  - `@common/types/game-matchmaking`: Split into `GameMatchmakingClient`/`Server` unions.
-  - `@common/types/game-chat`: Split into `GameChatClient`/`Server` unions; client uses `post-message`, server uses `new-message`.
-  - `@common/types/gameplay`: Split into `GameplayClient`/`Server` unions; updated payloads; removed `WsMessage`.
-  - `@common/utils/room-key.ts`: `roomKey(domain, room)` helper.
-  - `@common/domains/game/utils.ts`: `bareRoomForGameChat`, `bareRoomForGameplay`; `roomNameFor...` composes with `roomKey`.
+### Common
+- `@common/types/websockets`: Added envelopes and `WsDomainHandler` signature used by FE services.
+- `@common/types/game-matchmaking`: Split into `GameMatchmakingClient`/`Server` directional unions.
+- `@common/types/game-chat`: Split into `GameChatClient`/`Server`. Renamed client send to `post-message`; server emits `new-message` with `username`, `userId`, and `timestamp` from the server.
+- `@common/types/gameplay`: Split into `GameplayClient`/`Server`; removed `WsMessage`; standardized payloads; set `game-started.payload.playerMapping` to `{ playerId: string; playerIndex }` to match FE expectations.
+- `@common/utils/room-key.ts`: `roomKey(domain, room)` returns a composite room key like `gameplay:game-123`.
+- `@common/domains/game/utils.ts`:
+  - `bareRoomForGameChat(game)` and `bareRoomForGameplay(game|id)` produce bare room ids (e.g., `game-123`).
+  - `roomNameFor...` composes composite keys via `roomKey()`.
 
-- Backend Infra
-  - WS manager hydrates client messages to `WsServerInbound` (adds `user`) and dispatches via `DomainAPI`.
-  - `DomainAPI` injects `domain` on outbound (temporary duplication with effects until consolidation).
+### Backend Infrastructure
+- WS Manager: Validates client envelopes, hydrates to `WsServerInbound` with `user`, and dispatches to `DomainAPI`.
+- `DomainAPI`: Maintains a domain registry and injects `domain` into outbound messages (temporary duplication with effects; see Final Tightening).
 
-- Backend Domain: Matchmaking
-  - Effects (`createMatchmakingEffects`) and actions (`joinQueue`, `leaveQueue`, `earlyStartVote`).
-  - Adopted `roomKey(GAME_MATCHMAKING_DOMAIN, 'queue')` in effects.
+### Backend: Matchmaking
+- Effects: `createMatchmakingEffects` with `joinMatchmakingRoom`, `broadcast...` helpers.
+- Actions: `joinQueue`, `leaveQueue`, `earlyStartVote` accept plain args and call effects.
+- Room naming: Adopted `roomKey(GAME_MATCHMAKING_DOMAIN, 'queue')`.
 
-- Backend Domain: Chat
-  - Effects (`createGameChatEffects`): `joinChatRoom`, `leaveChatRoom`, `broadcastNewMessage` using composite room.
-  - Action `postMessage(userId, username, room, content)`: trims/limits content; timestamps on server.
-  - WS API: Registers only C→S handlers; hydrates user; builds effects per request.
+### Backend: Chat
+- Effects: `createGameChatEffects` for `joinChatRoom`, `leaveChatRoom`, `broadcastNewMessage` that composes composite room keys.
+- Action: `postMessage(userId, username, room, content)` performs trimming, length limits, and stamps server time.
+- WS API: Registers C→S handlers (`join-room`, `leave-room`, `post-message`), hydrates user, and wires effects.
 
-- Backend Domain: Gameplay
-  - Effects (`createGameplayEffects`): `joinGameplayRoom`, `leaveGameplayRoom` using composite room.
-  - Actions refactor to plain args:
-    - `queueMove(userId, sourceCoord, direction)`
-    - `cancelQueuedMoves(userId)`
-    - `undoLastQueuedMove(userId, gameId)`
-  - WS API: Registers only C→S handlers; hydrates user; delegates to actions; join/leave via effects.
-  - GameServer: `roomName = roomKey('gameplay', 'game-${id}')`; `playerMapping` payload aligned (`playerId: string`).
+### Backend: Gameplay
+- Effects: `createGameplayEffects` for `joinGameplayRoom`, `leaveGameplayRoom` using `roomKey`.
+- Actions (plain args):
+  - `queueMove(userId, sourceCoord, direction)`
+  - `cancelQueuedMoves(userId)`
+  - `undoLastQueuedMove(userId, gameId)`
+- WS API: C→S handlers hydrate user and delegate to actions; join/leave via effects.
+- GameServer: Uses composite room via `roomKey('gameplay', 'game-${id}')` and aligns `playerMapping` payload shape.
 
-- Frontend Infra
-  - `WebSocketService`: Sends `WsClientEnvelope`; receives `WsServerOutbound`; domain-based handlers.
-  - `WebSocketService.joinRoom(domain, room)`: stores composite key via `roomKey`.
-  - `useWebsocket(domain, handler, room?)`: joins room on ready; cleaned deps to include `room`.
+### Frontend Infrastructure
+- `WebSocketService`: Sends envelopes; receives `WsServerOutbound`; dispatches to per-domain handlers.
+- `joinRoom(domain, room)`: Sends a `join-room` envelope and tracks composite room keys.
+- `useWebsocket(domain, handler, room?)`: Registers handler, waits until ready, and joins a room if provided. Cleanup deregisters the handler.
 
-- Frontend: Chat
-  - Actions send `post-message` envelopes; join uses `createJoinRoomMessage(GAME_CHAT_DOMAIN, room)`.
-  - Handler consumes server-only `new-message`; UI renders `username`.
-  - Auto-join chat room via `useWebsocket` in `GameChat`.
+### Frontend: Chat
+- Actions: Send `post-message` envelopes; join room with `createJoinRoomMessage(GAME_CHAT_DOMAIN, bareRoom)`.
+- Handler: Consumes server `new-message` payloads and updates store.
+- UI: `GameChat` auto-joins based on the current game via `bareRoomForGameChat` and `useWebsocket`.
 
-- Frontend: Gameplay
-  - `GamePage` joins gameplay room using bare room; server composes via `roomKey`.
-  - Handler consumes only server unions (`game-starting`, `game-started`, etc.).
+### Frontend: Gameplay
+- `GamePage`: Passes `bareRoomForGameplay(gameId)` to `useWebsocket`; the server composes to composite with `roomKey`.
+- `GameplayWsHandler`: Consumes only server unions and updates stores for starting, started, state-update, and ended events.
 
 ## Build / Test Status
 
-- FE build: passes (vite + TS check).
-- BE build: type-checked during work; gameplay/chat related errors resolved. Broader runtime tests pending.
-- Tests: Gameplay/Chat do not have unit tests for WS flows yet; can be added in tightening phase.
+- Frontend build passes (TypeScript + Vite prod build) after gameplay migration.
+- Backend builds clean for migrated domains during development; broader runtime checks are pending full test coverage.
+- Test coverage for WS flows is limited. The final tightening plan includes targeted unit/integration tests for domain handlers and actions.
 
-## Ergonomics & Type Robustness — Observations
+## Ergonomics & Type Robustness — Detailed Observations
 
-- Directional clarity improved:
-  - C→S and S→C unions prevent accidental cross-direction usage.
-  - FE handlers don’t deal with inbound shapes or `user` on client messages anymore.
-- Decoupled backend actions:
-  - Plain-arg actions easier to test and reuse.
-  - Effects contain transport-only ops; scoped and domain-safe.
-- Room model clarity:
-  - Clients send bare rooms; server composes with `roomKey(domain, room)`.
-  - Avoids collisions and keeps FE payloads clean.
-- Type robustness:
-  - End-to-end envelope types reduce implicit coupling, but some casts remain in WS APIs when extracting payloads.
-  - Final pass could strengthen the inbound handler typing per message type to eliminate `(data as any)`.
-- Developer ergonomics:
-  - Domain WS APIs are simpler; each handler hydrates user and calls a narrowly-typed action.
-  - FE feels clearer with server-only unions; minimal code churn to adopt envelopes on send.
+1) Directional clarity and safety
+  - Splitting unions eliminated accidental use of `user` fields on the client and made it obvious which messages can be sent by which side.
+  - FE domain handlers became simpler and more focused (consume only one union each).
+
+2) Decoupled backend actions
+  - Actions now accept plain domain arguments and delegate all transport concerns to effects. This makes actions easy to test and reuse (e.g., calling from non-WS paths if needed).
+  - Effects expose only the operations a domain should perform (e.g., join room, broadcast to a specific room), reinforcing domain boundaries.
+
+3) Room semantics and correctness
+  - Clients only know “bare rooms” (e.g., `game-123`), improving readability in payloads and avoiding accidental cross-domain overlaps.
+  - The server composes composite keys, centralizing the room namespace policy and preventing domain bleed-through.
+
+4) Type resilience and casts
+  - Most casts were removed, but WS APIs still use `(data as any).payload` in a few places when extracting message-specific fields.
+  - A small typed helper or discriminated inbound union per domain would allow exhaustive `switch` on `type` with strongly-typed payloads to remove casts entirely.
+
+5) Developer experience
+  - Domain WS APIs now read as compact intent: hydrate user → maybe build effects → call action.
+  - Frontend code became easier to follow: send envelope; handler switches on server-only union; stores update.
 
 ## Code Review Checklist (Fresh Session)
 
+Use this list to methodically review the implementation:
+
 - Common/types
-  - Confirm each domain split has no lingering `WsMessage` imports.
-  - Verify payload shapes match current UI and server logic (e.g., gameplay `playerMapping`).
-- Backend
-  - WS manager: envelope validation sufficient for now? Any log noise or gaps?
-  - DomainAPI: Note the domain injection duplication with effects; acceptable short-term.
-  - Effects: Verify consistent `roomKey` usage and domain scoping.
-  - Actions: Validate args-only signatures; no transport access; correct error handling/logging.
-  - GameServer: Room key composition; payloads align to server unions; countdown/start/end broadcasts OK.
+  - No remaining imports of `WsMessage` in any migrated domain.
+  - Check each union’s payloads align with how the server emits and FE consumes (e.g., gameplay `playerMapping` uses `{ playerId: string, playerIndex }`).
+  - `roomKey` is the only place we compose composite room identifiers.
+
+- Backend infrastructure
+  - WS manager’s envelope validation: confirm it enforces `domain`, `type`, and presence of `payload` (even if `null`). Consider improving error messages/log context.
+  - `DomainAPI` still injects domain in outbound messages; ensure this is consistent with effects until we consolidate.
+
+- Backend domains
+  - Effects: Verify all `joinRoom/leaveRoom/broadcast` paths use `roomKey(domain, room)` consistently.
+  - Actions: Confirm they do not depend on WS types and accept only plain, minimal arguments.
+  - WS APIs: Confirm they hydrate `user`, validate/guard payloads, and delegate to actions with appropriate args. Check for remaining `any` casts and note where typed inbound unions would help.
+  - Gameplay GameServer: Composite room usage; outbound payloads conform to server unions; countdown/start/end sequences function as expected.
+
 - Frontend
-  - `WebSocketService`: handler registration/deregistration correctness; room tracking; join timing.
-  - Domain handlers: Only consume outbound unions; correct payload usage.
-  - GamePage / Chat: Confirm auto-join and bare-room usage; UI uses correct fields.
+  - `WebSocketService`: Verify message handler registration/deregistration lifecycle; room tracking stores composite keys; joining is triggered only when connected.
+  - `useWebsocket`: Confirms handler added on ready and removed on cleanup; when `room` changes, re-join occurs.
+  - Domain handlers: Only switch on server unions; no lingering usage of inbound-only fields.
+  - Pages: `GamePage` and `GameChat` auto-join with bare rooms derived from game id.
 
 ## Now-Visible Cleanups & Insights
 
-- Auto-leave rooms on unmount:
-  - Add `leave-room` send in `useWebsocket` cleanup when `room` is provided.
-- Stronger inbound typing in WS APIs:
-  - Introduce per-domain inbound union discriminants to avoid `(data as any)` casts.
-- Consolidate outbound domain injection:
-  - Decide on a single approach (effects or DomainAPI wrapper) and remove duplication.
-- FE WebSocketService improvements:
-  - Optional send queue for messages before connection is OPEN.
-  - Stronger typing for `addMessageHandler(domain, handler)` via domain-specific overloads (post-consolidation).
-- Room helpers consolidation:
-  - Consider a typed helper like `roomFor('gameplay', gameId)` to avoid manual string composition.
-- Validation:
-  - Add runtime schema validation per message (zod/io-ts) once unions are stable.
-- Logging/telemetry:
-  - Add structured logs around domain joins/leaves and message rates.
+1) Auto-leave rooms on unmount/change
+  - Add `leave-room` sends in `useWebsocket` cleanup when a `room` is provided. This prevents stale memberships on server side and reduces noise.
+
+2) Stronger inbound typing in WS APIs
+  - Define a discriminated inbound union per domain (e.g., `GameplayInbound = { type: 'move-request', payload: ... } | ...`).
+  - In domain handlers, switch on `type` and get strongly-typed `payload` with no casts. This also simplifies runtime guards.
+
+3) Consolidate outbound domain injection
+  - Today both `DomainAPI` and effects ensure `domain` on outbound. Choose one (recommend effects-only), remove the other to avoid confusion and double work.
+
+4) WebSocketService QoL
+  - Add an optional outbound queue for messages attempted before the socket reaches OPEN; flush on open.
+  - Consider typed helpers for common sends (e.g., `sendMove`, `sendCancelMoves`) to reduce repetition and enforce payload shapes at call sites.
+
+5) Room helpers consolidation
+  - Add `roomForGameplay(gameId)` and `roomForChat(gameId)` thin wrappers returning bare rooms to centralize the pattern.
+
+6) Validation & telemetry
+  - Add zod/io-ts validation for inbound C→S messages; in dev, log a clear error and ignore invalid messages; in prod, consider structured logs/metrics.
+  - Consider light telemetry around joins/leaves and per-domain message throughput for observability.
 
 ## Proposed Final Phase (Tightening) Plan
 
-1) Room lifecycle
-- Auto-send `leave-room` on unmount/room change in `useWebsocket` for gameplay/chat.
+1) Room lifecycle (small)
+  - In `useWebsocket`, when `room` is provided: send `leave-room` on cleanup and when `room` changes. Acceptance: server membership prunes on navigation.
 
-2) Inbound typing
-- Add per-domain inbound discriminated types and update DomainAPI registrations to use them (remove `(data as any)` casts).
+2) Inbound typing (medium)
+  - Create discriminated inbound unions per domain and update WS APIs to use them for switch-based handling. Acceptance: eliminate `(data as any)` in domain WS APIs.
 
-3) Outbound consolidation
-- Pick effects-first for outbound injection and remove DomainAPI domain-injection duplication.
+3) Outbound consolidation (small/medium)
+  - Remove `DomainAPI` domain-injection duplication in favor of effects-bound injection. Acceptance: single source of domain injection; updated tests/builds.
 
-4) Runtime validation
-- Add schemas for C→S messages in each domain; log or reject invalid payloads cleanly.
+4) Runtime validation (medium)
+  - Add zod/io-ts schemas for C→S messages per domain. Acceptance: invalid messages are rejected with clear logs; code paths assume validated payloads thereafter.
 
-5) FE QoL
-- Add optional send queue in `WebSocketService`.
-- Add tiny helpers for common sends (e.g., `sendMove`, `sendCancelMoves`) that enforce message shape.
+5) FE QoL (small)
+  - Add send queue and common send helpers in `WebSocketService`. Acceptance: messages sent pre-open are delivered; helpers reduce boilerplate and errors.
 
-6) Tests
-- Add unit tests for domain actions (chat/gameplay) with mocked effects.
-- Add light integration tests for WS API handlers (hydrate user, call effects/actions with correct args).
+6) Tests (medium)
+  - Add unit tests for chat/gameplay actions with mocked effects and basic integration tests for WS APIs. Acceptance: green test suite covering happy paths and common invalid input scenarios.
 
 ## Backlog / Revisit Later
 
-- Room membership policy: Decide whether joins/leaves should be centralized by the manager or remain domain-driven commands.
-- Standardize ID types across payloads: audit `number` vs `string` for `userId`/`playerId` and align everywhere.
-- Consider codegen for unions and validation schemas to avoid drift.
-- Performance: Monitor broadcast sizes/frequency; consider compression or diffing for large state updates.
-- Security: Add per-room authorization checks (ensure users can only join rooms they’re entitled to).
+- Room membership policy: Evaluate a manager-driven room membership model (automatic joins on domain events) versus command-driven joins; pick a consistent approach.
+- ID type standardization: Audit `number` vs `string` for `userId`/`playerId` fields and normalize to one type across FE/BE.
+- Schema/codegen: Consider generating TypeScript unions and zod schemas from a single source to reduce drift.
+- Performance: Monitor payload sizes/frequencies (especially `game-state-update`); consider diffing or compression if needed.
+- Security: Add per-room authorization checks to ensure only entitled users can join/broadcast in a room.
 
 ## Risks & Open Questions
 
-- Mixed domain injection: Keeping both effects and DomainAPI injection could mask mistakes; consolidation in the final phase recommended.
-- Validation cost: Runtime validation adds overhead; consider sampling/only-in-dev modes if needed.
-- Error handling strategy: How should invalid C→S payloads be reported to clients (error messages vs silent drops)?
+- Dual domain injection paths: Effects + `DomainAPI` could cover mistakes but also hide them; consolidation is recommended to reduce cognitive load.
+- Validation cost: Runtime validation adds CPU; likely negligible at current scale, but we can guard with dev-only schemas or toggle.
+- Error reporting: For invalid C→S payloads, decide between silent drops with logs versus explicit error messages back to clients.
 
 ## Summary
 
-The refactor has clarified message direction, reduced coupling, and standardized room semantics. The system now has cleaner boundaries and is easier to reason about and test. A brief tightening phase will eliminate minor duplication, strengthen runtime and compile-time guarantees, and add a few QoL improvements, leaving a solid foundation for future features.
-
+The refactor moves us to a clearer, more maintainable WebSocket architecture: direction is explicit, domain actions are testable and transport-agnostic, and room semantics are consistent and collision-free. A short tightening phase can remove the remaining rough edges (typing casts, duplicate domain injection, missing leave-room lifecycle) and add small QoL upgrades. With those in place, this will be a strong foundation for upcoming features like more complex gameplay events, spectating, and richer chat/system messaging.
