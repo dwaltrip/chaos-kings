@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useParams, Navigate } from 'react-router';
 
 import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
-import { roomNameForGameplay } from '@common/domains/game/utils';
+import { bareRoomForGameplay } from '@common/domains/game/utils';
 
 import { useWebsocket } from '@/hooks/use-websocket';
 import { userStore } from '@/stores/user-store';
@@ -66,8 +66,8 @@ function GamePageContent({ gameId }: { gameId: string }) {
   // Ideally we'd keep WebSocket details contained in GameUI, but for now this
   // is the easiest solution to fix the countdown race condition.
   // useGameplayWebSocket(game ? game.id : null);
-  const roomName = roomNameForGameplay(gameId);
-  const wsService = useWebsocket(GAMEPLAY_DOMAIN, GameplayWsHandler, roomName);
+  const roomBare = bareRoomForGameplay(gameId);
+  const wsService = useWebsocket(GAMEPLAY_DOMAIN, GameplayWsHandler, roomBare);
   const isConnected = wsService.isConnected;
 
   useEffect(() => {

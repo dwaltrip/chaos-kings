@@ -16,6 +16,7 @@ import {
 import { processStep as coreProcessStep } from '@core/step-processor';
 import type { MoveEvent } from '@core/replay/types';
 import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
+import { roomKey } from '@common/utils/room-key';
 import type { GameWithPlayers } from '@common/types/games';
 
 import { getGame } from '@/game/actions/get-game';
@@ -56,7 +57,7 @@ export class GameServer {
 
   constructor(game: GameWithPlayers) {
     this.game = game;
-    this.roomName = `gameplay-${this.game.id}`;
+    this.roomName = roomKey(GAMEPLAY_DOMAIN, `game-${this.game.id}`);
     this.log.debug('New GameServer');
 
     // setup player mappings and move queues
@@ -463,9 +464,9 @@ export class GameServer {
     return this.roomName;
   }
 
-  getPlayerMapping(): Array<{ userId: UserId; playerIndex: PlayerIndex }> {
+  getPlayerMapping(): Array<{ playerId: string; playerIndex: PlayerIndex }> {
     return Array.from(this.playerMapping.entries()).map(
-      ([userId, playerIndex]) => ({ userId, playerIndex }),
+      ([userId, playerIndex]) => ({ playerId: String(userId), playerIndex }),
     );
   }
 

@@ -1,21 +1,7 @@
-import { Gameplay } from '@common/types/gameplay';
 import { getGameCoordinator } from '../game-coordinator';
 import { getUserGame } from './user-game-mapping';
 
-export async function handleCancelMovesRequest(
-  data: Gameplay.CancelMovesRequest,
-): Promise<void> {
-  // TODO: why are we checking for user here? That should be handled elsewhere
-  // I'd like the params to be typed such thaat user is always defined
-  if (!data.user) {
-    console.error(
-      '[GameplayActions] No user data in cancel-moves-request message',
-    );
-    return;
-  }
-
-  // TODO (user-id-type-issue): Fix this. Should be number already.
-  const userId = Number(data.user.id);
+export async function cancelQueuedMoves(userId: number): Promise<void> {
   const gameId = getUserGame(userId);
 
   if (!gameId) {

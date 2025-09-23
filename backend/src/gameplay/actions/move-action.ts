@@ -1,17 +1,12 @@
-import { Gameplay } from '@common/types/gameplay';
+import type { Coord, Direction } from '@core/types';
 import { getGameCoordinator } from '../game-coordinator';
 import { getUserGame } from './user-game-mapping';
 
-export async function handleMoveRequest(
-  data: Gameplay.MoveRequest,
+export async function queueMove(
+  userId: number,
+  sourceCoord: Coord,
+  direction: Direction,
 ): Promise<void> {
-  if (!data.user) {
-    console.error('[GameplayActions] No user data in move-request message');
-    return;
-  }
-
-  // TODO (user-id-type-issue): Fix this. Should be number already.
-  const userId = Number(data.user.id);
   const gameId = getUserGame(userId);
 
   if (!gameId) {
@@ -29,10 +24,5 @@ export async function handleMoveRequest(
     return;
   }
 
-  // TODO: pass Player or User object instead of userId
-  gameServer.queueMove(
-    userId,
-    data.payload.sourceCoord,
-    data.payload.direction,
-  );
+  gameServer.queueMove(userId, sourceCoord, direction);
 }
