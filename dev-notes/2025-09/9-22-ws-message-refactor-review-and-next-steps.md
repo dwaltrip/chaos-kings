@@ -22,6 +22,37 @@ This document expands on what changed, why it changed, and how it currently beha
   - Frontend handlers consume a single outbound union per domain.
   - Backend WS APIs are thin and focused, with clear user hydration and action delegation.
 
+## Domain Effects (ws-effects): What, Why, and Design Choices
+
+Domain effects ("ws-effects") are small, per-domain modules that expose only the transport operations a domain is allowed to perform. For example, chat effects can: join a chat room, leave a chat room, and broadcast a new chat message to that room. Gameplay effects can: join/leave gameplay rooms. Importantly, effects:
+
+- Wrap and narrow the raw `WsActions` from the WebSocket layer, so domain code never manipulates sockets directly or sends arbitrary messages.
+- Compose details like room naming (via `roomKey(domain, room)`) and ensure the correct `domain` is present on all outbound payloads.
+- Provide a stable interface to actions; actions accept plain arguments and call effects without knowing anything about WebSocket internals.
+
+This pattern creates a clean “transport boundary”: domain actions are pure application logic (easy to test, reuse), and effects are the minimal shims that touch the network.
+
+Why we chose effects now:
+
+- Testing and reuse: Plain-arg actions can be tested with mocked effects, no sockets required.
+- Safety: Effects centralize room-key composition and outbound domain scoping, preventing cross-domain mistakes.
+- Incremental migration: Effects are easy to introduce per domain without rewriting the manager.
+
+Alternatives considered:
+
+- Direct use of `WsActions` in actions: Quicker initially, but it leaks transport details into business logic and makes testing harder.
+- Domain-specific outbound wrappers inside `DomainAPI`: Keeps transport centralized, but blurs ownership and still requires some domain-specific code in infra. We opted to push domain specifics down near the domain (effects) and keep `DomainAPI` thin.
+- Global message bus abstraction: Overkill for current scope; increases complexity without clear benefits versus effects.
+
+Connection to WebSocketManager and `injectDomain` simplification:
+
+- Today, both `DomainAPI.injectDomain` and effects set/ensure the `domain` on outbound messages. This is intentionally redundant during migration to avoid breaking flows.
+- In the final tightening phase, we plan to remove `injectDomain` and consolidate outbound domain scoping inside effects exclusively. That will:
+  - Simplify `DomainAPI` (no outbound mutation),
+  - Make responsibilities explicit (effects own domain scoping), and
+  - Reduce cognitive overhead when reasoning about where `domain` comes from.
+- With effects owning room-key composition and outbound scoping, `WebSocketManager` remains a generic router/broadcaster. It won’t need to know anything about domains beyond delivering messages and managing room membership.
+
 ## Scope & Outcomes to Date
 
 - Directional envelopes in common types:
