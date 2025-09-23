@@ -1,12 +1,13 @@
 import type { WsServerInbound } from '@common/types/websockets';
 import type { ClientWsActions } from '@/websocket/types';
 
+type DomainName = string;
 type DomainHandler = (data: WsServerInbound, actions: ClientWsActions) => void;
 
 class WsRouter {
-  private domains = new Map<string, DomainHandler>();
+  private domains = new Map<DomainName, DomainHandler>();
 
-  register(domain: string, handler: DomainHandler): void {
+  register(domain: DomainName, handler: DomainHandler): void {
     if (this.domains.has(domain)) {
       throw new Error(`WS domain already registered: ${domain}`);
     }
@@ -14,9 +15,11 @@ class WsRouter {
   }
 
   dispatch(data: WsServerInbound, actions: ClientWsActions): void {
-    const handler = this.domains.get(data.domain);
-    if (!handler) return;
-    handler(data, actions);
+    const domainHandler = this.domains.get(data.domain);
+    if (!domainHandler) {
+      throw new Error(`No handler registered for WS domain: ${data.domain}`);
+    }
+    domainHandler(data, actions);
   }
 }
 

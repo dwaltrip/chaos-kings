@@ -63,6 +63,7 @@ class WebSocketManager {
   clientStore = new ClientStore();
   log = moduleLogger;
   private dispatchFn: (data: WsServerInbound, actions: ClientWsActions) => void;
+
   constructor(
     dispatchFn: (data: WsServerInbound, actions: ClientWsActions) => void,
   ) {
