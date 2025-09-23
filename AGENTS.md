@@ -86,6 +86,24 @@ Hey AI assistant! My name is Daniel and I'm excited to build with you :)
 - For complex work with tricky debugging: commit progress frequently to save state and allow easy rollback of debugging attempts
 - Use concise commit messages for minor/straightforward changes - avoid overly verbose descriptions
 
+#### Commit Message Format
+
+- Subject line on the first line (imperative, concise)
+- Blank line after the subject
+- Body: one sentence or bullet per line (no wrapping paragraphs)
+- Prefer bullets starting with `- ` for multi-point commits
+- Keep each line focused and scannable; avoid filler
+
+Example:
+
+```
+feat(gameplay): Add move queue validation
+
+- Enforce max queued moves per player
+- Ignore moves from defeated players
+- Log invalid coords with user and step context
+```
+
 ## Code Conventions and Style
 
 ### General
