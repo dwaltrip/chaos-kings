@@ -1,14 +1,5 @@
 import { WsActions, WsMessageHandler } from '@/websocket/types';
-import { WsServerInbound, WsServerOutbound } from '@common/types/websockets';
-
-function injectDomain(domain: string, actions: WsActions): WsActions {
-  return {
-    ...actions,
-    broadcastToRoom: (roomId, data: WsServerOutbound) => {
-      actions.broadcastToRoom(roomId, { ...data, domain });
-    },
-  };
-}
+import { WsServerInbound } from '@common/types/websockets';
 
 // -----------------------------------------------------------------------
 // TODO: Message types can be client -> server and / or server -> client.
@@ -23,10 +14,7 @@ class DomainAPI<TMessageType extends string = string> {
 
   handleMessage(type: string, data: WsServerInbound, actions: WsActions) {
     if (type in this.handlers) {
-      this.handlers[type as TMessageType](
-        data,
-        injectDomain(this.name, actions),
-      );
+      this.handlers[type as TMessageType](data, actions);
     } else {
       // throw new Error(`No handler for message type: ${type} in domain: ${this.name}`);
       console.warn(
