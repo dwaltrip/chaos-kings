@@ -7,11 +7,10 @@ import authPlugin from '@/plugins/auth';
 import { systemRoutes } from '@/system/system-routes';
 import { userRoutes } from '@/user/user-routes';
 import { gameRoutes } from '@/game/game-routes';
-import { WebSocketManager, handleWebSocketMessage } from '@/websocket';
-import { registerDomainAPI } from '@/websocket/api';
-import { GameChatWsAPI } from '@/game-chat/game-chat-ws-api';
-import { GameMatchmakingWsAPI } from '@/game-matchmaking/game-matchmaking-ws-api';
-import { GameplayWsAPI } from '@/gameplay/gameplay-ws-api';
+import { WebSocketManager, registerDomainHandler } from '@/websocket';
+import { registerGameChatWsHandlers } from '@/game-chat/game-chat-ws-api';
+import { registerGameMatchmakingWsHandlers } from '@/game-matchmaking/game-matchmaking-ws-api';
+import { registerGameplayWsHandlers } from '@/gameplay/gameplay-ws-api';
 import { initializeGameCoordinator } from '@/gameplay/game-coordinator';
 import { setGlobalWebSocketManager } from '@/websocket/global-manager';
 import { logger, fastifyLoggerConfig } from '@/utils/logger';
@@ -40,12 +39,12 @@ fastify.register(systemRoutes, { prefix: '/api' });
 fastify.register(userRoutes, { prefix: '/api' });
 fastify.register(gameRoutes, { prefix: '/api' });
 
-// Initialize WebSocket manager and register domain APIs
+// Initialize WebSocket manager and register domain handlers
 const wsManager = new WebSocketManager();
 setGlobalWebSocketManager(wsManager);
-registerDomainAPI(GameChatWsAPI);
-registerDomainAPI(GameMatchmakingWsAPI);
-registerDomainAPI(GameplayWsAPI);
+registerGameChatWsHandlers(registerDomainHandler);
+registerGameMatchmakingWsHandlers(registerDomainHandler);
+registerGameplayWsHandlers(registerDomainHandler);
 
 // Initialize game coordinator
 initializeGameCoordinator();

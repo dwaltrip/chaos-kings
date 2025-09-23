@@ -6,7 +6,7 @@ import type { WebSocket as FastifyWebSocket } from '@fastify/websocket';
 import { invariant } from '@common/utils/invariant';
 import { User } from '@common/types/user';
 import { WsClientId, WsActions } from '@/websocket/types';
-import { handleWebSocketMessage } from '@/websocket/api';
+import { dispatchWebSocketMessage } from '@/websocket/router';
 import { createScopedLogger, ScopedLogger } from '@/utils/scoped-logger';
 import {
   WsServerInbound,
@@ -96,7 +96,7 @@ class WebSocketManager {
           ...validateClientEnvelope(JSON.parse(bufferStr)),
           user: client.user, // Attach user info to message
         };
-        handleWebSocketMessage(data, this.actionsForClient(client));
+        dispatchWebSocketMessage(data, this.actionsForClient(client));
       } catch (error) {
         client.log.error(
           'Error parsing message:',
