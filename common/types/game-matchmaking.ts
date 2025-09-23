@@ -1,6 +1,7 @@
 import type {
   WsClientEnvelope,
   WsServerOutbound,
+  WsServerInbound,
 } from '@common/types/websockets';
 
 const GAME_MATCHMAKING_DOMAIN = 'game-matchmaking';
@@ -63,10 +64,50 @@ namespace GameMatchmakingServer {
   }
 }
 
+// ------------------------------
+// Server inbound (typed C→S)
+// ------------------------------
+interface GameMatchmakingJoinQueueInbound {
+  type: 'join-queue';
+  payload: null;
+}
+
+interface GameMatchmakingLeaveQueueInbound {
+  type: 'leave-queue';
+  payload: null;
+}
+
+interface GameMatchmakingEarlyStartVoteInbound {
+  type: 'early-start-vote';
+  payload: { vote: boolean };
+}
+
+type GameMatchmakingInbound =
+  | GameMatchmakingJoinQueueInbound
+  | GameMatchmakingLeaveQueueInbound
+  | GameMatchmakingEarlyStartVoteInbound;
+
+type GameMatchmakingServerInbound = Omit<
+  WsServerInbound,
+  'domain' | 'type' | 'payload'
+> & { domain: typeof GAME_MATCHMAKING_DOMAIN } & GameMatchmakingInbound;
+
+function isGameMatchmakingServerInbound(
+  data: WsServerInbound,
+): data is GameMatchmakingServerInbound {
+  return data.domain === GAME_MATCHMAKING_DOMAIN;
+}
+
 export {
   GAME_MATCHMAKING_DOMAIN,
   type GameMatchmakingClientMessageType,
   type GameMatchmakingServerMessageType,
   type GameMatchmakingClient,
   type GameMatchmakingServer,
+  type GameMatchmakingInbound,
+  type GameMatchmakingServerInbound,
+  type GameMatchmakingJoinQueueInbound,
+  type GameMatchmakingLeaveQueueInbound,
+  type GameMatchmakingEarlyStartVoteInbound,
+  isGameMatchmakingServerInbound,
 };

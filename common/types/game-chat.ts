@@ -1,6 +1,7 @@
 import type {
   WsClientEnvelope,
   WsServerOutbound,
+  WsServerInbound,
 } from '@common/types/websockets';
 
 const GAME_CHAT_DOMAIN = 'game-chat';
@@ -50,10 +51,59 @@ namespace GameChatServer {
   }
 }
 
+// ------------------------------
+// Server inbound (typed C→S)
+// ------------------------------
+interface GameChatJoinRoomInbound {
+  type: 'join-room';
+  payload: {
+    room: string;
+    timestamp: number;
+  };
+}
+
+interface GameChatLeaveRoomInbound {
+  type: 'leave-room';
+  payload: {
+    room: string;
+    timestamp: number;
+  };
+}
+
+interface GameChatPostMessageInbound {
+  type: 'post-message';
+  payload: {
+    room: string;
+    content: string;
+  };
+}
+
+type GameChatInbound =
+  | GameChatJoinRoomInbound
+  | GameChatLeaveRoomInbound
+  | GameChatPostMessageInbound;
+
+type GameChatServerInbound = Omit<
+  WsServerInbound,
+  'domain' | 'type' | 'payload'
+> & { domain: typeof GAME_CHAT_DOMAIN } & GameChatInbound;
+
+function isGameChatServerInbound(
+  data: WsServerInbound,
+): data is GameChatServerInbound {
+  return data.domain === GAME_CHAT_DOMAIN;
+}
+
 export {
   GAME_CHAT_DOMAIN,
   type GameChatClientMessageType,
   type GameChatServerMessageType,
   type GameChatClient,
   type GameChatServer,
+  type GameChatInbound,
+  type GameChatServerInbound,
+  type GameChatJoinRoomInbound,
+  type GameChatLeaveRoomInbound,
+  type GameChatPostMessageInbound,
+  isGameChatServerInbound,
 };

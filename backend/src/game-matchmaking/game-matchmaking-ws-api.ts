@@ -2,6 +2,7 @@ import { DomainAPI } from '@/websocket/api';
 import {
   GAME_MATCHMAKING_DOMAIN,
   type GameMatchmakingClientMessageType,
+  type GameMatchmakingServerInbound,
 } from '@common/types/game-matchmaking';
 import { joinQueue, leaveQueue } from './actions';
 import { earlyStartVote } from './actions/early-start-vote-action';
@@ -30,7 +31,12 @@ const GameMatchmakingWsAPI = new DomainAPI<GameMatchmakingClientMessageType>(
     'early-start-vote': async (data, wsActions) => {
       const user = data.user;
       if (!user) return;
-      const vote = !!(data as any).payload?.vote;
+      const { vote } = (
+        data as Extract<
+          GameMatchmakingServerInbound,
+          { type: 'early-start-vote' }
+        >
+      ).payload;
       const effects = createMatchmakingEffects(wsActions);
       return earlyStartVote(Number(user.id), vote, effects);
     },

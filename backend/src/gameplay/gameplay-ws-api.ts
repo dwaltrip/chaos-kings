@@ -1,6 +1,7 @@
 import {
   GAMEPLAY_DOMAIN,
   type GameplayClientMessageType,
+  type GameplayServerInbound,
 } from '@common/types/gameplay';
 
 import { DomainAPI } from '@/websocket/api';
@@ -21,7 +22,9 @@ const GameplayWsAPI = new DomainAPI<GameplayClientMessageType>(
   {
     'join-room': (data, wsActions: WsActions) => {
       const user = data.user;
-      const room = (data as any).payload?.room as string;
+      const { room } = (
+        data as Extract<GameplayServerInbound, { type: 'join-room' }>
+      ).payload;
       if (!room) return;
       const effects = createGameplayEffects(wsActions);
       effects.joinGameplayRoom(room);
@@ -50,7 +53,9 @@ const GameplayWsAPI = new DomainAPI<GameplayClientMessageType>(
       }
     },
     'leave-room': (data, wsActions: WsActions) => {
-      const room = (data as any).payload?.room as string;
+      const { room } = (
+        data as Extract<GameplayServerInbound, { type: 'leave-room' }>
+      ).payload;
       if (!room) return;
       const effects = createGameplayEffects(wsActions);
       effects.leaveGameplayRoom(room);
@@ -58,9 +63,11 @@ const GameplayWsAPI = new DomainAPI<GameplayClientMessageType>(
     'move-request': async (data) => {
       const user = data.user;
       if (!user) return;
-      const p = (data as any).payload;
-      if (!p || !p.sourceCoord || !p.direction) return;
-      await queueMove(Number(user.id), p.sourceCoord, p.direction);
+      const { sourceCoord, direction } = (
+        data as Extract<GameplayServerInbound, { type: 'move-request' }>
+      ).payload;
+      if (!sourceCoord || !direction) return;
+      await queueMove(Number(user.id), sourceCoord, direction);
     },
     'cancel-moves-request': async (data) => {
       const user = data.user;
@@ -70,9 +77,11 @@ const GameplayWsAPI = new DomainAPI<GameplayClientMessageType>(
     'undo-move-request': async (data) => {
       const user = data.user;
       if (!user) return;
-      const gameId = Number((data as any).payload?.gameId);
+      const { gameId } = (
+        data as Extract<GameplayServerInbound, { type: 'undo-move-request' }>
+      ).payload;
       if (!gameId) return;
-      await undoLastQueuedMove(Number(user.id), gameId);
+      await undoLastQueuedMove(Number(user.id), Number(gameId));
     },
   },
 );

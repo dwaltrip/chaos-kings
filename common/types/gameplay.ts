@@ -1,6 +1,7 @@
 import type {
   WsClientEnvelope,
   WsServerOutbound,
+  WsServerInbound,
 } from '@common/types/websockets';
 import type { BoardState, Direction, Coord } from '@core/types';
 import type { GameWithPlayers } from '@common/types/games';
@@ -81,6 +82,52 @@ namespace GameplayServer {
   }
 }
 
+// ------------------------------
+// Server inbound (typed C→S)
+// ------------------------------
+interface GameplayJoinRoomInbound {
+  type: 'join-room';
+  payload: { room: string };
+}
+
+interface GameplayLeaveRoomInbound {
+  type: 'leave-room';
+  payload: { room: string };
+}
+
+interface GameplayMoveRequestInbound {
+  type: 'move-request';
+  payload: { sourceCoord: Coord; direction: Direction };
+}
+
+interface GameplayCancelMovesInbound {
+  type: 'cancel-moves-request';
+  payload: null;
+}
+
+interface GameplayUndoMoveInbound {
+  type: 'undo-move-request';
+  payload: { gameId: number };
+}
+
+type GameplayInbound =
+  | GameplayJoinRoomInbound
+  | GameplayLeaveRoomInbound
+  | GameplayMoveRequestInbound
+  | GameplayCancelMovesInbound
+  | GameplayUndoMoveInbound;
+
+type GameplayServerInbound = Omit<
+  WsServerInbound,
+  'domain' | 'type' | 'payload'
+> & { domain: typeof GAMEPLAY_DOMAIN } & GameplayInbound;
+
+function isGameplayServerInbound(
+  data: WsServerInbound,
+): data is GameplayServerInbound {
+  return data.domain === GAMEPLAY_DOMAIN;
+}
+
 export {
   GAMEPLAY_DOMAIN,
   type GameplayClientMessageType,
@@ -90,4 +137,12 @@ export {
   type GameplayClient,
   type GameplayServer,
   type PlayerIndex,
+  type GameplayInbound,
+  type GameplayServerInbound,
+  type GameplayJoinRoomInbound,
+  type GameplayLeaveRoomInbound,
+  type GameplayMoveRequestInbound,
+  type GameplayCancelMovesInbound,
+  type GameplayUndoMoveInbound,
+  isGameplayServerInbound,
 };
