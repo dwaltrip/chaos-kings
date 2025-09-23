@@ -1,6 +1,6 @@
 import type { WsActions } from '@/websocket/types';
-import { MATCHMAKING_ROOM_NAME } from '@common/constants/matchmaking';
 import { GAME_MATCHMAKING_DOMAIN } from '@common/types/game-matchmaking';
+import { roomKey } from '@common/utils/room-key';
 import { getGlobalWebSocketManager } from '@/websocket/global-manager';
 
 interface GameMatchmakingEffects {
@@ -18,26 +18,27 @@ interface GameMatchmakingEffects {
 function createMatchmakingEffects(
   wsActions: WsActions,
 ): GameMatchmakingEffects {
+  const ROOM = roomKey(GAME_MATCHMAKING_DOMAIN, 'queue');
   return {
     joinMatchmakingRoom() {
-      wsActions.joinRoom(MATCHMAKING_ROOM_NAME);
+      wsActions.joinRoom(ROOM);
     },
     broadcastQueueStatus(queueSize, playersNeeded) {
-      wsActions.broadcastToRoom(MATCHMAKING_ROOM_NAME, {
+      wsActions.broadcastToRoom(ROOM, {
         domain: GAME_MATCHMAKING_DOMAIN,
         type: 'queue-status',
         payload: { queueSize, playersNeeded },
       });
     },
     broadcastEarlyStartStatus(status) {
-      wsActions.broadcastToRoom(MATCHMAKING_ROOM_NAME, {
+      wsActions.broadcastToRoom(ROOM, {
         domain: GAME_MATCHMAKING_DOMAIN,
         type: 'early-start-status',
         payload: status,
       });
     },
     broadcastGameReady(gameId) {
-      wsActions.broadcastToRoom(MATCHMAKING_ROOM_NAME, {
+      wsActions.broadcastToRoom(ROOM, {
         domain: GAME_MATCHMAKING_DOMAIN,
         type: 'game-ready',
         payload: { gameId },
@@ -45,9 +46,7 @@ function createMatchmakingEffects(
     },
     removeUsersFromMatchmakingRoom(userIds) {
       const wsManager = getGlobalWebSocketManager();
-      userIds.forEach((id) =>
-        wsManager.removeUserFromRoom(String(id), MATCHMAKING_ROOM_NAME),
-      );
+      userIds.forEach((id) => wsManager.removeUserFromRoom(String(id), ROOM));
     },
   };
 }

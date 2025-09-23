@@ -32,7 +32,6 @@ namespace GameChatClient {
     payload: {
       room: string;
       content: string;
-      timestamp: number;
     };
   }
 }

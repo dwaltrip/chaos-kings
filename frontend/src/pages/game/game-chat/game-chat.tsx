@@ -1,5 +1,6 @@
 import type { Game } from '@common/types/games';
 import { GAME_CHAT_DOMAIN } from '@common/types/game-chat';
+import { bareRoomForGameChat } from '@common/domains/game/utils';
 import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
 import {
   sendChatMessage,
@@ -13,7 +14,8 @@ import { useWebsocket } from '@/hooks/use-websocket';
 function GameChat({ game }: { game: Game }) {
   const messages = gameChatStore((state) => state.messages);
   const newMessage = gameChatStore((state) => state.newMessage);
-  const wsService = useWebsocket(GAME_CHAT_DOMAIN, GameChatWsHandler);
+  const room = bareRoomForGameChat(game);
+  const wsService = useWebsocket(GAME_CHAT_DOMAIN, GameChatWsHandler, room);
   const isConnected = wsService.isConnected;
 
   const sendMessage = (e: React.FormEvent) => {

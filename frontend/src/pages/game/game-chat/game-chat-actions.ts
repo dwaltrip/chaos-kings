@@ -17,7 +17,6 @@ function sendChatMessage(message: string, game: Game) {
     payload: {
       room,
       content: message.trim(),
-      timestamp: Date.now(),
     },
   });
   actions.setNewMessage('');

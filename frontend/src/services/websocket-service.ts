@@ -3,6 +3,7 @@ import {
   type WsServerOutbound,
 } from '@common/types/websockets';
 import { createJoinRoomMessage } from '@common/websockets/message-types';
+import { roomKey } from '@common/utils/room-key';
 import { invariant } from '@common/utils/invariant';
 import { wsStore } from '@/services/ws-store';
 
@@ -20,9 +21,7 @@ class WebSocketService {
   private ws: WebSocket;
   private url: string;
   private _store = wsStore;
-  // ----------------------------------------------------------------------
-  // TODO: key should be domain + room, make a helper for this or something
-  // ----------------------------------------------------------------------
+  // TODO: we aren't using this anywhere, consider removing
   private _rooms: Set<string> = new Set();
 
   private listeners: EventListeners = {};
@@ -130,7 +129,7 @@ class WebSocketService {
       return;
     }
     this.send(createJoinRoomMessage(domain, room));
-    this._rooms.add(room);
+    this._rooms.add(roomKey(domain, room));
   }
 
   // TODO: what about `domain`????

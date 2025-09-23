@@ -15,7 +15,7 @@ function useWebsocket(domain: string, handler: WsDomainHandler, room?: string) {
     return () => {
       wsService.removeMessageHandler(domain, handler);
     };
-  }, [domain, handler]);
+  }, [domain, handler, room]);
 
   return wsService;
 }
