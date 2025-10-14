@@ -35,6 +35,7 @@ The current v1 architecture works but has room for improvement:
 - Could be crisper and more explicit about boundaries and responsibilities
 
 **Type Safety:**
+
 - WebSocket messages could have stronger compile-time safety
 - Payload types could be more rigorously defined
 - Would benefit from discriminated unions and better type inference
@@ -84,6 +85,7 @@ This incremental approach keeps the codebase coherent at each step and provides 
 ## Foundational Architecture
 
 **These docs define the target architecture and patterns:**
+
 - [Monorepo Folder Structure](../../../dev-notes/2025-10/10-12-[1]-monorepo-folder-structure-v2.md) - packages/, apps/ structure & dependency rules
 - [WebSocket Architecture Patterns](../../../dev-notes/2025-10/10-12-[2]-project-arch-massive-refactor.md) - Message types, handlers, actions, ws-effects
 
@@ -130,7 +132,9 @@ This incremental approach keeps the codebase coherent at each step and provides 
 
 ### Code Reuse
 - Maximize code reuse between FE/BE where it makes sense (both TypeScript)
-- Still determining which patterns/utilities are best shared vs. kept separate
+- NOTE: Still determining which patterns/utilities are best shared vs. kept separate.
+  - In particular, the `platform` package described by the origainl architecture docs is in a highly uncertain state. We may not end up using using it much.
+
 
 ### Migration Approach
 - Logical, incremental progression - maintain coherence throughout
@@ -145,7 +149,7 @@ This incremental approach keeps the codebase coherent at each step and provides 
 
 ### Deviations & Adaptations
 
-**[2025-10-13] Platform package**
+**[2025-10-13] Platform package - MOSTLY SKIP FOR NOW**
 Skip `packages/platform` for now. Keep domain types local to `apps/backend` and `apps/frontend`. Will extract to `packages/platform` if/when we see duplication pain. Reasoning: Wait for the pain before adding abstraction. Easy to extract later, harder to undo premature abstraction.
 
 **[2025-10-13] Actions are bidirectional**
@@ -183,11 +187,12 @@ Mock `wsBridge` initially in domain code. Will pull actual implementation from d
 4. Reference old code for behavior, but use new v2 structure
 
 **Domains:**
-- ✅ Chat (done - stubbed but structured)
-- 🔄 Matchmaking (next)
-- ⏳ Gameplay (after matchmaking)
+- ✅ Chat (DONE) - first pass of handlers, ws-effects implemented for v2 backend + frontend. actions mostly stubbed.
+- 🔄 Matchmaking (NEXT)
+- ⏳ Gameplay (LATER, after matchmaking)
 
 **End of Phase 1:**
+
 - Experiment with branded IDs implementation (might be tabled if not working well)
 
 ---
@@ -199,7 +204,7 @@ Mock `wsBridge` initially in domain code. Will pull actual implementation from d
 - Implement wsBridge (backend + frontend)
 - Implement WS server (backend)
 - Implement WS client (frontend)
-- Adapt from demo repo, integrate with v1 code where needed
+- We will adapt the working ws client and ws server from the demo repo, integrating with the existing v1 code where needed. This will require much careful thought.
 - Wire up the mocked bridges in domain code
 
 ---
@@ -245,7 +250,7 @@ Mock `wsBridge` initially in domain code. Will pull actual implementation from d
 
 ### Completed
 - ✅ [2025-10-13] Protocol message definitions (chat, matchmaking, gameplay) in `packages/protocol`
-  - Created `client-messages.ts` and `server-messages.ts` for each domain
+  - Created initial pass of `client-messages.ts` and `server-messages.ts` for each domain
   - Implemented discriminated union pattern with message creators
   - Using types from `@core` and `@kernel` where appropriate
 - ✅ [2025-10-13] Chat domain v2 structure in `apps/backend` and `apps/frontend`

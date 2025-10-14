@@ -15,12 +15,19 @@ The monorepo keeps responsibilities explicit so transport code never leaks into 
 - **`packages/kernel/`** – Minimal primitives (branded IDs, timestamps) shared everywhere else.
 - **`packages/protocol/`** – Wire types, message definitions, DTOs. Only describes what goes over the wire.
 - **`packages/platform/`** – Shared domain types, entities, value objects used by both backend and frontend.
-- **`packages/core/`** – Game-specific domain logic (if applicable).
-- **`packages/utils/`** – Generic helper functions with no business logic.
+- **`packages/core/`** – Game-specific domain logic
+- **`packages/utils/`** – Generic helper functions and utilities. No business logic.
 - **`apps/backend/`** – Server adapters: handlers, actions, persistence, mapping.
 - **`apps/frontend/`** – Client adapters: hooks, stores, components, UI logic.
 
-**Key principle**: Protocol depends only on `kernel` primitives. Platform/core have no knowledge of protocol. Apps bridge between protocol (wire) and domain (platform/core).
+Protocol depends only on `kernel` primitives. Platform/core have no knowledge of protocol. Apps bridge between protocol (wire) and domain (platform/core).
+
+In each app and package, where relevant, domain code will be in named sub-folders of `domains`. Example:
+
+* `apps/backend/domains/chat`
+* `apps/frontend/domains/chat`
+* `packages/protocol/domains/chat`
+* `packages/platform/domains/chat`
 
 ### Why platform and protocol stay separate
 
@@ -35,13 +42,14 @@ Reference, see following doc more more details: dev-notes/2025-10/2025-10-11-[01
 All messages follow a discriminated union pattern built from a payload map:
 
 ```typescript
-// Define a map of message types to their payloads
+// Define a map of message types to their payloads (client -> server)
+// (These specific messages are just illustrative examples)
 type ChatClientPayloadMap = {
   'chat:send': { roomId: string; text: string };
   'chat:typing': { roomId: string; isTyping: boolean };
 };
 
-// Convert to a discriminated union
+// Generic utility type - Convert to a discriminated union
 type MessageUnion<TMap extends Record<string, unknown>> = {
   [TType in keyof TMap]: {
     type: TType extends string ? TType : never;
@@ -49,6 +57,8 @@ type MessageUnion<TMap extends Record<string, unknown>> = {
   }
 }[keyof TMap];
 
+// Use `MessageUnion` with `ChatClientPayloadMap` to get discrimated union
+// of all Chat message types the client will send
 type ChatClientMessage = MessageUnion<ChatClientPayloadMap>;
 // Results in:
 //   | { type: 'chat:send', payload: { roomId: string; text: string } }
@@ -89,23 +99,30 @@ Each domain has separate files for client and server messages in the protocol pa
 
 ```
 packages/protocol/
-  chat/
-    client-messages.ts    # Messages sent FROM client TO server
-    server-messages.ts    # Messages sent FROM server TO client
-  timer/
+  domains/chat/
+    client-messages.ts    # client -> server: Messages FROM client TO server
+    server-messages.ts    # server -> client: Messages FROM server TO client
+  domains/timer/
     client-messages.ts
     server-messages.ts
   utils/
     message-helpers.ts    # Core type utilities for message unions
 ```
 
-Domain types (entities, value objects) live in platform:
+Domain types (entities, value objects) live in platform, if re-used between frontend and backend. App-specific projections of domain objects will be in a similar location in that app.
 
 ```
-packages/platform/
+# Shared types and helpers in platform
+packages/platform/domains/
   chat/
     entities.ts          # Chat domain entities (shared by apps)
     helpers.ts           # Pure domain utilities (ID factories, validation)
+    
+# 
+apps/backend/domains/
+  chat/ 
+    chat.db.ts # Type for DB table
+    types.ts # Backend-specific projection of chat message objects / models
 ```
 
 An entity example kept in `@platform/chat/entities.ts`:
@@ -118,7 +135,7 @@ import type {
   UnixMs,
 } from '@kernel/primitives';
 
-export interface ChatMessageEntity {
+interface ChatMessageEntity {
   id: ChatMessageId;
   roomId: ChatRoomId;
   authorId: UserId;
@@ -170,7 +187,7 @@ import type {
   UnixMs,
 } from '@kernel/primitives';
 
-export interface ChatMessageSnapshot {
+interface ChatMessageSnapshot {
   id: ChatMessageId;
   roomId: ChatRoomId;
   authorId: UserId;
@@ -178,10 +195,12 @@ export interface ChatMessageSnapshot {
   sentAt: UnixMs;
 }
 
-export interface ChatTypingSnapshot {
+interface ChatTypingSnapshot {
   roomId: ChatRoomId;
   userIds: UserId[];
 }
+
+export type { ChatMessageSnapshot, ChatTypingSnapshot }
 ```
 
 **Server Messages** (`packages/protocol/chat/server-messages.ts`):
@@ -229,22 +248,24 @@ import type { SystemServerPayloadMap } from './system/server-messages';
 // ... other domains
 
 // Merge all client payload maps
-export type ClientMessageMap =
+type ClientMessageMap =
   & ChatClientPayloadMap
   & SystemClientPayloadMap
   & TimerClientPayloadMap
   & GameClientPayloadMap;
 
 // Merge all server payload maps
-export type ServerMessageMap =
+type ServerMessageMap =
   & ChatServerPayloadMap
   & SystemServerPayloadMap
   & TimerServerPayloadMap
   & GameServerPayloadMap;
 
 // Create unions
-export type ClientMessage = MessageUnion<ClientMessageMap>;
-export type ServerMessage = MessageUnion<ServerMessageMap>;
+type ClientMessage = MessageUnion<ClientMessageMap>;
+type ServerMessage = MessageUnion<ServerMessageMap>;
+
+export type { ClientMessageMap, ServerMessageMap, ClientMessage, ServerMessage };
 ```
 
 **Benefits:**
@@ -260,13 +281,14 @@ export type ServerMessage = MessageUnion<ServerMessageMap>;
 Handlers are pure functions that receive payload + context, then call domain actions:
 
 **File**: `apps/backend/domains/chat/handlers.ts`
+
 ```typescript
 import type { ChatClientMessage } from '@protocol/messages';
 import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
 import type { HandlerContext } from '@src/ws/types';
 import { chatActions } from './actions';
 
-export const chatHandlers = {
+const chatHandlers = {
   'chat:send': ({ roomId, text }, ctx) => {
     chatActions.sendMessage(roomId, text, { userId: ctx.userId });
   },
@@ -275,6 +297,8 @@ export const chatHandlers = {
     chatActions.setTypingState(roomId, isTyping, { userId: ctx.userId });
   },
 } satisfies HandlerMapWithCtx<ChatClientMessage, HandlerContext>;
+
+export { chatHandlers };
 ```
 
 **Key points:**
@@ -307,7 +331,7 @@ function toSnapshot(entity: ChatMessageEntity): ChatMessageSnapshot {
   };
 }
 
-export const chatActions = {
+const chatActions = {
   sendMessage(roomId: string, text: string, meta: { userId: string }) {
     const entity: ChatMessageEntity = {
       id: chatIds.create(),
@@ -341,6 +365,8 @@ export const chatActions = {
     );
   },
 };
+
+export { chatActions };
 ```
 
 ### WebSocket Effects (Server-Initiated Messages)
@@ -353,7 +379,7 @@ import type { TimerStateSnapshot } from '@protocol/timer/types';
 import { wsBridge } from '@src/ws/bridge';
 import { MsgCreators } from '@protocol/timer/server-messages';
 
-export const timerWsEffects = {
+const timerWsEffects = {
   broadcastStateChange(roomId: string, snapshot: TimerStateSnapshot) {
     wsBridge.broadcastToRoom(
       roomId,
@@ -361,13 +387,16 @@ export const timerWsEffects = {
     );
   },
 };
+
+export { timerWsEffects };
 ```
 
 ### The WS Bridge (Server)
 
 The bridge abstracts WebSocket transport from domain logic:
 
-**File**: `apps/backend/ws/bridge.ts`
+**File**: `apps/backend/ws/server-bridge.ts`
+
 ```typescript
 import type { ServerMessage } from '@protocol/messages';
 
@@ -407,7 +436,9 @@ function createWsBridge<TMessage>() {
   };
 }
 
-export const wsBridge = createWsBridge<ServerMessage>();
+const wsBridge = createWsBridge<ServerMessage>();
+
+export { wsBridge };
 ```
 
 **Benefits:**
@@ -421,8 +452,9 @@ export const wsBridge = createWsBridge<ServerMessage>();
 ```typescript
 import type { ClientMessage, ServerMessage } from '@protocol/messages';
 import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
-import type { HandlerContext } from '@src/ws/types';
 
+import type { HandlerContext } from '@src/ws/types';
+import { wsBridge } from '@src/ws/server-bridge.ts';
 import { chatHandlers } from '@src/domains/chat/handlers';
 import { systemHandlers } from '@src/domains/system/handlers';
 import { timerHandlers } from '@src/domains/timer/handlers';
@@ -465,6 +497,7 @@ wsBridge.init(server);
 Similar to server, but simpler (client only sends, doesn't route):
 
 **File**: `apps/frontend/ws/client-bridge.ts`
+
 ```typescript
 import type { ClientMessage } from '@protocol/messages';
 import type { AppWsClient } from '@src/ws/types';
@@ -492,15 +525,17 @@ function createWsBridge<TMessage extends ClientMessage>() {
   };
 }
 
-export const wsBridge = createWsBridge<ClientMessage>();
+const wsBridge = createWsBridge<ClientMessage>();
+
+export { wsBridge };
 ```
 
 ### Using the Bridge in Components/Hooks
 
 **File**: `apps/frontend/domains/chat/use-chat-actions.ts`
 ```typescript
-import { wsBridge } from '@src/ws/client-bridge';
 import { MsgCreators } from '@protocol/chat/client-messages';
+import { wsBridge } from '@src/ws/client-bridge';
 
 function useChatActions(roomId: string) {
   const sendMessage = (text: string) => {
@@ -517,7 +552,10 @@ function useChatActions(roomId: string) {
 
 ## Adding a New Message Type (Checklist)
 
+Example: adding new message for "deleting a chat message".
+
 ### 1. Define in Protocol
+
 Add to the appropriate domain's payload map:
 
 ```typescript
@@ -571,8 +609,8 @@ export const chatActions = {
 ### 4. Use in Frontend
 ```typescript
 // apps/frontend/domains/chat/use-chat-actions.ts
-import { wsBridge } from '@src/ws/client-bridge';
 import { MsgCreators } from '@protocol/chat/client-messages';
+import { wsBridge } from '@src/ws/client-bridge';
 
 function useChatActions(roomId: string) {
   const deleteMessage = (messageId: string) => {

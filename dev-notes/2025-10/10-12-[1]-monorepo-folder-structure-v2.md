@@ -25,15 +25,15 @@
     ...
 ```
 
-## Responsibilities (short)
+## Responsibilities
 
-- **kernel**: Branded IDs (`UnixMs`, `IsoDate` as brand)
+- **kernel**: Branded IDs, other minimal primitives such as`UnixMs`, `IsoDate` as branded type
 - **core**: Gameplay-only pure domain (entities, VOs, services, events). No IO, no protocol.
 - **platform/**: Non-gameplay pure domains (social, lobby, curation, profile, stats). No IO. Only for aspects of the domains / features that are shared between backend and frontend.
-- **protocol**: DTOs, discriminated unions, zod/valibot schemas, envelope `{ v, kind, payload }`. May import *only* kernel primitives.
+- **protocol**: Websocket message definitions. DTOs, discriminated unions, and simple message creators. May import *only* kernel primitives.
 - **utils**: Generic helpers; no business shapes.
-- **apps/backend**: Infra & application (repos, CQRS/handlers, schedulers). **All mapping** lives here.
-- **apps/frontend**: UI adapters (hooks, Zustand stores/selectors, WS client). No domain-side mutations beyond commands.
+- **apps/backend**: Infra & application (database, api, WS server, game server, source of truth for game state, schedulers, etc)
+- **apps/frontend**: Game UI, adapters (hooks, Zustand stores/selectors, WS client)
 
 ## Dependency Rules
 
@@ -48,4 +48,4 @@
 - **platform/** = non-gameplay pure domains per context.
 - **protocol** = stable wire; depends only on **kernel**.
 - **kernel** = tiny primitives.
-- **apps** = adapters; all mapping at the edges.
+- **apps** = where everythiing comes together; glue code, adapters, persistence, user interfaces, etc.
