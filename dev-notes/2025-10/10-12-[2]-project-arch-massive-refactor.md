@@ -268,6 +268,10 @@ type ServerMessage = MessageUnion<ServerMessageMap>;
 export type { ClientMessageMap, ServerMessageMap, ClientMessage, ServerMessage };
 ```
 
+### System Domain
+
+The `system` domain owns cross-cutting connection flows that sit alongside ordinary product domains. It coordinates room join/leave lifecycle, tracks connection heartbeat + latency metrics, and exposes shared helpers the generic WS bridge uses to grant other domains convenient room membership APIs. Adapters integrate with it slightly differently: the bridge/server/client layers wire in its helpers directly so other domains can lean on `wsBridge.rooms.*` utilities without reimplementing membership bookkeeping. Otherwise it follows the same message-map conventions as every other domain.
+
 **Benefits:**
 - Each domain owns its messages
 - Type-safe at the edges (full client/server message unions)

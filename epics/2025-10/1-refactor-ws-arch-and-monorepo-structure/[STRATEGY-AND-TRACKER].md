@@ -1,5 +1,8 @@
 # WebSocket Architecture & Monorepo Refactor - Strategy & Tracker
 
+## Doc Purpose & Usage (WIP)
+This bracketed living doc owns the working view of the epic: current strategy, decisions, and status. Dated tactical notes inside the epic folder capture point-in-time work for specific tasks; summarize any lasting outcomes back here and cross-link the relevant note. Expect this process to evolve—log tweaks to the workflow in place as we discover better patterns.
+
 ## Overview
 
 This is a major refactor of the Generals v2 codebase that fundamentally restructures both our WebSocket message architecture and our monorepo organization. The work began in October 2025 and represents a thoughtful evolution of patterns we've been developing, bringing clarity, consistency, and stronger type safety to the entire codebase.
@@ -88,6 +91,8 @@ This incremental approach keeps the codebase coherent at each step and provides 
 
 - [Monorepo Folder Structure](../../../dev-notes/2025-10/10-12-[1]-monorepo-folder-structure-v2.md) - packages/, apps/ structure & dependency rules
 - [WebSocket Architecture Patterns](../../../dev-notes/2025-10/10-12-[2]-project-arch-massive-refactor.md) - Message types, handlers, actions, ws-effects
+
+*Note:* The linked folder-structure doc still reflects the earlier plan with an active `packages/platform`. The current execution defers those extractions; rely on the “Architecture Evolution” section below for the latest policy.
 
 **Key Principles (Summary):**
 - Protocol depends only on kernel
