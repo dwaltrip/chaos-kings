@@ -7,6 +7,7 @@ type MessageUnion<TMap extends MessageShapeMap> = {
   };
 }[keyof TMap];
 
+// TODO: Possibly rename to something more specific like BaseMessageType?
 type MessageType<TUnion extends { type: string }> = TUnion['type'];
 
 type PayloadFor<

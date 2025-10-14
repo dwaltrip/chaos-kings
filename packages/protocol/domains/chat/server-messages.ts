@@ -7,7 +7,7 @@ type ChatServerPayloadMap = {
   'chat:broadcast-message': {
     roomId: string; // TODO: [BRANDED_TYPES-roomId]
     content: string;
-    userId: number; // TODO: [BRANDED_TYPES-userId]
+    userId: string; // TODO: [BRANDED_TYPES-userId]
     timestamp: number;
   };
 };
@@ -19,7 +19,7 @@ const MsgCreators = {
   createBroadcastMessageMessage: (
     roomId: string, // TODO: [BRANDED_TYPES-roomId]
     content: string,
-    userId: number, // TODO: [BRANDED_TYPES-userId]
+    userId: string, // TODO: [BRANDED_TYPES-userId]
     timestamp: number,
   ): BroadcastMessageMessage => ({
     type: 'chat:broadcast-message',
