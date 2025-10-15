@@ -1,138 +1,100 @@
-# Generals v2 - Project Overview
+# Chaos Kings - Project Overview (WORK IN PROGRESS)
 
-Hey AI assistant! My name is Daniel and I'm excited to build with you :)
+Hey AI coding agent! My name is Daniel and I'm excited to build with you :)
 
-## Background / Current Status
+This project is a revamp + extension of the web-based real time strategy game, **generals.io**.
 
-- Multiplayer web game w/ soft realtime gampelay (a few moves a second)
-- This project is in early prototype phase.
+**⚠️ NOTE: This codebase is undergoing a major refactor. Architecture and conventions are in flux.**
 
-### Game Design - (Generals.io Style Game)
+See `epics/2025-10/1-refactor-ws-arch-and-monorepo-structure/` for current refactor status and decisions.
 
-- **Territory Expansion**: Players start with a general and expand by capturing neutral tiles and enemy territory
-- **Army Movement**: Move armies between adjacent tiles to attack/defend; larger armies defeat smaller ones
-- **Fog of War**: Players only see tiles they own or are adjacent to; enemy movements hidden until revealed
-- **Army Growth**: Cities and the general produce additional troops over time (every ~0.5-1 seconds)
-- **Victory**: Win by capturing the enemy general or controlling the most territory when time runs out
-- **Gameplay Flow**: Real-time with moves executed at regular intervals; currently targeting 1v1 matches
+---
 
-## Architecture
+## Import/Export Patterns (STABLE)
 
-### Backend (`/backend`)
+**CRITICAL: These conventions apply to ALL new code, even though existing code may violate them.**
 
-- Node.js with TypeScript
-- **Database**: PostgreSQL with Kysely as SQL builder/query library
-- **Cache/State**: Redis for transient state (e.g., active players in game rooms)
-- **WebSockets**: Generic WebSocket manager + "message-api" abstraction (see chat demo)
-- **REST API**: Not implemented yet; may be skipped for longer
+### Import Order
 
-### Frontend (`/frontend`)
+Organize imports from most generic to most specific:
 
-- React 19 + TypeScript + Vite
-- **Styling**: Tailwind CSS v4
-- **Routing**: React Router v7
-- **State**: Zustand (see game-chat store structure)
-- **WebSockets**: `WebSocketService` abstraction working in chat demo
-
-### Core (`/core`)
-
-- Pure game domain logic (board state, game rules, etc.)
-- All game-specific logic and types live here
-- Separate from generic shared utilities and types
-- Has its own Jest test suite for game logic validation
-- Isn't built directly, just included in BE + FE builds
-
-### Shared (`/common`)
-
-- Generic shared TypeScript types and utilities between frontend/backend
-- Validation, constants, and cross-cutting concerns
-- Isn't built directly, just included in BE + FE builds
-
-## Development Commands
-
-### Backend
-
-- `npm run start` - Start development server with hot reload
-- `npm run build` - Build TypeScript to JS (Use this to check for TS errors)
-- `npm test` / `npm run test:watch` - Run Jest tests
-- `npm run migrate:latest` - Run database migrations
-
-### Frontend
-
-- `npm run dev` - Start Vite dev server
-- `npm run build` - Build for production (Use this to check for TS errors)
-
-### Core
-
-- `npm test` / `npm run test:watch` - Run Jest tests for game logic
-
-## Development Workflow
-
-### Build Verification
-
-- **ALWAYS** check the builds in the frontend and backend for TS errors after making changes
-- Use `bash tools/build-all.sh` to run both, or `npm run build` to run separately
-- Fix any type errors before proceeding or committing changes
-
-### Test Verification
-
-- **ALWAYS** run tests after finishing a set of changes to ensure nothing is broken
-- Use `bash tools/test-all.sh` to run tests in both backend and core
-- Fix any test failures before committing changes
-
-### Git Commit Strategy
-
-- **ALWAYS** commit with succinct messages after finishing a set of changes
-- For complex work with tricky debugging: commit progress frequently to save state and allow easy rollback of debugging attempts
-- Use concise commit messages for minor/straightforward changes - avoid overly verbose descriptions
-
-#### Commit Message Format
-
-- Subject line on the first line (imperative, concise)
-- Blank line after the subject
-- Body: one sentence or bullet per line (no wrapping paragraphs)
-- Prefer bullets starting with `- ` for multi-point commits
-- Keep each line focused and scannable; avoid filler
-
-Example:
-
-```
-feat(gameplay): Add move queue validation
-
-- Enforce max queued moves per player
-- Ignore moves from defeated players
-- Log invalid coords with user and step context
+**1. Third-party libraries** (React, Redis, etc.)
+```ts
+import { useState } from 'react';
+import { createClient } from 'redis';
 ```
 
-## Code Conventions and Style
+**2. Shared packages** (in this order: utils → protocol → platform)
+```ts
+import { formatDate } from '@utils/date-helpers';
+import { MsgCreators } from '@protocol/domains/chat/server-messages';
+import { MATCHMAKING_ROOM_ID } from '@platform/domains/matchmaking/constants';
+```
 
-### General
+**3. App-level code** (generic → specific to current file/page)
 
-- All Javascript and Typescript should use 2-space indentation.
-- **ALWAYS** use kebab-case for filenames (e.g., `game-page.tsx`, not `GamePage.tsx`)
-- Files should **ALWAYS** have a single blank line at the end.
-- Pre-commit hooks automatically format staged files using Prettier
+**Frontend example:**
+```ts
+import { WebSocketService } from '@/services/websocket';        // FE-specific utils
+import { GameState } from '@/domains/game/types';               // FE domain types
+import { useGameStore } from '@/domains/game/store';            // FE stores
+import { gameActions } from '@/domains/game/actions';           // FE domain actions
+import { Button } from '@/components/ui/button';                // FE UI (generic)
+import { GameBoard } from '@/pages/game/components/game-board'; // FE UI (page-specific)
+```
 
-### Frontend Pages
+**Backend example:**
+```ts
+import { logger } from '@/utils/logger';                        // BE utils
+import { HandlerContext } from '@/ws/types';                    // BE generic types
+import { GameEntity } from '@/domains/game/types';              // BE domain types
+import { db } from '@/db/connection';                           // BE persistence
+import { RedisService } from '@/services/redis';                // BE other services
+import { gameActions } from '@/domains/game/actions';           // BE domain actions
+import { validateMove } from './helpers';                       // File-specific helpers
+```
 
-- Each page gets own directory: `frontend/src/pages/$page_name/`
-- Page-specific components and CSS stored in page directory
-- Reusable components in shared UI components dir outside `/pages`
+### Export Patterns
 
-### Import/Export Patterns
+**ALWAYS place all exports at the END of files using named export syntax:**
 
-- Use `@/path/to/file` for all local imports (both FE and BE)
-- Import order: third-party → `@common/...` → `@core/...` → local `@/...`
-- **ALWAYS** place all exports at the end of files using named export syntax: `export { ... }`
+```ts
+// ✅ CORRECT
+interface FooBaz { foo: string; baz: number; }
+function myFunction() { ... }
+const myConstant = 42;
 
-## Debugging & Troubleshooting
+export type { FooBaz }; // export types in a separate statement
+export { myFunction, myConstant };
+```
 
-- **docs/DEBUGGING-GUIDE.md**: Contains tricky patterns, gotchas, and solutions for complex issues
-- **When debugging complex issues**: Check docs/DEBUGGING-GUIDE.md first - it covers non-obvious patterns that have caused problems before
-- **Common issues covered**: Zustand infinite re-render loops, cross-store subscriptions, React hooks violations, performance debugging
-- **When adding new patterns**: Update docs/DEBUGGING-GUIDE.md with problem/solution patterns for future reference
+```ts
+// ❌ WRONG - inline exports
+export interface FooBaz { foo: string; baz: number; }
+export function myFunction() { ... }
+export const myConstant = 42;
+```
 
-## Comments
+*If there are type exports, then export those in a second export statement before the othe one (see the example above).*
 
-- **Comments**: Use very sparingly. NEVER explain what code does - only WHY or crucial context a senior dev couldn't infer
-- **NO** verbose/JSDoc style comments. Prefer short, single-line comments.
+### Handling Existing Code
+
+- **Existing code may violate these rules** - 
+- **ALL new code MUST follow these patterns**
+- **When editing existing files:** Fix import/export order if you're already touching that section
+- **Don't make separate commits just to fix ordering** - fix it as you make functional changes
+
+---
+
+## File Naming
+
+- Use **kebab-case** for all filenames: `game-board.tsx`, `matchmaking-service.ts`
+- Files end with a **single blank line**
+
+---
+
+## Development Notes
+
+- See `CLAUDE-OLD.md` for historical v1 conventions (may be outdated)
+- See refactor epic docs for current architecture decisions
+- This file will be expanded as v2 patterns stabilize
