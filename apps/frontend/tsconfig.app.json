@@ -19,6 +19,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@platform/*": ["../../packages/platform/*"],
       "@protocol/*": ["../../packages/protocol/*"]
     },
 

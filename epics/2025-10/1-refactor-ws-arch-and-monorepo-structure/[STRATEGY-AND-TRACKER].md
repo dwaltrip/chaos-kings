@@ -193,8 +193,8 @@ Mock `wsBridge` initially in domain code. Will pull actual implementation from d
 
 **Domains:**
 - ✅ Chat (DONE) - first pass of handlers, ws-effects implemented for v2 backend + frontend. actions mostly stubbed.
-- 🔄 Matchmaking (NEXT)
-- ⏳ Gameplay (LATER, after matchmaking)
+- ✅ Matchmaking (DONE) - scaffolding complete with all files stubbed following chat pattern
+- 🔄 Gameplay (NEXT)
 
 **End of Phase 1:**
 
@@ -262,17 +262,17 @@ Mock `wsBridge` initially in domain code. Will pull actual implementation from d
   - Backend: `handlers.ts`, `actions/` (stubbed), `ws-effects.ts`, `types.ts`
   - Frontend: `handlers.ts`, `actions.ts` (stubbed)
   - Follows new architectural pattern
+- ✅ [2025-10-15] Matchmaking domain scaffolding (see: `10-15-[1]-matchmaking-implementation-planning.md`)
+  - Backend/frontend handlers, actions (stubbed), ws-effects
+  - System domain stubs (joinRoom/leaveRoom)
+  - `MATCHMAKING_ROOM_ID` constant in platform
 
 ### In Progress
-- 🔄 Matchmaking domain v2 structure (next up)
-  - Review old v1 matchmaking code
-  - Confirm protocol message names
-  - Implement backend structure (handlers, actions, ws-effects, types)
-  - Implement frontend structure (handlers, actions)
+- 🔄 Gameplay domain v2 structure (next up)
 
 ### Upcoming
-- ⏳ Gameplay domain v2 structure
 - ⏳ Branded IDs experiment (end of Phase 1)
+- ⏳ System domain implementation (room membership, etc.)
 - ⏳ WS bridge implementation (backend + frontend)
 - ⏳ WS server/client implementation
 - ⏳ Business logic migration (unstub actions)
@@ -328,6 +328,10 @@ Use plain strings + TODO comments for now (following chat pattern). Will attempt
 - What patterns of divergence mean we shouldn't share?
 - How to handle DB vs UI projection differences?
 
+**Room identifiers:** Long-term pattern? (currently using constants like `MATCHMAKING_ROOM_ID`)
+
+**Error handling:** Cross-domain pattern for communicating errors to clients?
+
 **Domain-specific context:**
 - Which domains will need more than `userId` in `HandlerContext`?
 - When does it make sense to add domain-specific context vs keeping it in action parameters?
@@ -362,8 +366,7 @@ Use plain strings + TODO comments for now (following chat pattern). Will attempt
 - [WebSocket Architecture Patterns](../../../dev-notes/2025-10/10-12-[2]-project-arch-massive-refactor.md)
 
 ### Tactical Docs
-*(Will add as created)*
-- TBD: Matchmaking implementation guide
-- TBD: Gameplay implementation guide
-- TBD: WS bridge implementation guide
-- TBD: Business logic migration guide
+- [2025-10-15] [Matchmaking Implementation Planning](./10-15-[1]-matchmaking-implementation-planning.md)
+- TBD: Gameplay implementation
+- TBD: WS bridge implementation
+- TBD: Business logic migration
