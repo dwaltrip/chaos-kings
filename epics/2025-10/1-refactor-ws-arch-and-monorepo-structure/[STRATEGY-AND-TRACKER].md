@@ -253,6 +253,15 @@ Mock `wsBridge` initially in domain code. Will pull actual implementation from d
 
 ## Progress Tracker
 
+**⚠️ TODO: Refactor this section to be milestone-focused (not task-focused)**
+- Keep high-level completed milestones with dates
+- Keep current milestone + next 2-3 major milestones only
+- Remove granular task lists (those belong in tactical docs or [TODOS].md)
+- Tactical docs contain planned work; [TODOS].md is for discovered/unplanned items
+- This section should be strategic overview only
+
+---
+
 ### Completed
 - ✅ [2025-10-13] Protocol message definitions (chat, matchmaking, gameplay) in `packages/protocol`
   - Created initial pass of `client-messages.ts` and `server-messages.ts` for each domain
