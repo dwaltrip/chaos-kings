@@ -108,6 +108,8 @@ gameplay/
 - This is the game room ID (e.g., `game-123`)
 - Different from matchmaking which uses constant `MATCHMAKING_ROOM_ID`
 - System domain actions will receive this room ID dynamically
+- **Client builds room ID from gameId** received in matchmaking `game-ready` message
+- **Action item:** Create shared helper in `@platform/domains/gameplay` for building room IDs from game IDs
 
 ### ✅ System Domain Integration
 **Decision:** Call existing system domain stubs for room membership.
@@ -127,12 +129,21 @@ gameplay/
 - Migration happens in Phase 3+ when unstubbing
 - Document where v1 GameCoordinator is called in TODOs
 
-### ✅ Move Queue Validation
+### ✅ Move Queue Validation & gameId Consistency
 **Decision:** Document v1 validation logic in action TODOs.
 - Max 200 moves per player
 - Defeated players can't queue moves
 - Invalid coordinates rejected
 - Don't implement validation in Phase 1 stubs
+- **gameId parameter:** Pass `gameId` to ALL gameplay actions for consistency (including `queueMove`, `cancelMoves`)
+- **TODO in code:** Add note about v1's `get-user-mapping` pattern being suboptimal - don't refactor now but flag for future
+
+### ⚠️ System Domain Integration Concern
+**Decision:** Flag for future architectural discussion.
+- Gameplay currently has its own `join-room` / `leave-room` message types
+- System domain should probably handle room membership more generically
+- **TODO in code:** Add note that gameplay shouldn't own room membership messages
+- Don't refactor during scaffolding - just document the concern
 
 ### ✅ State Broadcasting Pattern
 **Decision:** Create ws-effects for all server-initiated broadcasts.
@@ -153,11 +164,12 @@ gameplay/
 
 **File:** `apps/backend/src/domains/gameplay/actions.ts`
 - 5 action functions (stubbed with detailed TODOs):
-  - `joinRoom(room: string, ctx: HandlerContext)` - Call systemActions.joinRoom, document v1 onPlayerJoinedRoom behavior
-  - `leaveRoom(room: string, ctx: HandlerContext)` - Document v1 leave logic, call systemActions.leaveRoom
-  - `queueMove(sourceCoord: Coord, direction: Direction, ctx: HandlerContext)` - Document v1 queueMove with validation
-  - `cancelMoves(ctx: HandlerContext)` - Document v1 clearMoves logic
+  - `joinRoom(room: string, gameId: number, ctx: HandlerContext)` - Call systemActions.joinRoom, document v1 onPlayerJoinedRoom behavior
+  - `leaveRoom(room: string, gameId: number, ctx: HandlerContext)` - Document v1 leave logic, call systemActions.leaveRoom
+  - `queueMove(sourceCoord: Coord, direction: Direction, gameId: number, ctx: HandlerContext)` - Document v1 queueMove with validation
+  - `cancelMoves(gameId: number, ctx: HandlerContext)` - Document v1 clearMoves logic
   - `undoMove(gameId: number, ctx: HandlerContext)` - Document v1 undoMove logic
+- **Note:** All actions now take `gameId` for consistency (not in protocol messages, extracted from context/room mapping)
 
 **File:** `apps/backend/src/domains/gameplay/ws-effects.ts`
 - 4 broadcast functions using mocked wsBridge:
