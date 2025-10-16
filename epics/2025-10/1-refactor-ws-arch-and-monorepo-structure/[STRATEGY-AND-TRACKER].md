@@ -275,9 +275,13 @@ Mock `wsBridge` initially in domain code. Will pull actual implementation from d
   - Backend/frontend handlers, actions (stubbed), ws-effects
   - System domain stubs (joinRoom/leaveRoom)
   - `MATCHMAKING_ROOM_ID` constant in platform
+- ✅ [2025-10-15] Gameplay domain scaffolding (see: `10-15-[2]-gameplay-implementation-planning.md`)
+  - Backend/frontend handlers, actions (stubbed), ws-effects
+  - Room ID helpers in `@platform/domains/gameplay` (buildGameRoomId, parseGameRoomId)
+  - Flagged system domain integration concerns for future discussion
 
 ### In Progress
-- 🔄 Gameplay domain v2 structure (next up)
+- 🔄 Phase 1 wrap-up: Branded IDs experiment, TypeScript checks, package.json setup
 
 ### Upcoming
 - ⏳ Branded IDs experiment (end of Phase 1)
@@ -322,6 +326,16 @@ Do one domain at a time. Matchmaking first, then gameplay. Get each domain fully
 
 **9. Branded types**
 Use plain strings + TODO comments for now (following chat pattern). Will attempt branded types implementation at end of Phase 1 as an experiment.
+
+---
+
+## Known Issues / Things to Revisit Later
+
+Issues and concerns flagged during implementation that don't block current work but should be addressed in future phases.
+
+**[2025-10-15] Gameplay domain flags:**
+- **v1 get-user-mapping pattern:** Current v1 pattern for mapping userId → gameId is suboptimal. Documented in TODOs but not refactoring during Phase 1 scaffolding.
+- **Room membership message ownership:** Gameplay domain currently has dedicated message types (`gameplay:join-room`, `gameplay:leave-room`), but system domain should own room membership patterns. The backend handlers correctly call system domain actions, so the logic is in the right place, but we should clarify ownership and ideally remove these gameplay-specific message types in favor of generic system domain messages.
 
 ---
 
@@ -376,6 +390,7 @@ Use plain strings + TODO comments for now (following chat pattern). Will attempt
 
 ### Tactical Docs
 - [2025-10-15] [Matchmaking Implementation Planning](./10-15-[1]-matchmaking-implementation-planning.md)
-- TBD: Gameplay implementation
+- [2025-10-15] [Gameplay Implementation Planning](./10-15-[2]-gameplay-implementation-planning.md)
 - TBD: WS bridge implementation
 - TBD: Business logic migration
+- TBD: Many other items as we progress through phases
