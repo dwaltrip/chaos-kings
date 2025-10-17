@@ -18,6 +18,12 @@ Inbox for discovered and unplanned work items.
 
 Tasks we know we need to do:
 
+- [ ] Fix frontend ws-effects scaffolding gap
+  - Frontend domains are calling wsService directly instead of using ws-effects layer
+  - Need to create ws-effects.ts for: matchmaking, gameplay, chat
+  - Need to rename system/actions.ts to system/ws-effects.ts for consistency
+  - Update actions.ts files to call ws-effects instead of wsService
+  - See exploration notes from 2025-10-17 branded types planning session
 - [ ] Set up package.json and build configs for apps/backend and apps/frontend
 - [ ] Run TypeScript checks to verify imports and types in new domain files
 - [ ] Implement system domain (room membership, heartbeat, connection lifecycle)
