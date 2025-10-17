@@ -19,8 +19,11 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@kernel/*": ["../../packages/kernel/*"],
       "@platform/*": ["../../packages/platform/*"],
-      "@protocol/*": ["../../packages/protocol/*"]
+      "@protocol/*": ["../../packages/protocol/*"],
+      "@core/*": ["../../core/src/*"],
+      "@common/*": ["../../common/*"]
     },
 
     /* Linting */
@@ -31,5 +34,12 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": [
+    "src",
+    "../../packages/kernel/**/*.ts",
+    "../../packages/platform/**/*.ts",
+    "../../packages/protocol/**/*.ts",
+    "../../core/src/**/*.ts",
+    "../../common/**/*.ts"
+  ]
 }

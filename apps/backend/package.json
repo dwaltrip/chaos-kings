@@ -1,0 +1,12 @@
+{
+  "name": "chaos-kings-backend",
+  "version": "0.2.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "@types/node": "^24.2.1",
+    "tsconfig-paths": "^4.2.0"
+  }
+}

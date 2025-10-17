@@ -7,8 +7,11 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@kernel/*": ["../../packages/kernel/*"],
       "@platform/*": ["../../packages/platform/*"],
-      "@protocol/*": ["../../packages/protocol/*"]
+      "@protocol/*": ["../../packages/protocol/*"],
+      "@core/*": ["../../core/src/*"],
+      "@common/*": ["../../common/*"]
     },
     "typeRoots": ["./node_modules/@types", "./src/types"],
     "strict": true,
@@ -22,8 +25,11 @@
   },
   "include": [
     "src/**/*.ts",
+    "../../packages/kernel/**/*.ts",
     "../../packages/platform/**/*.ts",
-    "../../packages/protocol/**/*.ts"
+    "../../packages/protocol/**/*.ts",
+    "../../core/src/**/*.ts",
+    "../../common/**/*.ts"
   ],
   "exclude": ["node_modules", "dist", "client"]
 }
