@@ -4,7 +4,7 @@ import { MessageType, PayloadFor } from '@protocol/utils/message-helpers';
 type BroadcastOptions = any;
 
 interface HandlerContext {
-  userId: string;
+  userId: number;
 }
 
 type DomainHandler<

@@ -279,12 +279,14 @@ Mock `wsBridge` initially in domain code. Will pull actual implementation from d
   - Backend/frontend handlers, actions (stubbed), ws-effects
   - Room ID helpers in `@platform/domains/gameplay` (buildGameRoomId, parseGameRoomId)
   - Flagged system domain integration concerns for future discussion
+- ✅ [2025-10-17] Branded types implementation (see: `10-17-[1]-branded-types-implementation.md`)
+  - Kernel: UserId, GameId, RoomId types with constructors + conversion helpers
+  - Full implementation in system and matchmaking domains (backend + frontend)
 
 ### In Progress
-- 🔄 Phase 1 wrap-up: Branded IDs experiment, TypeScript checks, package.json setup
+- 🔄 Phase 1 wrap-up: Add package.json to v2 apps, set up TypeScript type checking
 
 ### Upcoming
-- ⏳ Branded IDs experiment (end of Phase 1)
 - ⏳ System domain implementation (room membership, etc.)
 - ⏳ WS bridge implementation (backend + frontend)
 - ⏳ WS server/client implementation
@@ -391,6 +393,7 @@ Issues and concerns flagged during implementation that don't block current work 
 ### Tactical Docs
 - [2025-10-15] [Matchmaking Implementation Planning](./10-15-[1]-matchmaking-implementation-planning.md)
 - [2025-10-15] [Gameplay Implementation Planning](./10-15-[2]-gameplay-implementation-planning.md)
+- [2025-10-17] [Branded Types Implementation](./10-17-[1]-branded-types-implementation.md)
 - TBD: WS bridge implementation
 - TBD: Business logic migration
 - TBD: Many other items as we progress through phases

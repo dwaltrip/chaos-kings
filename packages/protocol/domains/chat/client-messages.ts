@@ -5,7 +5,7 @@ type ChatClientPayloadMap = {
   // NOTE: used to be "game-chat:post-message"
   // TODO: update rest of the app to match new name
   'chat:send-message': {
-    roomId: string; // TODO: [BRANDED_TYPES-roomId]
+    roomId: string;
     content: string;
   };
 };
@@ -18,10 +18,7 @@ type ChatClientMessage = MessageUnion<ChatClientPayloadMap>;
 type SendMessageMessage = ExtractMsg<ChatClientMessage, 'chat:send-message'>;
 
 const MsgCreators = {
-  createSendMessageMessage: (
-    roomId: string, // TODO: [BRANDED_TYPES-roomId]
-    content: string,
-  ): SendMessageMessage => ({
+  createSendMessageMessage: (roomId: string, content: string): SendMessageMessage => ({
     type: 'chat:send-message',
     payload: { roomId, content },
   }),

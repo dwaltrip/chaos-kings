@@ -12,12 +12,12 @@ type GameplayServerPayloadMap = {
   };
 
   'gameplay:game-starting': {
-    gameId: number; // TODO: [BRANDED_TYPES-gameId]
+    gameId: number;
     countdown: number;
   };
 
   'gameplay:game-started': {
-    gameId: number; // TODO: [BRANDED_TYPES-gameId]
+    gameId: number;
     playerMapping: PlayerMapping;
     boardState: BoardState;
     game: GameWithPlayers;

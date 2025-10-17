@@ -8,13 +8,13 @@ type MatchmakingServerPayloadMap = {
   };
 
   'matchmaking:early-start-status': {
-    voters: string[];
+    voters: number[];
     queueSize: number;
     allVoted: boolean;
   };
 
   'matchmaking:game-ready': {
-    gameId: number; // TODO: [BRANDED_TYPES-gameId]
+    gameId: number;
   };
 };
 
@@ -39,7 +39,7 @@ const MsgCreators = {
   }),
 
   createEarlyStartStatusMessage: (
-    voters: string[],
+    voters: number[],
     queueSize: number,
     allVoted: boolean,
   ): EarlyStartStatusMessage => ({

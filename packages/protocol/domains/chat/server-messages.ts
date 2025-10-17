@@ -5,9 +5,9 @@ type ChatServerPayloadMap = {
   // NOTE: used to be "game-chat:new-message"
   // TODO: update rest of the app to match new name
   'chat:broadcast-message': {
-    roomId: string; // TODO: [BRANDED_TYPES-roomId]
+    roomId: string;
     content: string;
-    userId: string; // TODO: [BRANDED_TYPES-userId]
+    userId: string;
     timestamp: number;
   };
 };
@@ -17,9 +17,9 @@ type BroadcastMessageMessage = ExtractMsg<ChatServerMessage, 'chat:broadcast-mes
 
 const MsgCreators = {
   createBroadcastMessageMessage: (
-    roomId: string, // TODO: [BRANDED_TYPES-roomId]
+    roomId: string,
     content: string,
-    userId: string, // TODO: [BRANDED_TYPES-userId]
+    userId: string,
     timestamp: number,
   ): BroadcastMessageMessage => ({
     type: 'chat:broadcast-message',

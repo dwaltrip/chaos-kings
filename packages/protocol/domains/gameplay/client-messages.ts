@@ -19,7 +19,7 @@ type GameplayClientPayloadMap = {
   'gameplay:cancel-moves': EmptyPayload;
 
   'gameplay:undo-move': {
-    gameId: number; // TODO: [BRANDED_TYPES-gameId]
+    gameId: number;
   };
 };
 

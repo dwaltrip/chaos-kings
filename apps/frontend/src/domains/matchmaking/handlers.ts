@@ -1,3 +1,5 @@
+import { UserId } from '@kernel/domains/user';
+import { GameId } from '@kernel/domains/game';
 import type { HandlerMap } from '@protocol/utils/message-helpers';
 import type { MatchmakingServerMessage } from '@protocol/domains/matchmaking/server-messages';
 
@@ -11,10 +13,14 @@ export const matchmakingHandlers = {
   },
 
   'matchmaking:early-start-status': (payload) => {
-    matchmakingActions.handleEarlyStartStatus(payload);
+    matchmakingActions.handleEarlyStartStatus({
+      voters: payload.voters.map(UserId),
+      queueSize: payload.queueSize,
+      allVoted: payload.allVoted,
+    });
   },
 
   'matchmaking:game-ready': (payload) => {
-    matchmakingActions.handleGameReady(payload);
+    matchmakingActions.handleGameReady(GameId(payload.gameId));
   },
 } as const satisfies MatchmakingHandlerMap;

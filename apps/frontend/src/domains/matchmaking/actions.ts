@@ -1,6 +1,9 @@
+import { UserId } from '@kernel/domains/user';
+import { GameId } from '@kernel/domains/game';
 import { MsgCreators } from '@protocol/domains/matchmaking/client-messages';
-import { systemWsEffects } from '@/domains/system/actions';
 import { MATCHMAKING_ROOM_ID } from '@platform/domains/matchmaking/constants';
+
+import { systemWsEffects } from '@/domains/system/actions';
 
 // Mock WebSocket service until Phase 2
 const wsService: any = {};
@@ -42,7 +45,7 @@ function handleQueueStatus(payload: { queueSize: number; playersNeeded: number }
 }
 
 function handleEarlyStartStatus(payload: {
-  voters: string[];
+  voters: UserId[];
   queueSize: number;
   allVoted: boolean;
 }) {
@@ -52,7 +55,7 @@ function handleEarlyStartStatus(payload: {
   // - May need to show which players have voted in UI
 }
 
-function handleGameReady(payload: { gameId: number }) {
+function handleGameReady(gameId: GameId) {
   // TODO: [MATCHMAKING_FE] Navigate to game
   // - Decide navigation approach: React Router navigate() vs window.location
   // - Navigate to /game/:gameId or appropriate game route

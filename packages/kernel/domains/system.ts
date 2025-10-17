@@ -1,0 +1,8 @@
+import { Brand } from '@kernel/branded-type';
+
+type RoomId = Brand<string, 'RoomId'>;
+
+const RoomId = (value: string): RoomId => value as RoomId;
+
+export type { RoomId };
+export { RoomId };

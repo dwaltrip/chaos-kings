@@ -1,3 +1,6 @@
+import { idToNumber } from '@kernel/branded-type';
+import { UserId } from '@kernel/domains/user';
+import { GameId } from '@kernel/domains/game';
 import { MsgCreators } from '@protocol/domains/matchmaking/server-messages';
 import { MATCHMAKING_ROOM_ID } from '@platform/domains/matchmaking/constants';
 
@@ -12,17 +15,21 @@ const matchmakingWsEffects = {
     );
   },
 
-  broadcastEarlyStartStatus(voters: string[], queueSize: number, allVoted: boolean) {
+  broadcastEarlyStartStatus(voters: UserId[], queueSize: number, allVoted: boolean) {
     wsBridge.broadcastToRoom(
       MATCHMAKING_ROOM_ID,
-      MsgCreators.createEarlyStartStatusMessage(voters, queueSize, allVoted),
+      MsgCreators.createEarlyStartStatusMessage(
+        voters.map(idToNumber),
+        queueSize,
+        allVoted,
+      ),
     );
   },
 
-  broadcastGameReady(gameId: number) {
+  broadcastGameReady(gameId: GameId) {
     wsBridge.broadcastToRoom(
       MATCHMAKING_ROOM_ID,
-      MsgCreators.createGameReadyMessage(gameId),
+      MsgCreators.createGameReadyMessage(idToNumber(gameId)),
     );
   },
 };
