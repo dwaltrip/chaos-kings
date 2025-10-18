@@ -12,6 +12,7 @@
     "format:check": "prettier --check .",
     "prepare": "husky install",
     "knip": "knip",
+    "agent": "tsx scripts/start-agent-session.ts",
     "tool:example": "npx tsx scripts/example-tool.ts"
   },
   "dependencies": {
