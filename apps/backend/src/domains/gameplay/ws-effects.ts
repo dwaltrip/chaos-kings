@@ -1,3 +1,6 @@
+import { idToString, idToNumber } from '@kernel/branded-type';
+import { RoomId } from '@kernel/domains/system';
+import { GameId } from '@kernel/domains/game';
 import { MsgCreators } from '@protocol/domains/gameplay/server-messages';
 import type { BoardState, PlayerIndex, PlayerMapping } from '@core/types';
 import type { PlayerQueuesMap } from '@common/types/gameplay';
@@ -12,13 +15,13 @@ const gameplayWsEffects = {
    * V1: GameServer.broadcastGameState()
    */
   broadcastGameState(
-    roomId: string,
+    roomId: RoomId,
     tick: number,
     boardState: BoardState,
     playerQueues?: PlayerQueuesMap,
   ) {
     wsBridge.broadcastToRoom(
-      roomId,
+      idToString(roomId),
       MsgCreators.createStateUpdateMessage(tick, boardState, playerQueues),
     );
   },
@@ -27,10 +30,10 @@ const gameplayWsEffects = {
    * Broadcast countdown notification (called every second before game starts)
    * V1: GameServer countdown timer callback
    */
-  broadcastGameStarting(roomId: string, gameId: number, countdown: number) {
+  broadcastGameStarting(roomId: RoomId, gameId: GameId, countdown: number) {
     wsBridge.broadcastToRoom(
-      roomId,
-      MsgCreators.createGameStartingMessage(gameId, countdown),
+      idToString(roomId),
+      MsgCreators.createGameStartingMessage(idToNumber(gameId), countdown),
     );
   },
 
@@ -39,15 +42,20 @@ const gameplayWsEffects = {
    * V1: GameServer.startGame()
    */
   broadcastGameStarted(
-    roomId: string,
-    gameId: number,
+    roomId: RoomId,
+    gameId: GameId,
     playerMapping: PlayerMapping,
     boardState: BoardState,
     game: GameWithPlayers,
   ) {
     wsBridge.broadcastToRoom(
-      roomId,
-      MsgCreators.createGameStartedMessage(gameId, playerMapping, boardState, game),
+      idToString(roomId),
+      MsgCreators.createGameStartedMessage(
+        idToNumber(gameId),
+        playerMapping,
+        boardState,
+        game,
+      ),
     );
   },
 
@@ -55,9 +63,9 @@ const gameplayWsEffects = {
    * Broadcast game ended (called once when game completes)
    * V1: GameServer.endGame()
    */
-  broadcastGameEnded(roomId: string, winner: PlayerIndex, finalBoardState: BoardState) {
+  broadcastGameEnded(roomId: RoomId, winner: PlayerIndex, finalBoardState: BoardState) {
     wsBridge.broadcastToRoom(
-      roomId,
+      idToString(roomId),
       MsgCreators.createGameEndedMessage(winner, finalBoardState),
     );
   },

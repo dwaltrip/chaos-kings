@@ -1,3 +1,4 @@
+import { ChatMessageId } from '@kernel/domains/chat';
 import { UserId } from '@kernel/domains/user';
 import { RoomId } from '@kernel/domains/system';
 import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
@@ -8,13 +9,15 @@ import { broadcastChatMessage } from '@/domains/chat/actions';
 
 const chatHandlers = {
   'chat:send-message': ({ roomId, content }, ctx) => {
+    // TODO: [DB] Get message ID from database after insert
+    const tempId = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+
     const message = {
-      id: 'fake-message-id', // TODO: id should come from DB
+      id: ChatMessageId(tempId),
       roomId: RoomId(roomId),
       content,
       userId: UserId(ctx.userId),
-      // TODO: timestamp should come from DB
-      timestamp: Date.now(),
+      timestamp: Date.now(), // TODO: timestamp should come from DB
     };
     broadcastChatMessage(message, ctx);
   },

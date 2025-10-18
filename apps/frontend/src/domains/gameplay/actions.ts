@@ -1,3 +1,6 @@
+import { idToString, idToNumber } from '@kernel/branded-type';
+import { GameId } from '@kernel/domains/game';
+import { RoomId } from '@kernel/domains/system';
 import { MsgCreators } from '@protocol/domains/gameplay/client-messages';
 import type { Coord, Direction } from '@core/types';
 import type { BoardState, PlayerIndex, PlayerMapping } from '@core/types';
@@ -12,16 +15,16 @@ const gameplayActions = {
   // OUTBOUND: Send messages to server
   // ============================================================================
 
-  sendJoinRoom(room: string) {
+  sendJoinRoom(roomId: RoomId) {
     // TODO: [GAMEPLAY-FE] Send join-room message via ws client
-    // const msg = MsgCreators.createJoinRoomMessage(room);
+    // const msg = MsgCreators.createJoinRoomMessage(idToString(roomId));
     // wsClient.send(msg);
     // Note: Room ID typically built from gameId using buildGameRoomId() helper
   },
 
-  sendLeaveRoom(room: string) {
+  sendLeaveRoom(roomId: RoomId) {
     // TODO: [GAMEPLAY-FE] Send leave-room message via ws client
-    // const msg = MsgCreators.createLeaveRoomMessage(room);
+    // const msg = MsgCreators.createLeaveRoomMessage(idToString(roomId));
     // wsClient.send(msg);
   },
 
@@ -41,9 +44,9 @@ const gameplayActions = {
     // Consider optimistic update: clear local queue immediately
   },
 
-  sendUndoMove(gameId: number) {
+  sendUndoMove(gameId: GameId) {
     // TODO: [GAMEPLAY-FE] Send undo-move message via ws client
-    // const msg = MsgCreators.createUndoMoveMessage(gameId);
+    // const msg = MsgCreators.createUndoMoveMessage(idToNumber(gameId));
     // wsClient.send(msg);
     // Note: Called when player presses undo hotkey (e.g., 'Z')
     // Consider optimistic update: pop from local queue immediately
@@ -68,7 +71,7 @@ const gameplayActions = {
     // Decision needed: Use existing gameplay-store-v2 or create new v2 store?
   },
 
-  handleGameStarting(payload: { gameId: number; countdown: number }) {
+  handleGameStarting(payload: { gameId: GameId; countdown: number }) {
     // TODO: [GAMEPLAY-FE] Display countdown notification
     // - Display countdown overlay (5... 4... 3... 2... 1...)
     // - Prepare game UI (show board, controls)
@@ -78,7 +81,7 @@ const gameplayActions = {
   },
 
   handleGameStarted(payload: {
-    gameId: number;
+    gameId: GameId;
     playerMapping: PlayerMapping;
     boardState: BoardState;
     game: GameWithPlayers;

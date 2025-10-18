@@ -1,19 +1,19 @@
 import { RoomId } from '@kernel/domains/system';
 import { UserId } from '@kernel/domains/user';
+import { GameId } from '@kernel/domains/game';
 import type { Coord, Direction } from '@core/types';
 
-import type { HandlerContext } from '@/ws/types';
 import { gameplayWsEffects } from '@/domains/gameplay/ws-effects';
 import { systemActions } from '@/domains/system/actions';
 
 const gameplayActions = {
-  joinRoom(room: string, gameId: number, ctx: HandlerContext) {
+  joinRoom(roomId: RoomId, gameId: GameId, userId: UserId) {
     // TODO: [SYSTEM-DOMAIN] gameplay shouldn't own join-room/leave-room messages
     // System domain should handle room membership more generically
     // Consider removing gameplay:join-room/leave-room in favor of system:join-room
 
     // Join game room for broadcasts
-    systemActions.joinRoom(RoomId(room), UserId(ctx.userId));
+    systemActions.joinRoom(roomId, userId);
 
     // TODO: [GAMEPLAY] Implement join room logic
     // - V1: GameServer.onPlayerJoinedRoom(userId)
@@ -25,7 +25,7 @@ const gameplayActions = {
     // - Handle reconnection case (player was in game before)
   },
 
-  leaveRoom(room: string, gameId: number, ctx: HandlerContext) {
+  leaveRoom(roomId: RoomId, gameId: GameId, userId: UserId) {
     // TODO: [GAMEPLAY] Implement leave room logic
     // - V1: GameServer.onPlayerLeftRoom(userId)
     // - V1 file: /backend/src/gameplay/game-server.ts
@@ -35,15 +35,10 @@ const gameplayActions = {
     // - Don't end game yet - wait for timeout or defeat
 
     // Leave game room
-    systemActions.leaveRoom(RoomId(room), UserId(ctx.userId));
+    systemActions.leaveRoom(roomId, userId);
   },
 
-  queueMove(
-    sourceCoord: Coord,
-    direction: Direction,
-    gameId: number,
-    ctx: HandlerContext,
-  ) {
+  queueMove(sourceCoord: Coord, direction: Direction, gameId: GameId, userId: UserId) {
     // TODO: [GAMEPLAY] Implement move queueing logic
     // - V1: GameServer.queueMove(userId, sourceCoord, direction)
     // - V1 file: /backend/src/gameplay/game-server.ts
@@ -58,7 +53,7 @@ const gameplayActions = {
     //   This pattern is not ideal - consider better approach in v2
   },
 
-  cancelMoves(gameId: number, ctx: HandlerContext) {
+  cancelMoves(gameId: GameId, userId: UserId) {
     // TODO: [GAMEPLAY] Implement cancel moves logic
     // - V1: GameServer.clearMoves(userId)
     // - V1 file: /backend/src/gameplay/game-server.ts
@@ -67,7 +62,7 @@ const gameplayActions = {
     // - No immediate broadcast - reflected in next state-update
   },
 
-  undoMove(gameId: number, ctx: HandlerContext) {
+  undoMove(gameId: GameId, userId: UserId) {
     // TODO: [GAMEPLAY] Implement undo move logic
     // - V1: GameServer.undoMove(userId, gameId)
     // - V1 file: /backend/src/gameplay/game-server.ts

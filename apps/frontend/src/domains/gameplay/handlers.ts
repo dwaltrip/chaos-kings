@@ -1,3 +1,4 @@
+import { GameId } from '@kernel/domains/game';
 import type { HandlerMap } from '@protocol/utils/message-helpers';
 import type { GameplayServerMessage } from '@protocol/domains/gameplay/server-messages';
 
@@ -9,11 +10,19 @@ const gameplayHandlers = {
   },
 
   'gameplay:game-starting': (payload) => {
-    gameplayActions.handleGameStarting(payload);
+    gameplayActions.handleGameStarting({
+      gameId: GameId(payload.gameId),
+      countdown: payload.countdown,
+    });
   },
 
   'gameplay:game-started': (payload) => {
-    gameplayActions.handleGameStarted(payload);
+    gameplayActions.handleGameStarted({
+      gameId: GameId(payload.gameId),
+      playerMapping: payload.playerMapping,
+      boardState: payload.boardState,
+      game: payload.game,
+    });
   },
 
   'gameplay:game-ended': (payload) => {

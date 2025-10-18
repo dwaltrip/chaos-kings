@@ -1,8 +1,9 @@
+import { ChatMessageId } from '@kernel/domains/chat';
 import { UserId } from '@kernel/domains/user';
 import { RoomId } from '@kernel/domains/system';
 
 interface ChatMessageEntity {
-  id: string; // TODO: [BRANDED_TYPES-chatMessageId] - create ChatMessageId branded type
+  id: ChatMessageId;
   userId: UserId;
   roomId: RoomId;
   content: string;
