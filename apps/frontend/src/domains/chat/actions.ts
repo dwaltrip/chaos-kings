@@ -1,3 +1,7 @@
+import { RoomId } from '@kernel/domains/system';
+
+import { chatWsEffects } from './ws-effects';
+
 // ---------------------------------------------
 // TODO:
 //   - Import this from the v1 frontend app?
@@ -9,20 +13,29 @@
 const chatStore: any = {};
 
 // function sendChatMessage(message: string, game: Game) {
-function sendChatMessage(message: any, game: any) {
-  const { setNewMessage } = chatStore.getState().actions;
-  // chatWsEffects.sendMessage(message, game);
-  setNewMessage('');
+function sendChatMessage(roomId: RoomId, message: string) {
+  // TODO: [CHAT-FE] Wire to store when available
+  // const { setNewMessage } = chatStore.getState().actions;
+  chatWsEffects.sendMessage(roomId, message);
+  // setNewMessage('');
 }
 
 function addReceivedMessage(chatMessage: any) {
-  const { addMessage } = chatStore.getState().actions;
-  addMessage(chatMessage);
+  // TODO: [CHAT-FE] Wire to store when available
+  // const { addMessage } = chatStore.getState().actions;
+  // addMessage(chatMessage);
 }
 
 function setNewMessage(message: string) {
-  const { setNewMessage } = chatStore.getState().actions;
-  setNewMessage(message);
+  // TODO: [CHAT-FE] Wire to store when available
+  // const { setNewMessage } = chatStore.getState().actions;
+  // setNewMessage(message);
 }
 
-export { sendChatMessage, setNewMessage, addReceivedMessage };
+const chatActions = {
+  sendChatMessage,
+  setNewMessage,
+  addReceivedMessage,
+};
+
+export { chatActions };

@@ -1,14 +1,12 @@
 import { idToString, idToNumber } from '@kernel/branded-type';
 import { GameId } from '@kernel/domains/game';
 import { RoomId } from '@kernel/domains/system';
-import { MsgCreators } from '@protocol/domains/gameplay/client-messages';
 import type { Coord, Direction } from '@core/types';
 import type { BoardState, PlayerIndex, PlayerMapping } from '@core/types';
 import type { PlayerQueuesMap } from '@common/types/gameplay';
 import type { GameWithPlayers } from '@common/types/games';
 
-// TODO: [PHASE-2] Import wsClient when available
-// import { wsClient } from '@/services/websocket';
+import { gameplayWsEffects } from './ws-effects';
 
 const gameplayActions = {
   // ============================================================================
@@ -16,40 +14,30 @@ const gameplayActions = {
   // ============================================================================
 
   sendJoinRoom(roomId: RoomId) {
-    // TODO: [GAMEPLAY-FE] Send join-room message via ws client
-    // const msg = MsgCreators.createJoinRoomMessage(idToString(roomId));
-    // wsClient.send(msg);
     // Note: Room ID typically built from gameId using buildGameRoomId() helper
+    gameplayWsEffects.sendJoinRoom(roomId);
   },
 
   sendLeaveRoom(roomId: RoomId) {
-    // TODO: [GAMEPLAY-FE] Send leave-room message via ws client
-    // const msg = MsgCreators.createLeaveRoomMessage(idToString(roomId));
-    // wsClient.send(msg);
+    gameplayWsEffects.sendLeaveRoom(roomId);
   },
 
   sendMoveRequest(sourceCoord: Coord, direction: Direction) {
-    // TODO: [GAMEPLAY-FE] Send move-request message via ws client
-    // const msg = MsgCreators.createMoveRequestMessage(sourceCoord, direction);
-    // wsClient.send(msg);
     // Note: This is called from game UI when player clicks/drags to move armies
-    // Consider optimistic update: add to local queue immediately, wait for server confirmation
+    // TODO: [GAMEPLAY-FE] Consider optimistic update: add to local queue immediately, wait for server confirmation
+    gameplayWsEffects.sendMoveRequest(sourceCoord, direction);
   },
 
   sendCancelMoves() {
-    // TODO: [GAMEPLAY-FE] Send cancel-moves message via ws client
-    // const msg = MsgCreators.createCancelMovesMessage();
-    // wsClient.send(msg);
     // Note: Called when player clicks "Clear Moves" button
-    // Consider optimistic update: clear local queue immediately
+    // TODO: [GAMEPLAY-FE] Consider optimistic update: clear local queue immediately
+    gameplayWsEffects.sendCancelMoves();
   },
 
   sendUndoMove(gameId: GameId) {
-    // TODO: [GAMEPLAY-FE] Send undo-move message via ws client
-    // const msg = MsgCreators.createUndoMoveMessage(idToNumber(gameId));
-    // wsClient.send(msg);
     // Note: Called when player presses undo hotkey (e.g., 'Z')
-    // Consider optimistic update: pop from local queue immediately
+    // TODO: [GAMEPLAY-FE] Consider optimistic update: pop from local queue immediately
+    gameplayWsEffects.sendUndoMove(gameId);
   },
 
   // ============================================================================

@@ -1,12 +1,9 @@
 import { UserId } from '@kernel/domains/user';
 import { GameId } from '@kernel/domains/game';
-import { MsgCreators } from '@protocol/domains/matchmaking/client-messages';
 import { MATCHMAKING_ROOM_ID } from '@platform/domains/matchmaking/constants';
 
 import { systemWsEffects } from '@/domains/system/actions';
-
-// Mock WebSocket service until Phase 2
-const wsService: any = {};
+import { matchmakingWsEffects } from './ws-effects';
 
 // ---------------------------------------------
 // Outbound Actions (Client → Server)
@@ -17,12 +14,12 @@ function joinQueue() {
   systemWsEffects.joinRoom(MATCHMAKING_ROOM_ID);
 
   // Send join-queue message
-  wsService.send(MsgCreators.createJoinQueueMessage());
+  matchmakingWsEffects.sendJoinQueue();
 }
 
 function leaveQueue() {
   // Send leave-queue message
-  wsService.send(MsgCreators.createLeaveQueueMessage());
+  matchmakingWsEffects.sendLeaveQueue();
 
   // Leave the matchmaking room
   systemWsEffects.leaveRoom(MATCHMAKING_ROOM_ID);
@@ -30,7 +27,7 @@ function leaveQueue() {
 
 function voteEarlyStart(vote: boolean) {
   // Send early-start-vote message
-  wsService.send(MsgCreators.createEarlyStartVoteMessage(vote));
+  matchmakingWsEffects.sendEarlyStartVote(vote);
 }
 
 // ---------------------------------------------

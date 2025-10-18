@@ -18,12 +18,6 @@ Inbox for discovered and unplanned work items.
 
 Tasks we know we need to do:
 
-- [ ] Fix frontend ws-effects scaffolding gap
-  - Frontend needs dedicated ws-effects layer (mirror backend architecture)
-  - Pattern should be: handlers → actions → ws-effects (3 layers)
-  - ws-effects provides clean interface for domain-specific WebSocket operations
-  - Currently frontend actions directly call wsService - should go through ws-effects
-  - Domains: matchmaking, gameplay, chat, system
 - [ ] Implement system domain (room membership, heartbeat, connection lifecycle)
   - Currently just stubbed joinRoom/leaveRoom actions
   - Not blocking other work - can defer
@@ -47,6 +41,7 @@ Not yet prioritized (may be lower priority for now) or fully scoped:
 
 Completed tasks (clean out periodically):
 
+- [x] Fixed ws-effects gap in frontend domain scaffold (Oct 18, 2025)
 - [x] Chat domain scaffolding (handlers, actions, ws-effects, BE + FE)
 - [x] Matchmaking domain scaffolding (handlers, actions, ws-effects, BE + FE)
 - [x] Gameplay domain scaffolding (handlers, actions, ws-effects, BE + FE)
