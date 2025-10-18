@@ -172,33 +172,27 @@ Mock `wsBridge` initially in domain code. Will pull actual implementation from d
 
 *Note: Phase 1 is relatively solid. Phases 2+ are highly tentative and will evolve significantly as we learn and encounter new requirements. Consider this a rough roadmap, not a fixed plan.*
 
-### Phase 1: Domain Structure (Current)
+### Phase 1: Domain Structure ✅ COMPLETE (Oct 2025)
 
 **Goal:** Create v2 ws-related files for each domain in apps/backend and apps/frontend.
 
-**Protocol messages (DONE):**
+**Protocol messages:**
 - ✅ Created `client-messages.ts` and `server-messages.ts` for all domains in `packages/protocol`
 - ✅ Domains covered: chat, matchmaking, gameplay
 
 **For each domain:**
 - **Backend:** `handlers.ts`, `actions.ts` (stubbed), `ws-effects.ts`, `types.ts`
 - **Frontend:** `handlers.ts`, `actions.ts` (stubbed)
-- **Protocol:** Review/confirm message type names before implementing domain structure
-
-**Process:**
-1. Review old v1 code to understand functionality
-2. Review/confirm protocol message names for the domain
-3. Implement new files following chat domain pattern
-4. Reference old code for behavior, but use new v2 structure
 
 **Domains:**
-- ✅ Chat (DONE) - first pass of handlers, ws-effects implemented for v2 backend + frontend. actions mostly stubbed.
-- ✅ Matchmaking (DONE) - scaffolding complete with all files stubbed following chat pattern
-- 🔄 Gameplay (NEXT)
+- ✅ Chat - handlers, actions, ws-effects (BE + FE)
+- ✅ Matchmaking - handlers, actions, ws-effects (BE + FE)
+- ✅ Gameplay - handlers, actions, ws-effects (BE + FE)
 
-**End of Phase 1:**
-
-- Experiment with branded IDs implementation (might be tabled if not working well)
+**Completion:**
+- ✅ All domain structures scaffolded (handlers, actions, ws-effects)
+- ✅ Branded types (UserId, GameId, RoomId, ChatMessageId) implemented across all domains
+- ✅ TypeScript infrastructure set up and passing typecheck
 
 ---
 
@@ -282,9 +276,16 @@ Mock `wsBridge` initially in domain code. Will pull actual implementation from d
 - ✅ [2025-10-17] Branded types implementation (see: `10-17-[1]-branded-types-implementation.md`)
   - Kernel: UserId, GameId, RoomId types with constructors + conversion helpers
   - Full implementation in system and matchmaking domains (backend + frontend)
+- ✅ [2025-10-17] Branded types implementation complete - all domains (see: `10-17-[2]-branded-types-chat-gameplay.md`)
+  - ChatMessageId added, conversions at all app boundaries
+- ✅ [2025-10-17] TypeScript infrastructure for v2 apps
+  - package.json + typecheck scripts, all type errors resolved
 
 ### In Progress
-- 🔄 Phase 1 wrap-up: Add package.json to v2 apps, set up TypeScript type checking
+- None currently
+
+### Next Steps (TBD)
+Need to carefully plan approach for WS infrastructure (ws-client, ws-server, ws-bridge for both sides) and migrating bulk of v1 app code. Will break into smaller manageable steps.
 
 ### Upcoming
 - ⏳ System domain implementation (room membership, etc.)
@@ -329,11 +330,25 @@ Do one domain at a time. Matchmaking first, then gameplay. Get each domain fully
 **9. Branded types**
 Use plain strings + TODO comments for now (following chat pattern). Will attempt branded types implementation at end of Phase 1 as an experiment.
 
+**[2025-10-17] Branded Types Implementation**
+
+Implemented branded ID types across all v2 domains (system, matchmaking, chat, and gameplay) with clear conversion boundaries:
+- **Pattern:** Primitives at infrastructure edges, branded types in domain logic
+- **Boundaries:** Handlers convert primitives → branded (entry), ws-effects convert branded → primitives (exit)
+  - When migrating app code, will convert at other boundaries: I/O for DB, redis, etc
+
 ---
 
 ## Known Issues / Things to Revisit Later
 
 Issues and concerns flagged during implementation that don't block current work but should be addressed in future phases.
+
+**[2025-10-18] Frontend ws-effects layer missing:**
+- Frontend currently has 2-layer pattern: handlers → actions (bidirectional)
+- Should mirror backend: handlers → actions → ws-effects (3 layers)
+- ws-effects should provide clean interface for domain-specific WebSocket operations
+- Actions should focus on domain logic, ws-effects handle message sending
+- Affects all domains: chat, matchmaking, gameplay, system
 
 **[2025-10-15] Gameplay domain flags:**
 - **v1 get-user-mapping pattern:** Current v1 pattern for mapping userId → gameId is suboptimal. Documented in TODOs but not refactoring during Phase 1 scaffolding.

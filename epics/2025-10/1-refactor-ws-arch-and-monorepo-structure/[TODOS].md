@@ -19,14 +19,14 @@ Inbox for discovered and unplanned work items.
 Tasks we know we need to do:
 
 - [ ] Fix frontend ws-effects scaffolding gap
-  - Frontend domains are calling wsService directly instead of using ws-effects layer
-  - Need to create ws-effects.ts for: matchmaking, gameplay, chat
-  - Need to rename system/actions.ts to system/ws-effects.ts for consistency
-  - Update actions.ts files to call ws-effects instead of wsService
-  - See exploration notes from 2025-10-17 branded types planning session
-- [ ] Set up package.json and build configs for apps/backend and apps/frontend
-- [ ] Run TypeScript checks to verify imports and types in new domain files
+  - Frontend needs dedicated ws-effects layer (mirror backend architecture)
+  - Pattern should be: handlers → actions → ws-effects (3 layers)
+  - ws-effects provides clean interface for domain-specific WebSocket operations
+  - Currently frontend actions directly call wsService - should go through ws-effects
+  - Domains: matchmaking, gameplay, chat, system
 - [ ] Implement system domain (room membership, heartbeat, connection lifecycle)
+  - Currently just stubbed joinRoom/leaveRoom actions
+  - Not blocking other work - can defer
 
 ---
 
@@ -50,3 +50,6 @@ Completed tasks (clean out periodically):
 - [x] Chat domain scaffolding (handlers, actions, ws-effects, BE + FE)
 - [x] Matchmaking domain scaffolding (handlers, actions, ws-effects, BE + FE)
 - [x] Gameplay domain scaffolding (handlers, actions, ws-effects, BE + FE)
+- [x] Set up package.json and build configs for v2 apps
+- [x] TypeScript type checking setup and error resolution
+- [x] Branded types implementation (all domains)
