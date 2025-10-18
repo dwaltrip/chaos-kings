@@ -1,3 +1,5 @@
+import { RoomId } from '@kernel/domains/system';
+import { UserId } from '@kernel/domains/user';
 import type { Coord, Direction } from '@core/types';
 
 import type { HandlerContext } from '@/ws/types';
@@ -11,7 +13,7 @@ const gameplayActions = {
     // Consider removing gameplay:join-room/leave-room in favor of system:join-room
 
     // Join game room for broadcasts
-    systemActions.joinRoom(room, ctx);
+    systemActions.joinRoom(RoomId(room), UserId(ctx.userId));
 
     // TODO: [GAMEPLAY] Implement join room logic
     // - V1: GameServer.onPlayerJoinedRoom(userId)
@@ -33,7 +35,7 @@ const gameplayActions = {
     // - Don't end game yet - wait for timeout or defeat
 
     // Leave game room
-    systemActions.leaveRoom(room, ctx);
+    systemActions.leaveRoom(RoomId(room), UserId(ctx.userId));
   },
 
   queueMove(

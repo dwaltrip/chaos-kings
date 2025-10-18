@@ -4,5 +4,4 @@ type GameId = Brand<number, 'GameId'>;
 
 const GameId = (value: number): GameId => value as GameId;
 
-export type { GameId };
 export { GameId };

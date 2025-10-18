@@ -31,5 +31,13 @@
     "../../core/src/**/*.ts",
     "../../common/**/*.ts"
   ],
-  "exclude": ["node_modules", "dist", "client"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "client",
+    "**/*.test.ts",
+    "**/__tests__/**",
+    "../../core/**/*.test.ts",
+    "../../core/**/__tests__/**"
+  ]
 }

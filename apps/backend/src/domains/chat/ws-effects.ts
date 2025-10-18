@@ -1,3 +1,4 @@
+import { idToNumber, idToString } from '@kernel/branded-type';
 import { MsgCreators } from '@protocol/domains/chat/server-messages';
 
 import { ChatMessageEntity } from '@/domains/chat/types';
@@ -7,8 +8,13 @@ const wsBridge: any = {};
 const chatWsEffects = {
   broadcastNewMessage({ roomId, content, userId, timestamp }: ChatMessageEntity) {
     wsBridge.broadcastToRoom(
-      roomId,
-      MsgCreators.createBroadcastMessageMessage(roomId, content, userId, timestamp),
+      idToString(roomId),
+      MsgCreators.createBroadcastMessageMessage(
+        idToString(roomId),
+        content,
+        idToNumber(userId),
+        timestamp,
+      ),
     );
   },
 };

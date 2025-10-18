@@ -7,7 +7,7 @@ type ChatServerPayloadMap = {
   'chat:broadcast-message': {
     roomId: string;
     content: string;
-    userId: string;
+    userId: number;
     timestamp: number;
   };
 };
@@ -19,7 +19,7 @@ const MsgCreators = {
   createBroadcastMessageMessage: (
     roomId: string,
     content: string,
-    userId: string,
+    userId: number,
     timestamp: number,
   ): BroadcastMessageMessage => ({
     type: 'chat:broadcast-message',
