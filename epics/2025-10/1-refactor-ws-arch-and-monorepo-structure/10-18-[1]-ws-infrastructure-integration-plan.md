@@ -98,7 +98,8 @@ This doc analyzes the existing v1 WebSocket infrastructure and the demo v2 imple
   - Simple in-memory Map-based implementation
   - Methods: `join`, `leave`, `getMembers`, `isMember`, `getRoomsForUser`
   - Returns metadata (createdRoom, alreadyMember, roomRemoved)
-
+  - Only supports one room per `userId`
+  
 - **`server.ts`** - Example bootstrap
   - Merges all domain handlers into single map
   - Creates typed server with full config
@@ -123,6 +124,7 @@ This doc analyzes the existing v1 WebSocket infrastructure and the demo v2 imple
 - ⚠️ **No Fastify integration** - uses standalone `ws` server
 - ⚠️ **No auth shown** - `onConnection` creates userId, no real auth example
 - ⚠️ **Simplified room manager** - explicitly marked "for demo purposes"
+- ❌ **Only one room per user** - room membership is tracked by userId, not by ws connection
 
 ---
 
@@ -140,6 +142,7 @@ This doc analyzes the existing v1 WebSocket infrastructure and the demo v2 imple
   - Auto-cleanup on `beforeunload`
 
 **Key Characteristics:**
+
 - ✅ **Working connection state management** with zustand
 - ✅ **Domain routing** - routes messages by `domain` field
 - ✅ **Room membership tracking** (though noted as possibly unused)
@@ -194,18 +197,20 @@ This doc analyzes the existing v1 WebSocket infrastructure and the demo v2 imple
 1. **Fastify Integration** - V1 integrates cleanly with Fastify's auth middleware and connection handling
 2. **Real Authentication** - Uses `req.currentUser` from Fastify auth plugin
 3. **Global Manager Access** - Domain code can access `getGlobalWebSocketManager()` for server-initiated broadcasts
-4. **Production-tested** - V1 is working code, battle-tested in the codebase
-5. **Scoped Logging** - V1 has detailed per-client logging via `ScopedLogger`
+4. **More battle-tested** - V1 is working code that has been tested on the prototype game
+5. **Scoped Logging** - V1 has per-client logging via `ScopedLogger`
 6. **UUID-based Client IDs** - V1 generates unique client IDs for tracking
 7. **Multi-Connection Support** - V1's `ClientStore` maps WebSocket → WsClient, supporting multiple tabs/windows per user
 
 **Frontend:**
+
 1. **Zustand Connection State** - V1 exposes connection state to components via store
 2. **Working Integration** - V1 frontend is already wired to existing backend
 
 ### What V2 Demo Has That V1 Lacks
 
 **Backend:**
+
 1. **Full Type Safety** - Discriminated unions, generic payload extraction, no `any`
 2. **Clean Architecture** - Bridge abstraction, dependency injection, no global state in core
 3. **Compile-time Completeness** - `satisfies HandlerMapWithCtx` ensures all message types have handlers
@@ -214,6 +219,7 @@ This doc analyzes the existing v1 WebSocket infrastructure and the demo v2 imple
 6. **Message Type Helpers** - `MessageType<T>`, `PayloadFor<T, Type>` utilities
 
 **Frontend:**
+
 1. **Auto-reconnection** - With exponential backoff
 2. **Message Queuing** - Automatic when disconnected
 3. **Full Type Safety** - Same as backend
@@ -236,6 +242,8 @@ This doc analyzes the existing v1 WebSocket infrastructure and the demo v2 imple
 - Rooms track `Set<WsClient>` (not `Set<UserId>`)
 - Each `WsClient` tracks its own `rooms: Set<RoomId>` for cleanup on disconnect
 
+**Decision:** MUST FIX, we need to incorporate v1 multi-connection in some way
+
 **Solution:** Extract v1's `ClientStore` and room bookkeeping into new `RoomManager` that preserves multi-connection semantics.
 
 ---
@@ -254,13 +262,15 @@ Build v2 WebSocket infrastructure that:
 We'll create a **hybrid** that takes the best of both:
 
 **Backend:**
+
 1. **Start with v2 demo architecture** (types, patterns, clean abstractions)
 2. **Adapt Fastify integration from v1** (connection handling, auth)
-3. **Keep v1's room manager** (or adapt v2's, TBD based on needs)
+3. **Extract v1 room management logic**, targeting a more robust version of v2's loose coupling between ws-server and room mgmt
 4. **Create new bootstrap** that wires to v2 domain handlers
-5. **Implement wsBridge** matching the interface Phase 1 domains expect
+5. **Implement wsBridge** matching the interface that the v2 domain scaffolding expects (from phase 1 of refactor)
 
 **Frontend:**
+
 1. **Start with v2 demo client** (reconnection, queuing, types)
 2. **Add v1's zustand store integration** for connection state
 3. **Keep v2's bootstrap pattern** but adapt to our app structure
@@ -274,18 +284,25 @@ We'll create a **hybrid** that takes the best of both:
 
 **Goal:** Implement backend WS infrastructure that v2 domains can use.
 
-#### Step 1: Create Type-Safe Server (`apps/backend/src/ws/`)
+#### Step 1: Create Type-Safe Server (`apps/backend/src`)
 
 **New Files:**
+
+- `main.ts` - backend entry point, in top-level `src/` folder. calls initialization code for ws server as well fastify server
+  - This is where the ws server receives actual domain information (via TS type params for message types / maps)
+  - IMPORTANT: `ws/*` code is completely agnostic to actual app / domain code, functions as a lib that app code uses
+  - See `backend/src/server.ts` from v1 as well as from the demo
+  - Renaming to `main.ts` to make it more obvious as entry point, and to distinguish from `ws/server.ts`
 - `ws/types.ts` - Import/adapt types from demo, match v2 protocol
 - `ws/server.ts` - Adapt `createWSServer` for Fastify integration
 - `ws/room-manager.ts` - Start with v1's room manager, may swap in v2's later
-- `ws/bridge.ts` - Create `wsBridge` matching demo interface
+- `ws/server-bridge.ts` - Create `wsBridge` matching demo interface
 - `ws/bootstrap.ts` - Server initialization, wire up domain handlers
 
 **Key Decisions:**
 
 1. **Fastify Integration:**
+   
    - Keep v1's `WebSocketManager.handleConnection(connection, req)` pattern
    - Extract `req.currentUser` for auth (v1 approach)
    - But internally use v2's typed message handling
@@ -296,6 +313,7 @@ We'll create a **hybrid** that takes the best of both:
    - Use v2 pattern: `{ 'chat:send-message': (payload, ctx) => ... }`
 
 3. **Context:**
+   
    - Base: `HandlerContext = { userId: UserId }`
    - Extract userId from authenticated user on connection
    - **[TENTATIVE-PLAN]** Extended with connection-scoped operations:
@@ -312,8 +330,9 @@ We'll create a **hybrid** that takes the best of both:
    - **Rationale:** Handlers/actions need to join/leave rooms for specific connections (multi-tab support)
    - **Alternative:** System domain intercepts join/leave messages before routing (tighter coupling)
    - **Note:** User data (beyond userId) should be fetched explicitly by handlers that need it, not passed in context
-
+   
 4. **Room Manager Extraction:**
+   
    - **Extract v1's `ClientStore` and room logic** from `backend/src/websocket/manager.ts` into new `apps/backend/src/ws/room-manager.ts`
    - **Preserve multi-connection semantics:**
      - `ClientStore` maps WebSocket → WsClient (unique client IDs)
@@ -334,8 +353,9 @@ We'll create a **hybrid** that takes the best of both:
      ```
    - **Preserve v1's scoped logging:** Each client gets unique logger with connection ID prefix
    - **Add runtime validation:** Message envelope validation (type, payload present), graceful error handling
-
+   
 5. **Bridge Interface:**
+   
    ```ts
    interface WsBridge {
      broadcast(message: ServerMessage, opts?: BroadcastOptions): void;
@@ -393,6 +413,8 @@ We'll create a **hybrid** that takes the best of both:
 - `ws/client-bridge.ts` - Frontend `wsBridge` implementation
 - `ws/bootstrap.ts` - Client initialization with all domain handlers
 - `ws/connection-store.ts` - Zustand store for connection state (adapt v1)
+
+*Questions:* can / should `ws/types.ts` and `ws/bootstrap.ts` be moved outside `ws` folder to keep `ws` more of a generic lib with no domain / app knowledge?
 
 **Key Decisions:**
 
