@@ -28,7 +28,6 @@ Tasks we know we need to do:
 
 Not yet prioritized (may be lower priority for now) or fully scoped:
 
-- [ ] Experiment with branded IDs implementation
 - [ ] Review and redesign room membership pattern (gameplay shouldn't own join/leave messages)
 - [ ] Migrate v1 MatchmakingService logic into v2 backend actions
 - [ ] Unstub frontend matchmaking actions (store integration, navigation)
@@ -41,7 +40,9 @@ Not yet prioritized (may be lower priority for now) or fully scoped:
 
 Completed tasks (clean out periodically):
 
-- [x] Fixed ws-effects gap in frontend domain scaffold (Oct 18, 2025)
+##### 2025-10 (October)
+
+- [x] Fixed ws-effects gap in frontend domain scaffold
 - [x] Chat domain scaffolding (handlers, actions, ws-effects, BE + FE)
 - [x] Matchmaking domain scaffolding (handlers, actions, ws-effects, BE + FE)
 - [x] Gameplay domain scaffolding (handlers, actions, ws-effects, BE + FE)

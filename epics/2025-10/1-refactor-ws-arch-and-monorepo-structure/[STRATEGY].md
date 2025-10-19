@@ -1,7 +1,7 @@
-# WebSocket Architecture & Monorepo Refactor - Strategy & Tracker
+# WebSocket Architecture & Monorepo Refactor - Strategy
 
-## Doc Purpose & Usage (WIP)
-This bracketed living doc owns the working view of the epic: current strategy, decisions, and status. Dated tactical notes inside the epic folder capture point-in-time work for specific tasks; summarize any lasting outcomes back here and cross-link the relevant note. Expect this process to evolve—log tweaks to the workflow in place as we discover better patterns.
+## Doc Purpose
+This doc owns the strategic vision and foundational decisions for the epic. It contains stable reference material: goals, architecture principles, key decisions, and the overall phase plan. For current status and active work tracking, see [PROGRESS].md.
 
 ## Overview
 
@@ -61,7 +61,7 @@ The current v1 architecture works but has room for improvement:
 
 ### When
 - **Started:** October 2025
-- **Status:** Early phase - building foundational structure
+- **Status:** See [PROGRESS].md for current status
 
 ### Scope
 This refactor touches:
@@ -92,15 +92,13 @@ This incremental approach keeps the codebase coherent at each step and provides 
 - [Monorepo Folder Structure](../../../dev-notes/2025-10/10-12-[1]-monorepo-folder-structure-v2.md) - packages/, apps/ structure & dependency rules
 - [WebSocket Architecture Patterns](../../../dev-notes/2025-10/10-12-[2]-project-arch-massive-refactor.md) - Message types, handlers, actions, ws-effects
 
-*Note:* The linked folder-structure doc still reflects the earlier plan with an active `packages/platform`. The current execution defers those extractions; rely on the “Architecture Evolution” section below for the latest policy.
+*Note:* The linked folder-structure doc still reflects the earlier plan with an active `packages/platform`. The current execution defers those extractions; rely on [PROGRESS].md for the latest implementation decisions.
 
 **Key Principles (Summary):**
 - Protocol depends only on kernel
 - Apps bridge protocol ↔ domain
 - Type safety via discriminated unions
 - Clear separation: handlers → actions → ws-effects
-
-*Note: This tracker documents actual implementation and deviations from the original plan.*
 
 ---
 
@@ -177,22 +175,22 @@ Mock `wsBridge` initially in domain code. Will pull actual implementation from d
 **Goal:** Create v2 ws-related files for each domain in apps/backend and apps/frontend.
 
 **Protocol messages:**
-- ✅ Created `client-messages.ts` and `server-messages.ts` for all domains in `packages/protocol`
-- ✅ Domains covered: chat, matchmaking, gameplay
+- Created `client-messages.ts` and `server-messages.ts` for all domains in `packages/protocol`
+- Domains covered: chat, matchmaking, gameplay
 
 **For each domain:**
 - **Backend:** `handlers.ts`, `actions.ts` (stubbed), `ws-effects.ts`, `types.ts`
 - **Frontend:** `handlers.ts`, `actions.ts` (stubbed)
 
 **Domains:**
-- ✅ Chat - handlers, actions, ws-effects (BE + FE)
-- ✅ Matchmaking - handlers, actions, ws-effects (BE + FE)
-- ✅ Gameplay - handlers, actions, ws-effects (BE + FE)
+- Chat - handlers, actions, ws-effects (BE + FE)
+- Matchmaking - handlers, actions, ws-effects (BE + FE)
+- Gameplay - handlers, actions, ws-effects (BE + FE)
 
 **Completion:**
-- ✅ All domain structures scaffolded (handlers, actions, ws-effects)
-- ✅ Branded types (UserId, GameId, RoomId, ChatMessageId) implemented across all domains
-- ✅ TypeScript infrastructure set up and passing typecheck
+- All domain structures scaffolded (handlers, actions, ws-effects)
+- Branded types (UserId, GameId, RoomId, ChatMessageId) implemented across all domains
+- TypeScript infrastructure set up and passing typecheck
 
 ---
 
@@ -245,58 +243,6 @@ Mock `wsBridge` initially in domain code. Will pull actual implementation from d
 
 ---
 
-## Progress Tracker
-
-**⚠️ TODO: Refactor this section to be milestone-focused (not task-focused)**
-- Keep high-level completed milestones with dates
-- Keep current milestone + next 2-3 major milestones only
-- Remove granular task lists (those belong in tactical docs or [TODOS].md)
-- Tactical docs contain planned work; [TODOS].md is for discovered/unplanned items
-- This section should be strategic overview only
-
----
-
-### Completed
-- ✅ [2025-10-13] Protocol message definitions (chat, matchmaking, gameplay) in `packages/protocol`
-  - Created initial pass of `client-messages.ts` and `server-messages.ts` for each domain
-  - Implemented discriminated union pattern with message creators
-  - Using types from `@core` and `@kernel` where appropriate
-- ✅ [2025-10-13] Chat domain v2 structure in `apps/backend` and `apps/frontend`
-  - Backend: `handlers.ts`, `actions/` (stubbed), `ws-effects.ts`, `types.ts`
-  - Frontend: `handlers.ts`, `actions.ts` (stubbed)
-  - Follows new architectural pattern
-- ✅ [2025-10-15] Matchmaking domain scaffolding (see: `10-15-[1]-matchmaking-implementation-planning.md`)
-  - Backend/frontend handlers, actions (stubbed), ws-effects
-  - System domain stubs (joinRoom/leaveRoom)
-  - `MATCHMAKING_ROOM_ID` constant in platform
-- ✅ [2025-10-15] Gameplay domain scaffolding (see: `10-15-[2]-gameplay-implementation-planning.md`)
-  - Backend/frontend handlers, actions (stubbed), ws-effects
-  - Room ID helpers in `@platform/domains/gameplay` (buildGameRoomId, parseGameRoomId)
-  - Flagged system domain integration concerns for future discussion
-- ✅ [2025-10-17] Branded types implementation (see: `10-17-[1]-branded-types-implementation.md`)
-  - Kernel: UserId, GameId, RoomId types with constructors + conversion helpers
-  - Full implementation in system and matchmaking domains (backend + frontend)
-- ✅ [2025-10-17] Branded types implementation complete - all domains (see: `10-17-[2]-branded-types-chat-gameplay.md`)
-  - ChatMessageId added, conversions at all app boundaries
-- ✅ [2025-10-17] TypeScript infrastructure for v2 apps
-  - package.json + typecheck scripts, all type errors resolved
-
-### In Progress
-- None currently
-
-### Next Steps (TBD)
-Need to carefully plan approach for WS infrastructure (ws-client, ws-server, ws-bridge for both sides) and migrating bulk of v1 app code. Will break into smaller manageable steps.
-
-### Upcoming
-- ⏳ System domain implementation (room membership, etc.)
-- ⏳ WS bridge implementation (backend + frontend)
-- ⏳ WS server/client implementation
-- ⏳ Business logic migration (unstub actions)
-- ⏳ Core and common reorganization
-- ⏳ V1 code removal
-
----
-
 ## Key Decisions & Learnings
 
 ### [2025-10-13] Architecture Q&A Session
@@ -307,7 +253,7 @@ Wait for duplication before extracting. Keep types in apps/ for now. Backend and
 **2. Actions pattern**
 Actions are the domain API - called by both handlers (incoming) and app code (outgoing). This bidirectional pattern is key to the architecture:
 - **Incoming:** handler receives message → calls action → action does business logic
-- **Outgoing:** app code (button click, timer, etc.) → calls action → action calls ws-effects → sends message
+- **Outgoing:** app code (button click, timer, etc.) → calls action → calls ws-effects → sends message
 
 **3. Implementation approach**
 Reference old v1 code for functionality, but structure using new v2 patterns. We're recreating the behavior, not just moving files. Look at existing backend/frontend code to understand what needs to be implemented, then map it to the new structure.
@@ -336,23 +282,6 @@ Implemented branded ID types across all v2 domains (system, matchmaking, chat, a
 - **Pattern:** Primitives at infrastructure edges, branded types in domain logic
 - **Boundaries:** Handlers convert primitives → branded (entry), ws-effects convert branded → primitives (exit)
   - When migrating app code, will convert at other boundaries: I/O for DB, redis, etc
-
----
-
-## Known Issues / Things to Revisit Later
-
-Issues and concerns flagged during implementation that don't block current work but should be addressed in future phases.
-
-**[2025-10-18] Frontend ws-effects layer missing:**
-- Frontend currently has 2-layer pattern: handlers → actions (bidirectional)
-- Should mirror backend: handlers → actions → ws-effects (3 layers)
-- ws-effects should provide clean interface for domain-specific WebSocket operations
-- Actions should focus on domain logic, ws-effects handle message sending
-- Affects all domains: chat, matchmaking, gameplay, system
-
-**[2025-10-15] Gameplay domain flags:**
-- **v1 get-user-mapping pattern:** Current v1 pattern for mapping userId → gameId is suboptimal. Documented in TODOs but not refactoring during Phase 1 scaffolding.
-- **Room membership message ownership:** Gameplay domain currently has dedicated message types (`gameplay:join-room`, `gameplay:leave-room`), but system domain should own room membership patterns. The backend handlers correctly call system domain actions, so the logic is in the right place, but we should clarify ownership and ideally remove these gameplay-specific message types in favor of generic system domain messages.
 
 ---
 

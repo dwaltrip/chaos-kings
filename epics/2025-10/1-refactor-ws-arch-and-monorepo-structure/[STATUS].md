@@ -4,7 +4,7 @@
 
 **Just Completed (Oct 18, 2025):**
 - Fixed ws-effects gap in frontend domain scaffold
-- All domain scaffolding (chat, matchmaking, gameplay)
+- All initial domain scaffolding (handlers, ws-effects, stubbed actions)
 - Branded types implementation across all domains
 - TypeScript infrastructure setup
 
