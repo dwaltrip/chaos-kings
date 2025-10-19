@@ -14,6 +14,29 @@ function question(prompt: string): Promise<string> {
   return new Promise((resolve) => rl.question(prompt, resolve));
 }
 
+function multiLineQuestion(prompt: string): Promise<string> {
+  return new Promise((resolve) => {
+    console.log(prompt);
+    console.log(chalk.dim('(Paste content, then type END on a new line to finish)'));
+    console.log();
+
+    const lines: string[] = [];
+
+    const handleLine = (line: string) => {
+      // Check for explicit terminator (case-insensitive)
+      if (line.trim() === 'END') {
+        rl.off('line', handleLine);
+        resolve(lines.join('\n'));
+      } else {
+        // Add the line to our collection (preserving blank lines)
+        lines.push(line);
+      }
+    };
+
+    rl.on('line', handleLine);
+  });
+}
+
 function findEpics(): Array<{ path: string; name: string }> {
   const epicsDir = join(process.cwd(), 'epics');
   const years = readdirSync(epicsDir).filter((name) => {
@@ -75,7 +98,7 @@ async function main() {
   console.log(chalk.green(`✓ Selected: ${selectedEpic.name}\n`));
 
   // Get session goal
-  const goal = await question(chalk.bold('What do you want to work on?\n> '));
+  const goal = await multiLineQuestion(chalk.bold('What do you want to work on?'));
 
   if (!goal.trim()) {
     console.log(chalk.red('\nSession goal is required!'));
@@ -85,8 +108,8 @@ async function main() {
 
   // Get optional context
   console.log();
-  const context = await question(
-    chalk.gray('Any additional context? (press Enter to skip)\n> '),
+  const context = await multiLineQuestion(
+    chalk.gray('Any additional context? (or just press Enter to skip)'),
   );
 
   // Generate prompt
@@ -95,7 +118,7 @@ async function main() {
 Docs: ${selectedEpic.path}/
 
 Quick context check:
-- Current status: @${selectedEpic.path}/[STATUS].md
+- Current status: @${selectedEpic.path}/[PROGRESS].md
 - Active TODOs: @${selectedEpic.path}/[TODOS].md
 
 Session Goal: ${goal.trim()}`;
