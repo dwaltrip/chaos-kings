@@ -23,7 +23,10 @@ TBD - Need to plan Phase 2 (WS infrastructure):
 - ws-bridge (frontend + backend)
 - Migration strategy for v1 app logic
 
-**Blockers:** None
+**Notes:**
+- Phase 1 delivered complete 3-layer architecture (handlers → actions → ws-effects)
+- Both frontend and backend now use stubbed wsBridge
+- Ready to implement real WS infrastructure in Phase 2
 
 ---
 

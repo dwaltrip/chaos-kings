@@ -4,22 +4,26 @@
 This living workflow doc captures how we run epic-scale work. It explains how the epic folder is organized, how living docs and tactical notes interact, and what to do before, during, and after AI-assisted sessions. Expect frequent tweaks—record any process adjustments here so the rest of the bracketed files stay focused on product decisions.
 
 ## Document Types
-- **Living docs (`[NAME].md`)** – Always-on references for the epic (strategy, tracker, workflow, todos, status). Keep them current; summarize durable outcomes and link supporting notes.
-- **`[STATUS].md`** – Quick-view status doc. At-a-glance current phase, recent completions, what's next, blockers. First stop for "where are we?" questions.
+- **Living docs (`[NAME].md`)** – Always-on references for the epic (strategy, progress, workflow, todos). Keep them current; summarize durable outcomes and link supporting notes.
+- **`[STRATEGY].md`** – Stable reference material: goals, architecture principles, key decisions, phase roadmap. Updated when foundational decisions are made.
+- **`[PROGRESS].md`** – Living status tracker: current phase, recent completions, what's next, blockers, detailed milestone history, known issues. First stop for "where are we?" questions. Updated frequently as work progresses.
+- **`[TODOS].md`** – Inbox for discovered/unplanned work. Items found mid-session, small tasks not warranting a tactical, or ideas to scope later. NOT a comprehensive task list—most work lives in tactical docs.
 - **Tactical notes (`MM-DD-[n]-slug.md`)** – Point-in-time planning or execution logs. Capture detailed thinking, implementation plans, and task lists for specific chunks of work. Bubble conclusions back into living docs.
 - **Prompt files (`prompts/MM-DD-[n]-slug.md`)** – Session prompts/context. Historical snapshots of what we asked the AI to do. Useful for understanding session scope and intent.
-- **`[TODOS].md`** – Inbox for discovered/unplanned work. Items found mid-session, small tasks not warranting a tactical, or ideas to scope later. NOT a comprehensive task list—most work lives in tactical docs.
 - **Legacy dev-notes** – Earlier docs may still be referenced. When a tactical note supersedes a dev-note, add a link back here and flag the old note as historical in its header.
 
 ## Session Flow
-- **Before a session** – Check `[STATUS].md` for quick overview, skim `[STRATEGY-AND-TRACKER].md` for details if needed, check `[TODOS].md` for discovered work, scan latest tactical note for open threads, and confirm whether new tactical scope is needed.
+- **Before a session** – Check `[PROGRESS].md` for quick overview, skim `[STRATEGY].md` for architecture/goals if needed, check `[TODOS].md` for discovered work, scan latest tactical note for open threads, and confirm whether new tactical scope is needed.
 - **During a session** – For planned work: follow the tactical doc's implementation plan. For discovered items: add to `[TODOS].md`. Log deep dives and conclusions in tactical notes.
-- **After a session** – Update living docs with durable decisions (BE CONCISE - 2-3 bullets max), update `[STATUS].md` with current phase/what's next, add the new tactical note to references, and capture any discovered tasks in `[TODOS].md`.
+- **After a session** – Update `[PROGRESS].md` with current status/completions (BE CONCISE - 2-3 bullets max), update `[STRATEGY].md` with durable architectural decisions if applicable, add the new tactical note to references, and capture any discovered tasks in `[TODOS].md`.
 
 ## Capturing Decisions
-- Promote anything that affects roadmap, architecture, or long-lived conventions into the tracker or strategy doc the same day.
-- **Keep tracker updates CONCISE** (2-3 bullets max). Verbose details belong in tactical notes. Link back to tactical notes for full context (e.g., "See 10-14-[1]-matchmaking-scope.md").
-- When a tactical note resolves an open question, mark the question as answered (or retired) in `[STRATEGY-AND-TRACKER].md`.
+- Promote anything that affects roadmap, architecture, or long-lived conventions into `[PROGRESS].md` or `[STRATEGY].md` the same day.
+- **Keep updates CONCISE** (2-3 bullets max). Verbose details belong in tactical notes. Link back to tactical notes for full context (e.g., "See 10-14-[1]-matchmaking-scope.md").
+- **When to update STRATEGY vs PROGRESS:**
+  - `[STRATEGY].md` – Architectural decisions, foundational patterns, design principles, open questions resolved
+  - `[PROGRESS].md` – Completed milestones, current status, known issues, next steps
+- When a tactical note resolves an open question, mark the question as answered (or retired) in `[STRATEGY].md`.
 
 ## When to Create Tactical Docs
 - Planning a multi-step implementation (multiple files, domains, etc.)
