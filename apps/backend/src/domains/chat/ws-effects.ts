@@ -1,7 +1,7 @@
 import { idToNumber, idToString } from '@kernel/branded-type';
 import { MsgCreators } from '@protocol/domains/chat/server-messages';
 
-import { wsBridge } from '@/ws-lib/server-bridge';
+import { wsBridge } from '@/ws/server-bridge-bootstrap';
 import { ChatMessageEntity } from '@/domains/chat/types';
 
 const chatWsEffects = {

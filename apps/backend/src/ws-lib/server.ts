@@ -1,7 +1,7 @@
 import type { WebSocket, RawData } from 'ws';
 
-import { RoomManager } from './room-manager';
 import type { HandlerMapWithCtx, ConnectionId, BroadcastOptions } from './types';
+import { RoomManager } from './room-manager';
 
 // TODO: Replace with uuid / or something else better
 function generateConnectionId(): ConnectionId {
@@ -34,9 +34,14 @@ type WSServerConfig<
   decode?: (raw: string) => TIncoming;
 };
 
+// ----------------------------------------------------------------------------------
+// TODO: we should be able to get rid of the `any` type in `handleConnection`
+// We could make TConnectionContext part of WSServerInstance generic params
+// But there are a few places where `WSServerInstance` is used without that context
+// ----------------------------------------------------------------------------------
 // Server instance (what bootstrap uses)
-type WSServerInstance<TOutgoing> = {
-  handleConnection(ws: WebSocket, connectionContext: any): void;
+type WSServerInstance<TOutgoing, TConnectionContext> = {
+  handleConnection(ws: WebSocket, connectionContext: TConnectionContext): void;
   broadcast(message: TOutgoing, opts?: BroadcastOptions): void;
   broadcastToRoom(roomId: string, message: TOutgoing, opts?: BroadcastOptions): void;
   sendToUser(userKey: string, message: TOutgoing): void;
@@ -50,7 +55,7 @@ function createWSServer<
   TConnectionContext,
 >(
   config: WSServerConfig<TIncoming, TOutgoing, TContext, TConnectionContext>,
-): WSServerInstance<TOutgoing> {
+): WSServerInstance<TOutgoing, TConnectionContext> {
   const { handlers, createContext, getUserKey, onDisconnect, encode, decode } = config;
 
   const clients = new Map<ConnectionId, WsClient>();

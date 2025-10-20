@@ -2,7 +2,7 @@ import { UserId } from '@kernel/domains/user';
 import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
 import type { MatchmakingClientMessage } from '@protocol/domains/matchmaking/client-messages';
 
-import type { AppHandlerContext } from '@/ws-handler-context';
+import type { AppHandlerContext } from '@/ws/app-handler-context';
 import { matchmakingActions } from '@/domains/matchmaking/actions';
 
 const matchmakingHandlers = {

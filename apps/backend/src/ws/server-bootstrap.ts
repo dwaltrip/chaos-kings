@@ -1,9 +1,12 @@
 import type { User } from '@common/types/user';
 
-import { createWSServer, wsBridge } from '@/ws-lib';
-import type { ClientMessage, ServerMessage, HandlerMapWithCtx } from '@/ws-lib/types';
+import { createWSServer } from '@/ws-lib';
+import type { HandlerMapWithCtx } from '@/ws-lib/types';
 
+import type { ClientMessage, ServerMessage } from '@/ws/message-types';
 import type { AppHandlerContext } from '@/ws/app-handler-context';
+import { wsBridge } from '@/ws/server-bridge-bootstrap';
+
 import { chatHandlers } from '@/domains/chat/handlers';
 import { matchmakingHandlers } from '@/domains/matchmaking/handlers';
 import { gameplayHandlers } from '@/domains/gameplay/handlers';

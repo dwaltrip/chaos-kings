@@ -1,11 +1,10 @@
-import type { ServerMessage } from './types';
 import type { WsBridge, BroadcastOptions, ConnectionId } from './types';
 import type { WSServerInstance } from './server';
 
-class ServerBridge implements WsBridge {
-  private transport: WSServerInstance<ServerMessage> | null = null;
+class ServerBridge<TMessage, TConnectionContext> implements WsBridge<TMessage> {
+  private transport: WSServerInstance<TMessage, TConnectionContext> | null = null;
 
-  init(transport: WSServerInstance<ServerMessage>) {
+  init(transport: WSServerInstance<TMessage, TConnectionContext>) {
     if (this.transport) {
       throw new Error('ServerBridge already initialized');
     }
@@ -19,15 +18,15 @@ class ServerBridge implements WsBridge {
     return this.transport;
   }
 
-  broadcast(message: ServerMessage, opts?: BroadcastOptions): void {
+  broadcast(message: TMessage, opts?: BroadcastOptions): void {
     this.getTransport().broadcast(message, opts);
   }
 
-  broadcastToRoom(roomId: string, message: ServerMessage, opts?: BroadcastOptions): void {
+  broadcastToRoom(roomId: string, message: TMessage, opts?: BroadcastOptions): void {
     this.getTransport().broadcastToRoom(roomId, message, opts);
   }
 
-  sendToUser(userKey: string, message: ServerMessage): void {
+  sendToUser(userKey: string, message: TMessage): void {
     this.getTransport().sendToUser(userKey, message);
   }
 
@@ -46,7 +45,4 @@ class ServerBridge implements WsBridge {
   }
 }
 
-// Export singleton instance
-const wsBridge = new ServerBridge();
-
-export { wsBridge };
+export { ServerBridge };

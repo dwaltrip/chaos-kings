@@ -5,7 +5,7 @@ import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
 import type { GameplayClientMessage } from '@protocol/domains/gameplay/client-messages';
 import { parseGameRoomId } from '@platform/domains/gameplay/helpers';
 
-import type { AppHandlerContext } from '@/ws-handler-context';
+import type { AppHandlerContext } from '@/ws/app-handler-context';
 import { gameplayActions } from '@/domains/gameplay/actions';
 
 const gameplayHandlers = {

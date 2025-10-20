@@ -1,10 +1,8 @@
 export { createWSServer } from './server';
 export { RoomManager } from './room-manager';
-export { wsBridge } from './server-bridge';
+export { ServerBridge } from './server-bridge';
 
 export type {
-  ClientMessage,
-  ServerMessage,
   ConnectionId,
   HandlerMapWithCtx,
   DomainHandler,

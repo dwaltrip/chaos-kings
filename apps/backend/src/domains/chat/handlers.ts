@@ -4,7 +4,7 @@ import { RoomId } from '@kernel/domains/system';
 import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
 import type { ChatClientMessage } from '@protocol/domains/chat/client-messages';
 
-import type { AppHandlerContext } from '@/ws-handler-context';
+import type { AppHandlerContext } from '@/ws/app-handler-context';
 import { broadcastChatMessage } from '@/domains/chat/actions';
 
 const chatHandlers = {
