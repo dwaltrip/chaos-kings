@@ -328,8 +328,9 @@ After review and analysis, these decisions have been made for the v2 WS infrastr
 
 **Implementation:**
 - Fastify adapter extracts `req.currentUser` on connection
-- Passes to `roomManager.addClient(socket, user, log)`
-- Handler context receives `userId` extracted from user
+- `createContext` builds `{ userId, connectionId }` for handlers
+- `getUserKey` derives a stable identifier (e.g., `user.id`) for transport-level lookups
+- Handler context receives only the distilled data; transport stores just the user key
 
 ---
 
@@ -371,10 +372,10 @@ After review and analysis, these decisions have been made for the v2 WS infrastr
 
 **[TENTATIVE-PLAN]** This design needs validation during implementation.
 
-**Recommended Decision:** Keep HandlerContext simple - data only, no operations.
+**Recommended Decision:** Keep the handler context simple—`{ userId, connectionId }`—and define it outside the shared `ws/` module.
 
 ```ts
-type HandlerContext = {
+type AppHandlerContext = {
   userId: UserId;
   connectionId: ConnectionId;
 };
@@ -386,6 +387,7 @@ type HandlerContext = {
 - Operations stay in ws-effects: `wsBridge.rooms.join(roomId, connectionId)`
 - Consistent with architecture: handlers → actions → ws-effects → bridge
 - Simpler context creation (no closure binding required)
+- Infrastructure package (`apps/backend/src/ws/`) remains framework-agnostic; app code owns `AppHandlerContext`
 
 **Usage pattern:**
 ```ts
@@ -413,7 +415,7 @@ wsEffects.joinGameRoom(roomId, connectionId) {
 
 **Alternative considered (operations in context):**
 ```ts
-type HandlerContext = {
+type AppHandlerContext = {
   userId: UserId;
   connection: {
     id: ConnectionId;
@@ -465,11 +467,12 @@ High-level goals for WS infrastructure implementation. See implementation docs f
 ```
 apps/backend/src/
 ├── ws/
-│   ├── types.ts              # HandlerContext, DomainHandler, etc.
+│   ├── types.ts              # ConnectionId, DomainHandler, etc.
 │   ├── server.ts             # createWSServer (generic)
 │   ├── room-manager.ts       # Room membership tracking
 │   ├── server-bridge.ts      # wsBridge singleton
 │   └── index.ts              # Public exports
+├── ws-handler-context.ts     # AppHandlerContext definition (app-specific)
 ├── ws-server-bootstrap.ts    # setupWebsocket() - wire all domains (app-specific)
 ├── domains/
 │   ├── chat/
@@ -521,7 +524,7 @@ This planning phase is complete. Proceed with implementation:
    - End-to-end smoke tests for all domains
    - Multi-client and connection resilience testing
 
-**Note:** Validate TENTATIVE decisions (especially handler context shape) during implementation
+**Note:** Validate TENTATIVE decisions (especially the app-owned handler context shape) during implementation
 
 ---
 
@@ -544,7 +547,7 @@ The `wsBridge` abstraction is brilliant:
   - `data` has entire envelope + user
   - `actions` is bag of methods (join, leave, reply, broadcast)
 
-- V2: `(payload: Payload, ctx: HandlerContext) => void`
+- V2: `(payload: Payload, ctx: AppHandlerContext) => void`
   - `payload` is just the typed payload
   - `ctx` is just context (userId)
   - Handlers call actions → actions call ws-effects → ws-effects use bridge
@@ -562,16 +565,10 @@ We should eventually extract v1's room logic into a separate class to match v2's
 V1 frontend lacks reconnection logic - this is a **big win** from v2 demo. Auto-reconnection is essential for production resilience.
 
 ### Handler Context Design (TENTATIVE)
-The proposed `HandlerContext` with connection-scoped operations (join/leave) is marked **[TENTATIVE-PLAN]** because:
-- It's a new pattern not present in either v1 or v2 demo
-- Needs validation that the closure-binding approach works cleanly
-- May discover simpler alternatives during implementation
-- Should be reviewed critically when implementing system domain handlers
-
-If this pattern proves awkward, alternatives include:
+We currently assume a data-only context (`AppHandlerContext`) and keep room join/leave operations in the ws-effects layer. If this proves limiting, we could explore richer contexts that expose connection-scoped helpers, but that would revisit the concerns about mixing behaviour into the handler context. Other fallback options include:
 - System domain message interception (before routing to handlers)
 - Pass entire WsClient to system handlers only (special case)
-- Move join/leave into ws-effects layer instead of context
+- Move join/leave into ws-effects layer instead of context (current plan)
 
 ---
 

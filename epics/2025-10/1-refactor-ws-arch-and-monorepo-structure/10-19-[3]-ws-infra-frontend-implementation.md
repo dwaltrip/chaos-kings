@@ -370,6 +370,14 @@ class ClientBridge implements WsBridge {
     this.client = client;
   }
 
+  /**
+   * Allow tests (or hot reloading) to explicitly clear the underlying client.
+   * The main app never calls this; it keeps the singleton alive for the whole session.
+   */
+  reset() {
+    this.client = null;
+  }
+
   private getClient() {
     if (!this.client) {
       throw new Error('ClientBridge not initialized. Call init() first.');
@@ -468,6 +476,13 @@ function initializeWsClient() {
 /**
  * React hook to initialize WS client.
  * Call once at app root (App.tsx).
+ *
+ * We deliberately do not tear the singleton down in this effect. React 18 runs
+ * mount effects twice in development (Strict Mode) so that developers can catch
+ * unsafe side effects. If we disconnect in the cleanup, the second mount would
+ * immediately hit the "already initialized" guard and crash the app. The socket
+ * is meant to live for the entire app session anyway, so teardown happens only
+ * in explicit test helpers.
  */
 export function useInitializeWsApp() {
   const [initialized, setInitialized] = useState(false);
@@ -476,14 +491,6 @@ export function useInitializeWsApp() {
   useEffect(() => {
     initializeWsClient();
     setInitialized(true);
-
-    // Cleanup on unmount
-    return () => {
-      if (clientInstance) {
-        clientInstance.disconnect();
-        clientInstance = null;
-      }
-    };
   }, []);
 
   return {
@@ -500,6 +507,7 @@ export function resetWsInitializationForTests() {
     clientInstance.disconnect();
     clientInstance = null;
   }
+  wsBridge.reset();
 }
 ```
 
