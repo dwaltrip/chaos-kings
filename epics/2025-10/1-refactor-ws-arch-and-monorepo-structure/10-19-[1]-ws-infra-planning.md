@@ -587,3 +587,21 @@ Phase 2 (WS Infrastructure) is complete when:
 - [ ] All domain handlers use `satisfies HandlerMap<...>` pattern
 
 **Note:** Domain actions remain stubbed. Business logic migration (Phase 3+) will make domains fully functional.
+
+---
+
+## Post-Implementation Discoveries
+
+**[2025-10-20] System Domain gap**
+
+During Phase 2.1 backend implementation, we re-discovered architectural gap with system domain:
+- System domain has NO handlers file (only stubbed actions)
+- No protocol messages for system (`packages/protocol/domains/system/` doesn't exist)
+- Gameplay domain has its own join / leave message types (`gameplay:join-room`, `gameplay:leave-room`)
+- Gameplay handlers delegate to system actions (backwards ownership)
+
+**See:** `10-20-[1]-system-domain-handlers.md` for analysis and options.
+
+**Decision needed:** How and when will join-room / leave-room messages be sent? who owns this, and how exactly does it integrate with the system domain. NOTE: We may have more clarifying info about this elsewhere, but I can't remember right now...
+
+**Timing:** Not blocking Phase 2 frontend work - can be addressed later.

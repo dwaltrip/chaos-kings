@@ -28,7 +28,8 @@ Tasks we know we need to do:
 
 Not yet prioritized (may be lower priority for now) or fully scoped:
 
-- [ ] Review and redesign room membership pattern (gameplay shouldn't own join/leave messages)
+- [ ] Review and redesign room membership pattern
+      - I don't think gameplay should have its own join / leave message types
 - [ ] Migrate v1 MatchmakingService logic into v2 backend actions
 - [ ] Unstub frontend matchmaking actions (store integration, navigation)
 - [ ] Define cross-domain error handling patterns
