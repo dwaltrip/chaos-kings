@@ -14,7 +14,7 @@ This doc analyzes the existing v1 WebSocket infrastructure and the demo v2 imple
 
 **Update (post-review):** This doc has been updated with:
 - Critical gaps identified (multi-connection support, Fastify integration details)
-- Architecture decisions finalized (room manager extraction, parallel deployment, auth flow, etc.)
+- Architecture decisions finalized (room manager extraction, auth flow, message format, etc.)
 - Detailed implementation plan for room manager, Fastify integration, Zustand sync
 - Implementation checklists expanded with logging and validation tasks
 - Handler context design marked as **[TENTATIVE-PLAN]** for validation during implementation
@@ -297,7 +297,75 @@ We'll create a **hybrid** that takes the best of both:
 - `ws/server.ts` - Adapt `createWSServer` for Fastify integration
 - `ws/room-manager.ts` - Start with v1's room manager, may swap in v2's later
 - `ws/server-bridge.ts` - Create `wsBridge` matching demo interface
-- `ws/bootstrap.ts` - Server initialization, wire up domain handlers
+- `ws-server-bootstrap.ts` - Server initialization, wire up domain handlers (app-specific, outside ws/)
+
+**createWSServer Approach:**
+
+The v2 demo's `createWSServer` is a standalone WebSocket server. We need to adapt it for Fastify's plugin-based WebSocket handling.
+
+**Key insight:** `createWSServer` contains valuable logic (typed message routing, handler dispatch, error handling), but needs to work with Fastify's connection model instead of creating its own server.
+
+**Approach:**
+```ts
+// Generic server factory - framework agnostic
+export function createWSServer<
+  TIncoming,
+  TOutgoing,
+  TContext,
+  TConnectionContext  // What the framework provides (e.g., User from auth)
+>(config: {
+  handlers: HandlerMapWithCtx<TIncoming, TContext>;
+  createContext: (connectionContext: TConnectionContext, ws: WebSocket) => TContext;
+  onDisconnect?: (context: TContext) => void;
+  encode?: (msg: TOutgoing) => string;
+  decode?: (raw: string) => TIncoming;
+}) {
+  const clients = new Map<ConnectionId, WsClient>();
+  const roomManager = new RoomManager();
+
+  return {
+    // Fastify calls this on each connection
+    handleConnection(ws: WebSocket, connectionContext: TConnectionContext) {
+      const context = createContext(connectionContext, ws);
+      // ... message routing, handler dispatch, cleanup
+    },
+    broadcast,
+    broadcastToRoom,
+    sendToUser,
+    rooms,
+  };
+}
+```
+
+**Usage in Fastify:**
+```ts
+// main.ts
+const wsServer = createWSServer<
+  ClientMessage,
+  ServerMessage,
+  HandlerContext,
+  User  // Fastify provides User from req.currentUser
+>({
+  handlers: mergedHandlers,
+  createContext: (user, ws) => ({
+    userId: user.id,
+    connectionId: generateConnectionId(),
+  }),
+});
+
+// Fastify route
+fastify.get('/ws', { websocket: true }, (connection, req) => {
+  wsServer.handleConnection(connection, req.currentUser);
+});
+```
+
+**[QUESTION - Simplify Generic Parameters]:** Can we eliminate the 4th generic `TConnectionContext` and/or the `createContext` function? Possibilities:
+- App code provides context directly to `handleConnection`
+- May require simplifying HandlerContext to data-only (no operations)
+- Consider other alternatives as well
+- Evaluate during implementation to find the cleanest approach.
+
+---
 
 **Key Decisions:**
 
@@ -331,32 +399,42 @@ We'll create a **hybrid** that takes the best of both:
    - **Alternative:** System domain intercepts join/leave messages before routing (tighter coupling)
    - **Note:** User data (beyond userId) should be fetched explicitly by handlers that need it, not passed in context
    
-4. **Room Manager Extraction:**
-   
-   - **Extract v1's `ClientStore` and room logic** from `backend/src/websocket/manager.ts` into new `apps/backend/src/ws/room-manager.ts`
+4. **Room Manager Design:**
+
+   - **RoomManager is a pure data structure** - tracks room membership only, no WebSocket sending
+   - **Server owns client connections** - separates connection lifecycle from room membership
    - **Preserve multi-connection semantics:**
-     - `ClientStore` maps WebSocket → WsClient (unique client IDs)
-     - `rooms: Map<RoomId, Set<WsClient>>` - which connections in which rooms
-     - `WsClient.rooms: Set<RoomId>` - inverse tracking for cleanup
-     - `WsClient` shape: `{ id: ConnectionId, ws: WebSocket, rooms: Set<RoomId>, user: User, log: ScopedLogger }`
-   - **Interface:**
+     - Server maintains `clients: Map<ConnectionId, WsClient>`
+     - `WsClient` shape: `{ id: ConnectionId, ws: WebSocket, user: User, log: ScopedLogger }`
+     - RoomManager tracks membership by ConnectionId (not WsClient objects)
+   - **RoomManager interface:**
      ```ts
-     interface RoomManager {
-       addClient(ws: WebSocket, user: User, log: ScopedLogger): WsClient;
-       removeClient(client: WsClient): void;
-       join(client: WsClient, roomId: RoomId): void;
-       leave(client: WsClient, roomId: RoomId): void;
-       broadcastToRoom(roomId: RoomId, data: WsServerOutbound, opts?: BroadcastOptions): void;
-       serverBroadcastToRoom(roomId: RoomId, data: WsServerOutbound): void;
-       sendToUser(userId: UserId, data: WsServerOutbound): void;
+     class RoomManager {
+       // Pure membership tracking - no WebSocket knowledge
+       join(connectionId: ConnectionId, roomId: RoomId): void;
+       leave(connectionId: ConnectionId, roomId: RoomId): void;
+       getMembers(roomId: RoomId): Set<ConnectionId>;
+       getRoomsForConnection(connectionId: ConnectionId): Set<RoomId>;
+       removeAllRooms(connectionId: ConnectionId): void;  // Cleanup on disconnect
      }
      ```
+   - **Internal structure:**
+     ```ts
+     private rooms = new Map<RoomId, Set<ConnectionId>>;  // Which connections in which rooms
+     private roomsForConnection = new Map<ConnectionId, Set<RoomId>>;  // Inverse index for cleanup
+     ```
+   - **Server handles broadcasting** - gets member IDs from RoomManager, looks up WsClients, sends messages
    - **Preserve v1's scoped logging:** Each client gets unique logger with connection ID prefix
    - **Add runtime validation:** Message envelope validation (type, payload present), graceful error handling
    
 5. **Bridge Interface:**
-   
+
    ```ts
+   // Broadcast options - exclude specific connection (for multi-tab support)
+   type BroadcastOptions = {
+     excludeConnectionId?: ConnectionId;
+   };
+
    interface WsBridge {
      broadcast(message: ServerMessage, opts?: BroadcastOptions): void;
      broadcastToRoom(roomId: string, message: ServerMessage, opts?: BroadcastOptions): void;
@@ -365,25 +443,44 @@ We'll create a **hybrid** that takes the best of both:
    }
    ```
 
-6. **Fastify Integration Details:**
-   - **Shared `/ws` route:** Both v1 and v2 can coexist using env flag to choose which initializes
+   **Note on multi-tab support:** When a user sends a message (e.g., makes a move in a game), we want to:
+   - Broadcast to all OTHER connections in the room
+   - Exclude the SPECIFIC tab that sent the message (not all of the user's tabs)
+   - Example: User has 3 tabs open in same game room. Tab A sends a move. We broadcast to Tab B, Tab C, and all other players - but NOT back to Tab A.
+   - This is why we exclude by `ConnectionId` (specific tab) not `UserId` (all tabs).
+
+6. **Key Types:**
+
+   - **ConnectionId** - Unique identifier for each WebSocket connection
+     ```ts
+     // In apps/backend/src/ws/types.ts
+
+     // Connection identifier (generated by server via UUID)
+     // NOTE: Consider making this a branded type for additional type safety
+     type ConnectionId = string;
+     ```
+   - Generated by server when client connects: `client-${uuidv4()}`
+   - Not exposed to kernel/domain layer - purely WS infrastructure
+   - Used for scoped logging, room membership tracking, and multi-tab support
+   - Stored in `WsClient.id` and used throughout RoomManager
+
+7. **Fastify Integration Details:**
    - **Adapter responsibilities:**
      1. Extract `req.currentUser` from Fastify auth middleware
-     2. Create scoped logger for connection
-     3. Call `roomManager.addClient(socket, user, log)` → get WsClient
-     4. On incoming message: decode → route to typed handler → pass `{ userId, connection }` context
-     5. On close/error: call `roomManager.removeClient(client)` → auto-cleanup rooms
-   - **Env flag toggle:** `USE_WS_V2=true/false` determines which server initializes
+     2. Create WsClient: `{ id: uuidv4(), ws: socket, user, log: createScopedLogger() }`
+     3. Add to server's clients Map: `clients.set(client.id, client)`
+     4. On incoming message: decode → route to typed handler → pass `{ userId, connectionId }` context
+     5. On close/error: cleanup rooms (`roomManager.removeAllRooms(client.id)`) + remove client (`clients.delete(client.id)`)
    - **createWSServer adaptation:**
      - Not a standalone ws.WebSocketServer - adapts to Fastify's websocket plugin
      - Wraps v2 demo's typed handler patterns around Fastify's connection handling
-     - Delegates connection/room lifecycle to RoomManager
+     - Server owns clients Map, RoomManager tracks membership only
 
-7. **Migration Path:**
-   - V1 `WebSocketManager` stays in place (keep v1 code working)
-   - New v2 server in `apps/backend/src/ws/`
-   - Bootstrap can choose which to use (flag/env var?)
-   - Gradually migrate v1 domains to v2 pattern
+8. **Implementation Approach:**
+   - Implement v2 in `apps/backend/src/ws/`
+   - Update `main.ts` to use v2 WebSocket server
+   - Keep v1 code (`backend/src/websocket/`) temporarily as reference
+   - Delete v1 code once v2 is working and tested
 
 #### Step 2: Wire Backend Bridge to Domains
 
@@ -394,7 +491,7 @@ We'll create a **hybrid** that takes the best of both:
   const wsBridge: any = {};
 
   // After:
-  import { wsBridge } from '@/ws/bridge';
+  import { wsBridge } from '@/ws/server-bridge';
   ```
 
 **No other changes needed** - ws-effects interface already matches!
@@ -408,24 +505,21 @@ We'll create a **hybrid** that takes the best of both:
 #### Step 1: Create Type-Safe Client (`apps/frontend/src/ws/`)
 
 **New Files:**
-- `ws/types.ts` - App-specific message types
+- `ws/types.ts` - Generic WS types (HandlerMap, etc.)
 - `ws/client.ts` - Adapt v2 demo `WSClient` class
 - `ws/client-bridge.ts` - Frontend `wsBridge` implementation
-- `ws/bootstrap.ts` - Client initialization with all domain handlers
 - `ws/connection-store.ts` - Zustand store for connection state (adapt v1)
-
-*Questions:* can / should `ws/types.ts` and `ws/bootstrap.ts` be moved outside `ws` folder to keep `ws` more of a generic lib with no domain / app knowledge?
+- `ws-client-bootstrap.ts` - Client initialization with all domain handlers (app-specific, outside ws/)
 
 **Key Decisions:**
 
 1. **Connection State Management:**
    - Keep v1's zustand store pattern (`ws/connection-store.ts`)
-   - Sync from v2 client's internal state
+   - Sync from v2 client's internal state via lifecycle callbacks
    - **Sync mechanism:**
      - WSClient maintains internal state (connecting/open/closed)
-     - Bootstrap wires WSClient state changes → zustand store updates
-     - Approach: Add optional lifecycle callbacks to WSClient (onStateChange)
-     - Or: Poll client.readyState on interval and update store
+     - WSClient exposes optional lifecycle callbacks (onStateChange)
+     - Bootstrap wires callbacks → zustand store updates
    - **Store interface:**
      ```ts
      interface WsConnectionStore {
@@ -469,7 +563,7 @@ We'll create a **hybrid** that takes the best of both:
   const wsBridge: any = {};
 
   // After:
-  import { wsBridge } from '@/ws/bridge';
+  import { wsBridge } from '@/ws/client-bridge';
   ```
 
 ---
@@ -479,9 +573,9 @@ We'll create a **hybrid** that takes the best of both:
 **Goal:** Wire everything together end-to-end.
 
 #### Backend Integration
-1. Update `apps/backend/src/server.ts`:
+1. Update `apps/backend/src/main.ts`:
    - Import new `setupWebsocketV2()` from `ws/bootstrap.ts`
-   - Either replace v1 or run both (feature flag)
+   - Replace v1 with v2 WebSocket server
    - Wire Fastify `/ws` route to v2 server
 
 2. Test each domain's WebSocket flow:
@@ -491,8 +585,9 @@ We'll create a **hybrid** that takes the best of both:
 
 #### Frontend Integration
 1. Update `apps/frontend/src/App.tsx`:
-   - Call `useInitializeWsApp()` at root
-   - Wait for connection before rendering app?
+   - Call `useInitializeWsApp()` at root (don't block rendering)
+   - Show connection status indicator in UI
+   - Components handle disconnected state gracefully
 
 2. Test each domain's WebSocket flow:
    - Chat: send message, receive others' messages
@@ -510,37 +605,22 @@ We'll create a **hybrid** that takes the best of both:
 
 After review and analysis, these decisions have been made for the v2 WS infrastructure:
 
-### 1. Room Manager Implementation → Extract v1's Logic (Option B)
+### 1. Room Manager Implementation → Pure Data Structure
 
-**Decision:** Extract v1's `ClientStore` and room bookkeeping from `WebSocketManager` into a new `RoomManager` class.
+**Decision:** RoomManager is a pure data structure that tracks room membership only. Server owns client connections separately.
 
 **Rationale:**
-- Better separation of concerns (room management vs connection handling)
-- Preserves v1's proven multi-connection semantics (multiple tabs per user)
-- Matches v2's clean architecture pattern
-- Keeps v1's rich features (scoped logging, UUID client IDs, inverse room tracking)
+- Clean separation: connection lifecycle (server) vs room membership (RoomManager)
+- RoomManager has no WebSocket knowledge - just tracks ConnectionIds
+- Server handles broadcasting by getting member IDs from RoomManager
+- Preserves v1's multi-connection semantics (multiple tabs per user via inverse index)
+- Simpler, more testable design
 
-**Implementation:** See detailed plan in Phase 2.1, Step 4 (Room Manager Extraction)
+**Implementation:** See detailed plan in Phase 2.1, Step 4 (Room Manager Design)
 
 ---
 
-### 2. Migration Strategy → Parallel Deployment (Option A)
-
-**Decision:** Run v1 and v2 WS servers in parallel initially, controlled by env flag.
-
-**Rationale:**
-- Safe - can test v2 without breaking existing v1 functionality
-- Easy rollback if issues discovered
-- Gradual confidence building before full cutover
-
-**Implementation:**
-- Env flag: `USE_WS_V2=true/false`
-- Both servers can share `/ws` route (only one initializes based on flag)
-- Delete v1 code once v2 proven stable in production
-
----
-
-### 3. Authentication Flow → Keep Fastify Auth (Option A)
+### 2. Authentication Flow → Keep Fastify Auth
 
 **Decision:** Continue using Fastify's `req.currentUser` from auth middleware.
 
@@ -556,7 +636,7 @@ After review and analysis, these decisions have been made for the v2 WS infrastr
 
 ---
 
-### 4. Message Envelope Format → Remove Domain Field (Option B)
+### 3. Message Envelope Format → Remove Domain Field
 
 **Decision:** Use flat envelope `{ type: 'chat:send-message', payload: {...} }` - remove separate `domain` field.
 
@@ -573,7 +653,7 @@ After review and analysis, these decisions have been made for the v2 WS infrastr
 
 ---
 
-### 5. Global vs Injected Dependencies → Module Singleton (Hybrid)
+### 4. Global vs Injected Dependencies → Module Singleton (Hybrid)
 
 **Decision:** `wsBridge` is a module-level singleton with lazy initialization (like v2 demo).
 
@@ -584,38 +664,71 @@ After review and analysis, these decisions have been made for the v2 WS infrastr
 - Can refactor to DI later if testing becomes painful
 
 **Implementation:**
-- `wsBridge` defined at module level in `apps/backend/src/ws/bridge.ts`
+- `wsBridge` defined at module level in `apps/backend/src/ws/server-bridge.ts`
 - Bootstrap calls `wsBridge.init(transport)` at startup
-- Domain code imports and uses directly: `import { wsBridge } from '@/ws/bridge'`
+- Domain code imports and uses directly: `import { wsBridge } from '@/ws/server-bridge'`
 
 ---
 
-### 6. Handler Context Shape → userId + Connection Ops (TENTATIVE)
+### 5. Handler Context Shape → Data-Only (TENTATIVE)
 
 **[TENTATIVE-PLAN]** This design needs validation during implementation.
 
-**Decision:** Extend `HandlerContext` with connection-scoped operations for multi-tab support.
+**Recommended Decision:** Keep HandlerContext simple - data only, no operations.
 
 ```ts
 type HandlerContext = {
   userId: UserId;
+  connectionId: ConnectionId;
+};
+```
+
+**Rationale:**
+- Handlers need to join/leave rooms for specific connections (multi-tab support)
+- Keep context thin - just data needed by handlers
+- Operations stay in ws-effects: `wsBridge.rooms.join(roomId, connectionId)`
+- Consistent with architecture: handlers → actions → ws-effects → bridge
+- Simpler context creation (no closure binding required)
+
+**Usage pattern:**
+```ts
+// Handler receives data-only context
+handler(payload, context: { userId, connectionId }) {
+  actions.makeMove(payload.move, context);
+}
+
+// Action passes context to ws-effects
+actions.makeMove(move, context) {
+  // ... game logic
+  wsEffects.broadcastGameUpdate(update, context.connectionId);
+}
+
+// ws-effects use bridge with connectionId
+wsEffects.broadcastGameUpdate(update, excludeConnectionId) {
+  wsBridge.broadcastToRoom(roomId, message, { excludeConnectionId });
+}
+
+// For room operations
+wsEffects.joinGameRoom(roomId, connectionId) {
+  wsBridge.rooms.join(roomId, connectionId);
+}
+```
+
+**Alternative considered (operations in context):**
+```ts
+type HandlerContext = {
+  userId: UserId;
   connection: {
-    id: ConnectionId;          // stable per socket/tab
+    id: ConnectionId;
     join(roomId: RoomId): void;
     leave(roomId: RoomId): void;
   };
 };
 ```
-
-**Rationale:**
-- Handlers/actions need to join/leave rooms for specific connections (not all tabs of a user)
-- Connection-scoped join/leave closures bound to specific WsClient
-- Keeps domain code pure - they call actions, actions use `ctx.connection.join(roomId)`
-- Server-initiated broadcasts (timers, bots) use `wsBridge` directly (no context)
-
-**Alternatives considered:**
-- System domain intercepts join/leave messages (breaks domain-driven flow)
-- Special-case system domain with richer context (leaks transport concerns)
+- Slightly more convenient: `ctx.connection.join(roomId)`
+- But mixes data and behavior in context
+- Requires careful closure binding to specific WsClient
+- Less consistent with domain architecture
 
 **Note:** User data (beyond userId) should be fetched explicitly by handlers that need it, not passed in context. Keeps WS layer decoupled from User shape.
 
@@ -629,9 +742,9 @@ type HandlerContext = {
 - [ ] Add scoped logging to room manager (per-client logger with connection ID)
 - [ ] Add runtime message validation (envelope structure, type guards for critical fields)
 - [ ] Implement `apps/backend/src/ws/server.ts` with Fastify integration
-- [ ] Implement `apps/backend/src/ws/bridge.ts` matching expected interface
-- [ ] Implement `apps/backend/src/ws/bootstrap.ts` to wire all domain handlers
-- [ ] Update `apps/backend/src/server.ts` to initialize v2 WS server (env flag toggle)
+- [ ] Implement `apps/backend/src/ws/server-bridge.ts` matching expected interface
+- [ ] Implement `apps/backend/src/ws-server-bootstrap.ts` to wire all domain handlers
+- [ ] Update `apps/backend/src/main.ts` to initialize v2 WS server
 - [ ] Replace stubbed `wsBridge` in all `domains/*/ws-effects.ts`
 - [ ] Test multi-connection support (multiple tabs per user)
 - [ ] Test each domain's WebSocket flow
@@ -640,10 +753,10 @@ type HandlerContext = {
 - [ ] Create `apps/frontend/src/ws/types.ts` with app message types
 - [ ] Implement `apps/frontend/src/ws/client.ts` (adapt v2 demo)
 - [ ] Implement `apps/frontend/src/ws/connection-store.ts` (zustand)
-- [ ] Wire WSClient state changes → zustand store (lifecycle callbacks or polling)
+- [ ] Wire WSClient state changes → zustand store (lifecycle callbacks)
 - [ ] Implement `apps/frontend/src/ws/client-bridge.ts`
-- [ ] Implement `apps/frontend/src/ws/bootstrap.ts` with all domain handlers
-- [ ] Export `useInitializeWsApp()` hook from `ws/index.ts`
+- [ ] Implement `apps/frontend/src/ws-client-bootstrap.ts` with all domain handlers
+- [ ] Export `useInitializeWsApp()` hook from `ws-client-bootstrap.ts`
 - [ ] Update `apps/frontend/src/App.tsx` to initialize WS
 - [ ] Replace stubbed `wsBridge` in all `domains/*/ws-effects.ts`
 - [ ] Verify connection state exposed to React components
@@ -673,11 +786,11 @@ type HandlerContext = {
 apps/backend/src/
 ├── ws/
 │   ├── types.ts              # HandlerContext, DomainHandler, etc.
-│   ├── server.ts             # createWSServer (Fastify-adapted)
+│   ├── server.ts             # createWSServer (generic)
 │   ├── room-manager.ts       # Room membership tracking
-│   ├── bridge.ts             # wsBridge singleton
-│   ├── bootstrap.ts          # setupWebsocket() - wire all domains
+│   ├── server-bridge.ts      # wsBridge singleton
 │   └── index.ts              # Public exports
+├── ws-server-bootstrap.ts    # setupWebsocket() - wire all domains (app-specific)
 ├── domains/
 │   ├── chat/
 │   │   ├── handlers.ts       # Uses wsBridge (real)
@@ -686,19 +799,19 @@ apps/backend/src/
 │   ├── matchmaking/...
 │   ├── gameplay/...
 │   └── system/...
-└── server.ts                 # Fastify app (calls setupWebsocket)
+└── main.ts                   # Entry point (Fastify + WS initialization)
 ```
 
 ### Frontend
 ```
 apps/frontend/src/
 ├── ws/
-│   ├── types.ts              # AppIncomingMessage, AppOutgoingMessage
+│   ├── types.ts              # Generic WS types
 │   ├── client.ts             # WSClient class
 │   ├── client-bridge.ts      # wsBridge singleton
 │   ├── connection-store.ts   # Zustand store
-│   ├── bootstrap.ts          # initializeWsApp(), useInitializeWsApp()
 │   └── index.ts              # Public exports
+├── ws-client-bootstrap.ts    # initializeWsApp(), useInitializeWsApp() (app-specific)
 ├── domains/
 │   ├── chat/
 │   │   ├── handlers.ts
