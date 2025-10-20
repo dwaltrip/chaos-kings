@@ -4,8 +4,7 @@ import { GameId } from '@kernel/domains/game';
 import { MsgCreators } from '@protocol/domains/matchmaking/server-messages';
 import { MATCHMAKING_ROOM_ID } from '@platform/domains/matchmaking/constants';
 
-// import { wsBridge } from '@/ws/bridge';
-const wsBridge: any = {};
+import { wsBridge } from '@/ws-lib/server-bridge';
 
 const matchmakingWsEffects = {
   broadcastQueueStatus(queueSize: number, playersNeeded: number) {

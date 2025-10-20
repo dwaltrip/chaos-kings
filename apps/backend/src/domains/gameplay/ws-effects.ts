@@ -6,8 +6,7 @@ import type { BoardState, PlayerIndex, PlayerMapping } from '@core/types';
 import type { PlayerQueuesMap } from '@common/types/gameplay';
 import type { GameWithPlayers } from '@common/types/games';
 
-// TODO: [PHASE-2] Replace with actual wsBridge implementation
-const wsBridge: any = {};
+import { wsBridge } from '@/ws-lib/server-bridge';
 
 const gameplayWsEffects = {
   /**

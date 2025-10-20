@@ -1,9 +1,8 @@
 import { idToNumber, idToString } from '@kernel/branded-type';
 import { MsgCreators } from '@protocol/domains/chat/server-messages';
 
+import { wsBridge } from '@/ws-lib/server-bridge';
 import { ChatMessageEntity } from '@/domains/chat/types';
-// import { wsBridge } from "@/ws/bridge";
-const wsBridge: any = {};
 
 const chatWsEffects = {
   broadcastNewMessage({ roomId, content, userId, timestamp }: ChatMessageEntity) {

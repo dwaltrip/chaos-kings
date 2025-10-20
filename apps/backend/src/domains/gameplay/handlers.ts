@@ -5,7 +5,7 @@ import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
 import type { GameplayClientMessage } from '@protocol/domains/gameplay/client-messages';
 import { parseGameRoomId } from '@platform/domains/gameplay/helpers';
 
-import type { HandlerContext } from '@/ws/types';
+import type { AppHandlerContext } from '@/ws-handler-context';
 import { gameplayActions } from '@/domains/gameplay/actions';
 
 const gameplayHandlers = {
@@ -51,6 +51,6 @@ const gameplayHandlers = {
   'gameplay:undo-move': ({ gameId }, ctx) => {
     gameplayActions.undoMove(GameId(gameId), UserId(ctx.userId));
   },
-} satisfies HandlerMapWithCtx<GameplayClientMessage, HandlerContext>;
+} satisfies HandlerMapWithCtx<GameplayClientMessage, AppHandlerContext>;
 
 export { gameplayHandlers };
