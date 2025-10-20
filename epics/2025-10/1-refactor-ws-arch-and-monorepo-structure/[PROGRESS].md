@@ -7,26 +7,26 @@ This doc tracks active status and work for the epic. It's a living tracker updat
 
 ## Current Status
 
-**Current Phase:** Phase 1 Complete ✅
+**Current Phase:** Phase 2 - WS Infrastructure (Backend Complete ✅)
 
-**Last Updated:** 2025-10-18
+**Last Updated:** 2025-10-20
 
 **Just Completed:**
-- Fixed ws-effects gap in frontend domain scaffold
-- All initial domain scaffolding (handlers, ws-effects, stubbed actions)
-- Branded types implementation across all domains
-- TypeScript infrastructure setup
+- Backend WS infrastructure implementation (Phase 2.1)
+- Type-safe WS server with multi-connection support
+- Server bridge singleton wired to all backend domains (through ws-effects)
 
 **What's Next:**
-TBD - Need to plan Phase 2 (WS infrastructure):
-- ws-client, ws-server
-- ws-bridge (frontend + backend)
-- Migration strategy for v1 app logic
+Phase 2.2 - Frontend WS infrastructure:
+- WS client with auto-reconnection and message queuing
+- Connection store integration with React
+- Client bridge for frontend domains
+- Bootstrap and useInitializeWsApp() hook
 
 **Notes:**
-- Phase 1 delivered complete 3-layer architecture (handlers → actions → ws-effects)
-- Both frontend and backend now use stubbed wsBridge
-- Ready to implement real WS infrastructure in Phase 2
+- Backend infrastructure complete, TypeScript passing
+- Main.ts stub created for future v1/v2 integration
+- Frontend implementation ready to begin
 
 ---
 
@@ -66,17 +66,28 @@ TBD - Need to plan Phase 2 (WS infrastructure):
   - ChatMessageId added, conversions at all app boundaries
 - ✅ [2025-10-17] TypeScript infrastructure for v2 apps
   - package.json + typecheck scripts, all type errors resolved
+- ✅ [2025-10-20] Backend WS Infrastructure - Phase 2.1 (see: `10-19-[2]-ws-infra-backend-implementation.md`)
+  - Created type-safe WS server, designed for easy Fastify integration
+  - Implemented RoomManager with multi-connection support (multiple tabs per user)
+  - Built server bridge singleton and use in all domain ws-effects 
+  - Main.ts stub created for future v1/v2 integration
 
 ### In Progress
 - None currently
 
-### Next Steps (TBD)
-Need to carefully plan approach for WS infrastructure (ws-client, ws-server, ws-bridge for both sides) and migrating bulk of v1 app code. Will break into smaller manageable steps.
+### Next Steps
+Phase 2.2 - Frontend WS infrastructure (see: `10-19-[3]-ws-infra-frontend-implementation.md`):
+- WS client with auto-reconnection and message queuing
+- Connection store integration with React
+- Client bridge for frontend domains
+- Bootstrap and useInitializeWsApp() hook
 
 ### Upcoming
 - ⏳ System domain implementation (room membership, etc.)
-- ⏳ WS bridge implementation (backend + frontend)
-- ⏳ WS server/client implementation
+- ✅ WS bridge implementation (backend) ← DONE
+- ✅ WS server implementation (backend) ← DONE
+- ⏳ WS client implementation (frontend) ← NEXT
+- ⏳ WS bridge implementation (frontend) ← NEXT
 - ⏳ Business logic migration (unstub actions)
 - ⏳ Core and common reorganization
 - ⏳ V1 code removal
