@@ -34,6 +34,7 @@ Not yet prioritized (may be lower priority for now) or fully scoped:
 - [ ] Unstub frontend matchmaking actions (store integration, navigation)
 - [ ] Define cross-domain error handling patterns
 - [ ] Decide on long-term room naming strategy
+- [ ] Implement system heartbeat & lifecycle handling (deferred until WS infra stabilizes)
 
 ---
 
