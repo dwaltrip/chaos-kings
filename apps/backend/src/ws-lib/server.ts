@@ -34,11 +34,6 @@ type WSServerConfig<
   decode?: (raw: string) => TIncoming;
 };
 
-// ----------------------------------------------------------------------------------
-// TODO: we should be able to get rid of the `any` type in `handleConnection`
-// We could make TConnectionContext part of WSServerInstance generic params
-// But there are a few places where `WSServerInstance` is used without that context
-// ----------------------------------------------------------------------------------
 // Server instance (what bootstrap uses)
 type WSServerInstance<TOutgoing, TConnectionContext> = {
   handleConnection(ws: WebSocket, connectionContext: TConnectionContext): void;
