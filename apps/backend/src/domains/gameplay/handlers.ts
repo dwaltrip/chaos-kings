@@ -1,6 +1,4 @@
-import { UserId } from '@kernel/domains/user';
-import { GameId } from '@kernel/domains/game';
-import { RoomId } from '@kernel/domains/system';
+import { GameId, RoomId, UserId } from '@kernel/ids';
 import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
 import type { GameplayClientMessage } from '@protocol/domains/gameplay/client-messages';
 import { parseGameRoomId } from '@platform/domains/gameplay/helpers';
@@ -17,7 +15,12 @@ const gameplayHandlers = {
       console.error(`Invalid game room ID: ${room}`);
       return;
     }
-    gameplayActions.joinRoom(RoomId(room), GameId(gameIdNumber), UserId(ctx.userId));
+    gameplayActions.joinRoom(
+      RoomId(room),
+      GameId(gameIdNumber),
+      UserId(ctx.userId),
+      ctx.connectionId,
+    );
   },
 
   // TODO: shouldn't have gameplay messages dedicated to room management, I think?
@@ -28,7 +31,12 @@ const gameplayHandlers = {
       console.error(`Invalid game room ID: ${room}`);
       return;
     }
-    gameplayActions.leaveRoom(RoomId(room), GameId(gameIdNumber), UserId(ctx.userId));
+    gameplayActions.leaveRoom(
+      RoomId(room),
+      GameId(gameIdNumber),
+      UserId(ctx.userId),
+      ctx.connectionId,
+    );
   },
 
   'gameplay:move-request': ({ sourceCoord, direction }, ctx) => {

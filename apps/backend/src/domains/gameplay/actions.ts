@@ -1,19 +1,18 @@
-import { RoomId } from '@kernel/domains/system';
-import { UserId } from '@kernel/domains/user';
-import { GameId } from '@kernel/domains/game';
+import { GameId, RoomId, UserId } from '@kernel/ids';
 import type { Coord, Direction } from '@core/types';
 
+import type { ConnectionId } from '@/ws-lib/types';
 import { gameplayWsEffects } from '@/domains/gameplay/ws-effects';
 import { systemActions } from '@/domains/system/actions';
 
 const gameplayActions = {
-  joinRoom(roomId: RoomId, gameId: GameId, userId: UserId) {
+  joinRoom(roomId: RoomId, gameId: GameId, userId: UserId, connectionId: ConnectionId) {
     // TODO: [SYSTEM-DOMAIN] gameplay shouldn't own join-room/leave-room messages
     // System domain should handle room membership more generically
     // Consider removing gameplay:join-room/leave-room in favor of system:join-room
 
     // Join game room for broadcasts
-    systemActions.joinRoom(roomId, userId);
+    systemActions.joinRoom({ roomId, userId, connectionId });
 
     // TODO: [GAMEPLAY] Implement join room logic
     // - V1: GameServer.onPlayerJoinedRoom(userId)
@@ -25,7 +24,7 @@ const gameplayActions = {
     // - Handle reconnection case (player was in game before)
   },
 
-  leaveRoom(roomId: RoomId, gameId: GameId, userId: UserId) {
+  leaveRoom(roomId: RoomId, gameId: GameId, userId: UserId, connectionId: ConnectionId) {
     // TODO: [GAMEPLAY] Implement leave room logic
     // - V1: GameServer.onPlayerLeftRoom(userId)
     // - V1 file: /backend/src/gameplay/game-server.ts
@@ -35,7 +34,7 @@ const gameplayActions = {
     // - Don't end game yet - wait for timeout or defeat
 
     // Leave game room
-    systemActions.leaveRoom(roomId, userId);
+    systemActions.leaveRoom({ roomId, userId, connectionId });
   },
 
   queueMove(sourceCoord: Coord, direction: Direction, gameId: GameId, userId: UserId) {

@@ -1,23 +1,21 @@
-import { idToString } from '@kernel/branded-type';
-import { RoomId } from '@kernel/domains/system';
+import { RoomId } from '@kernel/ids';
+import { makeRoomId, SystemClientMsgCreators } from '@protocol/domains/system';
 
 // TODO: [PHASE-2] Import wsBridge when available
 // import { wsBridge } from '@/ws/bridge';
 const wsBridge: any = {};
 
-// TODO: [SYSTEM_DOMAIN] Define system protocol messages
-// import { MsgCreators } from '@protocol/domains/system/client-messages';
-const MsgCreators: any = {};
-
 const systemWsEffects = {
   joinRoom(roomId: RoomId) {
-    // TODO: [SYSTEM_DOMAIN] Implement when protocol is defined
-    // wsBridge.send(MsgCreators.createJoinRoomMessage(idToString(roomId)));
+    wsBridge.send?.(SystemClientMsgCreators.createJoinRoomMessage(roomId));
   },
 
   leaveRoom(roomId: RoomId) {
-    // TODO: [SYSTEM_DOMAIN] Implement when protocol is defined
-    // wsBridge.send(MsgCreators.createLeaveRoomMessage(idToString(roomId)));
+    wsBridge.send?.(SystemClientMsgCreators.createLeaveRoomMessage(roomId));
+  },
+
+  makeRoomId(domain: string, slug: string) {
+    return makeRoomId(domain, slug);
   },
 };
 

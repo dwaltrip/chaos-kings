@@ -1,17 +1,50 @@
-import { RoomId } from '@kernel/domains/system';
-import { UserId } from '@kernel/domains/user';
+import { idToString } from '@kernel/branded-type';
+import { RoomId, UserId } from '@kernel/ids';
+import { makeRoomId } from '@protocol/domains/system';
+
+import type { AppHandlerContext } from '@/ws/app-handler-context';
+import type { ConnectionId } from '@/ws-lib/types';
+import { wsBridge } from '@/ws/server-bridge-bootstrap';
+import { roomMembershipTracker } from '@/domains/system/membership-tracker';
+import { systemWsEffects } from '@/domains/system/ws-effects';
+
+type JoinRoomParams = {
+  roomId: RoomId;
+  userId: UserId;
+  connectionId: ConnectionId;
+};
+
+type LeaveRoomParams = JoinRoomParams;
 
 const systemActions = {
-  joinRoom(roomId: RoomId, userId: UserId) {
-    // TODO: [SYSTEM_DOMAIN] Implement room membership management
-    // - Add userId to room in wsBridge
-    // - Track room membership in Redis/state
+  joinRoom({ roomId, userId, connectionId }: JoinRoomParams) {
+    if (!roomMembershipTracker.has(roomId, connectionId)) {
+      wsBridge.rooms.join(idToString(roomId), connectionId);
+      roomMembershipTracker.add(roomId, { userId, connectionId });
+    }
+
+    const memberIds = roomMembershipTracker.getUserIds(roomId);
+    systemWsEffects.broadcastRoomStatus({ roomId, memberIds });
   },
 
-  leaveRoom(roomId: RoomId, userId: UserId) {
-    // TODO: [SYSTEM_DOMAIN] Implement room membership management
-    // - Remove userId from room in wsBridge
-    // - Clean up room membership in Redis/state
+  leaveRoom({ roomId, userId: _userId, connectionId }: LeaveRoomParams) {
+    wsBridge.rooms.leave(idToString(roomId), connectionId);
+    roomMembershipTracker.remove(roomId, connectionId);
+
+    const memberIds = roomMembershipTracker.getUserIds(roomId);
+    systemWsEffects.broadcastRoomStatus({ roomId, memberIds });
+  },
+
+  ensureJoined(domain: string, slug: string, ctx: AppHandlerContext) {
+    const roomId = makeRoomId(domain, slug);
+
+    systemActions.joinRoom({
+      roomId,
+      userId: UserId(ctx.userId),
+      connectionId: ctx.connectionId,
+    });
+
+    return roomId;
   },
 };
 

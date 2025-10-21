@@ -10,11 +10,15 @@ import { wsBridge } from '@/ws/server-bridge-bootstrap';
 import { chatHandlers } from '@/domains/chat/handlers';
 import { matchmakingHandlers } from '@/domains/matchmaking/handlers';
 import { gameplayHandlers } from '@/domains/gameplay/handlers';
+import { systemHandlers } from '@/domains/system/handlers';
+import { roomMembershipTracker } from '@/domains/system/membership-tracker';
+import { systemWsEffects } from '@/domains/system/ws-effects';
 
 // Merge all domain handlers into single map
 const mergedHandlers: HandlerMapWithCtx<ClientMessage, AppHandlerContext> = {
   ...chatHandlers,
   ...matchmakingHandlers,
+  ...systemHandlers,
   ...gameplayHandlers,
 } satisfies HandlerMapWithCtx<ClientMessage, AppHandlerContext>;
 
@@ -29,6 +33,13 @@ function setupWebSocketV2() {
     getUserKey: (user) => String(user.id), // stable identifier used by sendToUser()
     onDisconnect: (context) => {
       console.log(`[WS] Client disconnected: ${context.connectionId}`);
+      const affectedRooms = roomMembershipTracker.removeConnectionFromAll(
+        context.connectionId,
+      );
+      affectedRooms.forEach((roomId) => {
+        const memberIds = roomMembershipTracker.getUserIds(roomId);
+        systemWsEffects.broadcastRoomStatus({ roomId, memberIds });
+      });
     },
   });
 

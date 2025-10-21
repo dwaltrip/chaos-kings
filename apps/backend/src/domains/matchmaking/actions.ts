@@ -1,13 +1,14 @@
-import { UserId } from '@kernel/domains/user';
+import { UserId } from '@kernel/ids';
 import { MATCHMAKING_ROOM_ID } from '@platform/domains/matchmaking/constants';
 
+import type { ConnectionId } from '@/ws-lib/types';
 import { matchmakingWsEffects } from '@/domains/matchmaking/ws-effects';
 import { systemActions } from '@/domains/system/actions';
 
 const matchmakingActions = {
-  joinQueue(userId: UserId) {
+  joinQueue(userId: UserId, connectionId: ConnectionId) {
     // Join matchmaking room
-    systemActions.joinRoom(MATCHMAKING_ROOM_ID, userId);
+    systemActions.joinRoom({ roomId: MATCHMAKING_ROOM_ID, userId, connectionId });
 
     // TODO: [MATCHMAKING] Implement join queue logic
     // - Add userId to queue in Redis (FIFO sorted set)
@@ -20,7 +21,7 @@ const matchmakingActions = {
     matchmakingWsEffects.broadcastQueueStatus(0, 8);
   },
 
-  leaveQueue(userId: UserId) {
+  leaveQueue(userId: UserId, connectionId: ConnectionId) {
     // TODO: [MATCHMAKING] Implement leave queue logic
     // - Remove userId from queue in Redis
     // - Reset early start votes (clear this user's vote)
@@ -29,7 +30,7 @@ const matchmakingActions = {
     // - If votes exist, recalculate and broadcast vote status
 
     // Leave matchmaking room
-    systemActions.leaveRoom(MATCHMAKING_ROOM_ID, userId);
+    systemActions.leaveRoom({ roomId: MATCHMAKING_ROOM_ID, userId, connectionId });
 
     // Stub: broadcast fake queue status
     matchmakingWsEffects.broadcastQueueStatus(0, 8);

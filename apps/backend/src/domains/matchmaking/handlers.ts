@@ -1,4 +1,4 @@
-import { UserId } from '@kernel/domains/user';
+import { UserId } from '@kernel/ids';
 import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
 import type { MatchmakingClientMessage } from '@protocol/domains/matchmaking/client-messages';
 
@@ -7,11 +7,11 @@ import { matchmakingActions } from '@/domains/matchmaking/actions';
 
 const matchmakingHandlers = {
   'matchmaking:join-queue': (payload, ctx) => {
-    matchmakingActions.joinQueue(UserId(ctx.userId));
+    matchmakingActions.joinQueue(UserId(ctx.userId), ctx.connectionId);
   },
 
   'matchmaking:leave-queue': (payload, ctx) => {
-    matchmakingActions.leaveQueue(UserId(ctx.userId));
+    matchmakingActions.leaveQueue(UserId(ctx.userId), ctx.connectionId);
   },
 
   'matchmaking:early-start-vote': ({ vote }, ctx) => {
