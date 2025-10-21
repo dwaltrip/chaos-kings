@@ -1,44 +1,10 @@
-import { GameId, RoomId, UserId } from '@kernel/ids';
+import { GameId, UserId } from '@kernel/ids';
 import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
 import type { GameplayClientMessage } from '@protocol/domains/gameplay/client-messages';
-import { parseGameRoomId } from '@platform/domains/gameplay/helpers';
-
 import type { AppHandlerContext } from '@/ws/app-handler-context';
 import { gameplayActions } from '@/domains/gameplay/actions';
 
 const gameplayHandlers = {
-  // TODO: shouldn't have gameplay messages dedicated to room management, I think?
-  'gameplay:join-room': ({ room }, ctx) => {
-    const gameIdNumber = parseGameRoomId(room);
-    if (!gameIdNumber) {
-      // TODO: [ERROR-HANDLING] Proper error handling for invalid room ID
-      console.error(`Invalid game room ID: ${room}`);
-      return;
-    }
-    gameplayActions.joinRoom(
-      RoomId(room),
-      GameId(gameIdNumber),
-      UserId(ctx.userId),
-      ctx.connectionId,
-    );
-  },
-
-  // TODO: shouldn't have gameplay messages dedicated to room management, I think?
-  'gameplay:leave-room': ({ room }, ctx) => {
-    const gameIdNumber = parseGameRoomId(room);
-    if (!gameIdNumber) {
-      // TODO: [ERROR-HANDLING] Proper error handling for invalid room ID
-      console.error(`Invalid game room ID: ${room}`);
-      return;
-    }
-    gameplayActions.leaveRoom(
-      RoomId(room),
-      GameId(gameIdNumber),
-      UserId(ctx.userId),
-      ctx.connectionId,
-    );
-  },
-
   'gameplay:move-request': ({ sourceCoord, direction }, ctx) => {
     // TODO: [GAMEPLAY] Extract gameId from context (need user-to-game mapping)
     const gameIdNumber = -1;

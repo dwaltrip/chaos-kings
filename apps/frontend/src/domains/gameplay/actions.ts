@@ -1,11 +1,12 @@
-import { idToString, idToNumber } from '@kernel/branded-type';
+import { idToNumber } from '@kernel/branded-type';
 import { GameId } from '@kernel/domains/game';
-import { RoomId } from '@kernel/domains/system';
+import { RoomId } from '@kernel/ids';
 import type { Coord, Direction } from '@core/types';
 import type { BoardState, PlayerIndex, PlayerMapping } from '@core/types';
 import type { PlayerQueuesMap } from '@common/types/gameplay';
 import type { GameWithPlayers } from '@common/types/games';
 
+import { systemWsEffects } from '@/domains/system/actions';
 import { gameplayWsEffects } from './ws-effects';
 
 const gameplayActions = {
@@ -15,11 +16,11 @@ const gameplayActions = {
 
   sendJoinRoom(roomId: RoomId) {
     // Note: Room ID typically built from gameId using buildGameRoomId() helper
-    gameplayWsEffects.sendJoinRoom(roomId);
+    systemWsEffects.joinRoom(roomId);
   },
 
   sendLeaveRoom(roomId: RoomId) {
-    gameplayWsEffects.sendLeaveRoom(roomId);
+    systemWsEffects.leaveRoom(roomId);
   },
 
   sendMoveRequest(sourceCoord: Coord, direction: Direction) {
