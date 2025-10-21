@@ -2,7 +2,16 @@
 
 **Date:** 2025-10-19
 **Phase:** Phase 2.1 - Backend WS Infrastructure
-**Status:** Ready for Implementation
+**Status:** ✅ Complete (Historical)
+
+**Post-Implementation Note (2025-10-20):**
+After completing this phase, the architecture was refactored to better decouple generic infrastructure from app-specific code:
+- Generic WS infrastructure moved to `ws-lib/` (fully reusable)
+- App-specific bootstrapping and types moved to `ws/` (imports from `ws-lib/`)
+- `ServerBridge` made generic over `<TMessage, TConnectionContext>`
+- Domain code imports from `/ws`, not `/ws-lib`
+
+See commit: "Fully decouple backend WS infra from app / domain logic" for details.
 
 ---
 

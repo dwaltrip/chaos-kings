@@ -4,6 +4,15 @@
 **Phase:** Phase 2 - WS Infrastructure
 **Status:** Planning Complete - See Implementation Docs
 
+**Post-Implementation Note (2025-10-20):**
+Backend implementation was refactored after initial completion to better separate concerns:
+- Generic WS infrastructure → `ws-lib/` (fully reusable, no app dependencies)
+- App-specific bootstrap/glue → `ws/` (imports from `ws-lib/`)
+- `ServerBridge` made generic over `<TMessage, TConnectionContext>`
+- Frontend should mirror this pattern when implemented
+
+See commit: "Fully decouple backend WS infra from app / domain logic" for details.
+
 ---
 
 ## Doc Purpose

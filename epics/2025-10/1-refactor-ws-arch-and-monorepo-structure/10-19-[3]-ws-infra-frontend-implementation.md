@@ -1,8 +1,17 @@
 # Frontend WS Infrastructure Implementation
 
-**Date:** 2025-10-19
+**Date:** 2025-10-19 (Updated: 2025-10-20)
 **Phase:** Phase 2.2 - Frontend WS Client
 **Status:** Ready for Implementation
+
+**Architecture Note:**
+This doc has been updated to reflect the `ws-lib/` vs `ws/` split pattern (mirroring the backend refactor):
+- Generic WS infrastructure → `ws-lib/` (fully reusable, no app dependencies)
+- App-specific bootstrap/glue → `ws/` (imports from `ws-lib/`)
+- `ClientBridge` made generic over `<TMessage>`
+- Domain code imports from `/ws`, not `/ws-lib`
+
+This separation ensures the infrastructure is reusable and properly decoupled from app-specific concerns.
 
 ---
 
@@ -30,13 +39,22 @@
 ## Scope
 
 ### What We're Building
-- `apps/frontend/src/ws/types.ts` - Generic WS types
-- `apps/frontend/src/ws/client.ts` - WSClient class with reconnection/queuing
-- `apps/frontend/src/ws/connection-store.ts` - Zustand store for connection state
-- `apps/frontend/src/ws/client-bridge.ts` - wsBridge singleton
-- `apps/frontend/src/ws/index.ts` - Public exports
-- `apps/frontend/src/ws-client-bootstrap.ts` - Client initialization + React hook (app-specific)
+
+**Generic WS Infrastructure (`ws-lib/`):**
+- `apps/frontend/src/ws-lib/types.ts` - Generic WS types
+- `apps/frontend/src/ws-lib/client.ts` - WSClient class with reconnection/queuing
+- `apps/frontend/src/ws-lib/connection-store.ts` - Zustand store for connection state
+- `apps/frontend/src/ws-lib/client-bridge.ts` - Generic ClientBridge class
+- `apps/frontend/src/ws-lib/index.ts` - Public exports
+
+**App-Specific Bootstrap (`ws/`):**
+- `apps/frontend/src/ws/message-types.ts` - App-specific message type definitions
+- `apps/frontend/src/ws/client-bridge-bootstrap.ts` - Instantiate bridge with app types
+- `apps/frontend/src/ws/client-bootstrap.ts` - Client initialization + React hook
+- `apps/frontend/src/ws/index.ts` - App-specific exports
 - Update `apps/frontend/src/App.tsx` - Initialize WS client
+
+**Note:** This mirrors the backend's `ws-lib/` vs `ws/` split for proper separation of concerns.
 
 ### What We're Wiring
 - Replace stubbed `wsBridge` in all frontend domain ws-effects:
@@ -84,18 +102,16 @@ These decisions from the planning doc guide this implementation:
 
 ### Step 1: Create Core Types
 
-**File:** `apps/frontend/src/ws/types.ts`
+**File:** `apps/frontend/src/ws-lib/types.ts`
 
 ```ts
-import type { ClientMessage, ServerMessage } from '@protocol/...';
-
-// Handler signature for incoming messages
-export type MessageHandler<T extends ServerMessage> = (
+// Handler signature for incoming messages (generic)
+export type MessageHandler<T extends { type: string; payload: any }> = (
   payload: T['payload']
 ) => void | Promise<void>;
 
-// Handler map (what bootstrap creates)
-export type HandlerMap<TMessage extends { type: string }> = {
+// Handler map (generic)
+export type HandlerMap<TMessage extends { type: string; payload: any }> = {
   [K in TMessage['type']]: MessageHandler<Extract<TMessage, { type: K }>>;
 };
 
@@ -116,9 +132,9 @@ export enum ConnectionState {
   CLOSED = 3,
 }
 
-// Bridge interface (what domain ws-effects use)
-export interface WsBridge {
-  send(message: ClientMessage): void;
+// Bridge interface (generic)
+export interface WsBridge<TMessage> {
+  send(message: TMessage): void;
 }
 ```
 
@@ -131,7 +147,7 @@ export interface WsBridge {
 
 ### Step 2: Implement WS Client
 
-**File:** `apps/frontend/src/ws/client.ts`
+**File:** `apps/frontend/src/ws-lib/client.ts`
 
 **Goal:** Create type-safe client with auto-reconnection and message queuing.
 
@@ -139,11 +155,10 @@ export interface WsBridge {
 
 ```ts
 import type { HandlerMap, WSClientConfig, ConnectionState } from './types';
-import type { ClientMessage, ServerMessage } from '@protocol/...';
 
 export class WSClient<
-  TIncoming extends { type: string },
-  TOutgoing extends { type: string }
+  TIncoming extends { type: string; payload: any },
+  TOutgoing extends { type: string; payload: any }
 > {
   private ws: WebSocket | null = null;
   private url: string;
@@ -285,7 +300,7 @@ export class WSClient<
 
 ### Step 3: Implement Connection Store
 
-**File:** `apps/frontend/src/ws/connection-store.ts`
+**File:** `apps/frontend/src/ws-lib/connection-store.ts`
 
 **Goal:** Zustand store that exposes connection state to React components.
 
@@ -351,19 +366,18 @@ function ConnectionIndicator() {
 
 ### Step 4: Implement Client Bridge
 
-**File:** `apps/frontend/src/ws/client-bridge.ts`
+**File:** `apps/frontend/src/ws-lib/client-bridge.ts`
 
-**Goal:** Create the wsBridge singleton that domain ws-effects will use.
+**Goal:** Create the generic ClientBridge class (not instantiated here).
 
 ```ts
-import type { ClientMessage } from '@protocol/...';
 import type { WsBridge } from './types';
 import type { WSClient } from './client';
 
-class ClientBridge implements WsBridge {
-  private client: WSClient<any, ClientMessage> | null = null;
+class ClientBridge<TMessage> implements WsBridge<TMessage> {
+  private client: WSClient<any, TMessage> | null = null;
 
-  init(client: WSClient<any, ClientMessage>) {
+  init(client: WSClient<any, TMessage>) {
     if (this.client) {
       throw new Error('ClientBridge already initialized');
     }
@@ -385,13 +399,13 @@ class ClientBridge implements WsBridge {
     return this.client;
   }
 
-  send(message: ClientMessage): void {
+  send(message: TMessage): void {
     this.getClient().send(message);
   }
 }
 
-// Export singleton instance
-export const wsBridge = new ClientBridge();
+// Export class, not instance (instantiation happens in app-specific bootstrap)
+export { ClientBridge };
 ```
 
 **Key characteristics:**
@@ -401,13 +415,13 @@ export const wsBridge = new ClientBridge();
 
 ---
 
-### Step 5: Create Public Exports
+### Step 5: Create Public Exports (ws-lib)
 
-**File:** `apps/frontend/src/ws/index.ts`
+**File:** `apps/frontend/src/ws-lib/index.ts`
 
 ```ts
 export { WSClient } from './client';
-export { wsBridge } from './client-bridge';
+export { ClientBridge } from './client-bridge';
 export { useWsConnectionStore } from './connection-store';
 export { ConnectionState } from './types';
 export type { HandlerMap, MessageHandler, WSClientConfig, WsBridge } from './types';
@@ -415,19 +429,52 @@ export type { HandlerMap, MessageHandler, WSClientConfig, WsBridge } from './typ
 
 ---
 
-### Step 6: Create Bootstrap
+### Step 6a: Create Message Types
 
-**File:** `apps/frontend/src/ws-client-bootstrap.ts`
+**File:** `apps/frontend/src/ws/message-types.ts`
+
+**Goal:** Define app-specific message types (re-export from protocol for convenience).
+
+```ts
+export type { ClientMessage } from '@protocol/client-messages';
+export type { ServerMessage } from '@protocol/server-messages';
+```
+
+---
+
+### Step 6b: Create Client Bridge Bootstrap
+
+**File:** `apps/frontend/src/ws/client-bridge-bootstrap.ts`
+
+**Goal:** Instantiate the generic ClientBridge with app-specific message types.
+
+```ts
+import { ClientBridge } from '@/ws-lib/client-bridge';
+import type { ClientMessage } from './message-types';
+
+// Export singleton instance with app types
+const wsBridge = new ClientBridge<ClientMessage>();
+
+export { wsBridge };
+```
+
+**Key:** This is where the generic infrastructure meets app-specific types.
+
+---
+
+### Step 6c: Create Client Bootstrap
+
+**File:** `apps/frontend/src/ws/client-bootstrap.ts`
 
 **Goal:** Wire all domain handlers together and provide React integration hook.
 
 ```ts
 import { useEffect, useState } from 'react';
-import { WSClient } from './ws/client';
-import { wsBridge } from './ws/client-bridge';
-import { useWsConnectionStore } from './ws/connection-store';
-import type { HandlerMap } from './ws/types';
-import type { ClientMessage, ServerMessage } from '@protocol/...';
+import { WSClient } from '@/ws-lib/client';
+import { useWsConnectionStore } from '@/ws-lib/connection-store';
+import type { HandlerMap } from '@/ws-lib/types';
+import { wsBridge } from './client-bridge-bootstrap';
+import type { ClientMessage, ServerMessage } from './message-types';
 
 // Import all domain handlers
 import { handlers as chatHandlers } from './domains/chat/handlers';
@@ -502,7 +549,7 @@ export function useInitializeWsApp() {
 /**
  * Reset for tests (if needed)
  */
-export function resetWsInitializationForTests() {
+export function resetWsClientForTests() {
   if (clientInstance) {
     clientInstance.disconnect();
     clientInstance = null;
@@ -520,6 +567,20 @@ export function resetWsInitializationForTests() {
 
 ---
 
+### Step 6d: Create App-Specific Exports
+
+**File:** `apps/frontend/src/ws/index.ts`
+
+```ts
+export { wsBridge } from './client-bridge-bootstrap';
+export { useInitializeWsApp, resetWsClientForTests } from './client-bootstrap';
+export type { ClientMessage, ServerMessage } from './message-types';
+```
+
+**Note:** Domain code imports `wsBridge` from `@/ws/client-bridge-bootstrap` (or `@/ws`), NOT from `@/ws-lib`.
+
+---
+
 ### Step 7: Update App Entry Point
 
 **File:** `apps/frontend/src/App.tsx`
@@ -527,8 +588,8 @@ export function resetWsInitializationForTests() {
 Update to initialize WS client at app root.
 
 ```tsx
-import { useInitializeWsApp } from './ws-client-bootstrap';
-import { useWsConnectionStore } from './ws/connection-store';
+import { useInitializeWsApp } from '@/ws/client-bootstrap';
+import { useWsConnectionStore } from '@/ws-lib/connection-store';
 
 function App() {
   const { initialized } = useInitializeWsApp();
@@ -589,7 +650,9 @@ Replace stubbed wsBridge in all frontend domain ws-effects.
 const wsBridge: any = {};
 
 // After:
-import { wsBridge } from '@/ws/client-bridge';
+import { wsBridge } from '@/ws/client-bridge-bootstrap';
+// or
+import { wsBridge } from '@/ws';
 ```
 
 **No other changes needed** - the ws-effects interface already matches what wsBridge provides!
@@ -658,8 +721,18 @@ import { wsBridge } from '@/ws/client-bridge';
 
 Frontend WS infrastructure is complete when:
 
-- [ ] All WS infrastructure files created (`ws/types.ts`, `ws/client.ts`, `ws/connection-store.ts`, `ws/client-bridge.ts`, `ws/index.ts`)
-- [ ] Bootstrap created (`ws-client-bootstrap.ts`)
+**Generic infrastructure (`ws-lib/`):**
+- [ ] Core types created (`ws-lib/types.ts`)
+- [ ] Client created (`ws-lib/client.ts`)
+- [ ] Connection store created (`ws-lib/connection-store.ts`)
+- [ ] Generic bridge created (`ws-lib/client-bridge.ts`)
+- [ ] Public exports (`ws-lib/index.ts`)
+
+**App-specific bootstrap (`ws/`):**
+- [ ] Message types defined (`ws/message-types.ts`)
+- [ ] Bridge instantiated (`ws/client-bridge-bootstrap.ts`)
+- [ ] Client bootstrap created (`ws/client-bootstrap.ts`)
+- [ ] App exports (`ws/index.ts`)
 - [ ] `App.tsx` updated to initialize WS client
 - [ ] All frontend domain ws-effects wired to real wsBridge
 - [ ] Client connects to backend successfully
