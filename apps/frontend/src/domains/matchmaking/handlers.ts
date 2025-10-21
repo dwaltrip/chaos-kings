@@ -1,13 +1,13 @@
 import { UserId } from '@kernel/domains/user';
 import { GameId } from '@kernel/domains/game';
-import type { HandlerMap } from '@protocol/utils/message-helpers';
 import type { MatchmakingServerMessage } from '@protocol/domains/matchmaking/server-messages';
 
+import type { HandlerMap } from '@/ws-lib';
 import { matchmakingActions } from '@/domains/matchmaking/actions';
 
 type MatchmakingHandlerMap = HandlerMap<MatchmakingServerMessage>;
 
-export const matchmakingHandlers = {
+const matchmakingHandlers = {
   'matchmaking:queue-status': (payload) => {
     matchmakingActions.handleQueueStatus(payload);
   },
@@ -24,3 +24,5 @@ export const matchmakingHandlers = {
     matchmakingActions.handleGameReady(GameId(payload.gameId));
   },
 } as const satisfies MatchmakingHandlerMap;
+
+export { matchmakingHandlers };

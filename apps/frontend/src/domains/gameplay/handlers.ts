@@ -1,7 +1,7 @@
 import { GameId } from '@kernel/domains/game';
-import type { HandlerMap } from '@protocol/utils/message-helpers';
 import type { GameplayServerMessage } from '@protocol/domains/gameplay/server-messages';
 
+import type { HandlerMap } from '@/ws-lib';
 import { gameplayActions } from '@/domains/gameplay/actions';
 
 const gameplayHandlers = {

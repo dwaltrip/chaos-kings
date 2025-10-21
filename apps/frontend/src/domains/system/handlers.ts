@@ -1,5 +1,6 @@
-import type { HandlerMap } from '@protocol/utils/message-helpers';
 import type { SystemServerMessage } from '@protocol/domains/system/server-messages';
+
+import type { HandlerMap } from '@/ws-lib';
 
 type SystemHandlerMap = HandlerMap<SystemServerMessage>;
 

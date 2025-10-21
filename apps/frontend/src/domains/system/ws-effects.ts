@@ -1,17 +1,15 @@
 import { RoomId } from '@kernel/ids';
 import { makeRoomId, SystemClientMsgCreators } from '@protocol/domains/system';
 
-// TODO: [PHASE-2] Import wsBridge when available
-// import { wsBridge } from '@/ws/bridge';
-const wsBridge: any = {};
+import { wsBridge } from '@/ws';
 
 const systemWsEffects = {
   joinRoom(roomId: RoomId) {
-    wsBridge.send?.(SystemClientMsgCreators.createJoinRoomMessage(roomId));
+    wsBridge.send(SystemClientMsgCreators.createJoinRoomMessage(roomId));
   },
 
   leaveRoom(roomId: RoomId) {
-    wsBridge.send?.(SystemClientMsgCreators.createLeaveRoomMessage(roomId));
+    wsBridge.send(SystemClientMsgCreators.createLeaveRoomMessage(roomId));
   },
 
   makeRoomId(domain: string, slug: string) {

@@ -1,8 +1,6 @@
 import { MsgCreators } from '@protocol/domains/matchmaking/client-messages';
 
-// TODO: [PHASE-2] Import wsBridge when available
-// import { wsBridge } from '@/ws/bridge';
-const wsBridge: any = {};
+import { wsBridge } from '@/ws';
 
 const matchmakingWsEffects = {
   sendJoinQueue() {

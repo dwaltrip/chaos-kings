@@ -22,6 +22,7 @@ Tasks we know we need to do:
   - Hook `system:room-status-update` into frontend state once WS client pub/sub lands
   - Decide whether to persist the membership tracker (Redis vs in-memory)
   - Define heartbeat / lifecycle flow and message surface
+- [ ] Replace frontend React/Zustand shims with real dependencies once package management is finalized
 
 ---
 

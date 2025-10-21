@@ -7,27 +7,27 @@ This doc tracks active status and work for the epic. It's a living tracker updat
 
 ## Current Status
 
-**Current Phase:** Phase 2 - WS Infrastructure (Backend Complete ✅)
+**Current Phase:** Phase 2 - WS Infrastructure (Frontend client ready for testing ✅)
 
-**Last Updated:** 2025-10-20
+**Last Updated:** 2025-10-21
 
 **Just Completed:**
 - Backend WS infrastructure implementation (Phase 2.1)
 - Type-safe WS server with multi-connection support
 - Server bridge singleton wired to all backend domains (through ws-effects)
 - System domain baseline implementation (backend + frontend scaffolding, centralized room membership)
+- Frontend WS infrastructure implementation (Phase 2.2): client, bridge, connection store, and domain wiring
 
 **What's Next:**
-Phase 2.2 - Frontend WS infrastructure:
-- WS client with auto-reconnection and message queuing
-- Connection store integration with React
-- Client bridge for frontend domains
-- Bootstrap and useInitializeWsApp() hook
+Phase 2.3 - Integration testing:
+- End-to-end message flow verification
+- Multi-client + resilience scenarios
+- Wire system room status updates into frontend state (pending from TODOs)
 
 **Notes:**
-- Backend infrastructure complete, TypeScript passing
-- Main.ts stub created for future v1/v2 integration
-- Frontend implementation ready to begin
+- Frontend client + bridge code passes `npm run typecheck`
+- Temporary shims declared for React/Zustand until real deps land
+- Integration testing plan ready in `10-19-[4]-ws-infra-integration-testing.md`
 
 ---
 
@@ -53,6 +53,14 @@ This section tracks major milestones only. See tactical docs for detailed implem
 - Backend ws-effects connected to real infrastructure
 - See tactical doc: 10-19-[2]-ws-infra-backend-implementation.md
 
+**Phase 2.2: Frontend WebSocket Infrastructure** (Oct 20-21, 2025) ✅
+- Type-safe WS client with auto-reconnection and message queuing
+- Client bridge singleton + Zustand connection store
+- Domain ws-effects wired to the real bridge (chat, matchmaking, gameplay, system)
+- React initialization hook + reset utilities for tests
+- Transitional shims for React/Zustand types added (replace with real deps later)
+- See tactical doc: 10-19-[3]-ws-infra-frontend-implementation.md
+
 ---
 
 ### Current Milestone
@@ -63,17 +71,9 @@ This section tracks major milestones only. See tactical docs for detailed implem
 
 ### Next Milestones
 
-**Phase 2.2: Frontend WebSocket Infrastructure** (Next Up)
-- WS client with auto-reconnection and message queuing
-- Zustand connection store for React integration
-- Client bridge for frontend domains
-- Bootstrap and useInitializeWsApp() hook
-- Wire frontend ws-effects to real infrastructure
-- See tactical doc: 10-19-[3]-ws-infra-frontend-implementation.md
-
 **System Domain Follow-ups** (Queued)
 - Frontend listener/state integration once WS client pub/sub lands
-- Decide on persistence strategy for membership tracker (in-memory vs Redis)
+- Decide on persistence strategy for membership tracker (Redis vs in-memory)
 - Implement heartbeat & lifecycle handling
 - See tactical doc: 10-20-[3]-system-domain-implementation-plan.md
 
