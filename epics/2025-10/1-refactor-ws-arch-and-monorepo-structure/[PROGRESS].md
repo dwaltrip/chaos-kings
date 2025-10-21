@@ -32,65 +32,64 @@ Phase 2.2 - Frontend WS infrastructure:
 
 ## Progress Tracker
 
-**⚠️ TODO: Refactor this section to be milestone-focused (not task-focused)**
-- Keep high-level completed milestones with dates
-- Keep current milestone + next 2-3 major milestones only
-- Remove granular task lists (those belong in tactical docs or [TODOS].md)
-- Tactical docs contain planned work; [TODOS].md is for discovered/unplanned items
-- This section should be strategic overview only
+This section tracks major milestones only. See tactical docs for detailed implementation plans and [TODOS].md for discovered/unplanned work.
 
 ---
 
-### Completed
+### Completed Milestones
 
-- ✅ [2025-10-13] Protocol message definitions (chat, matchmaking, gameplay) in `packages/protocol`
-  - Created initial pass of `client-messages.ts` and `server-messages.ts` for each domain
-  - Implemented discriminated union pattern with message creators
-  - Using types from `@core` and `@kernel` where appropriate
-- ✅ [2025-10-13] Chat domain v2 structure in `apps/backend` and `apps/frontend`
-  - Backend: `handlers.ts`, `actions/` (stubbed), `ws-effects.ts`, `types.ts`
-  - Frontend: `handlers.ts`, `actions.ts` (stubbed)
-  - Follows new architectural pattern
-- ✅ [2025-10-15] Matchmaking domain scaffolding (see: `10-15-[1]-matchmaking-implementation-planning.md`)
-  - Backend/frontend handlers, actions (stubbed), ws-effects
-  - System domain stubs (joinRoom/leaveRoom)
-  - `MATCHMAKING_ROOM_ID` constant in platform
-- ✅ [2025-10-15] Gameplay domain scaffolding (see: `10-15-[2]-gameplay-implementation-planning.md`)
-  - Backend/frontend handlers, actions (stubbed), ws-effects
-  - Room ID helpers in `@platform/domains/gameplay` (buildGameRoomId, parseGameRoomId)
-  - Flagged system domain integration concerns for future discussion
-- ✅ [2025-10-17] Branded types implementation (see: `10-17-[1]-branded-types-implementation.md`)
-  - Kernel: UserId, GameId, RoomId types with constructors + conversion helpers
-  - Full implementation in system and matchmaking domains (backend + frontend)
-- ✅ [2025-10-17] Branded types implementation complete - all domains (see: `10-17-[2]-branded-types-chat-gameplay.md`)
-  - ChatMessageId added, conversions at all app boundaries
-- ✅ [2025-10-17] TypeScript infrastructure for v2 apps
-  - package.json + typecheck scripts, all type errors resolved
-- ✅ [2025-10-20] Backend WS Infrastructure - Phase 2.1 (see: `10-19-[2]-ws-infra-backend-implementation.md`)
-  - Created type-safe WS server, designed for easy Fastify integration
-  - Implemented RoomManager with multi-connection support (multiple tabs per user)
-  - Built server bridge singleton and use in all domain ws-effects 
-  - Main.ts stub created for future v1/v2 integration
+**Phase 1: Domain Structure & Scaffolding** (Oct 13-17, 2025)
+- Protocol message definitions for all domains (chat, matchmaking, gameplay)
+- Backend/frontend domain scaffolding (handlers, actions, ws-effects) for all domains
+- Branded types implementation across all domains (UserId, GameId, RoomId, ChatMessageId)
+- TypeScript infrastructure and type checking setup
+- See tactical docs: 10-15-[1], 10-15-[2], 10-17-[1], 10-17-[2]
 
-### In Progress
-- None currently
+**Phase 2.1: Backend WebSocket Infrastructure** (Oct 19-20, 2025) ✅
+- Type-safe WS server with Fastify integration
+- RoomManager with multi-connection support
+- Server bridge singleton wired to all backend domains
+- Backend ws-effects connected to real infrastructure
+- See tactical doc: 10-19-[2]-ws-infra-backend-implementation.md
 
-### Next Steps
-Phase 2.2 - Frontend WS infrastructure (see: `10-19-[3]-ws-infra-frontend-implementation.md`):
+---
+
+### Current Milestone
+
+**None** - Ready to begin next phase
+
+---
+
+### Next Milestones
+
+**Phase 2.2: Frontend WebSocket Infrastructure** (Next Up)
 - WS client with auto-reconnection and message queuing
-- Connection store integration with React
+- Zustand connection store for React integration
 - Client bridge for frontend domains
 - Bootstrap and useInitializeWsApp() hook
+- Wire frontend ws-effects to real infrastructure
+- See tactical doc: 10-19-[3]-ws-infra-frontend-implementation.md
 
-### Upcoming
-- ⏳ System domain implementation (room membership, etc.)
-- ✅ WS bridge implementation (backend) ← DONE
-- ✅ WS server implementation (backend) ← DONE
-- ⏳ WS client implementation (frontend) ← NEXT
-- ⏳ WS bridge implementation (frontend) ← NEXT
-- ⏳ Business logic migration (unstub actions)
-- ⏳ Core and common reorganization
-- ⏳ V1 code removal
+**System Domain Implementation** (Queued)
+- Implement core system domain functionality (room membership, lifecycle)
+- Currently just stubbed joinRoom/leaveRoom actions
+- May be done in parallel with or after Phase 2.2
+- See tactical doc: 10-20-[1]-system-domain-missing-impl.md (WIP)
+
+**Phase 2.3: Integration Testing** (Future)
+- End-to-end WS message flows
+- Multi-client testing scenarios
+- Connection resilience verification
+- See tactical doc: 10-19-[4]-ws-infra-integration-testing.md
+
+---
+
+### Longer-Term Roadmap
+
+These are future phases, not yet scoped in detail:
+- Business logic migration (unstub all domain actions)
+- Core and common package reorganization
+- V1 code removal and cleanup
 
 ---
 

@@ -168,7 +168,7 @@ Mock `wsBridge` initially in domain code. Will pull actual implementation from d
 
 ## Phases (Highly Tentative / In Flux)
 
-*Note: Phase 1 is relatively solid. Phases 2+ are highly tentative and will evolve significantly as we learn and encounter new requirements. Consider this a rough roadmap, not a fixed plan.*
+*Note: Phase 1 and 2 are relatively solid. Phases 3+ are more tentative and will evolve significantly as we learn and encounter new requirements. Consider this a rough roadmap, not a fixed plan.*
 
 ### Phase 1: Domain Structure ✅ COMPLETE (Oct 2025)
 
@@ -335,9 +335,23 @@ Implemented branded ID types across all v2 domains (system, matchmaking, chat, a
 - [WebSocket Architecture Patterns](../../../dev-notes/2025-10/10-12-[2]-project-arch-massive-refactor.md)
 
 ### Tactical Docs
+
+**Phase 1 - Domain Structure:**
 - [2025-10-15] [Matchmaking Implementation Planning](./10-15-[1]-matchmaking-implementation-planning.md)
 - [2025-10-15] [Gameplay Implementation Planning](./10-15-[2]-gameplay-implementation-planning.md)
 - [2025-10-17] [Branded Types Implementation](./10-17-[1]-branded-types-implementation.md)
-- TBD: WS bridge implementation
+- [2025-10-17] [Branded Types - Chat & Gameplay](./10-17-[2]-branded-types-chat-gameplay.md)
+
+**Phase 2 - WS Infrastructure:**
+- [2025-10-18] [WS Infrastructure Integration Plan](./10-18-[1]-ws-infrastructure-integration-plan.md)
+- [2025-10-19] [WS Infrastructure Planning](./10-19-[1]-ws-infra-planning.md)
+- [2025-10-19] [Backend WS Infrastructure Implementation](./10-19-[2]-ws-infra-backend-implementation.md) ✅
+- [2025-10-19] [Frontend WS Infrastructure Implementation](./10-19-[3]-ws-infra-frontend-implementation.md)
+- [2025-10-19] [WS Infrastructure Integration Testing](./10-19-[4]-ws-infra-integration-testing.md)
+
+**System Domain:**
+- [2025-10-20] [System Domain Missing Implementation](./10-20-[1]-system-domain-missing-impl.md)
+
+**Future:**
 - TBD: Business logic migration
 - TBD: Many other items as we progress through phases
