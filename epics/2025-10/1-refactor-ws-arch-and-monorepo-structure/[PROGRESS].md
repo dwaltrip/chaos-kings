@@ -15,6 +15,7 @@ This doc tracks active status and work for the epic. It's a living tracker updat
 - Backend WS infrastructure implementation (Phase 2.1)
 - Type-safe WS server with multi-connection support
 - Server bridge singleton wired to all backend domains (through ws-effects)
+- System domain baseline implementation (backend + frontend scaffolding, centralized room membership)
 
 **What's Next:**
 Phase 2.2 - Frontend WS infrastructure:
@@ -70,11 +71,11 @@ This section tracks major milestones only. See tactical docs for detailed implem
 - Wire frontend ws-effects to real infrastructure
 - See tactical doc: 10-19-[3]-ws-infra-frontend-implementation.md
 
-**System Domain Implementation** (Queued)
-- Implement core system domain functionality (room membership, lifecycle)
-- Currently just stubbed joinRoom/leaveRoom actions
-- May be done in parallel with or after Phase 2.2
-- See tactical doc: 10-20-[1]-system-domain-missing-impl.md (WIP)
+**System Domain Follow-ups** (Queued)
+- Frontend listener/state integration once WS client pub/sub lands
+- Decide on persistence strategy for membership tracker (in-memory vs Redis)
+- Implement heartbeat & lifecycle handling
+- See tactical doc: 10-20-[3]-system-domain-implementation-plan.md
 
 **Phase 2.3: Integration Testing** (Future)
 - End-to-end WS message flows
@@ -106,4 +107,4 @@ Issues and concerns flagged during implementation that don't block current work 
 
 **[2025-10-15] Gameplay domain flags:**
 - **v1 get-user-mapping pattern:** Current v1 pattern for mapping userId → gameId is suboptimal. Documented in TODOs but not refactoring during Phase 1 scaffolding.
-- **Room membership message ownership:** Gameplay domain currently has dedicated message types (`gameplay:join-room`, `gameplay:leave-room`), but system domain should own room membership patterns. The backend handlers correctly call system domain actions, so the logic is in the right place, but we should clarify ownership and ideally remove these gameplay-specific message types in favor of generic system domain messages.
+- **Room membership message ownership:** ✅ Addressed. System domain now owns join/leave transport. Follow-up: ensure gameplay UI migrates to new system-domain helpers where applicable.

@@ -18,9 +18,10 @@ Inbox for discovered and unplanned work items.
 
 Tasks we know we need to do:
 
-- [ ] Implement system domain (room membership, heartbeat, connection lifecycle)
-  - Currently just stubbed joinRoom/leaveRoom actions
-  - Not blocking other work - can defer
+- [ ] System domain follow-ups
+  - Hook `system:room-status-update` into frontend state once WS client pub/sub lands
+  - Decide whether to persist the membership tracker (Redis vs in-memory)
+  - Define heartbeat / lifecycle flow and message surface
 
 ---
 
@@ -28,8 +29,6 @@ Tasks we know we need to do:
 
 Not yet prioritized (may be lower priority for now) or fully scoped:
 
-- [ ] Review and redesign room membership pattern
-      - I don't think gameplay should have its own join / leave message types
 - [ ] Migrate v1 MatchmakingService logic into v2 backend actions
 - [ ] Unstub frontend matchmaking actions (store integration, navigation)
 - [ ] Define cross-domain error handling patterns
@@ -44,6 +43,7 @@ Completed tasks (clean out periodically):
 
 ##### 2025-10 (October)
 
+- [x] Centralized room membership in system domain (join/leave transport + shared helper)
 - [x] Fixed ws-effects gap in frontend domain scaffold
 - [x] Chat domain scaffolding (handlers, actions, ws-effects, BE + FE)
 - [x] Matchmaking domain scaffolding (handlers, actions, ws-effects, BE + FE)
