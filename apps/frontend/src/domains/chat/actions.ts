@@ -7,7 +7,7 @@ import { chatWsEffects } from './ws-effects';
 //   - Import this from the v1 frontend app?
 //   - Maybe using a "@frontend-v1" alias?
 // -------------------------------------------------
-// import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
+// import { gameChatStore } from '@/pages/gameplay/game-chat/game-chat-store';
 
 // const { actions } = gameChatStore.getState();
 const chatStore: any = {};

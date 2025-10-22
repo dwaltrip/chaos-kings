@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ChatMessage } from '@/pages/game/game-chat/types';
+import type { ChatMessage } from '@/pages/gameplay/game-chat/types';
 
 interface GameChatState {
   messages: ChatMessage[];

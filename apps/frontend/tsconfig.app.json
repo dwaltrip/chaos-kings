@@ -22,8 +22,8 @@
       "@kernel/*": ["../../packages/kernel/*"],
       "@platform/*": ["../../packages/platform/*"],
       "@protocol/*": ["../../packages/protocol/*"],
-      "@core/*": ["../../core/src/*"],
-      "@common/*": ["../../common/*"]
+      "@core/*": ["../../packages/core/src/*"],
+      "@common/*": ["../../packages/common/*"]
     },
 
     /* Linting */
@@ -39,7 +39,7 @@
     "../../packages/kernel/**/*.ts",
     "../../packages/platform/**/*.ts",
     "../../packages/protocol/**/*.ts",
-    "../../core/src/**/*.ts",
-    "../../common/**/*.ts"
+    "../../packages/core/src/**/*.ts",
+    "../../packages/common/**/*.ts"
   ]
 }

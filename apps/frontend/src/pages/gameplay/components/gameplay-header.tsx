@@ -3,8 +3,8 @@ import { isEnded } from '@core/game';
 import type { PlayerIndex, PlayerMapping } from '@core/types';
 
 import type { User } from '@/services/user-service';
-import { PlayerColors } from '@/pages/game/player-colors';
-import { GameStatusInfo } from '@/pages/game/game-status-info';
+import { PlayerColors } from '@/pages/gameplay/player-colors';
+import { GameStatusInfo } from '@/pages/gameplay/game-status-info';
 
 interface GameHeaderProps {
   game: GameWithPlayers;
@@ -18,11 +18,11 @@ function GameHeader({ game, user, playerMapping, winner }: GameHeaderProps) {
   const isGameEnded = isEnded(game);
 
   if (!playerMapping) {
-    return <header className="game-header">Missing player mapping...</header>;
+    return <header className="gameplay-header">Missing player mapping...</header>;
   }
 
   return (
-    <header className="game-header">
+    <header className="gameplay-header">
       <div className="flex gap-6 text-sm items-center">
         <span className="font-bold">Game #{game.id}</span>
         <span>

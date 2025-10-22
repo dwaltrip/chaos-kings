@@ -10,7 +10,7 @@
   height: 100vh;
 }
 
-.game-header {
+.gameplay-header {
   grid-area: header;
   padding: 8px 12px;
   background: #aaa;

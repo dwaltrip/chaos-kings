@@ -9,11 +9,12 @@ import { userStore } from '@/stores/user-store';
 import { gameMetadataStore, useGameLoadingState } from '@/stores/game-metadata-store';
 import { GameplayWsHandler } from '@/game-ui/store/gameplay-ws-handler';
 
-import { GameHeader } from '@/pages/game/components/game-header';
-import { GameChat } from '@/pages/game/game-chat/game-chat';
-import { GameMainContent } from '@/pages/game/game-main-content';
+import { GameChat } from '@/pages/gameplay/game-chat/game-chat';
 
-function GamePage() {
+import { GameHeader } from '@/pages/gameplay/components/gameplay-header';
+import { GameplayMainContent } from '@/pages/gameplay/components/gameplay-main-content';
+
+function GameplayPage() {
   const { gameId } = useParams();
 
   if (!gameId) {
@@ -101,7 +102,7 @@ function GamePageContent({ gameId }: { gameId: string }) {
       </aside>
 
       <main className="game-main">
-        <GameMainContent
+        <GameplayMainContent
           gameId={game.id}
           gameStatus={game.status}
           countdownActive={countdownActive}
@@ -112,4 +113,4 @@ function GamePageContent({ gameId }: { gameId: string }) {
   );
 }
 
-export { GamePage };
+export { GameplayPage };

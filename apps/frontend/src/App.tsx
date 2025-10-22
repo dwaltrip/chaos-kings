@@ -1,7 +1,8 @@
 import { Routes, Route, NavLink, useLocation } from 'react-router';
+
 import { HomePage } from '@/pages/home/home-page';
-import { GamePage } from '@/pages/game/game-page';
-import { GameListPage } from '@/pages/games/game-list-page';
+import { GameplayPage } from '@/pages/gameplay/gameplay-page';
+import { GameListPage } from '@/pages/games-list/game-list-page';
 import { JoinGamePage } from '@/pages/join-game/join-game-page';
 import { useUserWebSocketInit } from '@/hooks/use-user-websocket-init';
 
@@ -34,7 +35,7 @@ function App() {
       <Routes>
         <Route index element={<HomePage />} />
         <Route path="games" element={<GameListPage />} />
-        <Route path="games/:gameId" element={<GamePage />} />
+        <Route path="games/:gameId" element={<GameplayPage />} />
         <Route path="join-game" element={<JoinGamePage />} />
       </Routes>
     </div>

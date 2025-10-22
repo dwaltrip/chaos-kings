@@ -1,4 +1,4 @@
-import { GameCountdown } from '@/components/game-countdown';
+import { GameCountdown } from '@/pages/gameplay/components/gameplay-countdown';
 import { GameUI } from '@/game-ui/game-ui';
 
 interface GameMainContentProps {
@@ -8,7 +8,7 @@ interface GameMainContentProps {
   countdownSeconds: number;
 }
 
-function GameMainContent({
+function GameplayMainContent({
   gameId,
   gameStatus,
   countdownActive,
@@ -37,5 +37,5 @@ function GameMainContent({
   return <GameUI gameId={gameId} />;
 }
 
-export { GameMainContent };
+export { GameplayMainContent };
 export type { GameMainContentProps };

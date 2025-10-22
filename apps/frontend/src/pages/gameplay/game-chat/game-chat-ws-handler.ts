@@ -1,7 +1,7 @@
 import type { WsServerOutbound } from '@common/types/websockets';
 import type { GameChatServerMessageType } from '@common/types/game-chat';
-import type { ChatMessage } from '@/pages/game/game-chat/types';
-import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
+import type { ChatMessage } from '@/pages/gameplay/game-chat/types';
+import { gameChatStore } from '@/pages/gameplay/game-chat/game-chat-store';
 
 const { actions } = gameChatStore.getState();
 

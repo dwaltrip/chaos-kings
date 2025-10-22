@@ -1,11 +1,14 @@
 import type { Game } from '@common/types/games';
 import { GAME_CHAT_DOMAIN } from '@common/types/game-chat';
 import { bareRoomForGameChat } from '@common/domains/game/utils';
-import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
-import { sendChatMessage, setNewMessage } from '@/pages/game/game-chat/game-chat-actions';
-import { GameChatWsHandler } from '@/pages/game/game-chat/game-chat-ws-handler';
+import { gameChatStore } from '@/pages/gameplay/game-chat/game-chat-store';
+import {
+  sendChatMessage,
+  setNewMessage,
+} from '@/pages/gameplay/game-chat/game-chat-actions';
+import { GameChatWsHandler } from '@/pages/gameplay/game-chat/game-chat-ws-handler';
 
-import '@/pages/game/game-chat/game-chat.css';
+import '@/pages/gameplay/game-chat/game-chat.css';
 import { useWebsocket } from '@/hooks/use-websocket';
 
 function GameChat({ game }: { game: Game }) {

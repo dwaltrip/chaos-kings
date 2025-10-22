@@ -4,7 +4,7 @@ import { GAME_CHAT_DOMAIN } from '@common/types/game-chat';
 import { createJoinRoomMessage } from '@common/websockets/message-types';
 
 import { getWebSocketService } from '@/services/websocket-service';
-import { gameChatStore } from '@/pages/game/game-chat/game-chat-store';
+import { gameChatStore } from '@/pages/gameplay/game-chat/game-chat-store';
 
 const { actions } = gameChatStore.getState();
 

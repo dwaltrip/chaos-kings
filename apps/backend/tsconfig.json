@@ -10,8 +10,8 @@
       "@kernel/*": ["../../packages/kernel/*"],
       "@platform/*": ["../../packages/platform/*"],
       "@protocol/*": ["../../packages/protocol/*"],
-      "@core/*": ["../../core/src/*"],
-      "@common/*": ["../../common/*"]
+      "@core/*": ["../../packages/core/src/*"],
+      "@common/*": ["../../packages/common/*"]
     },
     "typeRoots": ["./node_modules/@types", "./src/types"],
     "strict": true,
@@ -28,16 +28,8 @@
     "../../packages/kernel/**/*.ts",
     "../../packages/platform/**/*.ts",
     "../../packages/protocol/**/*.ts",
-    "../../core/src/**/*.ts",
-    "../../common/**/*.ts"
+    "../../packages/core/src/**/*.ts",
+    "../../packages/common/**/*.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "client",
-    "**/*.test.ts",
-    "**/__tests__/**",
-    "../../core/**/*.test.ts",
-    "../../core/**/__tests__/**"
-  ]
+  "exclude": ["node_modules", "dist", "client"]
 }
