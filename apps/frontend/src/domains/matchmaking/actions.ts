@@ -1,75 +1,73 @@
 import { UserId } from '@kernel/domains/user';
 import { GameId } from '@kernel/domains/game';
 import { MATCHMAKING_ROOM_ID } from '@platform/domains/matchmaking/constants';
+import { NAVIGATION_DELAY_MS } from '@core/ui-timing-config';
 
 import { systemWsEffects } from '@/domains/system/actions';
-import { matchmakingWsEffects } from './ws-effects';
-
-// ---------------------------------------------
-// Outbound Actions (Client → Server)
-// ---------------------------------------------
+import { gameMatchmakingStore } from '@/domains/matchmaking/matchmaking-store';
+import { matchmakingWsEffects } from '@/domains/matchmaking/ws-effects';
 
 function joinQueue() {
-  // Join the matchmaking room
-  systemWsEffects.joinRoom(MATCHMAKING_ROOM_ID);
-
-  // Send join-queue message
+  const { actions } = gameMatchmakingStore.getState();
   matchmakingWsEffects.sendJoinQueue();
+  actions.setIsInQueue(true);
+
+  // -------------------------------------------------------
+  // TODO: does this belong here?
+  // v1 didn't do anything with rooms here.
+  // -------------------------------------------------------
+  systemWsEffects.joinRoom(MATCHMAKING_ROOM_ID);
 }
 
 function leaveQueue() {
-  // Send leave-queue message
+  const { actions } = gameMatchmakingStore.getState();
   matchmakingWsEffects.sendLeaveQueue();
+  actions.setIsInQueue(false);
 
-  // Leave the matchmaking room
+  // -------------------------------------------------------
+  // TODO: does this belong here?
+  // v1 didn't do anything with rooms here.
+  // -------------------------------------------------------
   systemWsEffects.leaveRoom(MATCHMAKING_ROOM_ID);
 }
 
 function voteEarlyStart(vote: boolean) {
-  // Send early-start-vote message
   matchmakingWsEffects.sendEarlyStartVote(vote);
 }
 
-// ---------------------------------------------
-// Inbound Actions (Server → Client)
-// ---------------------------------------------
-
-function handleQueueStatus(payload: { queueSize: number; playersNeeded: number }) {
-  // TODO: [MATCHMAKING_FE] Update store with queue status
-  // - Decide which store to use (create new v2 store or integrate with v1?)
-  // - Update queueSize and playersNeeded
-  // - Trigger UI re-render
+function updateQueueStatus(queueSize: number, playersNeeded: number) {
+  const { actions } = gameMatchmakingStore.getState();
+  actions.setQueueSize(queueSize);
+  actions.setPlayersNeeded(playersNeeded);
 }
 
-function handleEarlyStartStatus(payload: {
-  voters: UserId[];
-  queueSize: number;
-  allVoted: boolean;
-}) {
-  // TODO: [MATCHMAKING_FE] Update store with early start vote status
-  // - Update voters list
-  // - Update allVoted flag
-  // - May need to show which players have voted in UI
+function updateEarlyStartStatus(voters: UserId[], queueSize: number, allVoted: boolean) {
+  const { actions } = gameMatchmakingStore.getState();
+  actions.setEarlyStartStatus(voters, queueSize, allVoted);
 }
 
+// TODO: clear matchmaking state??
 function handleGameReady(gameId: GameId) {
-  // TODO: [MATCHMAKING_FE] Navigate to game
-  // - Decide navigation approach: React Router navigate() vs window.location
-  // - Navigate to /game/:gameId or appropriate game route
-  // - Clear matchmaking state from store
-  // - Leave matchmaking room (may already be done by backend)
+  console.log('-- handleGameReady -- gameId:', gameId);
+  const { actions } = gameMatchmakingStore.getState();
+  actions.setGameReady(gameId);
+
+  // Navigate to game page after navigation delay
+  setTimeout(() => {
+    console.log(`Navigating to game ${gameId}...`);
+    // TODO: use React Router navigate helper
+    window.location.href = `/games/${gameId}`;
+  }, NAVIGATION_DELAY_MS);
 }
 
-const matchmakingActions = {
+export {
   // Outbound
   joinQueue,
   leaveQueue,
   voteEarlyStart,
 
   // Inbound
-  handleQueueStatus,
-  handleEarlyStartStatus,
+  updateQueueStatus,
+  updateEarlyStartStatus,
   handleGameReady,
 };
-
-export { matchmakingActions };

@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 
-import { GAME_MATCHMAKING_DOMAIN } from '@common/types/game-matchmaking';
 import { FFA_NUM_PLAYERS_MAX } from '@common/constants/matchmaking';
-import { gameMatchmakingStore } from '@/pages/join-game/join-game-store';
-import { joinQueue, leaveQueue } from '@/pages/join-game/game-matchmaking-actions';
-import { sendEarlyStartVote } from '@/pages/join-game/game-matchmaking-actions';
-import { GameMatchmakingWsHandler } from '@/pages/join-game/game-matchmaking-ws-handler';
-import { useWebsocket } from '@/hooks/use-websocket';
 import { MATCHMAKING_WAITING_TIMER_INTERVAL_MS } from '@core/ui-timing-config';
-import { userStore } from '@/stores/user-store';
+
+import { useWsConnectionStore } from '@/ws-lib';
+import { userStore } from '@/domains/users/user-store';
+import { gameMatchmakingStore } from '@/domains/matchmaking/matchmaking-store';
+import { joinQueue, leaveQueue, voteEarlyStart } from '@/domains/matchmaking/actions';
 
 function JoinGamePage() {
   const queueSize = gameMatchmakingStore((state) => state.queueSize);
@@ -19,7 +17,10 @@ function JoinGamePage() {
   const allVoted = gameMatchmakingStore((state) => state.allVoted);
   const user = userStore((state) => state.user);
   const [waitingTime, setWaitingTime] = useState(0);
-  const wsService = useWebsocket(GAME_MATCHMAKING_DOMAIN, GameMatchmakingWsHandler);
+
+  const isConnected = useWsConnectionStore((state) => state.isConnected);
+
+  // const wsService = useWebsocket(GAME_MATCHMAKING_DOMAIN, GameMatchmakingWsHandler);
 
   // TODO: move this to store. also name it better (waiting time is not a good name)
   useEffect(() => {
@@ -37,14 +38,14 @@ function JoinGamePage() {
 
   const handleJoinQueue = () => joinQueue();
   const handleCancelQueue = () => leaveQueue();
-  const hasVoted = !!(user && earlyStartVoters.includes(user.id.toString()));
-  const toggleEarlyStartVote = () => sendEarlyStartVote(!hasVoted);
+  const hasVoted = !!(user && earlyStartVoters.includes(user.id));
+  const toggleEarlyStartVote = () => voteEarlyStart(!hasVoted);
 
   return (
     <div className="p-4">
       <div className="mb-4">
         <span className="text-sm">
-          {wsService.isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+          {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
         </span>
       </div>
 
@@ -57,7 +58,7 @@ function JoinGamePage() {
       ) : !isInQueue ? (
         <button
           onClick={handleJoinQueue}
-          disabled={!wsService.isConnected}
+          disabled={!isConnected}
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           Join queue

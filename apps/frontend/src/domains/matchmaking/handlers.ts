@@ -1,27 +1,30 @@
-import { UserId } from '@kernel/domains/user';
-import { GameId } from '@kernel/domains/game';
+import { UserId, GameId } from '@kernel/ids';
 import type { MatchmakingServerMessage } from '@protocol/domains/matchmaking/server-messages';
 
 import type { HandlerMap } from '@/ws-lib';
-import { matchmakingActions } from '@/domains/matchmaking/actions';
+import {
+  updateQueueStatus,
+  updateEarlyStartStatus,
+  handleGameReady,
+} from '@/domains/matchmaking/actions';
 
 type MatchmakingHandlerMap = HandlerMap<MatchmakingServerMessage>;
 
 const matchmakingHandlers = {
   'matchmaking:queue-status': (payload) => {
-    matchmakingActions.handleQueueStatus(payload);
+    updateQueueStatus(payload.queueSize, payload.playersNeeded);
   },
 
   'matchmaking:early-start-status': (payload) => {
-    matchmakingActions.handleEarlyStartStatus({
-      voters: payload.voters.map(UserId),
-      queueSize: payload.queueSize,
-      allVoted: payload.allVoted,
-    });
+    updateEarlyStartStatus(
+      payload.voters.map(UserId),
+      payload.queueSize,
+      payload.allVoted,
+    );
   },
 
   'matchmaking:game-ready': (payload) => {
-    matchmakingActions.handleGameReady(GameId(payload.gameId));
+    handleGameReady(GameId(payload.gameId));
   },
 } as const satisfies MatchmakingHandlerMap;
 

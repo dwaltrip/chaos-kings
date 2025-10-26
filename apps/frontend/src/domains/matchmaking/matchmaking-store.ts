@@ -1,3 +1,4 @@
+import type { UserId } from '@kernel/ids';
 import { create } from 'zustand';
 
 interface GameMatchmakingState {
@@ -6,7 +7,7 @@ interface GameMatchmakingState {
   isInQueue: boolean;
   gameReady: boolean;
   gameId: number | null;
-  earlyStartVoters: string[];
+  earlyStartVoters: UserId[];
   allVoted: boolean;
 
   actions: {
@@ -15,7 +16,7 @@ interface GameMatchmakingState {
     setIsInQueue: (isInQueue: boolean) => void;
     setGameReady: (gameId: number) => void;
     resetGameState: () => void;
-    setEarlyStartStatus: (voters: string[], queueSize: number, allVoted: boolean) => void;
+    setEarlyStartStatus: (voters: UserId[], queueSize: number, allVoted: boolean) => void;
   };
 }
 

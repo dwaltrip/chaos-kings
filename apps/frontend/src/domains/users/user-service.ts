@@ -1,7 +1,9 @@
+import type { UserId } from '@kernel/ids';
+
 import { apiService } from '@/services/api-service';
 
 interface User {
-  id: number;
+  id: UserId;
   username: string;
   user_key: string;
   created_at: string;
