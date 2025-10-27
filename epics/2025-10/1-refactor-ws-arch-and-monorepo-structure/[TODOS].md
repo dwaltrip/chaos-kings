@@ -41,6 +41,7 @@ Tasks we know we need to do:
 
 Not yet prioritized (may be lower priority for now) or fully scoped:
 
+- [ ] Frontend WS init reconciliation (blocked on backend v1/v2 integration - see `10-27-[2]-frontend-ws-init-reconciliation.md`)
 - [ ] Migrate v1 MatchmakingService logic into v2 backend actions
 - [ ] Define cross-domain error handling patterns
 - [ ] Decide on long-term room naming strategy

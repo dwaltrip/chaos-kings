@@ -26,6 +26,7 @@ This doc tracks active status and work for the epic. It's a living tracker updat
 - Complete room join/leave lifecycle integration (see tactical doc `10-27-[1]`)
 - Backend chat username population
 - Additional v1 logic migration and cleanup
+- Backend v1/v2 integration (including frontend WS init reconciliation - see `10-27-[2]-frontend-ws-init-reconciliation.md`)
 
 ---
 
@@ -68,6 +69,14 @@ This section tracks major milestones only. See tactical docs for detailed implem
 ---
 
 ### Next Milestones
+
+**Backend v1/v2 Integration** (Queued)
+- Migrate majority of v1 `backend/src` code into v2 backend structure
+- Reorganize to fit v2 domain-based folder structure
+- Wire v1 logic into v2 architecture (handlers, actions, services, etc.)
+- Integrate v2 WS server into Fastify app with auth plugin
+- Clarify user identification pattern for WS connections (`req.currentUser`)
+- Complete frontend WS init reconciliation once backend pattern is clear (see `10-27-[2]-frontend-ws-init-reconciliation.md`)
 
 **System Domain Follow-ups** (Queued)
 - Frontend listener/state integration once WS client pub/sub lands
