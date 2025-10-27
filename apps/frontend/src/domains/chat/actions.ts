@@ -1,41 +1,30 @@
 import { RoomId } from '@kernel/domains/system';
 
-import { chatWsEffects } from './ws-effects';
+import { chatStore } from '@/domains/chat/chat-store';
+import { chatWsEffects } from '@/domains/chat/ws-effects';
 
-// ---------------------------------------------
-// TODO:
-//   - Import this from the v1 frontend app?
-//   - Maybe using a "@frontend-v1" alias?
-// -------------------------------------------------
-// import { gameChatStore } from '@/pages/gameplay/game-chat/game-chat-store';
+import type { ChatMessage } from './types';
 
-// const { actions } = gameChatStore.getState();
-const chatStore: any = {};
-
-// function sendChatMessage(message: string, game: Game) {
 function sendChatMessage(roomId: RoomId, message: string) {
-  // TODO: [CHAT-FE] Wire to store when available
-  // const { setNewMessage } = chatStore.getState().actions;
-  chatWsEffects.sendMessage(roomId, message);
-  // setNewMessage('');
+  const { actions } = chatStore.getState();
+  const trimmed = message.trim();
+
+  if (!trimmed) {
+    return;
+  }
+
+  chatWsEffects.sendMessage(roomId, trimmed);
+  actions.setNewMessage('');
 }
 
-function addReceivedMessage(chatMessage: any) {
-  // TODO: [CHAT-FE] Wire to store when available
-  // const { addMessage } = chatStore.getState().actions;
-  // addMessage(chatMessage);
+function addReceivedMessage(chatMessage: ChatMessage) {
+  const { actions } = chatStore.getState();
+  actions.addMessage(chatMessage);
 }
 
 function setNewMessage(message: string) {
-  // TODO: [CHAT-FE] Wire to store when available
-  // const { setNewMessage } = chatStore.getState().actions;
-  // setNewMessage(message);
+  const { actions } = chatStore.getState();
+  actions.setNewMessage(message);
 }
 
-const chatActions = {
-  sendChatMessage,
-  setNewMessage,
-  addReceivedMessage,
-};
-
-export { chatActions };
+export { sendChatMessage, addReceivedMessage, setNewMessage };

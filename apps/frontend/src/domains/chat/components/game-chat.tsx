@@ -1,26 +1,29 @@
+import { RoomId } from '@kernel/ids';
 import type { Game } from '@common/types/games';
-import { GAME_CHAT_DOMAIN } from '@common/types/game-chat';
-import { bareRoomForGameChat } from '@common/domains/game/utils';
-import { gameChatStore } from '@/pages/gameplay/game-chat/game-chat-store';
-import {
-  sendChatMessage,
-  setNewMessage,
-} from '@/pages/gameplay/game-chat/game-chat-actions';
-import { GameChatWsHandler } from '@/pages/gameplay/game-chat/game-chat-ws-handler';
+import { buildChatRoomId } from '@platform/domains/chat/helpers';
+
+import { useWsConnectionStore } from '@/ws-lib';
+import { chatStore } from '@/domains/chat/chat-store';
+import { sendChatMessage, setNewMessage } from '@/domains/chat/actions';
 
 import '@/pages/gameplay/game-chat/game-chat.css';
-import { useWebsocket } from '@/hooks/use-websocket';
+
+// TODO: Figure out where to join/leave the chat room
+// Options:
+// - Component-level useEffect
+// - Page-level initialization
+// - Action-level helper
 
 function GameChat({ game }: { game: Game }) {
-  const messages = gameChatStore((state) => state.messages);
-  const newMessage = gameChatStore((state) => state.newMessage);
-  const room = bareRoomForGameChat(game);
-  const wsService = useWebsocket(GAME_CHAT_DOMAIN, GameChatWsHandler, room);
-  const isConnected = wsService.isConnected;
+  const messages = chatStore((state) => state.messages);
+  const newMessage = chatStore((state) => state.newMessage);
+  const isConnected = useWsConnectionStore((state) => state.isConnected);
+
+  const roomId = RoomId(buildChatRoomId(game.id));
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    sendChatMessage(newMessage, game);
+    sendChatMessage(roomId, newMessage);
   };
 
   return (

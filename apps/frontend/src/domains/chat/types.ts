@@ -1,5 +1,11 @@
-import { type GameChatServer } from '@common/types/game-chat';
+import type { UserId, RoomId } from '@kernel/ids';
 
-type ChatMessage = GameChatServer.NewMessageMessage['payload'];
+interface ChatMessage {
+  roomId: RoomId;
+  content: string;
+  userId: UserId;
+  username: string;
+  timestamp: number;
+}
 
-export { type ChatMessage };
+export type { ChatMessage };

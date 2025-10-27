@@ -1,9 +1,9 @@
 import { create } from 'zustand';
-import type { ChatMessage } from '@/pages/gameplay/game-chat/types';
 
-interface GameChatState {
+import type { ChatMessage } from '@/domains/chat/types';
+
+interface ChatState {
   messages: ChatMessage[];
-  username: string;
   newMessage: string;
   actions: {
     setMessages: (messages: ChatMessage[]) => void;
@@ -12,9 +12,8 @@ interface GameChatState {
   };
 }
 
-const gameChatStore = create<GameChatState>((set) => ({
+const chatStore = create<ChatState>((set) => ({
   messages: [],
-  username: '',
   newMessage: '',
   actions: {
     setMessages: (messages) => set({ messages }),
@@ -25,4 +24,4 @@ const gameChatStore = create<GameChatState>((set) => ({
   },
 }));
 
-export { gameChatStore };
+export { chatStore };

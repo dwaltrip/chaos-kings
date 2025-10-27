@@ -5,6 +5,7 @@ import { RoomId } from '@kernel/domains/system';
 interface ChatMessageEntity {
   id: ChatMessageId;
   userId: UserId;
+  username: string;
   roomId: RoomId;
   content: string;
   timestamp: number; // TODO: figure out how timestamps will work...
