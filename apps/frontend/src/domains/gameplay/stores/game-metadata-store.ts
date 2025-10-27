@@ -6,7 +6,7 @@ import type { GameWithPlayers } from '@common/types/games';
 import type { PlayerIndex } from '@common/types/player';
 import { PRE_GAME_COUNTDOWN_SECONDS } from '@core/ui-timing-config';
 
-import { loadGame as apiLoadGame, GameNotFoundError } from '@/pages/gameplay/games-api';
+import { loadGame as apiLoadGame, GameNotFoundError } from '@/domains/games/games-api';
 
 interface GameMetadataState {
   // Static metadata from API

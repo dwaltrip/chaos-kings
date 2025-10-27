@@ -4,24 +4,27 @@ import clsx from 'clsx';
 import type { Coord, PlayerSquare } from '@core/types';
 import { areCoordsEqual } from '@core/utils/coordinate-utils';
 
+import { useRenderCounter } from '@/lib/use-render-counter';
 import { getPlayerColor } from '@/utils/player-colors';
 import {
   useTileQueuedDirections,
   useTileSquare,
   useTileSquareTypes,
-} from '@/game-ui/hooks/use-tile-store-state';
+} from '@/domains/gameplay/hooks/use-tile-store-state';
 import {
   useGameplayStoreV2,
   useIsAdjacentToSelected,
   useIsGameEnded,
   useIsTileSelected,
-} from '@/game-ui/store/gameplay-store-v2';
-import { useIsVisible, useNeighborVisibility } from '@/game-ui/hooks/use-visibility';
+} from '@/domains/gameplay/stores/gameplay-store-v2';
+import {
+  useIsVisible,
+  useNeighborVisibility,
+} from '@/domains/gameplay/hooks/use-visibility';
 
-import { MoveArrow } from '@/game-ui/components/move-arrow';
 import mountainIcon from '@/assets/mountain.svg';
 import generalIcon from '@/assets/crown.png';
-import { useRenderCounter } from '@/lib/use-render-counter';
+import { MoveArrow } from '@/domains/gameplay/ui/move-arrow';
 
 function TileOverlay({ className, zIndex }: { className?: string; zIndex?: number }) {
   return <div className={clsx('tile-overlay', className)} style={{ zIndex }} />;

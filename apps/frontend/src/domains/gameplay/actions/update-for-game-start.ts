@@ -2,11 +2,8 @@ import type { GameWithPlayers } from '@common/types/games';
 import type { BoardState } from '@core/types';
 import type { PlayerIndex } from '@common/types/player';
 
-import { gameMetadataStore } from '@/stores/game-metadata-store';
-import { gameplayActions } from '@/game-ui/store/gameplay-store-v2';
-
-const { setCountdownActive, setGame, setPlayerMapping } =
-  gameMetadataStore.getState().actions;
+import { gameMetadataStore } from '@/domains/gameplay/stores/game-metadata-store';
+import { gameplayActions } from '@/domains/gameplay/stores/gameplay-store-v2';
 
 type UserToPlayerMapping = {
   playerId: string; // TODO: rename to userId.
@@ -19,7 +16,10 @@ function updateForGameStart(
   boardState: BoardState,
   mapping: UserToPlayerMapping[],
 ) {
+  const { setCountdownActive, setGame, setPlayerMapping } =
+    gameMetadataStore.getState().actions;
   const { updateBoard } = gameplayActions();
+
   // Stop countdown when game actually starts
   setCountdownActive(false);
   // TODO: set game on gameplay store v2 also?

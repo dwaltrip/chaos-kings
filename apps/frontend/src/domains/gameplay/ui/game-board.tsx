@@ -1,8 +1,8 @@
 import type { BoardState } from '@core/types';
 import { serializeCoord } from '@core/utils/coordinate-utils';
 
-import { useGridLayout } from '@/game-ui/hooks/use-grid-layout';
-import { GameTile } from '@/game-ui/components/game-tile';
+import { useGridLayout } from '@/domains/gameplay/hooks/use-grid-layout';
+import { GameTile } from '@/domains/gameplay/ui/game-tile';
 
 import '@/game-ui/game-board.css';
 

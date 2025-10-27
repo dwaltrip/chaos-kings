@@ -3,16 +3,18 @@ import { create } from 'zustand';
 import type { BoardState, Coord } from '@core/types';
 import { areCoordsEqual } from '@core/utils/coordinate-utils';
 import { getCurrentPlayerIndex } from '@core/game/get-current-player-index';
+import { hasCompletedGameState, isEnded } from '@core/game';
+
+import type { PlayerIndex } from '@common/types/player';
 import type { GameWithPlayers } from '@common/types/games';
 import type { Movement } from '@common/types/gameplay';
 
-import type { User } from '@/services/user-service';
-import { isAdjacentTo } from '@/game-ui/utils/tile-utils';
-import { gameMetadataStore } from '@/stores/game-metadata-store';
-import { userStore } from '@/stores/user-store';
-import { hasCompletedGameState, isEnded } from '@core/game';
-import type { PlayerIndex } from '@common/types/player';
-import { tileOrchestrator } from './tile-orchestrator';
+import type { User } from '@/domains/users/user-service';
+import { userStore } from '@/domains/users/user-store';
+
+import { isAdjacentTo } from '@/domains/gameplay/utils/tile-utils';
+import { gameMetadataStore } from '@/domains/gameplay/stores/game-metadata-store';
+import { tileOrchestrator } from '@/domains/gameplay/stores/tile-orchestrator';
 
 interface GameplayStateV2 {
   user: User | null;

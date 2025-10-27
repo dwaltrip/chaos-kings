@@ -2,9 +2,12 @@ import type { BoardState } from '@core/types';
 import { Board } from '@core/board';
 import type { Movement, PlayerQueuesMap } from '@common/types/gameplay';
 
-import { gameplayActions, useGameplayStoreV2 } from '@/game-ui/store/gameplay-store-v2';
-import { getTileStore } from '@/game-ui/store/tile-store-registry';
-import { tileOrchestrator } from '@/game-ui/store/tile-orchestrator';
+import {
+  gameplayActions,
+  useGameplayStoreV2,
+} from '@/domains/gameplay/stores/gameplay-store-v2';
+import { getTileStore } from '@/domains/gameplay/stores/tile-store-registry';
+import { tileOrchestrator } from '@/domains/gameplay/stores/tile-orchestrator';
 
 function updateGameplayState(
   tick: number,

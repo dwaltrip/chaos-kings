@@ -1,32 +1,30 @@
-import { GameId } from '@kernel/domains/game';
+// import { GameId } from '@kernel/domains/game';
 import type { GameplayServerMessage } from '@protocol/domains/gameplay/server-messages';
 
 import type { HandlerMap } from '@/ws-lib';
-import { gameplayActions } from '@/domains/gameplay/actions';
+import {
+  updateForGameStart,
+  updateForGameStarting,
+  updateGameplayState,
+  updateForGameEnded,
+} from '@/domains/gameplay/actions';
 
 const gameplayHandlers = {
   'gameplay:state-update': (payload) => {
-    gameplayActions.handleGameState(payload);
+    updateGameplayState(payload.tick, payload.boardState, payload.playerQueues || {});
   },
 
   'gameplay:game-starting': (payload) => {
-    gameplayActions.handleGameStarting({
-      gameId: GameId(payload.gameId),
-      countdown: payload.countdown,
-    });
+    // const gameId: GameId(payload.gameId);
+    updateForGameStarting(payload.countdown);
   },
 
   'gameplay:game-started': (payload) => {
-    gameplayActions.handleGameStarted({
-      gameId: GameId(payload.gameId),
-      playerMapping: payload.playerMapping,
-      boardState: payload.boardState,
-      game: payload.game,
-    });
+    updateForGameStart(payload.game, payload.boardState, payload.playerMapping);
   },
 
   'gameplay:game-ended': (payload) => {
-    gameplayActions.handleGameEnded(payload);
+    updateForGameEnded(payload.finalBoardState, payload.winner);
   },
 } satisfies HandlerMap<GameplayServerMessage>;
 

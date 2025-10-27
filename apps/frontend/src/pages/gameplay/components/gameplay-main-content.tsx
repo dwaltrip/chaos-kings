@@ -1,5 +1,5 @@
 import { GameCountdown } from '@/pages/gameplay/components/gameplay-countdown';
-import { GameUI } from '@/game-ui/game-ui';
+import { GameUI } from '@/domains/gameplay/ui/game-ui';
 
 interface GameMainContentProps {
   gameId: number;

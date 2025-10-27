@@ -2,14 +2,14 @@ import type { BoardState } from '@core/types';
 import type { PlayerIndex } from '@common/types/player';
 import { GameStatus } from '@common/types/games';
 
-import { gameMetadataStore } from '@/stores/game-metadata-store';
-import { gameplayActions } from '@/game-ui/store/gameplay-store-v2';
-
-const { updateGame } = gameMetadataStore.getState().actions;
+import { gameMetadataStore } from '@/domains/gameplay/stores/game-metadata-store';
+import { gameplayActions } from '@/domains/gameplay/stores/gameplay-store-v2';
 
 function updateForGameEnded(finalBoardState: BoardState, winner: PlayerIndex) {
+  const { updateGame } = gameMetadataStore.getState().actions;
   const { updateBoard, setWinner, setVisibleSquares, clearSelectedTile } =
     gameplayActions();
+
   // -----------------------------------------------------------
   // TODO: Use data from server, dont manually set these values
   // -----------------------------------------------------------

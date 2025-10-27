@@ -18,6 +18,8 @@ function JoinGamePage() {
   const user = userStore((state) => state.user);
   const [waitingTime, setWaitingTime] = useState(0);
 
+  // TODO: re-think how we display connection status in the UI in general,
+  // and how we access that state.
   const isConnected = useWsConnectionStore((state) => state.isConnected);
 
   // const wsService = useWebsocket(GAME_MATCHMAKING_DOMAIN, GameMatchmakingWsHandler);

@@ -1,6 +1,7 @@
 import { useShallow } from 'zustand/shallow';
 import type { Coord, Direction, Square } from '@core/types';
-import { getTileStore } from '@/game-ui/store/tile-store-registry';
+
+import { getTileStore } from '@/domains/gameplay/stores/tile-store-registry';
 
 function useTileSquare(coord: Coord): Square {
   const store = getTileStore(coord);

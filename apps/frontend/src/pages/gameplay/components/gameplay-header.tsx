@@ -2,9 +2,9 @@ import type { GameWithPlayers } from '@common/types/games';
 import { isEnded } from '@core/game';
 import type { PlayerIndex, PlayerMapping } from '@core/types';
 
-import type { User } from '@/services/user-service';
-import { PlayerColors } from '@/pages/gameplay/player-colors';
-import { GameStatusInfo } from '@/pages/gameplay/game-status-info';
+import type { User } from '@/domains/users/user-service';
+import { PlayerColors } from '@/pages/gameplay/components/player-colors';
+import { GameStatusInfo } from '@/pages/gameplay/components/gameplay-status-info';
 
 interface GameHeaderProps {
   game: GameWithPlayers;

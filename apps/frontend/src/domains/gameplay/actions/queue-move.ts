@@ -1,9 +1,8 @@
 import type { BoardState, Coord, Direction } from '@core/types';
 import { Board } from '@core/board';
-import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
 
-import { getWebSocketService } from '@/services/websocket-service';
-import { gameplayActions } from '@/game-ui/store/gameplay-store-v2';
+import { gameplayWsEffects } from '@/domains/gameplay/ws-effects';
+import { gameplayActions } from '@/domains/gameplay/stores/gameplay-store-v2';
 
 function queueMove(direction: Direction, selectedTile: Coord | null, board: BoardState) {
   const { addQueuedMove, setSelectedTileV2 } = gameplayActions();
@@ -26,15 +25,7 @@ function queueMove(direction: Direction, selectedTile: Coord | null, board: Boar
   setSelectedTileV2(Board.applyDirection(selectedTile, direction));
 
   // Send to server
-  const wsService = getWebSocketService();
-  wsService.send({
-    domain: GAMEPLAY_DOMAIN,
-    type: 'move-request',
-    payload: {
-      sourceCoord: selectedTile,
-      direction,
-    },
-  });
+  gameplayWsEffects.sendMoveRequest(selectedTile, direction);
 }
 
 export { queueMove };

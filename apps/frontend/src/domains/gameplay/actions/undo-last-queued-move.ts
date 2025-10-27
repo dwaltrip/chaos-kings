@@ -1,11 +1,15 @@
+import { GameId } from '@kernel/ids';
+
 import { Board } from '@core/board';
 import { areCoordsEqual } from '@core/utils/coordinate-utils';
-import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
 
 import { copySetAndRemoveItem } from '@/lib/set-utils';
-import { getWebSocketService } from '@/services/websocket-service';
-import { gameplayActions, useGameplayStoreV2 } from '@/game-ui/store/gameplay-store-v2';
-import { getTileStore } from '@/game-ui/store/tile-store-registry';
+import { gameplayWsEffects } from '@/domains/gameplay/ws-effects';
+import {
+  gameplayActions,
+  useGameplayStoreV2,
+} from '@/domains/gameplay/stores/gameplay-store-v2';
+import { getTileStore } from '@/domains/gameplay/stores/tile-store-registry';
 
 function undoLastQueuedMove() {
   const { queuedMoves, game } = useGameplayStoreV2.getState();
@@ -13,14 +17,7 @@ function undoLastQueuedMove() {
     return;
   }
   applyOptimisticUpdates();
-
-  const wsService = getWebSocketService();
-  wsService.send({
-    domain: GAMEPLAY_DOMAIN,
-    type: 'undo-move-request',
-    // TODO: this is not being typed properly, it allows any??
-    payload: { gameId: game.id },
-  });
+  gameplayWsEffects.sendUndoMove(GameId(game.id));
 }
 
 function applyOptimisticUpdates() {

@@ -1,5 +1,6 @@
-import { PRE_GAME_COUNTDOWN_SECONDS } from '@core/ui-timing-config';
 import { useEffect, useState } from 'react';
+
+import { PRE_GAME_COUNTDOWN_SECONDS } from '@core/ui-timing-config';
 
 interface GameCountdownProps {
   countdown: number;

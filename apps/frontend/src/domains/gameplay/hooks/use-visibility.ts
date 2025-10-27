@@ -1,8 +1,10 @@
+import { useShallow } from 'zustand/shallow';
+
 import type { Coord } from '@core/types';
 import { serializeCoord } from '@core/utils/coordinate-utils';
-import { getNeighborCoords } from '@/game-ui/utils/tile-utils';
-import { type GameplayStateV2 } from '@/game-ui/store/gameplay-store-v2';
-import { useShallow } from 'zustand/shallow';
+
+import { getNeighborCoords } from '@/domains/gameplay/utils/tile-utils';
+import { type GameplayStateV2 } from '@/domains/gameplay/stores/gameplay-store-v2';
 
 interface NeighborVisibility {
   top: boolean;

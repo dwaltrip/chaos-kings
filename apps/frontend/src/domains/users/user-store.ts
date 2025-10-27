@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { userService, type User } from '@/services/user-service';
+import { userService, type User } from '@/domains/users/user-service';
 
 interface UserState {
   user: User | null;

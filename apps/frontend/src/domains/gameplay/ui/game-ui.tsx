@@ -1,20 +1,22 @@
 import type { Direction } from '@core/types';
 import { isEnded } from '@core/game';
 
-import { useKeyboardControls } from '@/game-ui/hooks/use-keyboard-controls';
-import { GameBoard } from '@/game-ui/components/game-board';
-import { queueMove } from '@/game-ui/actions/queue-move';
-import { undoLastQueuedMove } from '@/game-ui/actions/undo-last-queued-move';
-import { cancelQueuedMoves } from '@/game-ui/actions/cancel-queued-moves';
+import { useKeyboardControls } from '@/domains/gameplay/hooks/use-keyboard-controls';
+import { GameBoard } from '@/domains/gameplay/ui/game-board';
 import {
   useBoardState,
   useGameplayGame,
   useGameplayStoreV2,
   useSelectedTile,
-} from '@/game-ui/store/gameplay-store-v2';
+} from '@/domains/gameplay/stores/gameplay-store-v2';
+import {
+  queueMove,
+  undoLastQueuedMove,
+  cancelQueuedMoves,
+} from '@/domains/gameplay/actions';
 
-import '@/game-ui/game-page.css';
-import '@/game-ui/game-tile.css';
+import '@/domains/gameplay/ui/game-page.css';
+import '@/domains/gameplay/ui/game-tile.css';
 
 interface GameUIProps {
   gameId: number | null;

@@ -1,16 +1,15 @@
 import { useEffect } from 'react';
 import { useParams, Navigate } from 'react-router';
 
-import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
-import { bareRoomForGameplay } from '@common/domains/game/utils';
+// import { bareRoomForGameplay } from '@common/domains/game/utils';
+import { useWsConnectionStore } from '@/ws-lib';
+import { userStore } from '@/domains/users/user-store';
+import {
+  gameMetadataStore,
+  useGameLoadingState,
+} from '@/domains/gameplay/stores/game-metadata-store';
 
-import { useWebsocket } from '@/hooks/use-websocket';
-import { userStore } from '@/stores/user-store';
-import { gameMetadataStore, useGameLoadingState } from '@/stores/game-metadata-store';
-import { GameplayWsHandler } from '@/game-ui/store/gameplay-ws-handler';
-
-import { GameChat } from '@/pages/gameplay/game-chat/game-chat';
-
+import { GameChat } from '@/domains/chat/components/game-chat';
 import { GameHeader } from '@/pages/gameplay/components/gameplay-header';
 import { GameplayMainContent } from '@/pages/gameplay/components/gameplay-main-content';
 
@@ -46,6 +45,9 @@ function MessageDisplay({
   );
 }
 
+// -------------------------------------------------------------------------
+// TODO: figure out when we should be joining the "room" for this gameId...
+// -------------------------------------------------------------------------
 function GamePageContent({ gameId }: { gameId: string }) {
   const user = userStore((state) => state.user);
 
@@ -64,9 +66,7 @@ function GamePageContent({ gameId }: { gameId: string }) {
   // Ideally we'd keep WebSocket details contained in GameUI, but for now this
   // is the easiest solution to fix the countdown race condition.
   // useGameplayWebSocket(game ? game.id : null);
-  const roomBare = bareRoomForGameplay(gameId);
-  const wsService = useWebsocket(GAMEPLAY_DOMAIN, GameplayWsHandler, roomBare);
-  const isConnected = wsService.isConnected;
+  const isConnected = useWsConnectionStore((state) => state.isConnected);
 
   useEffect(() => {
     if (!game && gameId && !isLoadingGame) {
