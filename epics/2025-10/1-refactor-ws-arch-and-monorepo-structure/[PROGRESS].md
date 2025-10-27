@@ -7,27 +7,25 @@ This doc tracks active status and work for the epic. It's a living tracker updat
 
 ## Current Status
 
-**Current Phase:** Phase 2 - WS Infrastructure (Frontend client ready for testing ✅)
+**Current Phase:** Phase 3 - v1 Logic Integration & Migration (In Progress)
 
-**Last Updated:** 2025-10-21
+**Last Updated:** 2025-10-27
 
 **Just Completed:**
-- Backend WS infrastructure implementation (Phase 2.1)
-- Type-safe WS server with multi-connection support
-- Server bridge singleton wired to all backend domains (through ws-effects)
-- System domain baseline implementation (backend + frontend scaffolding, centralized room membership)
-- Frontend WS infrastructure implementation (Phase 2.2): client, bridge, connection store, and domain wiring
+- Frontend domain logic integration (Phase 3.1 - first pass, all 3 domains):
+  - Removed legacy v1 handlers and actions files (e.g. game-*-ws-handler.ts, game-*-actions.ts)
+  - Consolidated v1 actions into v2 actions.ts structure
+  - Updated handlers to use new action patterns
+  - Wired components/pages to use new actions and `useWsConnectionStore`
+- Domain-specific changes:
+  - **Matchmaking:** Store integration, basic navigation (needs React Router replacement)
+  - **Gameplay:** Split monolithic actions.ts into individual action files under actions/ directory
+  - **Chat:** Added username field to protocol, created room helpers (`buildChatRoomId`), renamed store
 
 **What's Next:**
-Phase 2.3 - Integration testing:
-- End-to-end message flow verification
-- Multi-client + resilience scenarios
-- Wire system room status updates into frontend state (pending from TODOs)
-
-**Notes:**
-- Frontend client + bridge code passes `npm run typecheck`
-- Temporary shims declared for React/Zustand until real deps land
-- Integration testing plan ready in `10-19-[4]-ws-infra-integration-testing.md`
+- Complete room join/leave lifecycle integration (see tactical doc `10-27-[1]`)
+- Backend chat username population
+- Additional v1 logic migration and cleanup
 
 ---
 
@@ -39,7 +37,7 @@ This section tracks major milestones only. See tactical docs for detailed implem
 
 ### Completed Milestones
 
-**Phase 1: Domain Structure & Scaffolding** (Oct 13-17, 2025)
+**Phase 1: Domain Structure & Scaffolding** (Oct 13-17, 2025) ✅
 - Protocol message definitions for all domains (chat, matchmaking, gameplay)
 - Backend/frontend domain scaffolding (handlers, actions, ws-effects) for all domains
 - Branded types implementation across all domains (UserId, GameId, RoomId, ChatMessageId)
@@ -61,11 +59,11 @@ This section tracks major milestones only. See tactical docs for detailed implem
 - Transitional shims for React/Zustand types added (replace with real deps later)
 - See tactical doc: 10-19-[3]-ws-infra-frontend-implementation.md
 
----
-
-### Current Milestone
-
-**None** - Ready to begin next phase
+**Phase 3.1: First pass migrating Frontend app logic from v1 into v2** (Oct 10- 27, 2025)
+- Removed legacy v1 handlers and actions files (e.g. game-*-ws-handler.ts, game-*-actions.ts)
+- Consolidated v1 actions into v2 actions.ts structure
+- Updated handlers to delegate all logic to actions, ensured UI components use v2 actions
+- Reorganized v1 files to better fit the new more clearly defined domain-based structure
 
 ---
 
@@ -77,20 +75,13 @@ This section tracks major milestones only. See tactical docs for detailed implem
 - Implement heartbeat & lifecycle handling
 - See tactical doc: 10-20-[3]-system-domain-implementation-plan.md
 
-**Phase 2.3: Integration Testing** (Future)
-- End-to-end WS message flows
-- Multi-client testing scenarios
-- Connection resilience verification
-- See tactical doc: 10-19-[4]-ws-infra-integration-testing.md
-
 ---
 
 ### Longer-Term Roadmap
 
 These are future phases, not yet scoped in detail:
-- Business logic migration (unstub all domain actions)
 - Core and common package reorganization
-- V1 code removal and cleanup
+- V1 code removal and cleanup 
 
 ---
 
@@ -98,13 +89,5 @@ These are future phases, not yet scoped in detail:
 
 Issues and concerns flagged during implementation that don't block current work but should be addressed in future phases.
 
-**[2025-10-18] Frontend ws-effects layer missing:**
-- Frontend currently has 2-layer pattern: handlers → actions (bidirectional)
-- Should mirror backend: handlers → actions → ws-effects (3 layers)
-- ws-effects should provide clean interface for domain-specific WebSocket operations
-- Actions should focus on domain logic, ws-effects handle message sending
-- Affects all domains: chat, matchmaking, gameplay, system
-
 **[2025-10-15] Gameplay domain flags:**
 - **v1 get-user-mapping pattern:** Current v1 pattern for mapping userId → gameId is suboptimal. Documented in TODOs but not refactoring during Phase 1 scaffolding.
-- **Room membership message ownership:** ✅ Addressed. System domain now owns join/leave transport. Follow-up: ensure gameplay UI migrates to new system-domain helpers where applicable.

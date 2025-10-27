@@ -18,11 +18,22 @@ Inbox for discovered and unplanned work items.
 
 Tasks we know we need to do:
 
+- [ ] **Room join/leave lifecycle integration** (High priority - see tactical doc `10-27-[1]-room-join-leave-lifecycle.md`)
+  - Determine where frontend should trigger `systemWsEffects.joinRoom/leaveRoom` for chat, gameplay, and matchmaking
+  - Decide: backend-initiated vs frontend-initiated room joins
+  - Current state: System domain owns transport, but call sites unclear
+
+- [ ] **Backend chat: Fetch and populate username field**
+  - Location: `apps/backend/src/domains/chat/handlers.ts:15-21`
+  - Need user lookup service/context to populate username in ChatMessageEntity
+
+- [ ] **Matchmaking navigation improvements**
+  - Replace `window.location.href` with React Router navigate helper (`actions.ts:52`)
+  - Clear matchmaking state on game ready (`actions.ts:48`)
+
 - [ ] System domain follow-ups
-  - Hook `system:room-status-update` into frontend state once WS client pub/sub lands
-  - Decide whether to persist the membership tracker (Redis vs in-memory)
-  - Define heartbeat / lifecycle flow and message surface
-- [ ] Replace frontend React/Zustand shims with real dependencies once package management is finalized
+  - Hook `system:room-status-update` into frontend state
+  - Decide on persistence strategy for membership tracker (Redis vs in-memory)
 
 ---
 
@@ -31,7 +42,6 @@ Tasks we know we need to do:
 Not yet prioritized (may be lower priority for now) or fully scoped:
 
 - [ ] Migrate v1 MatchmakingService logic into v2 backend actions
-- [ ] Unstub frontend matchmaking actions (store integration, navigation)
 - [ ] Define cross-domain error handling patterns
 - [ ] Decide on long-term room naming strategy
 - [ ] Implement system heartbeat & lifecycle handling (deferred until WS infra stabilizes)

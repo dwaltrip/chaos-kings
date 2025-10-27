@@ -283,6 +283,19 @@ Implemented branded ID types across all v2 domains (system, matchmaking, chat, a
 - **Boundaries:** Handlers convert primitives → branded (entry), ws-effects convert branded → primitives (exit)
   - When migrating app code, will convert at other boundaries: I/O for DB, redis, etc
 
+**[2025-10-27] Phase 3.1 Integration Patterns**
+
+First pass integrating v1 frontend logic into v2 structure revealed consistent, successful patterns:
+
+- **Consistent integration workflow:** All 3 domains (chat, matchmaking, gameplay) followed same pattern: delete legacy files → consolidate into v2 actions → wire to ws-effects → update UI components
+- **Handlers are pure message routers:** All domain logic moved out of handlers into dedicated actions (as designed from the beginning)
+- **Pragmatic file organization:** Actions stay in single file for simple domains (chat, matchmaking); split into actions/ directory when complexity grows (gameplay)
+- **Adjusted v1 file organization:** Reorganized v1 files to better fit the new more clearly defined domain-based structure
+- **Tentative: pages/ vs domains/ organization:**
+  - **domains/[domain]/** gets: Core domain logic (actions, handlers, stores, types) + components representing domain concepts that may be used across pages
+  - **pages/[page]/** gets: Page orchestration + components tightly coupled to that page's specific UX flow
+  - Current heuristic working well but needs more experience to solidify
+
 ---
 
 ## Open Questions
@@ -325,6 +338,23 @@ Implemented branded ID types across all v2 domains (system, matchmaking, chat, a
 - Which utilities/helpers should be shared between FE/BE?
 - When does duplication provide better clarity than sharing?
 - How to handle similar-but-different patterns (e.g., validation on both sides)?
+
+**Store access patterns:**
+- Should actions be pure (receive all data as arguments)?
+- Or is it acceptable for actions to call `domainStore.getState()` directly?
+- Current state: Inconsistent usage across domains
+- Need to establish and document preferred pattern
+
+**Data enrichment strategy:**
+- When should we add extra fields to WS payloads (e.g., chat username)?
+- When should we fetch/include complete entities instead?
+- Trade-offs: Protocol simplicity vs completeness vs multiple roundtrips
+- Current approach (chat username): Simple field addition works for now, but may not scale if more User fields needed
+
+**pages/ vs domains/ organization:**
+- Current heuristic: domains/[domain]/ gets core domain logic (actions, handlers, stores, types) + components representing domain concepts that may be used across pages; pages/[page]/ gets page orchestration + components tightly coupled to that page's specific UX flow
+- Working well so far but needs refinement with more experience
+- Questions: When should domain-specific UI move to domains/ vs stay in pages/? How to handle page-specific variations of domain components? When does page-coupled logic belong in pages/ vs domains/?
 
 ---
 

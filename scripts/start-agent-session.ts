@@ -106,12 +106,6 @@ async function main() {
     return;
   }
 
-  // Get optional context
-  console.log();
-  const context = await multiLineQuestion(
-    chalk.gray('Any additional context? (or just press Enter to skip)'),
-  );
-
   // Generate prompt
   let prompt = `Current Epic: ${selectedEpic.name.split('/').pop()}
 
@@ -123,11 +117,12 @@ Quick context check:
 
 Session Goal: ${goal.trim()}`;
 
-  if (context.trim()) {
-    prompt += `\n\nAdditional Context: ${context.trim()}`;
-  }
-
-  prompt += `\n\nBefore starting work, please briefly confirm your understanding of the goal and outline your first steps. Don't immediately dive into implementation.`;
+  prompt += [
+    '\n\n',
+    'Before starting work, please briefly confirm your understanding of the goal',
+    ' and outline your first steps.',
+    `Don't immediately dive into implementation.`,
+  ].join('');
 
   // Add script attribution
   prompt += `\n\n---\n_Generated via: \`npm run agent\`_`;

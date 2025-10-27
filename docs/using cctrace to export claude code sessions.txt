@@ -1,0 +1,5 @@
+python3 ~/claude_sessions/export_claude_session.py --session-id
+
+get session ID from the filenames in this folder:
+
+ ~/.claude/projects/-Users-danielwaltrip-all-files-projects-code-generals-v2
