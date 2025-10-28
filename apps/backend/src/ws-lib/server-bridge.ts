@@ -30,6 +30,10 @@ class ServerBridge<TMessage, TConnectionContext> implements WsBridge<TMessage> {
     this.getTransport().sendToUser(userKey, message);
   }
 
+  getConnectionsForUser(userKey: string, filterByRoom?: string): Set<ConnectionId> {
+    return this.getTransport().getConnectionsForUser(userKey, filterByRoom);
+  }
+
   get rooms() {
     return {
       join: (roomId: string, connectionId: ConnectionId) => {
@@ -38,7 +42,7 @@ class ServerBridge<TMessage, TConnectionContext> implements WsBridge<TMessage> {
       leave: (roomId: string, connectionId: ConnectionId) => {
         this.getTransport().rooms.leave(connectionId, roomId);
       },
-      getMembers: (roomId: string) => {
+      getMembers: (roomId: string): Set<ConnectionId> => {
         return this.getTransport().rooms.getMembers(roomId);
       },
     };

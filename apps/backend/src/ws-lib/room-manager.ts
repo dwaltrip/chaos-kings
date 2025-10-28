@@ -1,5 +1,8 @@
 import type { ConnectionId } from './types';
 
+// TODO: can we not use raw string for room IDs here?
+//  In the app code, room ID is branded.
+
 class RoomManager {
   // Which connections are in which rooms
   private rooms = new Map<string, Set<ConnectionId>>();

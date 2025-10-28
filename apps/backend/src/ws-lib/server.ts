@@ -40,6 +40,7 @@ type WSServerInstance<TOutgoing, TConnectionContext> = {
   broadcast(message: TOutgoing, opts?: BroadcastOptions): void;
   broadcastToRoom(roomId: string, message: TOutgoing, opts?: BroadcastOptions): void;
   sendToUser(userKey: string, message: TOutgoing): void;
+  getConnectionsForUser(userKey: string, filterByRoom?: string): Set<ConnectionId>;
   rooms: RoomManager;
 };
 
@@ -156,11 +157,34 @@ function createWSServer<
     }
   }
 
+  function getConnectionsForUser(
+    userKey: string,
+    filterByRoom?: string,
+  ): Set<ConnectionId> {
+    const connectionIds = [];
+    // new Set<ConnectionId>();
+    for (const client of clients.values()) {
+      if (client.userKey === userKey) {
+        connectionIds.push(client.id);
+      }
+    }
+
+    if (filterByRoom) {
+      return new Set(
+        connectionIds.filter((connId) =>
+          roomManager.getRoomsForConnection(connId).has(filterByRoom),
+        ),
+      );
+    }
+    return new Set(connectionIds);
+  }
+
   return {
     handleConnection,
     broadcast,
     broadcastToRoom,
     sendToUser,
+    getConnectionsForUser,
     rooms: roomManager,
   };
 }

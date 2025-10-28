@@ -1,42 +1,25 @@
-import { GAME_MATCHMAKING_DOMAIN } from '@common/types/game-matchmaking';
-import { MATCHMAKING_ROOM_NAME } from '@common/constants/matchmaking';
-import { getMatchmakingService } from '@/game-matchmaking/matchmaking-service';
-import { spawnGameInstance } from './spawn-game-action';
-import type { GameMatchmakingEffects } from '@/game-matchmaking/ws-effects';
+import { UserId } from '@kernel/ids';
+import { MATCHMAKING_ROOM_ID } from '@platform/domains/matchmaking/constants';
+
+import type { ConnectionId } from '@/ws-lib/types';
+import { systemActions } from '@/domains/system/actions';
+import { getMatchmakingService } from '@/domains/matchmaking/matchmaking-service';
+import { handleGameSpawn } from '@/domains/matchmaking/actions/handle-game-spawn';
+import { broadcastMatchmakingStatus } from '@/domains/matchmaking/actions/broadcast-matchmaking-status';
 
 export async function joinQueue(
-  userId: number,
-  username: string,
-  effects: GameMatchmakingEffects,
+  userId: UserId,
+  connectionId: ConnectionId,
 ): Promise<void> {
-  effects.joinMatchmakingRoom();
+  // Join matchmaking room
+  systemActions.joinRoom({ roomId: MATCHMAKING_ROOM_ID, userId, connectionId });
 
   const matchmakingService = await getMatchmakingService();
-  const game = await matchmakingService.addPlayer(String(userId), {
-    username,
-  });
+  const game = await matchmakingService.addPlayer(userId);
 
   if (game) {
-    try {
-      await spawnGameInstance(game.gameId);
-      // Broadcast game-ready to matchmaking room BEFORE removing users
-      effects.broadcastGameReady(game.gameId);
-
-      // Now remove users from matchmaking room
-      effects.removeUsersFromMatchmakingRoom(
-        game.players.map((p) => parseInt(p.playerId, 10)),
-      );
-      console.log(`Game ${game.gameId} ready; broadcasted and removed from room`);
-    } catch (error) {
-      console.error(`Failed to spawn game instance for game ${game.gameId}:`, error);
-      // TODO: Should probably notify players of the error
-    }
+    await handleGameSpawn(game);
   }
 
-  const queueStatus = await matchmakingService.getQueueStatus();
-  effects.broadcastQueueStatus(queueStatus.queueSize, queueStatus.playersNeeded);
-
-  // Broadcast early-start status after join (votes reset on membership change)
-  const earlyStatus = await matchmakingService.getEarlyStartStatus();
-  effects.broadcastEarlyStartStatus(earlyStatus);
+  await broadcastMatchmakingStatus();
 }

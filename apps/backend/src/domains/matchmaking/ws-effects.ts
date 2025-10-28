@@ -31,6 +31,18 @@ const matchmakingWsEffects = {
       MsgCreators.createGameReadyMessage(idToNumber(gameId)),
     );
   },
+
+  // TODO: review this implementation, I wrote it quickly
+  // `getConnectionsForUser` was added solely for this
+  removeUsersFromMatchmakingRoom(userIds: UserId[]) {
+    userIds.forEach((userId) => {
+      wsBridge
+        .getConnectionsForUser(String(idToNumber(userId)), MATCHMAKING_ROOM_ID)
+        .forEach((connId) => {
+          wsBridge.rooms.leave(MATCHMAKING_ROOM_ID, connId);
+        });
+    });
+  },
 };
 
 export { matchmakingWsEffects };

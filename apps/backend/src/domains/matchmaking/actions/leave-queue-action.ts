@@ -1,19 +1,20 @@
-import { GAME_MATCHMAKING_DOMAIN } from '@common/types/game-matchmaking';
-import { MATCHMAKING_ROOM_NAME } from '@common/constants/matchmaking';
-import { getMatchmakingService } from '@/game-matchmaking/matchmaking-service';
-import type { GameMatchmakingEffects } from '@/game-matchmaking/ws-effects';
+import { UserId } from '@kernel/ids';
+import { MATCHMAKING_ROOM_ID } from '@platform/domains/matchmaking/constants';
+
+import type { ConnectionId } from '@/ws-lib/types';
+import { systemActions } from '@/domains/system/actions';
+import { getMatchmakingService } from '@/domains/matchmaking/matchmaking-service';
+import { broadcastMatchmakingStatus } from '@/domains/matchmaking/actions/broadcast-matchmaking-status';
 
 export async function leaveQueue(
-  userId: number,
-  effects: GameMatchmakingEffects,
+  userId: UserId,
+  connectionId: ConnectionId,
 ): Promise<void> {
   const matchmakingService = await getMatchmakingService();
-  await matchmakingService.removePlayer(String(userId));
+  await matchmakingService.removePlayer(userId);
 
-  const queueStatus = await matchmakingService.getQueueStatus();
-  effects.broadcastQueueStatus(queueStatus.queueSize, queueStatus.playersNeeded);
+  await broadcastMatchmakingStatus();
 
-  // Broadcast early-start status after leave (votes reset on membership change)
-  const earlyStatus = await matchmakingService.getEarlyStartStatus();
-  effects.broadcastEarlyStartStatus(earlyStatus);
+  // Leave matchmaking room
+  systemActions.leaveRoom({ roomId: MATCHMAKING_ROOM_ID, userId, connectionId });
 }

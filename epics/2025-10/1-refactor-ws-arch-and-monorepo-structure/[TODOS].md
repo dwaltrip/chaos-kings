@@ -41,6 +41,11 @@ Tasks we know we need to do:
 
 Not yet prioritized (may be lower priority for now) or fully scoped:
 
+- [ ] **Review domain boundaries for game spawning (consider during game/gameplay integration)**
+  - Example: `matchmaking/actions/spawn-game-action.ts` does gameplay/games domain work (GameCoordinator, addUserToGame)
+  - Broader question: Are there other cross-domain action patterns like this? Is this a code smell?
+  - Consider: Should matchmaking call into gameplay/games actions instead of owning spawn logic?
+  - Revisit when integrating game + gameplay domains to establish clear boundaries
 - [ ] Frontend WS init reconciliation (blocked on backend v1/v2 integration - see `10-27-[2]-frontend-ws-init-reconciliation.md`)
 - [ ] Migrate v1 MatchmakingService logic into v2 backend actions
 - [ ] Define cross-domain error handling patterns

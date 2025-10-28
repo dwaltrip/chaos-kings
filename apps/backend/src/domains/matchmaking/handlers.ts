@@ -3,19 +3,19 @@ import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
 import type { MatchmakingClientMessage } from '@protocol/domains/matchmaking/client-messages';
 
 import type { AppHandlerContext } from '@/ws/app-handler-context';
-import { matchmakingActions } from '@/domains/matchmaking/actions';
+import { joinQueue, leaveQueue, earlyStartVote } from '@/domains/matchmaking/actions';
 
 const matchmakingHandlers = {
-  'matchmaking:join-queue': (payload, ctx) => {
-    matchmakingActions.joinQueue(UserId(ctx.userId), ctx.connectionId);
+  'matchmaking:join-queue': (_payload, ctx) => {
+    joinQueue(UserId(ctx.userId), ctx.connectionId);
   },
 
-  'matchmaking:leave-queue': (payload, ctx) => {
-    matchmakingActions.leaveQueue(UserId(ctx.userId), ctx.connectionId);
+  'matchmaking:leave-queue': (_payload, ctx) => {
+    leaveQueue(UserId(ctx.userId), ctx.connectionId);
   },
 
   'matchmaking:early-start-vote': ({ vote }, ctx) => {
-    matchmakingActions.earlyStartVote(vote, UserId(ctx.userId));
+    earlyStartVote(vote, UserId(ctx.userId));
   },
 } satisfies HandlerMapWithCtx<MatchmakingClientMessage, AppHandlerContext>;
 

@@ -1,8 +1,18 @@
-import { getClient } from '@/services/redis';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 import { createClient } from 'redis';
+
+import { GameId, UserId } from '@kernel/ids';
+import { idToNumber } from '@kernel/branded-type';
 import { FFA_NUM_PLAYERS_MAX } from '@common/constants/matchmaking';
-import { createGame } from '@/game/actions/create-game';
+
+import { getClient } from '@/services/redis';
+import { createGame } from '@/domains/games/actions/create-game';
+
+// TOOD: is this the best way to handle userIds in Redis?
+const redisUserIds = {
+  serialize: (userId: UserId): string => idToNumber(userId).toString(),
+  deserialize: (str: string): UserId => UserId(Number(str)),
+};
 
 type Redis = ReturnType<typeof createClient>;
 
@@ -13,13 +23,13 @@ interface PlayerData {
 }
 
 interface QueueEntry {
-  playerId: string;
+  playerId: UserId;
   joinedAt: number;
   [key: string]: any;
 }
 
 interface MatchmakingGame {
-  gameId: number;
+  gameId: GameId;
   players: QueueEntry[];
   createdAt: number;
   status: string;
@@ -27,7 +37,7 @@ interface MatchmakingGame {
 
 interface QueueStatus {
   queueSize: number;
-  playersInQueue: string[];
+  playersInQueue: UserId[];
   playersNeeded: number;
 }
 
@@ -50,7 +60,7 @@ class MatchmakingService {
   }
 
   async addPlayer(
-    playerId: string,
+    playerId: UserId,
     playerData: PlayerData = {},
   ): Promise<MatchmakingGame | null> {
     const timestamp = Date.now();
@@ -63,7 +73,7 @@ class MatchmakingService {
     await this.redis.hSet(this.playerDataKey, playerId, JSON.stringify(queueEntry));
     await this.redis.zAdd(this.queueKey, {
       score: timestamp,
-      value: playerId,
+      value: redisUserIds.serialize(playerId),
     });
 
     // Reset early-start votes on membership change
@@ -72,9 +82,10 @@ class MatchmakingService {
     return await this.checkForMatch();
   }
 
-  async removePlayer(playerId: string): Promise<void> {
-    await this.redis.zRem(this.queueKey, playerId);
-    await this.redis.hDel(this.playerDataKey, playerId);
+  async removePlayer(playerId: UserId): Promise<void> {
+    const userId = redisUserIds.serialize(playerId);
+    await this.redis.zRem(this.queueKey, userId);
+    await this.redis.hDel(this.playerDataKey, userId);
     // Reset early-start votes on membership change
     await this.clearEarlyVotes();
   }
@@ -160,7 +171,7 @@ class MatchmakingService {
 
     return {
       queueSize,
-      playersInQueue,
+      playersInQueue: playersInQueue.map(redisUserIds.deserialize),
       playersNeeded: Math.max(0, this.playersPerGame - queueSize),
     };
   }
@@ -170,21 +181,22 @@ class MatchmakingService {
     return gameData ? JSON.parse(gameData) : null;
   }
 
-  async setEarlyStartVote(playerId: string, vote: boolean): Promise<void> {
+  async setEarlyStartVote(playerId: UserId, vote: boolean): Promise<void> {
+    const userId = redisUserIds.serialize(playerId);
     if (vote) {
-      await this.redis.sAdd(this.earlyVotesKey, playerId);
+      await this.redis.sAdd(this.earlyVotesKey, userId);
     } else {
-      await this.redis.sRem(this.earlyVotesKey, playerId);
+      await this.redis.sRem(this.earlyVotesKey, userId);
     }
   }
 
   async getEarlyStartStatus(): Promise<{
-    voters: string[];
+    voters: UserId[];
     queueSize: number;
     allVoted: boolean;
   }> {
     const [voters, queueSize] = await Promise.all([
-      this.redis.sMembers(this.earlyVotesKey),
+      (await this.redis.sMembers(this.earlyVotesKey)).map(redisUserIds.deserialize),
       this.redis.zCard(this.queueKey),
     ]);
     const allVoted = queueSize >= 2 && voters.length === queueSize;
