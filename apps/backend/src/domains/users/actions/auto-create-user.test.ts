@@ -1,6 +1,5 @@
-import { autoCreateUser } from './auto-create-user';
-import { createUser } from './create-user';
-import { UserRepository } from '@/user/user-repository';
+import { randomUUID } from 'crypto';
+
 import {
   setupTestDb,
   cleanupTestDb,
@@ -8,7 +7,8 @@ import {
   testDb,
   expectUniqueConstraintViolation,
 } from '@/tests/test-helpers';
-import { randomUUID } from 'crypto';
+import { UserRepository } from '@/domains/users/user-repository';
+import { autoCreateUser, createUser } from '@/domains/users/actions';
 
 describe('autoCreateUser', () => {
   beforeAll(async () => {

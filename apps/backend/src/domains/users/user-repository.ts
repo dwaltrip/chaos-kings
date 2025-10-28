@@ -1,7 +1,8 @@
-import { db } from '@/services/db';
-import { UsersTable } from '@/user/user.db';
 import { Selectable, Insertable, Kysely } from 'kysely';
+
 import { Database } from '@/types';
+import { db } from '@/services/db';
+import { UsersTable } from '@/domains/users/user.db';
 
 type User = Selectable<UsersTable>;
 type NewUser = Insertable<UsersTable>;

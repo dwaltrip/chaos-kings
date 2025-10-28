@@ -1,4 +1,3 @@
-import { createUser } from '@/user/actions/create-user';
 import {
   setupTestDb,
   cleanupTestDb,
@@ -6,6 +5,7 @@ import {
   testDb,
   expectUniqueConstraintViolation,
 } from '@/tests/test-helpers';
+import { createUser } from '@/domains/users/actions';
 
 describe('createUser', () => {
   beforeAll(async () => {

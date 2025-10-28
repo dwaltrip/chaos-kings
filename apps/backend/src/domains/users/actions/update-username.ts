@@ -1,8 +1,10 @@
-import { UserRepository } from '@/user/user-repository';
-import { UsersTable } from '@/user/user.db';
 import { Selectable, Kysely } from 'kysely';
-import { Database } from '@/types';
+
 import { validateUsername } from '@common/validation/username';
+import { Database } from '@/types';
+
+import { UsersTable } from '@/domains/users/user.db';
+import { UserRepository } from '@/domains/users/user-repository';
 
 type User = Selectable<UsersTable>;
 

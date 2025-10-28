@@ -1,11 +1,17 @@
 import { FastifyInstance } from 'fastify';
-import { findUser } from '@/user/actions/find-user';
-import { createUser } from '@/user/actions/create-user';
-import { updateUsername } from '@/user/actions/update-username';
-import { autoCreateUser } from '@/user/actions/auto-create-user';
-import { UserRepository } from '@/user/user-repository';
-import { USER_KEY_COOKIE_NAME, USER_KEY_COOKIE_OPTIONS } from '@/user/user-key-cookie';
+
 import { asyncHandler, parseId } from '@/utils/route-handler';
+import {
+  findUser,
+  createUser,
+  autoCreateUser,
+  updateUsername,
+} from '@/domains/users/actions';
+import { UserRepository } from '@/domains/users/user-repository';
+import {
+  USER_KEY_COOKIE_NAME,
+  USER_KEY_COOKIE_OPTIONS,
+} from '@/domains/users/user-key-cookie';
 
 async function userRoutes(fastify: FastifyInstance) {
   fastify.get(

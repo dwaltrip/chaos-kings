@@ -1,6 +1,5 @@
-import { createUser } from '@/user/actions/create-user';
-import { updateUsername } from '@/user/actions/update-username';
 import { setupTestDb, cleanupTestDb, teardownTestDb, testDb } from '@/tests/test-helpers';
+import { createUser, updateUsername } from '@/domains/users/actions';
 
 describe('updateUsername', () => {
   beforeAll(async () => {
