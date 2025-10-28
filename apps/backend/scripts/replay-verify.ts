@@ -3,18 +3,13 @@ import { replayFrames } from '@core/replay/replayer';
 import type { BoardState } from '@core/types';
 
 function boardsEqual(a: BoardState, b: BoardState): boolean {
-  if (a.size.width !== b.size.width || a.size.height !== b.size.height)
-    return false;
+  if (a.size.width !== b.size.width || a.size.height !== b.size.height) return false;
   for (let y = 0; y < a.size.height; y++) {
     for (let x = 0; x < a.size.width; x++) {
       const s1 = a.grid[y][x] as any;
       const s2 = b.grid[y][x] as any;
       if (s1.type !== s2.type) return false;
-      if (
-        s1.type === 'ARMY' ||
-        s1.type === 'PLAYER_CITY' ||
-        s1.type === 'GENERAL'
-      ) {
+      if (s1.type === 'ARMY' || s1.type === 'PLAYER_CITY' || s1.type === 'GENERAL') {
         if (s1.playerIndex !== s2.playerIndex) return false;
         if (s1.units !== s2.units) return false;
       }
@@ -34,11 +29,7 @@ function diffBoard(a: BoardState, b: BoardState): string[] {
         diffs.push(`${coord}: type ${s1.type} != ${s2.type}`);
         continue;
       }
-      if (
-        s1.type === 'ARMY' ||
-        s1.type === 'PLAYER_CITY' ||
-        s1.type === 'GENERAL'
-      ) {
+      if (s1.type === 'ARMY' || s1.type === 'PLAYER_CITY' || s1.type === 'GENERAL') {
         if (s1.playerIndex !== s2.playerIndex)
           diffs.push(`${coord}: player ${s1.playerIndex} != ${s2.playerIndex}`);
         if (s1.units !== s2.units)
@@ -52,9 +43,7 @@ function diffBoard(a: BoardState, b: BoardState): string[] {
 async function main() {
   const args = new Map<string, string>();
   for (const part of process.argv.slice(2)) {
-    const [k, v] = part.startsWith('--')
-      ? part.slice(2).split('=')
-      : [part, 'true'];
+    const [k, v] = part.startsWith('--') ? part.slice(2).split('=') : [part, 'true'];
     args.set(k, v ?? '');
   }
   const idStr = args.get('gameId');
@@ -98,9 +87,7 @@ async function main() {
     }
   }
   if (!final) {
-    console.error(
-      'Replay did not reach game end; unable to verify determinism',
-    );
+    console.error('Replay did not reach game end; unable to verify determinism');
     process.exit(1);
   }
 
@@ -109,9 +96,7 @@ async function main() {
     console.log(`OK: Game ${gameId} replay matches saved final board.`);
     process.exit(0);
   } else {
-    console.error(
-      `MISMATCH: Game ${gameId} replay differs from saved final board.`,
-    );
+    console.error(`MISMATCH: Game ${gameId} replay differs from saved final board.`);
     for (const line of diffBoard(final, saved)) console.error('  ' + line);
     process.exit(1);
   }
