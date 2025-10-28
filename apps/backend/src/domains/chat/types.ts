@@ -1,6 +1,4 @@
-import { ChatMessageId } from '@kernel/domains/chat';
-import { UserId } from '@kernel/domains/user';
-import { RoomId } from '@kernel/domains/system';
+import { ChatMessageId, RoomId, UserId } from '@kernel/ids';
 
 interface ChatMessageEntity {
   id: ChatMessageId;
@@ -8,7 +6,7 @@ interface ChatMessageEntity {
   username: string;
   roomId: RoomId;
   content: string;
-  timestamp: number; // TODO: figure out how timestamps will work...
+  timestamp: number;
 }
 
 export { ChatMessageEntity };
