@@ -1,8 +1,11 @@
 import { Selectable, Insertable } from 'kysely';
 
 import { GamesTable } from '@/domains/games/game.db';
+import { GameId } from '@kernel/ids';
 
-type Game = Selectable<GamesTable>;
+type DBGame = Selectable<GamesTable>;
+type Game = Omit<DBGame, 'id'> & { id: GameId };
+
 type NewGame = Insertable<GamesTable>;
 
 enum GameStatus {
@@ -11,4 +14,4 @@ enum GameStatus {
   COMPLETE = 'complete',
 }
 
-export { Game, NewGame, GameStatus };
+export { DBGame, Game, NewGame, GameStatus };
