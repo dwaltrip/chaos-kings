@@ -13,14 +13,14 @@ import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
 import { roomKey } from '@common/utils/room-key';
 import type { GameWithPlayers } from '@common/types/games';
 
-import { getGame } from '@/game/actions/get-game';
 import { createScopedLogger } from '@/utils/scoped-logger';
-import { getGlobalWebSocketManager } from '@/websocket/global-manager';
-import { removeUserFromGame } from '@/gameplay/gameplay-ws-api';
-import { GameRepository } from '@/game/game-repository';
-import { GameStatus } from '@/game/types';
-import { endGame } from '@/game/actions/end-game';
-import { MoveHistoryBuffer } from '@/gameplay/move-history-buffer';
+import { GameStatus } from '@/domains/games/types';
+import { GameRepository } from '@/domains/games/game-repository';
+import { getGame, endGame } from '@/domains/games/actions';
+
+import { gameplayWsEffects } from '@/domains/gameplay/ws-effects';
+import { MoveHistoryBuffer } from '@/domains/gameplay/move-history-buffer';
+import { GameId, RoomId } from '@kernel/ids';
 
 const MAX_QUEUED_MOVES_PER_PLAYER = 200;
 
@@ -30,6 +30,8 @@ interface QueuedMove {
 }
 
 export class GameServer {
+  // TODO: GameWithPlayers doesn't have proper app types, e.g. GameId, UserId, etc
+  // it's more of a plain data object from the DB layer
   private game: GameWithPlayers;
   private gameState: GameState;
   private playerQueues: Map<PlayerIndex, QueuedMove[]> = new Map();
@@ -207,17 +209,12 @@ export class GameServer {
 
   private broadcastGameState(): void {
     try {
-      const wsManager = getGlobalWebSocketManager();
-      wsManager.serverBroadcastToRoom(this.roomName, {
-        domain: GAMEPLAY_DOMAIN,
-        type: 'game-state-update',
-        payload: {
-          gameId: this.game.id,
-          tick: this.gameState.tick,
-          boardState: this.gameState.board,
-          playerQueues: this.getPlayerQueuesForBroadcast(),
-        },
-      });
+      gameplayWsEffects.broadcastGameState(
+        RoomId(this.roomName),
+        this.gameState.tick,
+        this.gameState.board,
+        this.getPlayerQueuesForBroadcast(),
+      );
     } catch (error) {
       this.log.error('Failed to broadcast game state. Error:', error);
     }
@@ -225,17 +222,11 @@ export class GameServer {
 
   private broadcastGameEnd(winnerPlayerIndex: number): void {
     try {
-      const wsManager = getGlobalWebSocketManager();
-      wsManager.serverBroadcastToRoom(this.roomName, {
-        domain: GAMEPLAY_DOMAIN,
-        type: 'game-ended',
-        payload: {
-          gameId: this.game.id,
-          winner: winnerPlayerIndex,
-          reason: 'general_captured',
-          finalBoardState: this.gameState.board,
-        },
-      });
+      gameplayWsEffects.broadcastGameEnded(
+        RoomId(this.roomName),
+        winnerPlayerIndex,
+        this.gameState.board,
+      );
     } catch (error) {
       this.log.error(`Failed to broadcast game end. Error:`, error);
     }
@@ -385,15 +376,12 @@ export class GameServer {
 
   private broadcastGameStarting(): void {
     try {
-      const wsManager = getGlobalWebSocketManager();
-      wsManager.serverBroadcastToRoom(this.roomName, {
-        domain: GAMEPLAY_DOMAIN,
-        type: 'game-starting',
-        payload: {
-          gameId: this.game.id,
-          countdown: this.countdownSeconds,
-        },
-      });
+      // TODO: these IDs should already be of type GameId / RoomId
+      gameplayWsEffects.broadcastGameStarting(
+        RoomId(this.roomName),
+        GameId(this.game.id),
+        this.countdownSeconds,
+      );
     } catch (error) {
       this.log.error('Failed to broadcast game-starting. Error:', error);
     }
@@ -410,7 +398,7 @@ export class GameServer {
     // Update game status to IN_PROGRESS in database
     try {
       const gameRepository = new GameRepository();
-      await gameRepository.updateStatus(this.game.id, GameStatus.IN_PROGRESS);
+      await gameRepository.updateStatus(GameId(this.game.id), GameStatus.IN_PROGRESS);
 
       // Get the updated game object with new status
       const updatedGame = await getGame(this.game.id);
@@ -426,23 +414,13 @@ export class GameServer {
 
   private async broadcastGameStart(game: GameWithPlayers): Promise<void> {
     try {
-      const wsManager = getGlobalWebSocketManager();
-      const payload: any = {
-        gameId: this.game.id,
-        playerMapping: this.getPlayerMapping(),
-        boardState: this.gameState.board,
-      };
-
-      // Include the full game object if available
-      if (game) {
-        payload.game = game;
-      }
-
-      wsManager.serverBroadcastToRoom(this.roomName, {
-        domain: GAMEPLAY_DOMAIN,
-        type: 'game-started',
-        payload,
-      });
+      gameplayWsEffects.broadcastGameStarted(
+        RoomId(this.roomName),
+        GameId(this.game.id),
+        this.getPlayerMapping(),
+        this.gameState.board,
+        game,
+      );
     } catch (error) {
       this.log.error(`Failed to broadcast game start`, error);
     }

@@ -1,4 +1,4 @@
-import { getGameCoordinator } from '@/gameplay/game-coordinator';
+import { getGameCoordinator } from '@/domains/gameplay/game-coordinator';
 
 async function undoLastQueuedMove(userId: number, gameId: number): Promise<void> {
   const gameCoordinator = getGameCoordinator();

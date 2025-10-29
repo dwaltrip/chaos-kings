@@ -1,7 +1,7 @@
 import { idToString, idToNumber } from '@kernel/branded-type';
-import { RoomId } from '@kernel/domains/system';
-import { GameId } from '@kernel/domains/game';
+import { GameId, RoomId } from '@kernel/ids';
 import { MsgCreators } from '@protocol/domains/gameplay/server-messages';
+
 import type { BoardState, PlayerIndex, PlayerMapping } from '@core/types';
 import type { PlayerQueuesMap } from '@common/types/gameplay';
 import type { GameWithPlayers } from '@common/types/games';
