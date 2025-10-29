@@ -3,6 +3,14 @@ import { EmptyPayload, ExtractMsg } from '@protocol/utils/type-helpers';
 import type { Coord, Direction } from '@core/types';
 
 type GameplayClientPayloadMap = {
+  'gameplay:join-game': {
+    gameId: number;
+  };
+
+  'gameplay:leave-game': {
+    gameId: number;
+  };
+
   'gameplay:move-request': {
     sourceCoord: Coord;
     direction: Direction;
@@ -16,11 +24,23 @@ type GameplayClientPayloadMap = {
 };
 
 type GameplayClientMessage = MessageUnion<GameplayClientPayloadMap>;
+type JoinGameMessage = ExtractMsg<GameplayClientMessage, 'gameplay:join-game'>;
+type LeaveGameMessage = ExtractMsg<GameplayClientMessage, 'gameplay:leave-game'>;
 type MoveRequestMessage = ExtractMsg<GameplayClientMessage, 'gameplay:move-request'>;
 type CancelMovesMessage = ExtractMsg<GameplayClientMessage, 'gameplay:cancel-moves'>;
 type UndoMoveMessage = ExtractMsg<GameplayClientMessage, 'gameplay:undo-move'>;
 
 const MsgCreators = {
+  createJoinGameMessage: (gameId: number): JoinGameMessage => ({
+    type: 'gameplay:join-game',
+    payload: { gameId },
+  }),
+
+  createLeaveGameMessage: (gameId: number): LeaveGameMessage => ({
+    type: 'gameplay:leave-game',
+    payload: { gameId },
+  }),
+
   createMoveRequestMessage: (
     sourceCoord: Coord,
     direction: Direction,

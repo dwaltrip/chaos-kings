@@ -1,22 +1,16 @@
+import { GameId } from '@kernel/ids';
+import { idToNumber } from '@kernel/branded-type';
+
 /**
- * Build WebSocket room ID from game ID
+ * Build WebSocket room slug from game ID (without domain prefix)
  * Used for joining/leaving game rooms for real-time gameplay
+ * Returns bare slug like "game-123", combine with domain to get full RoomId
+ *
+ * NOTE: We could theoretically parse gameId back out of the room slug,
+ * but we prefer to pass gameId explicitly in message payloads instead.
  */
-function buildGameRoomId(gameId: number): string {
-  return `game-${gameId}`;
+function buildGameRoomId(gameId: GameId): string {
+  return `game-${idToNumber(gameId)}`;
 }
 
-/**
- * Extract game ID from room ID
- * Returns null if room ID is not a valid game room format
- */
-function parseGameRoomId(roomId: string): number | null {
-  const match = roomId.match(/^game-(\d+)$/);
-  if (!match) {
-    return null;
-  }
-  const gameId = parseInt(match[1], 10);
-  return isNaN(gameId) ? null : gameId;
-}
-
-export { buildGameRoomId, parseGameRoomId };
+export { buildGameRoomId };

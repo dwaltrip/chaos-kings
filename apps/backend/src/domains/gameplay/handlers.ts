@@ -7,9 +7,19 @@ import {
   queueMove,
   cancelQueuedMoves,
   undoLastQueuedMove,
+  onPlayerJoined,
+  onPlayerLeft,
 } from '@/domains/gameplay/actions';
 
 const gameplayHandlers = {
+  'gameplay:join-game': ({ gameId }, ctx) => {
+    onPlayerJoined(GameId(gameId), UserId(ctx.userId), ctx.connectionId);
+  },
+
+  'gameplay:leave-game': ({ gameId }, ctx) => {
+    onPlayerLeft(GameId(gameId), UserId(ctx.userId), ctx.connectionId);
+  },
+
   'gameplay:move-request': ({ sourceCoord, direction }, ctx) => {
     queueMove(UserId(ctx.userId), sourceCoord, direction);
   },
