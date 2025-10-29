@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { GameId } from '@kernel/ids';
 
 import { asyncHandler, parseId } from '@/utils/route-handler';
 import { getGame, listGames } from '@/domains/games/actions';
@@ -24,7 +25,7 @@ async function gameRoutes(fastify: FastifyInstance) {
     '/games/:id',
     asyncHandler(async (request, reply) => {
       const { id } = request.params as { id: string };
-      const gameId = parseId(id);
+      const gameId = GameId(parseId(id));
 
       const game = await getGame(gameId);
       if (!game) {

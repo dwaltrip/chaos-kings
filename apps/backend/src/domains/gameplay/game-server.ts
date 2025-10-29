@@ -1,4 +1,4 @@
-import { UserId } from '@core/db-types';
+import { GameId, RoomId, UserId } from '@kernel/ids';
 import { GameState, BoardState, Direction, Coord, PlayerIndex } from '@core/types';
 import { Board } from '@core/board';
 import type { GameConfig } from '@core/game-config';
@@ -17,10 +17,9 @@ import { createScopedLogger } from '@/utils/scoped-logger';
 import { GameStatus } from '@/domains/games/types';
 import { GameRepository } from '@/domains/games/game-repository';
 import { getGame, endGame } from '@/domains/games/actions';
-
 import { gameplayWsEffects } from '@/domains/gameplay/ws-effects';
 import { MoveHistoryBuffer } from '@/domains/gameplay/move-history-buffer';
-import { GameId, RoomId } from '@kernel/ids';
+import { removeUserFromGame } from '@/domains/gameplay/actions';
 
 const MAX_QUEUED_MOVES_PER_PLAYER = 200;
 
@@ -58,7 +57,7 @@ export class GameServer {
 
     // setup player mappings and move queues
     game.players.forEach((player, playerIndex) => {
-      this.playerMapping.set(player.user_id, playerIndex);
+      this.playerMapping.set(UserId(player.user_id), playerIndex);
       this.playerQueues.set(playerIndex, []);
     });
 
@@ -401,7 +400,7 @@ export class GameServer {
       await gameRepository.updateStatus(GameId(this.game.id), GameStatus.IN_PROGRESS);
 
       // Get the updated game object with new status
-      const updatedGame = await getGame(this.game.id);
+      const updatedGame = await getGame(GameId(this.game.id));
       if (!updatedGame) {
         throw new Error(`Game ${this.game.id} not found after starting`);
       }
@@ -484,7 +483,7 @@ export class GameServer {
     try {
       const repo = new GameRepository();
       await this.moveHistory.flush(
-        (history) => repo.updateMoveHistory(this.game.id, history),
+        (history) => repo.updateMoveHistory(GameId(this.game.id), history),
         force,
       );
     } catch (error) {

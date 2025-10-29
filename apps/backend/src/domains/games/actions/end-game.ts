@@ -1,3 +1,4 @@
+import { GameId } from '@kernel/ids';
 import { GameState } from '@core/types';
 import { GameWithPlayers } from '@common/types/games';
 import type { MoveHistoryV1 } from '@core/replay/types';
@@ -39,7 +40,7 @@ async function endGame({
 
     // Update status, game_state and move_history in a single operation
     await gameRepository.updateStatusGameStateAndMoveHistory(
-      game.id,
+      GameId(game.id),
       GameStatus.COMPLETE,
       gameStateToSave,
       moveHistory,

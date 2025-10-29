@@ -1,4 +1,5 @@
 import { TICK_RATE_MS } from '@core/game-timing-config';
+import { GameId } from '@kernel/ids';
 
 import { createScopedLogger } from '@/utils/scoped-logger';
 import { GameServer } from '@/domains/gameplay/game-server';
@@ -7,7 +8,7 @@ import type { GameWithPlayers } from '@common/types/games';
 const moduleLogger = createScopedLogger('GameCoordinator');
 
 class GameCoordinator {
-  private games: Map<number, GameServer> = new Map();
+  private games: Map<GameId, GameServer> = new Map();
   private tickInterval: NodeJS.Timeout | null = null;
   private log = moduleLogger;
 
@@ -45,7 +46,7 @@ class GameCoordinator {
   }
 
   addGame(game: GameWithPlayers): void {
-    const gameId = game.id;
+    const gameId = GameId(game.id);
     if (this.games.has(gameId)) {
       this.log.info(`Game ${gameId} already exists in registry`);
       return;
@@ -56,7 +57,7 @@ class GameCoordinator {
     this.games.set(gameId, gameServer);
   }
 
-  removeGame(gameId: number): void {
+  removeGame(gameId: GameId): void {
     const gameServer = this.games.get(gameId);
     if (!gameServer) {
       this.log.info(`Attempted to remove non-existent game ${gameId}`);
@@ -68,11 +69,11 @@ class GameCoordinator {
     this.games.delete(gameId);
   }
 
-  getGame(gameId: number): GameServer | undefined {
+  getGame(gameId: GameId): GameServer | undefined {
     return this.games.get(gameId);
   }
 
-  requireGame(gameId: number): GameServer {
+  requireGame(gameId: GameId): GameServer {
     const game = this.games.get(gameId);
     if (!game) {
       throw new Error(`Game server for game=${gameId} not found`);

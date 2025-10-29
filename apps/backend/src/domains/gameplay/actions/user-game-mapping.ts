@@ -1,17 +1,21 @@
-import type { UserId, GameId } from '@core/db-types';
+import { UserId, GameId } from '@kernel/ids';
 
-const userGameMapping: Map<UserId, number> = new Map();
+import { createScopedLogger } from '@/utils/scoped-logger';
+
+const log = createScopedLogger('gameplay:user-game-mapping');
+
+const userGameMapping: Map<UserId, GameId> = new Map();
 
 function addUserToGame(userId: UserId, gameId: GameId): void {
   userGameMapping.set(userId, gameId);
-  console.log(`[GameplayActions] Added user ${userId} to game ${gameId}`);
+  log.debug(`Added user ${userId} to game ${gameId}`);
 }
 
 function removeUserFromGame(userId: UserId): void {
   const gameId = userGameMapping.get(userId);
-  if (gameId) {
+  if (gameId !== undefined) {
     userGameMapping.delete(userId);
-    console.log(`[GameplayActions] Removed user ${userId} from game ${gameId}`);
+    log.debug(`Removed user ${userId} from game ${gameId}`);
   }
 }
 

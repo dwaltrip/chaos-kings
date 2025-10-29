@@ -1,10 +1,14 @@
-import { getGameCoordinator } from '@/domains/gameplay/game-coordinator';
-import { addUserToGame } from '@/domains/gameplay/gameplay-ws-api';
-import { getGame } from '@/domains/games/actions';
-// No room management here; action handlers will manage matchmaking room membership
+import { GameId, UserId } from '@kernel/ids';
 
-export async function spawnGameInstance(gameId: number): Promise<void> {
-  console.log(`Spawning game instance for game ${gameId}`);
+import { createScopedLogger } from '@/utils/scoped-logger';
+import { getGameCoordinator } from '@/domains/gameplay/game-coordinator';
+import { registerPlayersForGame } from '@/domains/gameplay/actions';
+import { getGame } from '@/domains/games/actions';
+
+const log = createScopedLogger('matchmaking:spawn-game');
+
+async function spawnGameInstance(gameId: GameId): Promise<void> {
+  log.debug(`Spawning game instance for game ${gameId}`);
 
   // Get game data with players
   const game = await getGame(gameId);
@@ -16,10 +20,13 @@ export async function spawnGameInstance(gameId: number): Promise<void> {
   const gameCoordinator = getGameCoordinator();
   gameCoordinator.addGame(game);
 
-  // Set up user-game mappings for WebSocket API
-  game.players.forEach((player) => {
-    addUserToGame(player.user_id, gameId);
-  });
+  // Set up user-game mappings
+  registerPlayersForGame(
+    gameId,
+    game.players.map((p) => UserId(p.user_id)),
+  );
 
-  console.log(`Game ${gameId} instance spawned with ${game.players.length} players`);
+  log.info(`Game ${gameId} instance spawned with ${game.players.length} players`);
 }
+
+export { spawnGameInstance };

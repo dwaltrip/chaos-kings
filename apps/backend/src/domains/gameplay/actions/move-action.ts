@@ -1,16 +1,22 @@
 import type { Coord, Direction } from '@core/types';
-import { getGameCoordinator } from '../game-coordinator';
+import { UserId } from '@kernel/ids';
+
+import { createScopedLogger } from '@/utils/scoped-logger';
+import { getGameCoordinator } from '@/domains/gameplay/game-coordinator';
+
 import { getUserGame } from './user-game-mapping';
 
-export async function queueMove(
-  userId: number,
+const log = createScopedLogger('gameplay:queue-move');
+
+async function queueMove(
+  userId: UserId,
   sourceCoord: Coord,
   direction: Direction,
 ): Promise<void> {
   const gameId = getUserGame(userId);
 
   if (!gameId) {
-    console.log(`[GameplayActions] User ${userId} not in any active game`);
+    log.debug(`User ${userId} not in any active game`);
     return;
   }
 
@@ -18,9 +24,11 @@ export async function queueMove(
   const gameServer = gameCoordinator.getGame(gameId);
 
   if (!gameServer) {
-    console.log(`[GameplayActions] Game ${gameId} not found for user ${userId}`);
+    log.warn(`Game ${gameId} not found for user ${userId}`);
     return;
   }
 
   gameServer.queueMove(userId, sourceCoord, direction);
 }
+
+export { queueMove };
