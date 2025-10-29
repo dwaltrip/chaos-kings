@@ -1,8 +1,7 @@
 import { FastifyInstance } from 'fastify';
-import { createGame } from '@/game/actions/create-game';
-import { listGames } from '@/game/actions/list-games';
-import { getGame } from '@/game/actions/get-game';
+
 import { asyncHandler, parseId } from '@/utils/route-handler';
+import { getGame, listGames } from '@/domains/games/actions';
 
 async function gameRoutes(fastify: FastifyInstance) {
   // POST /api/games - Create new game

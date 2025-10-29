@@ -1,6 +1,6 @@
 import { getGameCoordinator } from '@/domains/gameplay/game-coordinator';
 import { addUserToGame } from '@/domains/gameplay/gameplay-ws-api';
-import { getGame } from '@/domains/games/actions/get-game';
+import { getGame } from '@/domains/games/actions';
 // No room management here; action handlers will manage matchmaking room membership
 
 export async function spawnGameInstance(gameId: number): Promise<void> {

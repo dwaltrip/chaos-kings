@@ -3,8 +3,8 @@ import { GameWithPlayers } from '@common/types/games';
 import type { MoveHistoryV1 } from '@core/replay/types';
 
 import { logger } from '@/utils/logger';
-import { GameRepository } from '@/game/game-repository';
-import { GameStatus } from '@/game/types';
+import { GameRepository } from '@/domains/games/game-repository';
+import { GameStatus } from '@/domains/games/types';
 
 interface EndGameParams {
   game: GameWithPlayers;
@@ -47,7 +47,7 @@ async function endGame({
 
     logger.info(`Successfully ended game ${game.id} and saved final state`);
   } catch (error) {
-    logger.error(`Failed to end game ${game.id}:`, error);
+    logger.error(`Failed to end game ${game.id}. Error: ${error}`);
     throw error;
   }
 }

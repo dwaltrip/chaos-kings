@@ -1,8 +1,9 @@
-import { createGame } from '@/game/actions/create-game';
-import { createUser } from '@/user/actions/create-user';
-import { GameStatus } from '@/game/types';
 import { PLAYER_COLORS } from '@core/colors';
+
 import { setupTestDb, cleanupTestDb, teardownTestDb, testDb } from '@/tests/test-helpers';
+import { createUser } from '@/domains/users/actions';
+import { GameStatus } from '@/domains/games/types';
+import { createGame } from '@/domains/games/actions/create-game';
 
 describe('createGame', () => {
   beforeAll(async () => {

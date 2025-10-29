@@ -6,7 +6,7 @@ import { idToNumber } from '@kernel/branded-type';
 import { FFA_NUM_PLAYERS_MAX } from '@common/constants/matchmaking';
 
 import { getClient } from '@/services/redis';
-import { createGame } from '@/domains/games/actions/create-game';
+import { createGame } from '@/domains/games/actions';
 
 // TOOD: is this the best way to handle userIds in Redis?
 const redisUserIds = {

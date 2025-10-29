@@ -1,5 +1,6 @@
-import { GamesTable } from '@/game/game.db';
 import { Selectable, Insertable } from 'kysely';
+
+import { GamesTable } from '@/domains/games/game.db';
 
 type Game = Selectable<GamesTable>;
 type NewGame = Insertable<GamesTable>;

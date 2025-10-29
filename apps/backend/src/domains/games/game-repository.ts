@@ -1,9 +1,9 @@
-import { db } from '@/services/db';
-import { GamesTable } from '@/game/game.db';
-import { Game, NewGame } from '@/game/types';
-import { GamePlayer } from '@/game-players/game-players-repository';
 import { Kysely } from 'kysely';
+
+import { db } from '@/services/db';
 import { Database } from '@/types';
+import { Game, NewGame } from '@/domains/games/types';
+import { GamePlayer } from '@/domains/games/game-players-repository';
 
 class GameRepository {
   constructor(private dbInstance: Kysely<Database> = db) {}

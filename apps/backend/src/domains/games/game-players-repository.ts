@@ -1,7 +1,8 @@
-import { db } from '@/services/db';
-import { GamePlayersTable, GamePlayerStatus } from '@/game-players/game-players.db';
 import { Kysely, Selectable, Insertable } from 'kysely';
+
+import { db } from '@/services/db';
 import { Database } from '@/types';
+import { GamePlayersTable, GamePlayerStatus } from '@/domains/games/game-players.db';
 
 type GamePlayer = Selectable<GamePlayersTable>;
 type NewGamePlayer = Insertable<GamePlayersTable>;

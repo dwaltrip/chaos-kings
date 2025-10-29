@@ -17,11 +17,11 @@ import { calcMapSizeForPlayers } from '@core/map/calc-map-size';
 import { colorsForPlayerCount } from '@core/colors';
 
 import { logger } from '@/utils/logger';
-import { GameRepository } from '@/game/game-repository';
-import { GamePlayersRepository } from '@/game-players/game-players-repository';
-import { GameStatus, Game, NewGame } from '@/game/types';
 import { Database } from '@/types';
 import { db } from '@/services/db';
+import { GameStatus, Game, NewGame } from '@/domains/games/types';
+import { GameRepository } from '@/domains/games/game-repository';
+import { GamePlayersRepository } from '@/domains/games/game-players-repository';
 
 async function createGame(
   playerIds: number[],

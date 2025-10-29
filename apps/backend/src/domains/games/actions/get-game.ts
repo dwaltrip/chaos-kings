@@ -1,8 +1,9 @@
-import { GameRepository } from '@/game/game-repository';
-import { Game } from '@/game/types';
 import { Kysely } from 'kysely';
-import { Database } from '@/types';
+
 import { GameWithPlayers } from '@common/types/games';
+import { Database } from '@/types';
+import { Game } from '@/domains/games/types';
+import { GameRepository } from '@/domains/games/game-repository';
 
 async function getGame_OLD(
   id: number,
