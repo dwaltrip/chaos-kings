@@ -1,5 +1,5 @@
-import { MessageUnion } from '@protocol/utils/message-helpers';
-import { ExtractMsg } from '@protocol/utils/type-helpers';
+import type { MessageUnion } from '@protocol/utils/message-helpers';
+import type { ExtractMsg } from '@protocol/utils/type-helpers';
 
 type ChatClientPayloadMap = {
   // NOTE: used to be "game-chat:post-message"

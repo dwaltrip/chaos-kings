@@ -1,5 +1,6 @@
 import { Grid } from '@core/terrain-generation/grid';
-import { CellState, Coord } from '@core/terrain-generation/types';
+import type { Coord } from '@core/terrain-generation/types';
+import { CellState } from '@core/terrain-generation/types';
 
 class DebugRenderer {
   // Renders grid as ASCII representation for debugging

@@ -1,4 +1,5 @@
-import { BoardState, Coord, Direction, PlayerSquareType, SquareType } from '@core/types';
+import type { BoardState, Coord } from '@core/types';
+import { Direction, PlayerSquareType, SquareType } from '@core/types';
 import { Board } from '@core/board';
 import { isPlayerSquare } from '@core/square';
 import {

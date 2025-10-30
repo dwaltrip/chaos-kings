@@ -1,6 +1,7 @@
 import { applyMovement } from '@core/engine';
 import { Board } from '@core/board';
-import { BoardState, Direction, SquareType, PlayerSquareType } from '@core/types';
+import type { BoardState } from '@core/types';
+import { Direction, SquareType, PlayerSquareType } from '@core/types';
 
 describe('applyMovement function', () => {
   let board: BoardState;

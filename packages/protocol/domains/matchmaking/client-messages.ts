@@ -1,6 +1,5 @@
-import { MessageUnion } from '@protocol/utils/message-helpers';
-import { EmptyPayload, ExtractMsg } from '@protocol/utils/type-helpers';
-import { create } from 'domain';
+import type { MessageUnion } from '@protocol/utils/message-helpers';
+import type { EmptyPayload, ExtractMsg } from '@protocol/utils/type-helpers';
 
 type MatchmakingClientPayloadMap = {
   'matchmaking:join-queue': EmptyPayload;

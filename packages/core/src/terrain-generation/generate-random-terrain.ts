@@ -1,6 +1,6 @@
 import {
+  type GenerationResult,
   generateTerrain,
-  GenerationResult,
 } from '@core/terrain-generation/generate-terrain';
 import { RandomCandidateGenerator } from '@core/terrain-generation/candidate-generator';
 

@@ -1,5 +1,6 @@
 import { tick } from '@core/engine';
-import { BoardState, SquareType } from '@core/types';
+import type { BoardState } from '@core/types';
+import { SquareType } from '@core/types';
 import {
   GENERAL_PRODUCTION_TICKS,
   ARMY_PRODUCTION_TICKS,

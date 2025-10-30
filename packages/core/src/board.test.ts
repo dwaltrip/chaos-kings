@@ -1,5 +1,6 @@
 import { Board } from '@core/board';
-import { BoardState, GameGrid, PlayerSquareType, NeutralSquareType } from '@core/types';
+import type { BoardState, GameGrid } from '@core/types';
+import { PlayerSquareType, NeutralSquareType } from '@core/types';
 
 function blank(x: number, y: number) {
   return { coord: { x, y }, type: NeutralSquareType.BLANK };

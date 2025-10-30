@@ -1,6 +1,6 @@
-import { RoomId, UserId } from '@kernel/ids';
-import { MessageUnion } from '@protocol/utils/message-helpers';
-import { ExtractMsg } from '@protocol/utils/type-helpers';
+import type { RoomId, UserId } from '@kernel/ids';
+import type { MessageUnion } from '@protocol/utils/message-helpers';
+import type { ExtractMsg } from '@protocol/utils/type-helpers';
 
 type RoomStatusPayload = {
   roomId: RoomId;

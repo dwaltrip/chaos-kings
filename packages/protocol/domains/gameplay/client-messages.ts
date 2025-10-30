@@ -1,5 +1,5 @@
-import { MessageUnion } from '@protocol/utils/message-helpers';
-import { EmptyPayload, ExtractMsg } from '@protocol/utils/type-helpers';
+import type { MessageUnion } from '@protocol/utils/message-helpers';
+import type { EmptyPayload, ExtractMsg } from '@protocol/utils/type-helpers';
 import type { Coord, Direction } from '@core/types';
 
 type GameplayClientPayloadMap = {

@@ -1,4 +1,4 @@
-import { Brand } from '@kernel/branded-type';
+import type { Brand } from '@kernel/branded-type';
 
 type ChatMessageId = Brand<number, 'ChatMessageId'>;
 
