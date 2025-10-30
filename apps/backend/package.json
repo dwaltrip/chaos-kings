@@ -5,7 +5,7 @@
   "scripts": {
     "start": "ts-node src/server.ts",
     "dev": "ts-node --watch src/server.ts",
-    "build": "tsc && tsc-alias",
+    "build": "tsc -p tsconfig.build.json && tsc-alias",
     "prod": "node dist/server.js",
     "start:prod": "ts-node -r tsconfig-paths/register src/server.ts",
     "test": "jest --silent --verbose=false --reporters=summary",

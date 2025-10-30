@@ -10,6 +10,7 @@
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
+    "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
@@ -34,12 +35,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": [
-    "src",
-    "../../packages/kernel/**/*.ts",
-    "../../packages/platform/**/*.ts",
-    "../../packages/protocol/**/*.ts",
-    "../../packages/core/src/**/*.ts",
-    "../../packages/common/**/*.ts"
-  ]
+  "include": ["src"]
 }
