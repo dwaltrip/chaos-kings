@@ -105,6 +105,8 @@ Does backend auto-join users to rooms, or is frontend explicit joining required?
 
 #### Finding 2: Chat Username Population Not Implemented
 
+**UPDATE (2025-10-31):** ✅ Already implemented in commit e020b53 (Oct 28). UserRepository lookup working correctly.
+
 **Confidence:** 🟡 Medium (TODO exists, user lookup infrastructure may exist elsewhere)
 
 **Evidence:**
