@@ -4,13 +4,13 @@ import { HomePage } from '@/pages/home/home-page';
 import { GameplayPage } from '@/pages/gameplay/gameplay-page';
 import { GameListPage } from '@/pages/games-list/game-list-page';
 import { JoinGamePage } from '@/pages/join-game/join-game-page';
-import { useUserWebSocketInit } from '@/hooks/use-user-websocket-init';
+import { useUserSessionAndWsInit } from '@/hooks/use-user-session-and-ws-init';
 
 function App() {
-  const { isReady } = useUserWebSocketInit();
+  const { ready } = useUserSessionAndWsInit();
   const location = useLocation();
 
-  if (!isReady) {
+  if (!ready) {
     return <div className="p-5 text-center">Loading...</div>;
   }
 

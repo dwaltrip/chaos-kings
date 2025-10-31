@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react';
-
 import { ConnectionState } from '@/ws-lib';
 import type { HandlerMap } from '@/ws-lib';
 import { WSClient } from '@/ws-lib/client';
@@ -60,26 +58,6 @@ function initializeWsClient() {
   return clientInstance;
 }
 
-type InitializeWsAppResult = {
-  initialized: boolean;
-  connectionState: ConnectionState;
-};
-
-function useInitializeWsApp(): InitializeWsAppResult {
-  const [initialized, setInitialized] = useState(false);
-  const connectionState = useWsConnectionStore((state) => state.readyState);
-
-  useEffect(() => {
-    initializeWsClient();
-    setInitialized(true);
-  }, []);
-
-  return {
-    initialized,
-    connectionState,
-  };
-}
-
 function resetWsClientForTests() {
   if (clientInstance) {
     clientInstance.disconnect();
@@ -93,5 +71,4 @@ function resetWsClientForTests() {
   store.setReconnectAttempts(0);
 }
 
-export type { InitializeWsAppResult };
-export { useInitializeWsApp, resetWsClientForTests, initializeWsClient };
+export { resetWsClientForTests, initializeWsClient };
