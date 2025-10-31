@@ -71,7 +71,11 @@ class WSClient<
   }
 
   getState(): ConnectionState {
-    return this.ws?.readyState ?? ConnectionState.CLOSED;
+    return (this.ws?.readyState as ConnectionState) ?? ConnectionState.CLOSED;
+  }
+
+  private isValidMessageType(type: string): type is TIncoming['type'] {
+    return type in this.handlers;
   }
 
   private connect() {
@@ -123,12 +127,13 @@ class WSClient<
     }
 
     const message = parsed as TIncoming;
-    const handler = this.handlers[message.type];
 
-    if (!handler) {
+    if (!this.isValidMessageType(message.type)) {
       console.warn(`No handler registered for message type "${message.type}"`);
       return;
     }
+
+    const handler = this.handlers[message.type];
 
     try {
       handler(message.payload);

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { userStore } from '@/stores/user-store';
+
+import { userStore } from '@/domains/users/user-store';
 import { validateUsername } from '@/utils/username-validation';
 
 interface UsernameFormProps {

@@ -1,6 +1,6 @@
 import type { WSClient } from './client';
 
-class ClientBridge<TMessage> {
+class ClientBridge<TMessage extends { type: string; payload: unknown }> {
   private client: WSClient<any, TMessage> | null = null;
 
   init(client: WSClient<any, TMessage>) {

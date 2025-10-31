@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
+
 import { apiService } from '@/services/api-service';
 import type { GameWithPlayers, ListGamesResponse } from '@common/types/games';
-import { GameListPlayerInfo } from '@/pages/games/game-list-player-info';
+
+import { GameListPlayerInfo } from '@/pages/games-list/game-list-player-info';
 
 // TODO: layout on this page is a bit messed up. it's overflowing / not scrolling
 function GameListPage() {
