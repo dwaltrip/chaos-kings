@@ -7,26 +7,23 @@ This doc tracks active status and work for the epic. It's a living tracker updat
 
 ## Current Status
 
-**Current Phase:** Phase 3 - v1 Logic Integration & Migration (In Progress)
+**Current Phase:** v2 System Activation Complete - Ready for Testing & Cleanup
 
-**Last Updated:** 2025-10-27
+**Last Updated:** 2025-10-31
 
 **Just Completed:**
-- Frontend domain logic integration (Phase 3.1 - first pass, all 3 domains):
-  - Removed legacy v1 handlers and actions files (e.g. game-*-ws-handler.ts, game-*-actions.ts)
-  - Consolidated v1 actions into v2 actions.ts structure
-  - Updated handlers to use new action patterns
-  - Wired components/pages to use new actions and `useWsConnectionStore`
-- Domain-specific changes:
-  - **Matchmaking:** Store integration, basic navigation (needs React Router replacement)
-  - **Gameplay:** Split monolithic actions.ts into individual action files under actions/ directory
-  - **Chat:** Added username field to protocol, created room helpers (`buildChatRoomId`), renamed store
+- v2 WebSocket system activation (commits 9068370, 2b0786b):
+  - Created backend server entry point (server.ts + main.ts orchestration)
+  - Wired v2 WS infrastructure with auth flow
+  - Deleted v1 backend WebSocket infrastructure
+  - Server tested and running on port 3131
 
 **What's Next:**
-- Complete room join/leave lifecycle integration (see tactical doc `10-27-[1]`)
-- Backend chat username population
-- Additional v1 logic migration and cleanup
-- Backend v1/v2 integration (including frontend WS init reconciliation - see `10-27-[2]-frontend-ws-init-reconciliation.md`)
+- End-to-end system testing
+- Review remaining TODOs and lingering issues
+- Complete room join/leave lifecycle integration (verify status - see tactical doc `10-27-[1]`)
+- Backend chat username population (verify if still needed)
+- Address any discovered gaps or cleanup items
 
 ---
 
@@ -60,23 +57,28 @@ This section tracks major milestones only. See tactical docs for detailed implem
 - Transitional shims for React/Zustand types added (replace with real deps later)
 - See tactical doc: 10-19-[3]-ws-infra-frontend-implementation.md
 
-**Phase 3.1: First pass migrating Frontend app logic from v1 into v2** (Oct 10- 27, 2025)
+**Phase 3.1: First pass migrating Frontend app logic from v1 into v2** (Oct 10-27, 2025)
 - Removed legacy v1 handlers and actions files (e.g. game-*-ws-handler.ts, game-*-actions.ts)
 - Consolidated v1 actions into v2 actions.ts structure
 - Updated handlers to delegate all logic to actions, ensured UI components use v2 actions
 - Reorganized v1 files to better fit the new more clearly defined domain-based structure
 
+**Phase 3.2: v2 System Activation** (Oct 31, 2025) ✅
+- Created backend server entry point (server.ts exports startServer(), main.ts orchestrates)
+- Wired v2 WS server into Fastify with auth flow (commits 9068370, 2b0786b)
+- Deleted v1 backend WebSocket infrastructure (websocket-v0.1/, server-v0.1.ts)
+- See tactical doc: 10-30-[1]-critical-path-v2-system-activation.md
+
 ---
 
 ### Next Milestones
 
-**Backend v1/v2 Integration** (Queued)
-- Migrate majority of v1 `backend/src` code into v2 backend structure
-- Reorganize to fit v2 domain-based folder structure
-- Wire v1 logic into v2 architecture (handlers, actions, services, etc.)
-- Integrate v2 WS server into Fastify app with auth plugin
-- Clarify user identification pattern for WS connections (`req.currentUser`)
-- Complete frontend WS init reconciliation once backend pattern is clear (see `10-27-[2]-frontend-ws-init-reconciliation.md`)
+**System Testing & Cleanup** (Next)
+- End-to-end testing of v2 system
+- Review and address remaining TODOs
+- Verify room join/leave lifecycle integration status
+- Verify chat username population status
+- Address any lingering issues or gaps
 
 **System Domain Follow-ups** (Queued)
 - Frontend listener/state integration once WS client pub/sub lands
