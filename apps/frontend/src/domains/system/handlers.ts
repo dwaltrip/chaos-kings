@@ -6,7 +6,8 @@ type SystemHandlerMap = HandlerMap<SystemServerMessage>;
 
 const systemHandlers = {
   'system:room-status-update': (payload) => {
-    // TODO: Wire this into real state once the WS client pub/sub utilities land (Phase 2.2).
+    // TODO: Can explore using this for showing how many users are in a room, etc.
+    // Not a priority right now.
     console.debug('[systemHandlers] Received room status update (stub).', payload);
   },
 } as const satisfies SystemHandlerMap;

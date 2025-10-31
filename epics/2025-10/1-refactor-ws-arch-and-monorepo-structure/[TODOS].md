@@ -18,13 +18,7 @@ Inbox for discovered and unplanned work items.
 
 Tasks we know we need to do:
 
-- [ ] **Matchmaking navigation improvements**
-  - Replace `window.location.href` with React Router navigate helper (`actions.ts:52`)
-  - Clear matchmaking state on game ready (`actions.ts:48`)
-
-- [ ] System domain follow-ups
-  - Hook `system:room-status-update` into frontend state
-  - Decide on persistence strategy for membership tracker (Redis vs in-memory)
+* [ ] Finish the refactor!
 
 ---
 
@@ -37,11 +31,18 @@ Not yet prioritized (may be lower priority for now) or fully scoped:
   - Broader question: Are there other cross-domain action patterns like this? Is this a code smell?
   - Consider: Should matchmaking call into gameplay/games actions instead of owning spawn logic?
   - Revisit when integrating game + gameplay domains to establish clear boundaries
-- [ ] Frontend WS init reconciliation (blocked on backend v1/v2 integration - see `10-27-[2]-frontend-ws-init-reconciliation.md`)
+
 - [ ] Migrate v1 MatchmakingService logic into v2 backend actions
 - [ ] Define cross-domain error handling patterns
 - [ ] Decide on long-term room naming strategy
 - [ ] Implement system heartbeat & lifecycle handling (deferred until WS infra stabilizes)
+
+- [ ] System domain follow-ups
+  - Hook `system:room-status-update` into frontend state
+  - Decide on persistence strategy for membership tracker (Redis vs in-memory)
+- [ ] **Matchmaking navigation improvements**
+  - Replace `window.location.href` with React Router navigate helper (`actions.ts:52`)
+  - Clear matchmaking state on game ready (`actions.ts:48`)
 
 ---
 
@@ -52,6 +53,7 @@ Completed tasks (clean out periodically):
 ##### 2025-10 (October)
 
 - [x] Room join/leave lifecycle integration (Oct 31 - gameplay + chat room joining in GameplayPage)
+- [x] Frontend WS init reconciliation (doc: `10-27-[2]-frontend-ws-init-reconciliation.md`)
 - [x] Backend chat username population (implemented Oct 28 via UserRepository)
 - [x] Centralized room membership in system domain (join/leave transport + shared helper)
 - [x] Fixed ws-effects gap in frontend domain scaffold

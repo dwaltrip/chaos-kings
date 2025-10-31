@@ -80,12 +80,6 @@ This section tracks major milestones only. See tactical docs for detailed implem
 - Verify chat username population status
 - Address any lingering issues or gaps
 
-**System Domain Follow-ups** (Queued)
-- Frontend listener/state integration once WS client pub/sub lands
-- Decide on persistence strategy for membership tracker (Redis vs in-memory)
-- Implement heartbeat & lifecycle handling
-- See tactical doc: 10-20-[3]-system-domain-implementation-plan.md
-
 ---
 
 ### Longer-Term Roadmap
@@ -102,3 +96,12 @@ Issues and concerns flagged during implementation that don't block current work 
 
 **[2025-10-15] Gameplay domain flags:**
 - **v1 get-user-mapping pattern:** Current v1 pattern for mapping userId → gameId is suboptimal. Documented in TODOs but not refactoring during Phase 1 scaffolding.
+
+---
+
+### Deferred / Low-priority
+
+**System Domain Follow-ups**
+- Decide on persistence strategy for membership tracker (Redis vs in-memory)
+- Implement heartbeat, ws status info bells and whistles (e.g. msg type `system:room-status-update`)
+- See tactical doc: 10-20-[3]-system-domain-implementation-plan.md
