@@ -2,6 +2,10 @@ import { RoomId } from '@kernel/domains/system';
 
 import { chatStore } from '@/domains/chat/chat-store';
 import { chatWsEffects } from '@/domains/chat/ws-effects';
+import {
+  joinGameChatRoom,
+  leaveGameChatRoom,
+} from '@/domains/chat/actions/join-game-chat-room';
 
 import type { ChatMessage } from './types';
 
@@ -27,4 +31,10 @@ function setNewMessage(message: string) {
   actions.setNewMessage(message);
 }
 
-export { sendChatMessage, addReceivedMessage, setNewMessage };
+export {
+  sendChatMessage,
+  addReceivedMessage,
+  setNewMessage,
+  joinGameChatRoom,
+  leaveGameChatRoom,
+};

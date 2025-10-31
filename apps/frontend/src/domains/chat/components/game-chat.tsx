@@ -8,12 +8,6 @@ import { sendChatMessage, setNewMessage } from '@/domains/chat/actions';
 
 import '@/pages/gameplay/game-chat/game-chat.css';
 
-// TODO: Figure out where to join/leave the chat room
-// Options:
-// - Component-level useEffect
-// - Page-level initialization
-// - Action-level helper
-
 function GameChat({ game }: { game: Game }) {
   const messages = chatStore((state) => state.messages);
   const newMessage = chatStore((state) => state.newMessage);

@@ -1,14 +1,15 @@
 import { useEffect } from 'react';
 import { useParams, Navigate } from 'react-router';
+import { GameId } from '@kernel/ids';
 
-// import { bareRoomForGameplay } from '@common/domains/game/utils';
 import { useWsConnectionStore } from '@/ws-lib';
 import { userStore } from '@/domains/users/user-store';
 import {
   gameMetadataStore,
   useGameLoadingState,
 } from '@/domains/gameplay/stores/game-metadata-store';
-
+import { joinGameplay, leaveGameplay } from '@/domains/gameplay/actions';
+import { joinGameChatRoom, leaveGameChatRoom } from '@/domains/chat/actions';
 import { GameChat } from '@/domains/chat/components/game-chat';
 import { GameHeader } from '@/pages/gameplay/components/gameplay-header';
 import { GameplayMainContent } from '@/pages/gameplay/components/gameplay-main-content';
@@ -45,9 +46,6 @@ function MessageDisplay({
   );
 }
 
-// -------------------------------------------------------------------------
-// TODO: figure out when we should be joining the "room" for this gameId...
-// -------------------------------------------------------------------------
 function GamePageContent({ gameId }: { gameId: string }) {
   const user = userStore((state) => state.user);
 
@@ -60,12 +58,6 @@ function GamePageContent({ gameId }: { gameId: string }) {
   const playerMapping = gameMetadataStore((state) => state.playerMapping);
   const { actions } = gameMetadataStore.getState();
 
-  // Connect to gameplay WebSocket at page level so players join the gameplay room
-  // immediately when page loads, even before GameUI renders. This ensures the
-  // backend can send countdown messages to players who are waiting.
-  // Ideally we'd keep WebSocket details contained in GameUI, but for now this
-  // is the easiest solution to fix the countdown race condition.
-  // useGameplayWebSocket(game ? game.id : null);
   const isConnected = useWsConnectionStore((state) => state.isConnected);
 
   useEffect(() => {
@@ -73,6 +65,19 @@ function GamePageContent({ gameId }: { gameId: string }) {
       actions.loadGame(gameId);
     }
   }, [gameId, game, isLoadingGame, actions]);
+
+  // Join gameplay and chat rooms when page loads
+  useEffect(() => {
+    const numericGameId = GameId(parseInt(gameId, 10));
+
+    joinGameplay(numericGameId);
+    joinGameChatRoom(numericGameId);
+
+    return () => {
+      leaveGameplay(numericGameId);
+      leaveGameChatRoom(numericGameId);
+    };
+  }, [gameId]);
 
   if (!user) {
     return <Navigate to="/" replace />;
