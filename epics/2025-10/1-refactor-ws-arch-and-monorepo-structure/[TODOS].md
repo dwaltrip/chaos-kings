@@ -18,11 +18,6 @@ Inbox for discovered and unplanned work items.
 
 Tasks we know we need to do:
 
-- [ ] **Room join/leave lifecycle integration** (High priority - see tactical doc `10-27-[1]-room-join-leave-lifecycle.md`)
-  - Determine where frontend should trigger `systemWsEffects.joinRoom/leaveRoom` for chat, gameplay, and matchmaking
-  - Decide: backend-initiated vs frontend-initiated room joins
-  - Current state: System domain owns transport, but call sites unclear
-
 - [ ] **Matchmaking navigation improvements**
   - Replace `window.location.href` with React Router navigate helper (`actions.ts:52`)
   - Clear matchmaking state on game ready (`actions.ts:48`)
@@ -56,6 +51,7 @@ Completed tasks (clean out periodically):
 
 ##### 2025-10 (October)
 
+- [x] Room join/leave lifecycle integration (Oct 31 - gameplay + chat room joining in GameplayPage)
 - [x] Backend chat username population (implemented Oct 28 via UserRepository)
 - [x] Centralized room membership in system domain (join/leave transport + shared helper)
 - [x] Fixed ws-effects gap in frontend domain scaffold

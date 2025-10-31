@@ -65,6 +65,8 @@ Systematically identify remaining work items after v2 system activation (commits
 
 #### Finding 1: Room Join/Leave Lifecycle Status Unclear
 
+**UPDATE (2025-10-31):** ✅ Implemented in commit a27524c. Frontend joins gameplay/chat rooms in GameplayPage useEffect.
+
 **Confidence:** 🟡 Medium (TODOs exist but may be stale)
 
 **Evidence:**
