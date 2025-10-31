@@ -9,7 +9,6 @@ import {
   useGameLoadingState,
 } from '@/domains/gameplay/stores/game-metadata-store';
 import { joinGameplay, leaveGameplay } from '@/domains/gameplay/actions';
-import { joinGameChatRoom, leaveGameChatRoom } from '@/domains/chat/actions';
 import { GameChat } from '@/domains/chat/components/game-chat';
 import { GameHeader } from '@/pages/gameplay/components/gameplay-header';
 import { GameplayMainContent } from '@/pages/gameplay/components/gameplay-main-content';
@@ -66,17 +65,10 @@ function GamePageContent({ gameId }: { gameId: string }) {
     }
   }, [gameId, game, isLoadingGame, actions]);
 
-  // Join gameplay and chat rooms when page loads
   useEffect(() => {
     const numericGameId = GameId(parseInt(gameId, 10));
-
     joinGameplay(numericGameId);
-    joinGameChatRoom(numericGameId);
-
-    return () => {
-      leaveGameplay(numericGameId);
-      leaveGameChatRoom(numericGameId);
-    };
+    return () => leaveGameplay(numericGameId);
   }, [gameId]);
 
   if (!user) {

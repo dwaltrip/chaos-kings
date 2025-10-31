@@ -1,10 +1,16 @@
-import { RoomId } from '@kernel/ids';
+import { useEffect } from 'react';
+import { GameId, RoomId } from '@kernel/ids';
 import type { Game } from '@common/types/games';
 import { buildChatRoomId } from '@platform/domains/chat/helpers';
 
 import { useWsConnectionStore } from '@/ws-lib';
 import { chatStore } from '@/domains/chat/chat-store';
-import { sendChatMessage, setNewMessage } from '@/domains/chat/actions';
+import {
+  sendChatMessage,
+  setNewMessage,
+  joinGameChatRoom,
+  leaveGameChatRoom,
+} from '@/domains/chat/actions';
 
 import '@/pages/gameplay/game-chat/game-chat.css';
 
@@ -14,6 +20,12 @@ function GameChat({ game }: { game: Game }) {
   const isConnected = useWsConnectionStore((state) => state.isConnected);
 
   const roomId = RoomId(buildChatRoomId(game.id));
+
+  useEffect(() => {
+    const gameId = GameId(game.id);
+    joinGameChatRoom(gameId);
+    return () => leaveGameChatRoom(gameId);
+  }, [game.id]);
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
