@@ -1,13 +1,14 @@
 import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
-import { UserRepository } from '@/user/user-repository';
+
 import { SessionStore } from '@/services/session-store';
-import { USER_KEY_COOKIE_NAME } from '@/user/user-key-cookie';
+import { UserRepository } from '@/domains/users/user-repository';
+import { USER_KEY_COOKIE_NAME } from '@/domains/users/user-key-cookie';
 import {
   SESSION_COOKIE_NAME,
   SESSION_COOKIE_OPTIONS,
   generateSessionId,
-} from '@/user/session-cookie';
+} from '@/domains/users/session-cookie';
 
 const authPlugin: FastifyPluginAsync = async (fastify) => {
   const sessionStore = new SessionStore();
@@ -55,8 +56,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
         created_at: user.created_at.toISOString(),
       };
     } catch (error) {
-      console.warn('Failed to authenticate user:', error);
-      fastify.log.warn('Failed to authenticate user:', error);
+      fastify.log.warn(`Failed to authenticate user: ${error}`);
     }
   });
 };
