@@ -32,6 +32,12 @@ Not yet prioritized (may be lower priority for now) or fully scoped:
   - Consider: Should matchmaking call into gameplay/games actions instead of owning spawn logic?
   - Revisit when integrating game + gameplay domains to establish clear boundaries
 
+- [ ] **ws-lib polish items** (see investigation doc `10-31-[1]` Finding #5)
+  - [ ] Send error messages to client (see tactical `10-31-[2]-ws-error-messages-to-client.md`)
+  - [ ] Replace connection ID generator with UUID library
+  - [ ] Use branded RoomId in RoomManager (requires idToString conversions)
+  - [ ] Use branded UserId in HandlerContext (affects all handler signatures)
+
 - [ ] Migrate v1 MatchmakingService logic into v2 backend actions
 - [ ] Define cross-domain error handling patterns
 - [ ] Decide on long-term room naming strategy
