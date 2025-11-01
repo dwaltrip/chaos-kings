@@ -12,7 +12,7 @@ import {
   leaveGameChatRoom,
 } from '@/domains/chat/actions';
 
-import '@/pages/gameplay/game-chat/game-chat.css';
+import '@/domains/chat/components/game-chat.css';
 
 function GameChat({ game }: { game: Game }) {
   const messages = chatStore((state) => state.messages);

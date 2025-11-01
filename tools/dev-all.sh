@@ -28,7 +28,7 @@ trap cleanup SIGINT SIGTERM EXIT
 
 # Start backend development server
 echo "📦 Starting backend server..."
-cd "$PROJECT_ROOT/backend"
+cd "$PROJECT_ROOT/apps/backend"
 fnm use 2>/dev/null || true
 npm run start &
 BACKEND_PID=$!
@@ -38,7 +38,7 @@ sleep 2
 
 # Start frontend development server
 echo "⚛️  Starting frontend server..."
-cd "$PROJECT_ROOT/frontend"
+cd "$PROJECT_ROOT/apps/frontend"
 fnm use 2>/dev/null || true
 npm run dev &
 FRONTEND_PID=$!

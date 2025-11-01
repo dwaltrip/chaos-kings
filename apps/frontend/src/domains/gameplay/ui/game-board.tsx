@@ -4,7 +4,7 @@ import { serializeCoord } from '@core/utils/coordinate-utils';
 import { useGridLayout } from '@/domains/gameplay/hooks/use-grid-layout';
 import { GameTile } from '@/domains/gameplay/ui/game-tile';
 
-import '@/game-ui/game-board.css';
+import '@/domains/gameplay/ui/game-board.css';
 
 interface GameBoardProps {
   boardState: BoardState;

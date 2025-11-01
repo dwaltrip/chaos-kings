@@ -9,8 +9,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@common': path.resolve(__dirname, '../common'),
-      '@core': path.resolve(__dirname, '../core/src'),
+      '@kernel': path.resolve(__dirname, '../../packages/kernel'),
+      '@protocol': path.resolve(__dirname, '../../packages/protocol'),
+      '@platform': path.resolve(__dirname, '../../packages/platform'),
+      '@common': path.resolve(__dirname, '../../packages/common'),
+      '@core': path.resolve(__dirname, '../../packages/core/src'),
     },
   },
   server: {
