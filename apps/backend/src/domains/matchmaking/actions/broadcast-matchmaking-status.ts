@@ -1,6 +1,7 @@
 import { getMatchmakingService } from '@/domains/matchmaking/matchmaking-service';
 import { matchmakingWsEffects } from '@/domains/matchmaking/ws-effects';
 
+// TODO: combine status updates into single message type?
 async function broadcastMatchmakingStatus(): Promise<void> {
   const matchmakingService = await getMatchmakingService();
 

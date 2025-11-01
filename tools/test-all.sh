@@ -9,9 +9,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 echo "Running backend tests..."
-cd "$PROJECT_ROOT/backend" && npm test
+cd "$PROJECT_ROOT/apps/backend" && npm test
 
 echo "Running core tests..."
-cd "$PROJECT_ROOT/core" && npm test
+cd "$PROJECT_ROOT/packages/core" && npm test
 
 echo "✅ All tests completed successfully!"

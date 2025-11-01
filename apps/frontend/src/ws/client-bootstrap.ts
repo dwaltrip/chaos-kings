@@ -20,7 +20,8 @@ const mergedHandlers = {
 
 let clientInstance: WSClient<ServerMessage, ClientMessage> | null = null;
 
-const DEFAULT_WS_URL = 'ws://localhost:3000/ws';
+// TODO: use env vars / config for this
+const DEFAULT_WS_URL = 'ws://localhost:3131/ws';
 
 function resolveWsUrl() {
   if (typeof import.meta !== 'undefined' && typeof import.meta.env !== 'undefined') {
