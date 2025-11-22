@@ -3,7 +3,7 @@ import { createClient } from 'redis';
 
 import { GameId, UserId } from '@kernel/ids';
 import { idToNumber } from '@kernel/branded-type';
-import { FFA_NUM_PLAYERS_MAX } from '@common/constants/matchmaking';
+import { FFA_NUM_PLAYERS_MAX } from '@platform/domains/matchmaking/constants';
 
 import { getClient } from '@/services/redis';
 import { createGame } from '@/domains/games/actions';

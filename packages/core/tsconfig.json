@@ -5,6 +5,7 @@
     "moduleResolution": "nodenext",
     "baseUrl": ".",
     "paths": {
+      "@utils/*": ["../utils/*"],
       "@common/*": ["../common/*"],
       "@core/*": ["./src/*"]
     },

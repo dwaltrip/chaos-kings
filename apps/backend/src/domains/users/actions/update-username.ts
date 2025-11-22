@@ -1,6 +1,6 @@
 import { Selectable, Kysely } from 'kysely';
 
-import { validateUsername } from '@common/validation/username';
+import { validateUsername } from '@/domains/users/validation/username';
 import { Database } from '@/types';
 
 import { UsersTable } from '@/domains/users/user.db';

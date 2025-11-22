@@ -7,6 +7,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@utils/*": ["../../packages/utils/*"],
       "@kernel/*": ["../../packages/kernel/*"],
       "@platform/*": ["../../packages/platform/*"],
       "@protocol/*": ["../../packages/protocol/*"],

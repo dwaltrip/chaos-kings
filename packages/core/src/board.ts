@@ -1,4 +1,4 @@
-import { invariant } from '@common/utils/invariant';
+import { invariant } from '@utils/assertions/invariant';
 import type { BoardState, Coord, Square, PlayerSquare } from '@core/types';
 import { Direction, SquareType } from '@core/types';
 import { isPlayerSquare } from '@core/square';

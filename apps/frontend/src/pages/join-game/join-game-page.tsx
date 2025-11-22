@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-import { FFA_NUM_PLAYERS_MAX } from '@common/constants/matchmaking';
+import { FFA_NUM_PLAYERS_MAX } from '@platform/domains/matchmaking/constants';
 import { MATCHMAKING_WAITING_TIMER_INTERVAL_MS } from '@core/ui-timing-config';
 
 import { useWsConnectionStore } from '@/ws-lib';

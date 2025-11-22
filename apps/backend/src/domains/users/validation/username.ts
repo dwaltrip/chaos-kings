@@ -28,4 +28,5 @@ function validateUsername(username: string): UsernameValidationResult {
   return { isValid: true };
 }
 
-export { validateUsername, type UsernameValidationResult };
+export type { UsernameValidationResult };
+export { validateUsername };

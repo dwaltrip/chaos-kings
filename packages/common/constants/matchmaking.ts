@@ -1,4 +1,0 @@
-const FFA_NUM_PLAYERS_MAX = 8;
-const MATCHMAKING_ROOM_NAME = 'matchmaking-queue';
-
-export { FFA_NUM_PLAYERS_MAX, MATCHMAKING_ROOM_NAME };
