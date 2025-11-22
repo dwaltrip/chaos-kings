@@ -9,8 +9,9 @@ import {
 } from '@core/ui-timing-config';
 import { processStep as coreProcessStep } from '@core/step-processor';
 import type { MoveEvent } from '@core/replay/types';
+import { makeRoomId } from '@protocol/domains/system';
+import { buildGameRoomId } from '@platform/domains/gameplay/helpers';
 import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
-import { roomKey } from '@common/utils/room-key';
 import type { GameWithPlayers } from '@common/types/games';
 
 import { createScopedLogger } from '@/utils/scoped-logger';
@@ -52,7 +53,7 @@ export class GameServer {
 
   constructor(game: GameWithPlayers) {
     this.game = game;
-    this.roomName = roomKey(GAMEPLAY_DOMAIN, `game-${this.game.id}`);
+    this.roomName = makeRoomId(GAMEPLAY_DOMAIN, buildGameRoomId(GameId(this.game.id)));
     this.log.debug('New GameServer');
 
     // setup player mappings and move queues
