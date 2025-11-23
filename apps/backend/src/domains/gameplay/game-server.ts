@@ -9,9 +9,7 @@ import {
 } from '@core/ui-timing-config';
 import { processStep as coreProcessStep } from '@core/step-processor';
 import type { MoveEvent } from '@core/replay/types';
-import { makeRoomId } from '@protocol/domains/system';
 import { buildGameRoomId } from '@platform/domains/gameplay/helpers';
-import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
 import type { GameWithPlayers } from '@common/types/games';
 
 import { createScopedLogger } from '@/utils/scoped-logger';
@@ -35,7 +33,7 @@ export class GameServer {
   private game: GameWithPlayers;
   private gameState: GameState;
   private playerQueues: Map<PlayerIndex, QueuedMove[]> = new Map();
-  private roomName: string;
+  private roomName: RoomId;
   private playerMapping: Map<UserId, PlayerIndex> = new Map(); // userId -> playerIndex
   private connectedPlayers: Set<UserId> = new Set(); // userIds who joined gameplay room
   private expectedPlayerCount: number = 0;
@@ -53,7 +51,7 @@ export class GameServer {
 
   constructor(game: GameWithPlayers) {
     this.game = game;
-    this.roomName = makeRoomId(GAMEPLAY_DOMAIN, buildGameRoomId(GameId(this.game.id)));
+    this.roomName = buildGameRoomId(GameId(this.game.id));
     this.log.debug('New GameServer');
 
     // setup player mappings and move queues
@@ -210,7 +208,7 @@ export class GameServer {
   private broadcastGameState(): void {
     try {
       gameplayWsEffects.broadcastGameState(
-        RoomId(this.roomName),
+        this.roomName,
         this.gameState.tick,
         this.gameState.board,
         this.getPlayerQueuesForBroadcast(),
@@ -223,7 +221,7 @@ export class GameServer {
   private broadcastGameEnd(winnerPlayerIndex: number): void {
     try {
       gameplayWsEffects.broadcastGameEnded(
-        RoomId(this.roomName),
+        this.roomName,
         winnerPlayerIndex,
         this.gameState.board,
       );
@@ -378,7 +376,7 @@ export class GameServer {
     try {
       // TODO: these IDs should already be of type GameId / RoomId
       gameplayWsEffects.broadcastGameStarting(
-        RoomId(this.roomName),
+        this.roomName,
         GameId(this.game.id),
         this.countdownSeconds,
       );
@@ -415,7 +413,7 @@ export class GameServer {
   private async broadcastGameStart(game: GameWithPlayers): Promise<void> {
     try {
       gameplayWsEffects.broadcastGameStarted(
-        RoomId(this.roomName),
+        this.roomName,
         GameId(this.game.id),
         this.getPlayerMapping(),
         this.gameState.board,
@@ -426,7 +424,7 @@ export class GameServer {
     }
   }
 
-  getRoomName(): string {
+  getRoomName() {
     return this.roomName;
   }
 

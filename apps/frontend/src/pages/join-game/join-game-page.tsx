@@ -22,8 +22,6 @@ function JoinGamePage() {
   // and how we access that state.
   const isConnected = useWsConnectionStore((state) => state.isConnected);
 
-  // const wsService = useWebsocket(GAME_MATCHMAKING_DOMAIN, GameMatchmakingWsHandler);
-
   // TODO: move this to store. also name it better (waiting time is not a good name)
   useEffect(() => {
     if (!isInQueue) {

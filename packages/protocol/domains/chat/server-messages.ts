@@ -2,8 +2,6 @@ import type { MessageUnion } from '@protocol/utils/message-helpers';
 import type { ExtractMsg } from '@protocol/utils/type-helpers';
 
 type ChatServerPayloadMap = {
-  // NOTE: used to be "game-chat:new-message"
-  // TODO: update rest of the app to match new name
   'chat:broadcast-message': {
     roomId: string;
     content: string;

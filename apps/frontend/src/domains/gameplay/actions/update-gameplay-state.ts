@@ -1,6 +1,6 @@
-import type { BoardState } from '@core/types';
+import type { BoardState, Movement } from '@core/types';
 import { Board } from '@core/board';
-import type { Movement, PlayerQueuesMap } from '@common/types/gameplay';
+import type { PlayerQueuesMap } from '@platform/domains/gameplay/types';
 
 import {
   gameplayActions,

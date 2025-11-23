@@ -68,6 +68,11 @@ const Direction = {
 } as const;
 type Direction = (typeof Direction)[keyof typeof Direction];
 
+interface Movement {
+  sourceCoord: Coord;
+  direction: Direction;
+}
+
 export { Direction, PlayerSquareType, NeutralSquareType, SquareType };
 
 export type {
@@ -82,4 +87,5 @@ export type {
   PlayerSquare,
   Square,
   GameGrid,
+  Movement,
 };

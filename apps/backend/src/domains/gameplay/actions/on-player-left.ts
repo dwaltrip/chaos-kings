@@ -1,6 +1,4 @@
 import { GameId, UserId } from '@kernel/ids';
-import { makeRoomId } from '@protocol/domains/system';
-import { GAMEPLAY_DOMAIN } from '@common/types/gameplay';
 import { buildGameRoomId } from '@platform/domains/gameplay/helpers';
 
 import { createScopedLogger } from '@/utils/scoped-logger';
@@ -16,8 +14,7 @@ function onPlayerLeft(gameId: GameId, userId: UserId, connectionId: ConnectionId
   // Should remove from connectedPlayers set, maybe cancel countdown, clear move queue
   log.debug(`Player ${userId} left game ${gameId} (cleanup deferred)`);
 
-  // Handle transport (system domain)
-  const roomId = makeRoomId(GAMEPLAY_DOMAIN, buildGameRoomId(gameId));
+  const roomId = buildGameRoomId(gameId);
   systemActions.leaveRoom({ roomId, userId, connectionId });
 }
 

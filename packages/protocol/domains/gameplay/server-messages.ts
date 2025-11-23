@@ -2,7 +2,7 @@ import type { MessageUnion } from '@protocol/utils/message-helpers';
 import type { ExtractMsg } from '@protocol/utils/type-helpers';
 import type { BoardState, PlayerIndex, PlayerMapping } from '@core/types';
 import type { GameWithPlayers } from '@common/types/games';
-import type { PlayerQueuesMap } from '@common/types/gameplay';
+import type { PlayerQueuesMap } from '@platform/domains/gameplay/types';
 
 type GameplayServerPayloadMap = {
   'gameplay:state-update': {
