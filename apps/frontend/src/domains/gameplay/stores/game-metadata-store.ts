@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/shallow';
 
 import { isEnded } from '@core/game';
+import type { PlayerIndex } from '@core/types';
 import type { GameWithPlayers } from '@common/types/games';
-import type { PlayerIndex } from '@common/types/player';
 import { PRE_GAME_COUNTDOWN_SECONDS } from '@core/ui-timing-config';
 
 import { loadGame as apiLoadGame, GameNotFoundError } from '@/domains/games/games-api';

@@ -1,11 +1,9 @@
 import { create } from 'zustand';
 
-import type { BoardState, Coord } from '@core/types';
+import type { BoardState, Coord, PlayerIndex } from '@core/types';
 import { areCoordsEqual } from '@core/utils/coordinate-utils';
 import { getCurrentPlayerIndex } from '@core/game/get-current-player-index';
 import { hasCompletedGameState, isEnded } from '@core/game';
-
-import type { PlayerIndex } from '@common/types/player';
 import type { GameWithPlayers } from '@common/types/games';
 import type { Movement } from '@common/types/gameplay';
 

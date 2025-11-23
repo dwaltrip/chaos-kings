@@ -1,22 +1,14 @@
 // import { GameConfig } from '@core/game-config';
-
-type PlayerIndex = number;
-
-type GamePlayerStatus = 'active' | 'captured' | 'inactive';
+import type { PlayerIndex } from '@core/types';
 
 interface Player {
   id: number;
   game_id: number;
   user_id: number;
   joined_at: Date | string | undefined;
-  status: GamePlayerStatus;
+  status: string; // GamePlayerStatus
   player_index: PlayerIndex;
   data: object | null;
 }
 
-// function getPlayerColorInHex(player: Player, gameConfig: GameConfig): string {
-//   return ColorMap.get(player.color) || '#ddd';
-// }
-
-// export { Player, PlayerColor, getPlayerColorInHex };
-export type { Player, GamePlayerStatus, PlayerIndex };
+export type { Player };

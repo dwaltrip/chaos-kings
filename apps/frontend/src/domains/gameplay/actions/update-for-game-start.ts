@@ -1,6 +1,5 @@
 import type { GameWithPlayers } from '@common/types/games';
-import type { BoardState } from '@core/types';
-import type { PlayerIndex } from '@common/types/player';
+import type { BoardState, PlayerIndex } from '@core/types';
 
 import { gameMetadataStore } from '@/domains/gameplay/stores/game-metadata-store';
 import { gameplayActions } from '@/domains/gameplay/stores/gameplay-store-v2';

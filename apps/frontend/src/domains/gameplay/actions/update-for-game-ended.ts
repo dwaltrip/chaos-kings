@@ -1,5 +1,4 @@
-import type { BoardState } from '@core/types';
-import type { PlayerIndex } from '@common/types/player';
+import type { BoardState, PlayerIndex } from '@core/types';
 import { GameStatus } from '@common/types/games';
 
 import { gameMetadataStore } from '@/domains/gameplay/stores/game-metadata-store';
