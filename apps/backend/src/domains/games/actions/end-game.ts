@@ -1,9 +1,10 @@
+import { logger } from '@/utils/logger';
+
 import { GameId } from '@kernel/ids';
 import { GameState } from '@core/types';
-import { GameWithPlayers } from '@common/types/games';
 import type { MoveHistoryV1 } from '@core/replay/types';
+import { GameWithPlayers } from '@platform/domains/games/types';
 
-import { logger } from '@/utils/logger';
 import { GameRepository } from '@/domains/games/game-repository';
 import { GameStatus } from '@/domains/games/types';
 

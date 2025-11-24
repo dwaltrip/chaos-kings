@@ -4,7 +4,7 @@ import { MsgCreators } from '@protocol/domains/gameplay/server-messages';
 
 import type { BoardState, PlayerIndex, PlayerMapping } from '@core/types';
 import type { PlayerQueuesMap } from '@platform/domains/gameplay/types';
-import type { GameWithPlayers } from '@common/types/games';
+import type { GameWithPlayers } from '@platform/domains/games/types';
 
 import { wsBridge } from '@/ws/server-bridge-bootstrap';
 

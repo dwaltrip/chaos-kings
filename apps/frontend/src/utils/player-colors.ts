@@ -1,5 +1,5 @@
 import { PLAYER_COLORS, ColorMap } from '@core/colors';
-import type { Player } from '@common/types/player';
+import type { Player } from '@platform/domains/games/types';
 
 function getPlayerColor(playerIndex: number): string {
   const colorName = PLAYER_COLORS[playerIndex];

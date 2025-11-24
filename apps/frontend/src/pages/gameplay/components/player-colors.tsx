@@ -1,5 +1,5 @@
-import type { GameWithPlayers } from '@common/types/games';
 import { getPlayerColor } from '@/utils/player-colors';
+import type { GameWithPlayers } from '@platform/domains/games/types';
 
 interface PlayerColorsProps {
   game: GameWithPlayers;

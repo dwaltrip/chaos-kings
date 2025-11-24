@@ -1,6 +1,6 @@
-import type { GameWithPlayers } from '@common/types/games';
 import { isEnded } from '@core/game';
 import type { PlayerIndex, PlayerMapping } from '@core/types';
+import type { GameWithPlayers } from '@platform/domains/games/types';
 
 import type { User } from '@/domains/users/user-service';
 import { PlayerColors } from '@/pages/gameplay/components/player-colors';

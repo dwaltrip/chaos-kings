@@ -24,8 +24,7 @@
       "@kernel/*": ["../../packages/kernel/*"],
       "@platform/*": ["../../packages/platform/*"],
       "@protocol/*": ["../../packages/protocol/*"],
-      "@core/*": ["../../packages/core/src/*"],
-      "@common/*": ["../../packages/common/*"]
+      "@core/*": ["../../packages/core/src/*"]
     },
 
     /* Linting */

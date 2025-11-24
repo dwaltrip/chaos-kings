@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import type { GameWithPlayers } from '@common/types/games';
+import type { GameWithPlayers } from '@platform/domains/games/types';
 
 interface GameStatusInfoProps {
   game: GameWithPlayers;

@@ -1,3 +1,5 @@
+import { createScopedLogger } from '@/utils/scoped-logger';
+
 import { GameId, RoomId, UserId } from '@kernel/ids';
 import { GameState, BoardState, Direction, Coord, PlayerIndex } from '@core/types';
 import { Board } from '@core/board';
@@ -10,9 +12,8 @@ import {
 import { processStep as coreProcessStep } from '@core/step-processor';
 import type { MoveEvent } from '@core/replay/types';
 import { buildGameRoomId } from '@platform/domains/gameplay/helpers';
-import type { GameWithPlayers } from '@common/types/games';
+import type { GameWithPlayers } from '@platform/domains/games/types';
 
-import { createScopedLogger } from '@/utils/scoped-logger';
 import { GameStatus } from '@/domains/games/types';
 import { GameRepository } from '@/domains/games/game-repository';
 import { getGame, endGame } from '@/domains/games/actions';

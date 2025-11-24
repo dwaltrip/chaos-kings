@@ -1,6 +1,5 @@
 import type { MessageUnion } from '@protocol/utils/message-helpers';
 import type { EmptyPayload, ExtractMsg } from '@protocol/utils/type-helpers';
-import type { Coord, Direction } from '@core/types';
 
 type GameplayClientPayloadMap = {
   'gameplay:join-game': {
@@ -12,8 +11,8 @@ type GameplayClientPayloadMap = {
   };
 
   'gameplay:move-request': {
-    sourceCoord: Coord;
-    direction: Direction;
+    sourceCoord: { x: number; y: number };
+    direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
   };
 
   'gameplay:cancel-moves': EmptyPayload;

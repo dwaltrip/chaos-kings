@@ -1,4 +1,5 @@
-import type { GameWithPlayers, GetGameResponse } from '@common/types/games';
+import type { GetGameResponse } from '@common/types/games';
+import type { GameWithPlayers } from '@platform/domains/games/types';
 import { apiService } from '@/services/api-service';
 
 class GameNotFoundError extends Error {

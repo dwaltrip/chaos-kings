@@ -1,5 +1,5 @@
 import 'fastify';
-import { User } from '@common/types/user';
+import { User } from '@packages/domains/users/types-deprecated';
 
 declare module 'fastify' {
   export interface FastifyRequest {

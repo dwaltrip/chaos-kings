@@ -1,5 +1,5 @@
-import type { Player } from '@common/types/player';
 import { getPlayerDisplayInfo } from '@/utils/player-colors';
+import type { Player } from '@platform/domains/games/types';
 
 interface GameListPlayerInfoProps {
   players: (Player & { username?: string })[];

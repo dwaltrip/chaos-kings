@@ -1,5 +1,5 @@
-import { GameStatus, type Game } from '@common/types/games';
 import type { CompletedGameState } from '@core/types';
+import { GameStatus, type Game } from '@core/game/types';
 
 function isEnded(game: Game) {
   return game.status === GameStatus.COMPLETE;

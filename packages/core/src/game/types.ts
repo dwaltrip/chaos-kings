@@ -1,4 +1,3 @@
-import type { Player } from '@common/types/player';
 import type { GameConfig } from '@core/game-config';
 import type { CompletedGameState } from '@core/types';
 
@@ -26,34 +25,6 @@ interface Game {
   updated_at: Date | string;
 }
 
-interface GameWithPlayers extends Game {
-  players: Player[];
-}
-
-interface CreateGameRequest {
-  // Empty for now, may add game options later
-}
-
-interface CreateGameResponse {
-  game: Game;
-}
-
-interface ListGamesResponse {
-  games: GameWithPlayers[];
-}
-
-interface GetGameResponse {
-  game: GameWithPlayers;
-}
+export type { Game, GameStatusType };
 
 export { GameStatus };
-
-export type {
-  Game,
-  GameWithPlayers,
-  GameStatusType,
-  CreateGameRequest,
-  CreateGameResponse,
-  ListGamesResponse,
-  GetGameResponse,
-};

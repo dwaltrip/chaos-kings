@@ -13,7 +13,6 @@ export default defineConfig({
       '@kernel': path.resolve(__dirname, '../../packages/kernel'),
       '@protocol': path.resolve(__dirname, '../../packages/protocol'),
       '@platform': path.resolve(__dirname, '../../packages/platform'),
-      '@common': path.resolve(__dirname, '../../packages/common'),
       '@core': path.resolve(__dirname, '../../packages/core/src'),
     },
   },

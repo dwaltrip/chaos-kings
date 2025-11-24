@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 
+import type { GameWithPlayers } from '@platform/domains/games/types';
 import { apiService } from '@/services/api-service';
-import type { GameWithPlayers, ListGamesResponse } from '@common/types/games';
+import type { ListGamesResponse } from '@common/types/games';
 
 import { GameListPlayerInfo } from '@/pages/games-list/game-list-player-info';
 

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { GameId, RoomId } from '@kernel/ids';
-import type { Game } from '@common/types/games';
+
+import type { Game } from '@platform/domains/games/types';
 import { buildChatRoomId } from '@platform/domains/chat/helpers';
 
 import { useWsConnectionStore } from '@/ws-lib';

@@ -1,9 +1,10 @@
-import { TICK_RATE_MS } from '@core/game-timing-config';
+import { createScopedLogger } from '@/utils/scoped-logger';
 import { GameId } from '@kernel/ids';
 
-import { createScopedLogger } from '@/utils/scoped-logger';
+import { TICK_RATE_MS } from '@core/game-timing-config';
+import type { GameWithPlayers } from '@platform/domains/games/types';
+
 import { GameServer } from '@/domains/gameplay/game-server';
-import type { GameWithPlayers } from '@common/types/games';
 
 const moduleLogger = createScopedLogger('GameCoordinator');
 
