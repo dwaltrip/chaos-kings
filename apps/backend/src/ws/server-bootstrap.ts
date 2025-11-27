@@ -1,4 +1,4 @@
-import type { User } from '@packages/domains/users/types-deprecated';
+import type { User } from '@platform/domains/users/types-deprecated';
 
 import { createWSServer } from '@/ws-lib';
 import type { HandlerMapWithCtx } from '@/ws-lib/types';

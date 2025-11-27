@@ -1,6 +1,11 @@
-import type { GetGameResponse } from '@common/types/games';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 import { apiService } from '@/services/api-service';
+
+// TODO: Is this a useful interface? think about where to put stuff like this
+// Feels analogous to the WS types in @protocol
+interface GetGameResponse {
+  game: GameWithPlayers;
+}
 
 class GameNotFoundError extends Error {
   constructor(gameId: string) {

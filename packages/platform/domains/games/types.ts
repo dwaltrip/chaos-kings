@@ -28,30 +28,6 @@ interface GameWithPlayers extends Game {
   players: Player[];
 }
 
-interface CreateGameRequest {
-  // Empty for now, may add game options later
-}
-
-interface CreateGameResponse {
-  game: Game;
-}
-
-interface ListGamesResponse {
-  games: GameWithPlayers[];
-}
-
-interface GetGameResponse {
-  game: GameWithPlayers;
-}
-
 export { GameStatus };
 
-export type {
-  Game,
-  GameWithPlayers,
-  CreateGameRequest,
-  CreateGameResponse,
-  ListGamesResponse,
-  GetGameResponse,
-  Player,
-};
+export type { Game, GameWithPlayers, Player };

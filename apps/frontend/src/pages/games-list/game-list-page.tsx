@@ -3,9 +3,14 @@ import { useNavigate } from 'react-router';
 
 import type { GameWithPlayers } from '@platform/domains/games/types';
 import { apiService } from '@/services/api-service';
-import type { ListGamesResponse } from '@common/types/games';
 
 import { GameListPlayerInfo } from '@/pages/games-list/game-list-player-info';
+
+// TODO: Is this a useful interface? think about where to put stuff like this
+// Feels analogous to the WS types in @protocol
+interface ListGamesResponse {
+  games: GameWithPlayers[];
+}
 
 // TODO: layout on this page is a bit messed up. it's overflowing / not scrolling
 function GameListPage() {

@@ -2,7 +2,7 @@ import { ColumnType, Generated } from 'kysely';
 
 /* 
   "Deprecated" User interface from common common/types/user.ts
-  Now moved packages/domains/users/types-deprecated.ts
+  Now moved platform/domains/users/types-deprecated.ts
 
   interface UserFromCommon {
     id: number;

@@ -1,6 +1,13 @@
 import type { MessageUnion } from '@protocol/utils/message-helpers';
 import type { EmptyPayload, ExtractMsg } from '@protocol/utils/type-helpers';
 
+// TODO(sharing-types-with-protocol):
+// Originally @protocol wasn't supposed to import from platform, core...
+// These types are copy+pasted from packages/core/src/types.ts
+// Fix this: How and when should we share types with @protocol?
+type Coord = { x: number; y: number };
+type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
+
 type GameplayClientPayloadMap = {
   'gameplay:join-game': {
     gameId: number;
@@ -11,8 +18,8 @@ type GameplayClientPayloadMap = {
   };
 
   'gameplay:move-request': {
-    sourceCoord: { x: number; y: number };
-    direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
+    sourceCoord: Coord;
+    direction: Direction;
   };
 
   'gameplay:cancel-moves': EmptyPayload;
