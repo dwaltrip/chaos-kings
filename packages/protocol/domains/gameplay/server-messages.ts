@@ -1,9 +1,6 @@
 import type { MessageUnion } from '@protocol/utils/message-helpers';
 import type { ExtractMsg } from '@protocol/utils/type-helpers';
 
-// TODO(sharing-types-with-protocol):
-// Originally @protocol wasn't supposed to import from platform, core...
-// Need to figure this out
 import type { BoardState, PlayerIndex, PlayerMapping } from '@core/types';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 import type { PlayerQueuesMap } from '@platform/domains/gameplay/types';

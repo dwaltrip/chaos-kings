@@ -57,11 +57,12 @@ This document tracks architectural questions, loose ends, and areas needing deci
 **Open questions:**
 1. **Threshold for extraction:** When should we extract types to platform vs. keep in apps?
 2. **Divergence patterns:** When do backend/frontend need different types vs. shared?
-3. **Dependency on protocol:** Should platform types depend on protocol message types?
 
 **Current approach:** Wait for duplication pain before extracting. Easy to extract later, harder to undo premature abstraction.
 
 **Decision needed:** Formalize platform package guidelines or accept it as a pragmatic shared space.
+
+**Note on protocol dependencies:** ✅ **RESOLVED (2025-11-28)** - Protocol package may import type definitions from `@core` and `@platform` when those types represent shared vocabulary. See docs/architecture.md for details.
 
 ---
 

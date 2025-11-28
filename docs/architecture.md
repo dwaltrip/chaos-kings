@@ -42,14 +42,16 @@ generals-v2/
 
 ### Dependency Rules
 
-Packages have strict dependency constraints:
+Packages have dependency constraints to maintain clean boundaries:
 
-- `protocol` → depends only on `kernel`
+- `protocol` → may import **type definitions** from `kernel`, `core`, and `platform` when those types represent shared vocabulary for messages. Must never import functions, classes, or business logic.
 - `core` → depends on `kernel`, `utils`
 - `platform` → depends on `protocol`, `core`, `kernel`, `utils`
 - `apps/*` → can depend on any package
 
 **Key principle:** Packages should be pure, reusable, and have no I/O or app-specific concerns.
+
+**Protocol imports clarification:** The protocol package can import stable type definitions (e.g., `BoardState`, `Coord`, `Direction`) from `@core` and `@platform` when those types are part of the message contract. This allows protocol to reuse shared vocabulary instead of duplicating type definitions. However, protocol must never import functions, business logic, or stateful code.
 
 ### Import Path Aliases
 

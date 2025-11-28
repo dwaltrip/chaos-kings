@@ -8,7 +8,9 @@
     "paths": {
       "@utils/*": ["../../packages/utils/*"],
       "@kernel/*": ["../../packages/kernel/*"],
-      "@protocol/*": ["../../packages/protocol/*"]
+      "@protocol/*": ["../../packages/protocol/*"],
+      "@core/*": ["../../packages/core/src/*"],
+      "@platform/*": ["../../packages/platform/*"]
     },
     "strict": true,
     "esModuleInterop": true,
