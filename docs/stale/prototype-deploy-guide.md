@@ -1,3 +1,8 @@
+
+**IMPORTANT NOTE:** This doc is from before the big v0.2 refactor
+
+---
+
 # Prototype Deploy Guide (DigitalOcean, Docker Compose)
 
 This guide shows a developer how to deploy the Generals v2 prototype to a single DigitalOcean droplet using Docker Compose and Caddy. It prioritizes simplicity over robustness.
