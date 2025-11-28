@@ -4,12 +4,47 @@ Hey AI coding agent! My name is Daniel and I'm excited to build with you :)
 
 This project is a revamp + extension of the web-based real time strategy game, **generals.io**.
 
-**Architecture:** This codebase recently completed a major WebSocket architecture and monorepo refactor (v2, October 2025). The architecture is now stable with clear patterns and conventions.
+**Architecture:** This codebase recently completed a major WebSocket architecture and monorepo refactor (Oct-Nov 2025 -> v0.2.0-refactor-done). The architecture is now stable with clear patterns and conventions.
 
 **📚 Key Documentation:**
 - **docs/architecture.md** - Complete architecture guide (start here for understanding the system)
 - **docs/open-questions.md** - Known loose ends, future work, architectural decisions needed
 - **AGENTS.md** (this file) - Coding conventions and patterns
+
+---
+
+## Game Design (Generals.io Style)
+
+- **Territory Expansion**: Players start with a general and expand by capturing neutral tiles and enemy territory
+- **Army Movement**: Move armies between adjacent tiles to attack/defend; larger armies defeat smaller ones
+- **Fog of War**: Players only see tiles they own or are adjacent to; enemy movements hidden until revealed
+- **Army Growth**: Cities and the general produce additional troops over time (every ~0.5-1 seconds)
+- **Victory**: Win by capturing the enemy general or controlling the most territory when time runs out
+- **Gameplay Flow**: Real-time with moves executed at regular intervals; currently targeting 1v1 matches
+
+---
+
+## Tech Stack
+
+### Backend
+- Node.js + TypeScript
+- PostgreSQL with **Kysely** as SQL builder/query library
+- Redis for transient state (active players, game rooms)
+- Fastify + WebSockets
+
+### Frontend
+- React 19 + TypeScript + Vite
+- **Styling:** Tailwind CSS v4
+- **Routing:** React Router v7
+- **State:** Zustand
+- WebSockets with auto-reconnection
+
+### Packages
+- **@core** - Pure game engine logic (board, rules, mechanics) with Jest tests
+- **@protocol** - WebSocket message types and DTOs
+- **@kernel** - Branded ID types and primitives
+- **@platform** - Shared domain types/constants (temporary state, see docs/open-questions.md)
+- **@utils** - Generic helper functions
 
 ---
 
@@ -27,9 +62,10 @@ import { useState } from 'react';
 import { createClient } from 'redis';
 ```
 
-**2. Shared packages** (in this order: utils → protocol → platform)
+**2. Shared packages** (in this order: utils → kernel → protocol → platform)
 ```ts
 import { formatDate } from '@utils/date-helpers';
+import { GameId, UserId } from '@kernel/index';
 import { MsgCreators } from '@protocol/domains/chat/server-messages';
 import { MATCHMAKING_ROOM_ID } from '@platform/domains/matchmaking/constants';
 ```
@@ -78,11 +114,11 @@ export function myFunction() { ... }
 export const myConstant = 42;
 ```
 
-*If there are type exports, then export those in a second export statement before the othe one (see the example above).*
+*If there are type exports, then export those in a second export statement before the other one (see the example above).*
 
 ### Handling Existing Code
 
-- **Existing code may violate these rules** - 
+- **Existing code may violate these rules**
 - **ALL new code MUST follow these patterns**
 - **When editing existing files:** Fix import/export order if you're already touching that section
 - **Don't make separate commits just to fix ordering** - fix it as you make functional changes
@@ -170,15 +206,79 @@ type GameId = string & { readonly __brand: 'GameId' };
 
 ---
 
-## File Naming
+## Code Conventions & Style
 
+### File Naming
 - Use **kebab-case** for all filenames: `game-board.tsx`, `matchmaking-service.ts`
 - Files end with a **single blank line**
 
+### General
+- All JavaScript and TypeScript uses **2-space indentation**
+- Pre-commit hooks automatically format staged files using Prettier
+
+### Frontend Pages
+- Each page gets own directory: `frontend/src/pages/$page_name/`
+- Page-specific components stored in page directory
+- Reusable components in `domains/[domain]/components/` or shared UI components dir
+
+### Comments
+- Use **very sparingly** - NEVER explain what code does, only WHY or crucial context
+- NO verbose/JSDoc style comments - prefer short, single-line comments
+- Explain non-obvious decisions, not obvious code
+
 ---
 
-## Development Notes
+## Development Workflow
 
-- See `CLAUDE-OLD.md` for historical v1 conventions (may be outdated)
-- See `docs/architecture.md` for complete architecture guide
-- See `docs/open-questions.md` for known loose ends and future work
+### Build Verification
+- **ALWAYS** check builds in frontend and backend for TS errors after making changes
+- Use `bash tools/build-all.sh` to run both, or `npm run build` separately
+- Fix any type errors before proceeding or committing changes
+
+### Test Verification
+- **ALWAYS** run tests after finishing a set of changes
+- Use `bash tools/test-all.sh` to run tests in both backend and core
+- Fix any test failures before committing changes
+
+### Git Commit Strategy
+- **ALWAYS** commit with succinct messages after finishing a set of changes
+- For complex work with tricky debugging: commit progress frequently to save state
+- Use concise commit messages for minor/straightforward changes - avoid overly verbose descriptions
+
+---
+
+## Development Commands
+
+### Backend (`apps/backend`)
+- `npm run start` - Start development server with hot reload
+- `npm run build` - Build TypeScript to JS (check for TS errors)
+- `npm test` / `npm run test:watch` - Run Jest tests
+- `npm run migrate:latest` - Run database migrations
+
+### Frontend (`apps/frontend`)
+- `npm run dev` - Start Vite dev server
+- `npm run build` - Build for production (check for TS errors)
+
+### Core (`packages/core`)
+- `npm test` / `npm run test:watch` - Run Jest tests for game logic
+
+### All
+- `bash tools/build-all.sh` - Build backend + frontend
+- `bash tools/test-all.sh` - Run all tests
+
+---
+
+## Debugging & Troubleshooting
+
+- **docs/DEBUGGING-GUIDE.md** - Contains tricky patterns, gotchas, and solutions for complex issues
+- **When debugging complex issues:** Check docs/DEBUGGING-GUIDE.md first - covers non-obvious patterns
+- **Common issues covered:** Zustand infinite re-render loops, cross-store subscriptions, React hooks violations, performance debugging
+- **When adding new patterns:** Update docs/DEBUGGING-GUIDE.md with problem/solution patterns for future reference
+
+---
+
+## Related Documentation
+
+- **docs/architecture.md** - Complete architecture guide
+- **docs/open-questions.md** - Known loose ends and future work
+- **docs/DEBUGGING-GUIDE.md** - Debugging patterns and gotchas
