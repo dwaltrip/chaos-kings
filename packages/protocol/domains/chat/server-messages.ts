@@ -3,6 +3,7 @@ import type { ExtractMsg } from '@protocol/utils/type-helpers';
 
 type ChatServerPayloadMap = {
   'chat:broadcast-message': {
+    id: number;
     roomId: string;
     content: string;
     userId: number;
@@ -16,6 +17,7 @@ type BroadcastMessageMessage = ExtractMsg<ChatServerMessage, 'chat:broadcast-mes
 
 const MsgCreators = {
   createBroadcastMessageMessage: (
+    id: number,
     roomId: string,
     content: string,
     userId: number,
@@ -23,7 +25,7 @@ const MsgCreators = {
     timestamp: number,
   ): BroadcastMessageMessage => ({
     type: 'chat:broadcast-message',
-    payload: { roomId, content, userId, username, timestamp },
+    payload: { id, roomId, content, userId, username, timestamp },
   }),
 } as const;
 

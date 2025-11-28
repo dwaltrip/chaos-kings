@@ -6,6 +6,7 @@ import { ChatMessageEntity } from '@/domains/chat/types';
 
 const chatWsEffects = {
   broadcastNewMessage({
+    id,
     roomId,
     content,
     userId,
@@ -15,6 +16,7 @@ const chatWsEffects = {
     wsBridge.broadcastToRoom(
       idToString(roomId),
       MsgCreators.createBroadcastMessageMessage(
+        idToNumber(id),
         idToString(roomId),
         content,
         idToNumber(userId),

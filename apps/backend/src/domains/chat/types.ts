@@ -1,7 +1,8 @@
-import { ChatMessageId, RoomId, UserId } from '@kernel/ids';
+import { ChatMessageId, GameId, RoomId, UserId } from '@kernel/ids';
 
 interface ChatMessageEntity {
   id: ChatMessageId;
+  gameId: GameId;
   userId: UserId;
   username: string;
   roomId: RoomId;
@@ -9,4 +10,4 @@ interface ChatMessageEntity {
   timestamp: number;
 }
 
-export { ChatMessageEntity };
+export type { ChatMessageEntity };

@@ -3,7 +3,7 @@ import type { ExtractMsg } from '@protocol/utils/type-helpers';
 
 type ChatClientPayloadMap = {
   'chat:send-message': {
-    roomId: string;
+    gameId: number;
     content: string;
   };
 };
@@ -16,9 +16,9 @@ type ChatClientMessage = MessageUnion<ChatClientPayloadMap>;
 type SendMessageMessage = ExtractMsg<ChatClientMessage, 'chat:send-message'>;
 
 const MsgCreators = {
-  createSendMessageMessage: (roomId: string, content: string): SendMessageMessage => ({
+  createSendMessageMessage: (gameId: number, content: string): SendMessageMessage => ({
     type: 'chat:send-message',
-    payload: { roomId, content },
+    payload: { gameId, content },
   }),
 } as const;
 

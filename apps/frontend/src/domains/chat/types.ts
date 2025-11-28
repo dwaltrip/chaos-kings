@@ -1,11 +1,5 @@
-import type { UserId, RoomId } from '@kernel/ids';
+import type { ChatServerPayloadMap } from '@protocol/domains/chat/server-messages';
 
-interface ChatMessage {
-  roomId: RoomId;
-  content: string;
-  userId: UserId;
-  username: string;
-  timestamp: number;
-}
+type ChatMessage = ChatServerPayloadMap['chat:broadcast-message'];
 
 export type { ChatMessage };

@@ -1,10 +1,10 @@
-import { RoomId, UserId } from '@kernel/ids';
+import { GameId, UserId } from '@kernel/ids';
 
 import { chatWsEffects } from '@/domains/chat/ws-effects';
 import { createChatMessage } from '@/domains/chat/actions';
 
-async function broadcastChatMessage(roomId: RoomId, content: string, userId: UserId) {
-  const chatMessage = await createChatMessage(roomId, content, userId);
+async function broadcastChatMessage(gameId: GameId, content: string, userId: UserId) {
+  const chatMessage = await createChatMessage(gameId, content, userId);
   chatWsEffects.broadcastNewMessage(chatMessage);
 }
 

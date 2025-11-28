@@ -1,12 +1,12 @@
-import { idToString } from '@kernel/branded-type';
-import { RoomId } from '@kernel/domains/system';
+import { idToNumber } from '@kernel/branded-type';
+import { GameId } from '@kernel/ids';
 import { MsgCreators } from '@protocol/domains/chat/client-messages';
 
 import { wsBridge } from '@/ws';
 
 const chatWsEffects = {
-  sendMessage(roomId: RoomId, content: string) {
-    wsBridge.send(MsgCreators.createSendMessageMessage(idToString(roomId), content));
+  sendMessage(gameId: GameId, content: string) {
+    wsBridge.send(MsgCreators.createSendMessageMessage(idToNumber(gameId), content));
   },
 };
 

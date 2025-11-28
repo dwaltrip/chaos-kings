@@ -1,37 +1,29 @@
-import { ChatMessageId, RoomId, UserId } from '@kernel/ids';
+import { GameId, UserId } from '@kernel/ids';
+import { idToNumber } from '@kernel/branded-type';
 
-import { requireEntity } from '@/utils/db-utils';
-import { UserRepository } from '@/domains/users/user-repository';
+import { ChatMessageRepository } from '@/domains/chat/chat-message-repository';
+import { toEntity } from '@/domains/chat/serializers';
 import { ChatMessageEntity } from '@/domains/chat/types';
 
 async function createChatMessage(
-  roomId: RoomId,
+  gameId: GameId,
   content: string,
   userId: UserId,
 ): Promise<ChatMessageEntity> {
-  // TODO: [DB] Get message ID from database after insert
-  const tempId = ChatMessageId(Date.now() * 1000 + Math.floor(Math.random() * 1000));
-  // TODO: timestamp should come from DB
-  const timestamp = Date.now();
-
-  const user = await requireEntity(
-    new UserRepository().findById(userId),
-    'User not found for broadcasting chat message',
-  );
-
   const trimmed = content.trim();
   if (!trimmed) {
-    console.error('Chat message contents empty...');
+    throw new Error('Chat message content cannot be empty');
   }
 
-  return {
-    id: tempId,
-    roomId,
-    content,
-    userId,
-    username: user.username,
-    timestamp,
-  };
+  const chatRepo = new ChatMessageRepository();
+  const dbRow = await chatRepo.createGameChat({
+    content: trimmed,
+    user_id: idToNumber(userId),
+    game_id: idToNumber(gameId),
+    updated_at: new Date(),
+  });
+
+  return toEntity(dbRow, gameId);
 }
 
 export { createChatMessage };

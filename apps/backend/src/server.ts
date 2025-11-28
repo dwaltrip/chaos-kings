@@ -11,6 +11,7 @@ import { logger, fastifyLoggerConfig } from '@/utils/logger';
 import { systemRoutes } from '@/domains/system/system-routes';
 import { userRoutes } from '@/domains/users/user-routes';
 import { gameRoutes } from '@/domains/games/game-routes';
+import { chatRoutes } from '@/domains/chat/chat-routes';
 
 const fastify = Fastify({
   logger: fastifyLoggerConfig,
@@ -34,6 +35,7 @@ fastify.register(authPlugin);
 fastify.register(systemRoutes, { prefix: '/api' });
 fastify.register(userRoutes, { prefix: '/api' });
 fastify.register(gameRoutes, { prefix: '/api' });
+fastify.register(chatRoutes, { prefix: '/api' });
 
 // Initialize v2 WebSocket server
 const wsServer = setupWebSocketV2();

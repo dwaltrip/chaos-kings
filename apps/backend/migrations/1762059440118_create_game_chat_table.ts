@@ -16,6 +16,12 @@ export async function up(db: Kysely<any>): Promise<void> {
       'id',
     ])
     .execute();
+
+  await db.schema
+    .createIndex('game_chat_messages_game_id_idx')
+    .on('game_chat_messages')
+    .column('game_id')
+    .execute();
 }
 
 export async function down(db: Kysely<any>): Promise<void> {
