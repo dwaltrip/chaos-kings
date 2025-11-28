@@ -1,8 +1,12 @@
 # Chat Persistence - Detailed Implementation Plan
 
+**Status:** Updated 2025-11-28 to align with domain object patterns from docs/domain-object-patterns.md
+
 ## Overview
 
 Implementing persistent game chat with DB storage and REST API for history retrieval.
+
+**Pattern:** Following the 3-layer pattern (DB → Backend Entity → Protocol) documented in docs/domain-object-patterns.md
 
 ## Phase 1: Database & Migration
 
@@ -92,140 +96,139 @@ createBroadcastMessageMessage: (
 ### 3.1 Implement Serializers
 **File:** `apps/backend/src/domains/chat/serializers.ts`
 
+**Pattern:** Separate serializers file for DB → Entity conversions. Keeps repository focused on data access, serializers focused on transformations.
+
+**Decision:** Join with `users` table when fetching (don't denormalize username into chat table).
+
 ```typescript
 import { Selectable } from 'kysely';
-import { ChatMessageId, RoomId, UserId } from '@kernel/ids';
-import { GameChatMessagesTable } from './chat.db';
-import { ChatMessageEntity } from './types';
+import { ChatMessageId, GameId, RoomId, UserId } from '@kernel/ids';
+import { buildGameRoomId } from '@platform/domains/gameplay/helpers';
 
-type GameChatMessageDB = Selectable<GameChatMessagesTable>;
+import { GameChatMessagesTable } from '@/domains/chat/chat.db';
+import { ChatMessageEntity } from '@/domains/chat/types';
 
-function serializeChatMessageForGame(dbMessage: GameChatMessageDB, roomId: RoomId, username: string): ChatMessageEntity {
+// DB row type (with username from join)
+type ChatMessageRow = Selectable<GameChatMessagesTable> & { username: string };
+
+// Convert DB row to backend entity
+function toEntity(row: ChatMessageRow, gameId: GameId): ChatMessageEntity {
+  const roomId = buildGameRoomId(gameId);
   return {
-    id: ChatMessageId(dbMessage.id),
+    id: ChatMessageId(row.id),
+    gameId,
+    userId: UserId(row.user_id),
+    username: row.username,
     roomId,
-    content: dbMessage.content,
-    userId: UserId(dbMessage.user_id),
-    username,
-    timestamp: dbMessage.created_at.getTime(),
+    content: row.content,
+    timestamp: row.created_at.getTime(),
   };
 }
 
-// For REST API responses
-function serializeChatMessagesForAPI(dbMessages: GameChatMessageDB[]): Array<{
-  id: number;
-  content: string;
-  userId: number;
-  username: string;
-  timestamp: number;
-}> {
-  // TODO: Need to join with users table to get username
-  // Or store username in game_chat_messages table
-}
+export { toEntity };
+export type { ChatMessageRow };
 ```
 
-**DECISION NEEDED:** Should we store `username` in `game_chat_messages` table, or join with `users` table when fetching?
-
-### 3.2 Update ChatMessageEntity Type (Optional)
+### 3.2 Update ChatMessageEntity Type
 **File:** `apps/backend/src/domains/chat/types.ts`
 
-Currently uses temp ChatMessageId. After DB insert, we'll use real integer ID converted to branded type.
+Add `gameId` field to entity (needed for repository queries and REST API):
 
-No changes needed unless we want to track whether message is persisted.
+```typescript
+import { ChatMessageId, GameId, RoomId, UserId } from '@kernel/ids';
+
+interface ChatMessageEntity {
+  id: ChatMessageId;
+  gameId: GameId;      // ADD - needed for DB operations
+  userId: UserId;
+  username: string;
+  roomId: RoomId;
+  content: string;
+  timestamp: number;
+}
+```
 
 ### 3.3 Update createChatMessage Action
 **File:** `apps/backend/src/domains/chat/actions/create-chat-message.ts`
 
+**Pattern:** Action calls repository, then uses serializer to convert to entity.
+
 ```typescript
-import { ChatMessageId, GameId, RoomId, UserId } from '@kernel/ids';
+import { GameId, RoomId, UserId } from '@kernel/ids';
 import { idToNumber } from '@kernel/branded-type';
-import { requireEntity } from '@/utils/db-utils';
-import { UserRepository } from '@/domains/users/user-repository';
+import { buildGameRoomId } from '@platform/domains/gameplay/helpers';
+
 import { ChatMessageRepository } from '@/domains/chat/chat-message-repository';
+import { toEntity } from '@/domains/chat/serializers';
 import { ChatMessageEntity } from '@/domains/chat/types';
 
 async function createChatMessage(
-  roomId: RoomId,
-  gameId: GameId,  // ADD THIS PARAMETER
+  gameId: GameId,
   content: string,
   userId: UserId,
 ): Promise<ChatMessageEntity> {
-  const user = await requireEntity(
-    new UserRepository().findById(userId),
-    'User not found for broadcasting chat message',
-  );
-
   const trimmed = content.trim();
   if (!trimmed) {
-    console.error('Chat message contents empty...');
+    throw new Error('Chat message content cannot be empty');
   }
 
-  // Insert into DB
+  // Insert into DB (repository handles username join on return)
   const chatRepo = new ChatMessageRepository();
-  const dbMessage = await chatRepo.createGameChat({
+  const dbRow = await chatRepo.createGameChat({
     content: trimmed,
     user_id: idToNumber(userId),
     game_id: idToNumber(gameId),
     updated_at: new Date(),
   });
 
-  // Return entity with DB-generated ID and timestamp
-  return {
-    id: ChatMessageId(dbMessage.id),
-    roomId,
-    content: dbMessage.content,
-    userId,
-    username: user.username,
-    timestamp: dbMessage.created_at.getTime(),
-  };
+  // Convert DB row to entity using serializer
+  return toEntity(dbRow, gameId);
 }
 
 export { createChatMessage };
 ```
 
+**Note:** Simplified signature - removed `roomId` parameter since we can derive it from `gameId`.
+
 ### 3.4 Update broadcastChatMessage Action
 **File:** `apps/backend/src/domains/chat/actions/broadcast-chat-message.ts`
 
 ```typescript
-import { GameId, RoomId, UserId } from '@kernel/ids';
+import { GameId, UserId } from '@kernel/ids';
+
 import { chatWsEffects } from '@/domains/chat/ws-effects';
 import { createChatMessage } from '@/domains/chat/actions';
 
 async function broadcastChatMessage(
-  roomId: RoomId,
-  gameId: GameId,  // ADD THIS PARAMETER
+  gameId: GameId,
   content: string,
   userId: UserId
 ) {
-  const chatMessage = await createChatMessage(roomId, gameId, content, userId);
+  const chatMessage = await createChatMessage(gameId, content, userId);
   chatWsEffects.broadcastNewMessage(chatMessage);
 }
 
 export { broadcastChatMessage };
 ```
 
+**Note:** Simplified - removed `roomId` parameter (derived from `gameId` in entity).
+
 ### 3.5 Update Handler
 **File:** `apps/backend/src/domains/chat/handlers.ts`
 
-**Convert `gameId` to branded type and derive authoritative `roomId`** from it:
+**Convert `gameId` to branded type and call action:**
 ```typescript
 import { GameId, UserId } from '@kernel/ids';
-import { idToNumber } from '@kernel/branded-type';
-import { buildGameRoomId } from '@platform/domains/gameplay/helpers';
 import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
 import type { ChatClientMessage } from '@protocol/domains/chat/client-messages';
 import type { AppHandlerContext } from '@/ws/app-handler-context';
+
 import { broadcastChatMessage } from '@/domains/chat/actions';
 
 const chatHandlers = {
   'chat:send-message': ({ gameId, content }, ctx) => {
-    const brandedGameId = GameId(gameId);
-    // Derive authoritative roomId from gameId (server controls this)
-    const roomId = buildGameRoomId(brandedGameId);
-
     broadcastChatMessage(
-      roomId,
-      brandedGameId,
+      GameId(gameId),
       content,
       UserId(ctx.userId)
     );
@@ -235,7 +238,7 @@ const chatHandlers = {
 export { chatHandlers };
 ```
 
-**Key change:** Handler now derives `roomId` from `gameId` using `buildGameRoomId()` instead of trusting client-provided roomId.
+**Key change:** Handler converts primitives to branded types, action/serializer handle roomId derivation.
 
 ### 3.6 Update WS Effects (REQUIRED)
 **File:** `apps/backend/src/domains/chat/ws-effects.ts`
@@ -266,30 +269,75 @@ const chatWsEffects = {
 };
 ```
 
-### 3.7 Update Repository (if needed)
+### 3.7 Update Repository
 **File:** `apps/backend/src/domains/chat/chat-message-repository.ts`
 
-Current implementation looks good. Might want to add username join:
-```typescript
-async findGameChatsByGameId(gameId: GameId): Promise<Array<GameChatMessageDB & { username: string }>> {
-  const messages = await this.dbInstance
-    .selectFrom('game_chat_messages')
-    .innerJoin('users', 'users.id', 'game_chat_messages.user_id')
-    .select([
-      'game_chat_messages.id',
-      'game_chat_messages.content',
-      'game_chat_messages.created_at',
-      'game_chat_messages.user_id',
-      'game_chat_messages.game_id',
-      'users.username',
-    ])
-    .where('game_chat_messages.game_id', '=', gameId)
-    .orderBy('game_chat_messages.created_at', 'asc')
-    .execute();
+Update both `createGameChat` and `findGameChatsByGameId` to join with users table and return `ChatMessageRow`:
 
-  return messages;
+```typescript
+import { Selectable, Insertable, Kysely } from 'kysely';
+import { GameId } from '@kernel/ids';
+import { idToNumber } from '@kernel/branded-type';
+
+import { Database } from '@/types';
+import { db } from '@/services/db';
+import { GameChatMessagesTable } from '@/domains/chat/chat.db';
+import { ChatMessageRow } from '@/domains/chat/serializers';
+
+class ChatMessageRepository {
+  constructor(private dbInstance: Kysely<Database> = db) {}
+
+  async createGameChat(data: Insertable<GameChatMessagesTable>): Promise<ChatMessageRow> {
+    const message = await this.dbInstance
+      .insertInto('game_chat_messages')
+      .values(data)
+      .returningAll()
+      .executeTakeFirstOrThrow();
+
+    // Join to get username
+    const messageWithUsername = await this.dbInstance
+      .selectFrom('game_chat_messages')
+      .innerJoin('users', 'users.id', 'game_chat_messages.user_id')
+      .select([
+        'game_chat_messages.id',
+        'game_chat_messages.content',
+        'game_chat_messages.created_at',
+        'game_chat_messages.updated_at',
+        'game_chat_messages.user_id',
+        'game_chat_messages.game_id',
+        'users.username',
+      ])
+      .where('game_chat_messages.id', '=', message.id)
+      .executeTakeFirstOrThrow();
+
+    return messageWithUsername;
+  }
+
+  async findGameChatsByGameId(gameId: GameId): Promise<ChatMessageRow[]> {
+    const messages = await this.dbInstance
+      .selectFrom('game_chat_messages')
+      .innerJoin('users', 'users.id', 'game_chat_messages.user_id')
+      .select([
+        'game_chat_messages.id',
+        'game_chat_messages.content',
+        'game_chat_messages.created_at',
+        'game_chat_messages.updated_at',
+        'game_chat_messages.user_id',
+        'game_chat_messages.game_id',
+        'users.username',
+      ])
+      .where('game_chat_messages.game_id', '=', idToNumber(gameId))
+      .orderBy('game_chat_messages.created_at', 'asc')
+      .execute();
+
+    return messages;
+  }
 }
+
+export { ChatMessageRepository };
 ```
+
+**Pattern:** Repository returns `ChatMessageRow` (DB row with username), serializer converts to `ChatMessageEntity`.
 
 ## Phase 4: REST API Endpoint
 
@@ -402,20 +450,32 @@ mergeMessages: (newMessages) => {
 }
 ```
 
-### 5.5 Update Chat Message Type (if needed)
-**File:** `apps/frontend/src/domains/chat/types.ts` (or similar)
+### 5.5 Update Chat Message Type
+**File:** `apps/frontend/src/domains/chat/types.ts`
 
-Ensure frontend chat message type includes `id: number`:
+**Pattern decision:** Per docs/domain-object-patterns.md, frontend should reuse protocol shape when possible.
+
+**Option A (Recommended): Reuse protocol shape**
+```typescript
+import type { ChatServerPayloadMap } from '@protocol/domains/chat/server-messages';
+
+type ChatMessage = ChatServerPayloadMap['chat:broadcast-message'];
+```
+
+**Option B: Define custom type (only if UI-specific fields needed)**
 ```typescript
 interface ChatMessage {
-  id: number;        // DB-generated ID for deduplication
+  id: number;
+  roomId: string;
   content: string;
   userId: number;
   username: string;
   timestamp: number;
-  // roomId might still be here for display purposes
+  isOptimistic?: boolean;  // If needed for optimistic updates
 }
 ```
+
+**Use Option A unless you need UI-specific fields.**
 
 ## Testing Checklist
 
@@ -429,13 +489,20 @@ interface ChatMessage {
 - [ ] Empty chat history doesn't error
 - [ ] Auth/permissions work correctly on REST endpoint
 
+## Pattern Decisions (Updated 2025-11-28)
+
+✅ **Resolved:**
+1. **Separate serializers file** - Keeps repository focused on data access, serializers on conversions
+2. **Username via join** - Join with users table, don't denormalize
+3. **Frontend type** - Reuse protocol shape (Option A) unless UI-specific fields needed
+4. **No intermediate type aliases** - Use `Selectable<GameChatMessagesTable>` inline, export `ChatMessageRow` from serializers for reuse
+
 ## Open Questions / TODOs
 
-1. **Username storage:** Store in `game_chat_messages` or join with `users`? (Current plan: join with users table)
-2. **REST API patterns:** Verify exact helpers (asyncHandler, parseId) used in existing routes
-3. **Auth on REST endpoint:** How to verify user has access to game?
-4. **Frontend chat store structure:** Need to explore current implementation
-5. **Future optimization:** Consider optimistic message display
+1. **REST API patterns:** Verify exact helpers (asyncHandler, parseId) used in existing routes
+2. **Auth on REST endpoint:** How to verify user has access to game?
+3. **Frontend chat store structure:** Need to explore current implementation
+4. **Future optimization:** Consider optimistic message display
 
 ## Summary of Key Changes
 
