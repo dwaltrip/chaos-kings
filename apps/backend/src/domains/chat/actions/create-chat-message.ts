@@ -20,10 +20,9 @@ async function createChatMessage(
     content: trimmed,
     user_id: idToNumber(userId),
     game_id: idToNumber(gameId),
-    updated_at: new Date(),
   });
 
-  return toEntity(dbRow, gameId);
+  return toEntity(dbRow);
 }
 
 export { createChatMessage };

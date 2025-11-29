@@ -37,8 +37,8 @@ function GameChat({ game }: { game: Game }) {
     <div className="game-chat">
       <span>{isConnected ? '🟢 Connected' : '🔴 Disconnected'}</span>
       <div>
-        {messages.map((msg, i) => (
-          <div key={i}>
+        {messages.map((msg) => (
+          <div key={msg.id}>
             <strong>{msg.username || 'Unknown'}:</strong> {msg.content}
             <small>{new Date(msg.timestamp).toLocaleTimeString()}</small>
           </div>

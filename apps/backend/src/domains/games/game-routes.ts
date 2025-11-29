@@ -24,6 +24,8 @@ async function gameRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/games/:id',
     asyncHandler(async (request, reply) => {
+      // TODO: Are there easy / nice ways of having request.params auto-typed?
+      // Should be able to use the URL string above?
       const { id } = request.params as { id: string };
       const gameId = GameId(parseId(id));
 

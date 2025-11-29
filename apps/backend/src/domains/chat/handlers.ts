@@ -3,11 +3,11 @@ import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
 import type { ChatClientMessage } from '@protocol/domains/chat/client-messages';
 
 import type { AppHandlerContext } from '@/ws/app-handler-context';
-import { broadcastChatMessage } from '@/domains/chat/actions';
+import { createAndBroadcastChatMessage } from '@/domains/chat/actions';
 
 const chatHandlers = {
   'chat:send-message': ({ gameId, content }, ctx) => {
-    broadcastChatMessage(GameId(gameId), content, UserId(ctx.userId));
+    createAndBroadcastChatMessage(GameId(gameId), content, UserId(ctx.userId));
   },
 } satisfies HandlerMapWithCtx<ChatClientMessage, AppHandlerContext>;
 

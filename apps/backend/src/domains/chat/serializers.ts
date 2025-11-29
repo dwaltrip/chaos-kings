@@ -8,7 +8,8 @@ import { ChatMessageEntity } from '@/domains/chat/types';
 
 type ChatMessageRow = Selectable<GameChatMessagesTable> & { username: string };
 
-function toEntity(row: ChatMessageRow, gameId: GameId): ChatMessageEntity {
+function toEntity(row: ChatMessageRow): ChatMessageEntity {
+  const gameId = GameId(row.game_id);
   const roomId = buildGameRoomId(gameId);
   return {
     id: ChatMessageId(row.id),
