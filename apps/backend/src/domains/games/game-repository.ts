@@ -9,7 +9,7 @@ import { DBGame, Game, NewGame } from '@/domains/games/types';
 import { GamePlayer } from '@/domains/games/game-players-repository';
 
 class GameRepository {
-  constructor(private dbInstance: Kysely<Database> = db) {}
+  constructor(private dbInstance: Kysely<Database>) {}
 
   async findAll(): Promise<(Game & { players: GamePlayer[] })[]> {
     const games = await this.dbInstance
@@ -140,4 +140,12 @@ function deserializeGame(game: DBGame): Game {
   };
 }
 
-export { GameRepository, GamePlayer };
+// Singleton instance for production use
+const gameRepository = new GameRepository(db);
+
+// Factory for tests
+function createGameRepository(dbInstance: Kysely<Database>): GameRepository {
+  return new GameRepository(dbInstance);
+}
+
+export { gameRepository, createGameRepository, GamePlayer };

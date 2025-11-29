@@ -7,7 +7,7 @@ import {
   autoCreateUser,
   updateUsername,
 } from '@/domains/users/actions';
-import { UserRepository } from '@/domains/users/user-repository';
+import { userRepository } from '@/domains/users/user-repository';
 import {
   USER_KEY_COOKIE_NAME,
   USER_KEY_COOKIE_OPTIONS,
@@ -72,7 +72,6 @@ async function userRoutes(fastify: FastifyInstance) {
         return reply.status(200).send({ user: null });
       }
 
-      const userRepository = new UserRepository();
       const user = await userRepository.findByUserKey(userKey);
       return reply.send({ user: user || null });
     }),
@@ -88,7 +87,6 @@ async function userRoutes(fastify: FastifyInstance) {
         return reply.status(401).send({ error: 'No user session found' });
       }
 
-      const userRepository = new UserRepository();
       const user = await userRepository.findByUserKey(userKey);
       if (!user) {
         return reply.status(404).send({ error: 'User not found' });

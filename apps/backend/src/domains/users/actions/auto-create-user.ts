@@ -2,7 +2,10 @@ import { Selectable, Insertable, Kysely } from 'kysely';
 
 import { Database } from '@/types';
 import { UsersTable } from '@/domains/users/user.db';
-import { UserRepository } from '@/domains/users/user-repository';
+import {
+  userRepository,
+  createUserRepository,
+} from '@/domains/users/user-repository';
 
 type User = Selectable<UsersTable>;
 type NewUser = Insertable<UsersTable>;
@@ -16,7 +19,9 @@ const MAX_ATTEMPTS = 50;
 const MIN_RANDOM_NUMBER = 100000;
 const MAX_RANDOM_NUMBER = 999999;
 
-async function generateUniqueUsername(repository: UserRepository): Promise<string> {
+async function generateUniqueUsername(
+  repository: ReturnType<typeof createUserRepository>,
+): Promise<string> {
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     const randomNum = Math.floor(
       Math.random() * (MAX_RANDOM_NUMBER - MIN_RANDOM_NUMBER + 1) + MIN_RANDOM_NUMBER,
@@ -38,8 +43,8 @@ async function generateUniqueUsername(repository: UserRepository): Promise<strin
 }
 
 async function autoCreateUser(dbInstance?: Kysely<Database>): Promise<AutoCreateResult> {
-  const userRepository = new UserRepository(dbInstance);
-  const username = await generateUniqueUsername(userRepository);
+  const repo = dbInstance ? createUserRepository(dbInstance) : userRepository;
+  const username = await generateUniqueUsername(repo);
   const userKey = crypto.randomUUID();
 
   const newUser: NewUser = {
@@ -47,7 +52,7 @@ async function autoCreateUser(dbInstance?: Kysely<Database>): Promise<AutoCreate
     user_key: userKey,
   };
 
-  const user = await userRepository.create(newUser);
+  const user = await repo.create(newUser);
   return {
     user,
     isNewUser: true,

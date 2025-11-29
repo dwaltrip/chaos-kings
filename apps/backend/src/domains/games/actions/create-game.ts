@@ -20,8 +20,14 @@ import { logger } from '@/utils/logger';
 import { Database } from '@/types';
 import { db } from '@/services/db';
 import { GameStatus, Game, NewGame } from '@/domains/games/types';
-import { GameRepository } from '@/domains/games/game-repository';
-import { GamePlayersRepository } from '@/domains/games/game-players-repository';
+import {
+  gameRepository,
+  createGameRepository,
+} from '@/domains/games/game-repository';
+import {
+  gamePlayersRepository,
+  createGamePlayersRepository,
+} from '@/domains/games/game-players-repository';
 
 async function createGame(
   playerIds: number[],
@@ -75,17 +81,18 @@ async function createGame(
     status: GameStatus.NOT_STARTED,
   };
 
-  const gameRepository = new GameRepository(dbInstance);
-  const game = await gameRepository.create(newGame);
+  const repo = dbInstance === db ? gameRepository : createGameRepository(dbInstance);
+  const game = await repo.create(newGame);
 
-  const gamePlayersRepository = new GamePlayersRepository(dbInstance);
+  const playersRepo =
+    dbInstance === db ? gamePlayersRepository : createGamePlayersRepository(dbInstance);
   const gamePlayersData = playerIds.map((playerId, index) => ({
     game_id: game.id,
     user_id: playerId,
     player_index: index, // 0-based indexing
   }));
 
-  await gamePlayersRepository.bulkCreate(gamePlayersData);
+  await playersRepo.bulkCreate(gamePlayersData);
   return game;
 }
 

@@ -2,7 +2,7 @@ import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 
 import { SessionStore } from '@/services/session-store';
-import { UserRepository } from '@/domains/users/user-repository';
+import { userRepository } from '@/domains/users/user-repository';
 import { USER_KEY_COOKIE_NAME } from '@/domains/users/user-key-cookie';
 import {
   SESSION_COOKIE_NAME,
@@ -22,7 +22,6 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     }
 
     try {
-      const userRepository = new UserRepository();
       const user = await userRepository.findByUserKey(userKey);
 
       if (!user) {

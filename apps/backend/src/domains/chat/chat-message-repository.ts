@@ -6,7 +6,7 @@ import { idToNumber } from '@kernel/branded-type';
 
 import { Database } from '@/types';
 import { db } from '@/services/db';
-import { UserRepository } from '@/domains/users/user-repository';
+import { userRepository } from '@/domains/users/user-repository';
 import { GameChatMessagesTable } from '@/domains/chat/chat.db';
 import { ChatMessageEntity } from '@/domains/chat/types';
 import { ChatMessageRow, toEntity } from '@/domains/chat/serializers';
@@ -14,6 +14,7 @@ import { ChatMessageRow, toEntity } from '@/domains/chat/serializers';
 class ChatMessageRepository {
   constructor(private dbInstance: Kysely<Database> = db) {}
 
+  // TODO: should take branded IDs
   async createGameChat(data: Insertable<GameChatMessagesTable>): Promise<ChatMessageRow> {
     const message = await this.dbInstance
       .insertInto('game_chat_messages')
@@ -21,8 +22,7 @@ class ChatMessageRepository {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    const userRepo = new UserRepository(this.dbInstance);
-    const user = await userRepo.findById(message.user_id);
+    const user = await userRepository.findById(message.user_id);
     // This should never happen...
     invariant(!!user, `User with id ${message.user_id} not found`);
 
@@ -50,4 +50,10 @@ class ChatMessageRepository {
   }
 }
 
-export { ChatMessageRepository };
+const chatMessageRepository = new ChatMessageRepository(db);
+
+function createChatMessageRepository(dbInstance: Kysely<Database>) {
+  return new ChatMessageRepository(dbInstance);
+}
+
+export { chatMessageRepository, createChatMessageRepository };

@@ -4,7 +4,7 @@ import { GameId } from '@kernel/ids';
 import { idToNumber, idToString } from '@kernel/branded-type';
 
 import { asyncHandler, parseId } from '@/utils/route-handler';
-import { ChatMessageRepository } from '@/domains/chat/chat-message-repository';
+import { chatMessageRepository } from '@/domains/chat/chat-message-repository';
 
 async function chatRoutes(fastify: FastifyInstance) {
   fastify.get(
@@ -15,8 +15,7 @@ async function chatRoutes(fastify: FastifyInstance) {
       const { gameId: gameIdParam } = request.params as { gameId: string };
       const gameId = GameId(parseId(gameIdParam));
 
-      const chatRepo = new ChatMessageRepository();
-      const messages = await chatRepo.findGameChatsByGameId(gameId);
+      const messages = await chatMessageRepository.findGameChatsByGameId(gameId);
       const dtos = messages.map((msg) => ({
         ...msg,
         id: idToNumber(msg.id),

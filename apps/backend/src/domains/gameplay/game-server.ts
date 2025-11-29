@@ -15,7 +15,7 @@ import { buildGameRoomId } from '@platform/domains/gameplay/helpers';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
 import { GameStatus } from '@/domains/games/types';
-import { GameRepository } from '@/domains/games/game-repository';
+import { gameRepository } from '@/domains/games/game-repository';
 import { getGame, endGame } from '@/domains/games/actions';
 import { gameplayWsEffects } from '@/domains/gameplay/ws-effects';
 import { MoveHistoryBuffer } from '@/domains/gameplay/move-history-buffer';
@@ -396,7 +396,6 @@ export class GameServer {
 
     // Update game status to IN_PROGRESS in database
     try {
-      const gameRepository = new GameRepository();
       await gameRepository.updateStatus(GameId(this.game.id), GameStatus.IN_PROGRESS);
 
       // Get the updated game object with new status
@@ -481,9 +480,8 @@ export class GameServer {
 
   private async flushMoveHistory(force: boolean = false): Promise<void> {
     try {
-      const repo = new GameRepository();
       await this.moveHistory.flush(
-        (history) => repo.updateMoveHistory(GameId(this.game.id), history),
+        (history) => gameRepository.updateMoveHistory(GameId(this.game.id), history),
         force,
       );
     } catch (error) {

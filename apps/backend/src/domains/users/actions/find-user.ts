@@ -2,7 +2,10 @@ import { Selectable, Kysely } from 'kysely';
 
 import { Database } from '@/types';
 import { UsersTable } from '@/domains/users/user.db';
-import { UserRepository } from '@/domains/users/user-repository';
+import {
+  userRepository,
+  createUserRepository,
+} from '@/domains/users/user-repository';
 
 type User = Selectable<UsersTable>;
 
@@ -11,9 +14,8 @@ async function findUser(
   userId: number,
   dbInstance?: Kysely<Database>,
 ): Promise<User | null> {
-  const userRepository = new UserRepository(dbInstance);
-
-  return await userRepository.findById(userId);
+  const repo = dbInstance ? createUserRepository(dbInstance) : userRepository;
+  return await repo.findById(userId);
 }
 
 export { findUser };

@@ -5,7 +5,7 @@ import { GameState } from '@core/types';
 import type { MoveHistoryV1 } from '@core/replay/types';
 import { GameWithPlayers } from '@platform/domains/games/types';
 
-import { GameRepository } from '@/domains/games/game-repository';
+import { gameRepository } from '@/domains/games/game-repository';
 import { GameStatus } from '@/domains/games/types';
 
 interface EndGameParams {
@@ -28,7 +28,6 @@ async function endGame({
   );
 
   try {
-    const gameRepository = new GameRepository();
 
     // Prepare the final game state to persist
     const gameStateToSave = {
