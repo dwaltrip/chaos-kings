@@ -8,7 +8,7 @@ type User = Selectable<UsersTable>;
 type NewUser = Insertable<UsersTable>;
 
 class UserRepository {
-  constructor(private dbInstance: Kysely<Database> = db) {}
+  constructor(private dbInstance: Kysely<Database>) {}
 
   async findById(id: number): Promise<User | null> {
     const user = await this.dbInstance
@@ -62,4 +62,12 @@ class UserRepository {
   }
 }
 
-export { UserRepository };
+// Singleton instance for production use
+const userRepository = new UserRepository(db);
+
+// Factory for tests
+function createUserRepository(dbInstance: Kysely<Database>): UserRepository {
+  return new UserRepository(dbInstance);
+}
+
+export { userRepository, createUserRepository };

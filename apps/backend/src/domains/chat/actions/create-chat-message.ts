@@ -1,7 +1,7 @@
 import { ChatMessageId, RoomId, UserId } from '@kernel/ids';
 
 import { requireEntity } from '@/utils/db-utils';
-import { UserRepository } from '@/domains/users/user-repository';
+import { userRepository } from '@/domains/users/user-repository';
 import { ChatMessageEntity } from '@/domains/chat/types';
 
 async function createChatMessage(
@@ -15,7 +15,7 @@ async function createChatMessage(
   const timestamp = Date.now();
 
   const user = await requireEntity(
-    new UserRepository().findById(userId),
+    userRepository.findById(userId),
     'User not found for broadcasting chat message',
   );
 

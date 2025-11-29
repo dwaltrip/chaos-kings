@@ -16,7 +16,7 @@ interface CreateGamePlayerData {
 }
 
 class GamePlayersRepository {
-  constructor(private dbInstance: Kysely<Database> = db) {}
+  constructor(private dbInstance: Kysely<Database>) {}
 
   async findByGameId(gameId: number): Promise<GamePlayer[]> {
     const players = await this.dbInstance
@@ -66,4 +66,12 @@ class GamePlayersRepository {
   }
 }
 
-export { GamePlayersRepository, GamePlayer, NewGamePlayer, CreateGamePlayerData };
+// Singleton instance for production use
+const gamePlayersRepository = new GamePlayersRepository(db);
+
+// Factory for tests
+function createGamePlayersRepository(dbInstance: Kysely<Database>): GamePlayersRepository {
+  return new GamePlayersRepository(dbInstance);
+}
+
+export { gamePlayersRepository, createGamePlayersRepository, GamePlayer, NewGamePlayer, CreateGamePlayerData };

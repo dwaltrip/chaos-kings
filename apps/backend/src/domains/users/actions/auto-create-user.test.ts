@@ -7,7 +7,7 @@ import {
   testDb,
   expectUniqueConstraintViolation,
 } from '@/tests/test-helpers';
-import { UserRepository } from '@/domains/users/user-repository';
+import { createUserRepository } from '@/domains/users/user-repository';
 import { autoCreateUser, createUser } from '@/domains/users/actions';
 
 describe('autoCreateUser', () => {
@@ -96,7 +96,7 @@ describe('autoCreateUser', () => {
     });
 
     test('should handle duplicate key errors', async () => {
-      const userRepository = new UserRepository(testDb);
+      const userRepository = createUserRepository(testDb);
 
       // Create a user with a specific username first
       await userRepository.create({
@@ -129,7 +129,7 @@ describe('autoCreateUser', () => {
   describe('username generation collision handling', () => {
     test('should handle username collisions and find unique username', async () => {
       // Pre-create a user with a specific username pattern
-      const userRepository = new UserRepository(testDb);
+      const userRepository = createUserRepository(testDb);
       await userRepository.create({
         username: 'Player_123456',
         user_key: randomUUID(),
@@ -158,7 +158,7 @@ describe('autoCreateUser', () => {
       });
 
       // Pre-create a user to cause collisions
-      const userRepository = new UserRepository(testDb);
+      const userRepository = createUserRepository(testDb);
       await userRepository.create({
         username: 'Player_550000',
         user_key: randomUUID(),
