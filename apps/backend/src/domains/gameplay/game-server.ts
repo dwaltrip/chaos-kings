@@ -1,5 +1,3 @@
-import { createScopedLogger } from '@/utils/scoped-logger';
-
 import { GameId, RoomId, UserId } from '@kernel/ids';
 import { GameState, BoardState, Direction, Coord, PlayerIndex } from '@core/types';
 import { Board } from '@core/board';
@@ -14,6 +12,8 @@ import type { MoveEvent } from '@core/replay/types';
 import { buildGameRoomId } from '@platform/domains/gameplay/helpers';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
+import { createScopedLogger } from '@/utils/scoped-logger';
+import { runInContextWithTransaction } from '@/context/app-context';
 import { GameStatus } from '@/domains/games/types';
 import { gameRepository } from '@/domains/games/game-repository';
 import { getGame, endGame } from '@/domains/games/actions';
@@ -321,18 +321,22 @@ export class GameServer {
   private startFallbackTimer(): void {
     // Start countdown after fallback delay even if not all players joined
     this.fallbackTimer = setTimeout(() => {
-      if (!this.countdownActive && !this.gameStarted) {
-        if (this.connectedPlayers.size >= 2) {
-          this.log.error(`Fallback countdown with ${this.connectedPlayers.size} players`);
-          this.startCountdown();
-        } else {
-          // Not enough players, keep waiting (alpha behavior)
-          this.log.info(
-            `Fallback skipped; waiting for at least 2 players (currently ${this.connectedPlayers.size})`,
-          );
-          this.startFallbackTimer();
+      void runInContextWithTransaction(async () => {
+        if (!this.countdownActive && !this.gameStarted) {
+          if (this.connectedPlayers.size >= 2) {
+            this.log.error(
+              `Fallback countdown with ${this.connectedPlayers.size} players`,
+            );
+            this.startCountdown();
+          } else {
+            // Not enough players, keep waiting (alpha behavior)
+            this.log.info(
+              `Fallback skipped; waiting for at least 2 players (currently ${this.connectedPlayers.size})`,
+            );
+            this.startFallbackTimer();
+          }
         }
-      }
+      });
     }, FALLBACK_TIMER_MS);
   }
 
@@ -354,13 +358,15 @@ export class GameServer {
     this.broadcastGameStarting();
 
     this.countdownInterval = setInterval(() => {
-      this.countdownSeconds--;
+      void runInContextWithTransaction(async () => {
+        this.countdownSeconds--;
 
-      if (this.countdownSeconds <= 0) {
-        this.finishCountdown();
-      } else {
-        this.broadcastGameStarting();
-      }
+        if (this.countdownSeconds <= 0) {
+          await this.finishCountdown();
+        } else {
+          this.broadcastGameStarting();
+        }
+      });
     }, ONE_SECOND_MS);
   }
 
@@ -467,7 +473,9 @@ export class GameServer {
   private startMoveFlushTimer(): void {
     if (this.moveFlushTimer) return;
     this.moveFlushTimer = setInterval(() => {
-      void this.flushMoveHistory();
+      void runInContextWithTransaction(async () => {
+        await this.flushMoveHistory();
+      });
     }, 1000);
   }
 

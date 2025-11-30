@@ -2,7 +2,7 @@ import { idToString } from '@kernel/branded-type';
 import { RoomId, UserId } from '@kernel/ids';
 import { makeRoomId } from '@protocol/domains/system';
 
-import type { AppHandlerContext } from '@/ws/app-handler-context';
+import type { ConnectionContext } from '@/ws/connection-context';
 import type { ConnectionId } from '@/ws-lib/types';
 import { wsBridge } from '@/ws/server-bridge-bootstrap';
 import { roomMembershipTracker } from '@/domains/system/membership-tracker';
@@ -35,7 +35,7 @@ const systemActions = {
     systemWsEffects.broadcastRoomStatus({ roomId, memberIds });
   },
 
-  ensureJoined(domain: string, slug: string, ctx: AppHandlerContext) {
+  ensureJoined(domain: string, slug: string, ctx: ConnectionContext) {
     const roomId = makeRoomId(domain, slug);
 
     systemActions.joinRoom({

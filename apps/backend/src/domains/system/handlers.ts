@@ -2,7 +2,7 @@ import { RoomId, UserId } from '@kernel/ids';
 import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
 import type { SystemClientMessage } from '@protocol/domains/system/client-messages';
 
-import type { AppHandlerContext } from '@/ws/app-handler-context';
+import type { ConnectionContext } from '@/ws/connection-context';
 import { systemActions } from '@/domains/system/actions';
 
 const systemHandlers = {
@@ -21,6 +21,6 @@ const systemHandlers = {
       connectionId: ctx.connectionId,
     });
   },
-} satisfies HandlerMapWithCtx<SystemClientMessage, AppHandlerContext>;
+} satisfies HandlerMapWithCtx<SystemClientMessage, ConnectionContext>;
 
 export { systemHandlers };

@@ -1,6 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 
+import { runInContextWithTransaction } from '@/context/app-context';
 import { SessionStore } from '@/services/session-store';
 import { userRepository } from '@/domains/users/user-repository';
 import { USER_KEY_COOKIE_NAME } from '@/domains/users/user-key-cookie';
@@ -21,9 +22,8 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
       return; // No user key, skip auth
     }
 
-    try {
+    async function handleAuth(userKey: string, sessionId: string | undefined) {
       const user = await userRepository.findByUserKey(userKey);
-
       if (!user) {
         console.warn('[auth-plugin] Invalid user key:', userKey);
         reply.clearCookie(USER_KEY_COOKIE_NAME);
@@ -54,6 +54,12 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
         user_key: userKey!,
         created_at: user.created_at.toISOString(),
       };
+    }
+
+    try {
+      await runInContextWithTransaction(async () => {
+        await handleAuth(userKey, sessionId);
+      });
     } catch (error) {
       fastify.log.warn(`Failed to authenticate user: ${error}`);
     }

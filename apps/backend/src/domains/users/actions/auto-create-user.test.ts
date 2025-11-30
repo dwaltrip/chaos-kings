@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 
+import { test } from '@/tests/wrapped-test-fn';
 import {
   setupTestDb,
   cleanupTestDb,
@@ -7,7 +8,7 @@ import {
   testDb,
   expectUniqueConstraintViolation,
 } from '@/tests/test-helpers';
-import { createUserRepository } from '@/domains/users/user-repository';
+import { userRepository } from '@/domains/users/user-repository';
 import { autoCreateUser, createUser } from '@/domains/users/actions';
 
 describe('autoCreateUser', () => {
@@ -29,7 +30,7 @@ describe('autoCreateUser', () => {
 
   describe('successful user creation', () => {
     test('should create user with auto-generated username', async () => {
-      const result = await autoCreateUser(testDb);
+      const result = await autoCreateUser();
 
       expect(result.isNewUser).toBe(true);
       expect(result.user.username).toMatch(/^Player_\d{6}$/);
@@ -41,9 +42,9 @@ describe('autoCreateUser', () => {
 
     test('should generate unique usernames when creating multiple users', async () => {
       const users = await Promise.all([
-        autoCreateUser(testDb),
-        autoCreateUser(testDb),
-        autoCreateUser(testDb),
+        autoCreateUser(),
+        autoCreateUser(),
+        autoCreateUser(),
       ]);
 
       const usernames = users.map((u) => u.user.username);
@@ -54,7 +55,7 @@ describe('autoCreateUser', () => {
     });
 
     test('should generate user_key as valid UUID', async () => {
-      const result = await autoCreateUser(testDb);
+      const result = await autoCreateUser();
 
       const uuidRegex =
         /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -62,7 +63,7 @@ describe('autoCreateUser', () => {
     });
 
     test('should generate username with exactly 6 digits', async () => {
-      const result = await autoCreateUser(testDb);
+      const result = await autoCreateUser();
 
       const match = result.user.username.match(/^Player_(\d+)$/);
       expect(match).not.toBeNull();
@@ -74,7 +75,7 @@ describe('autoCreateUser', () => {
     });
 
     test('should create user in database', async () => {
-      const result = await autoCreateUser(testDb);
+      const result = await autoCreateUser();
 
       // Verify user exists in database
       const users = await testDb.selectFrom('users').selectAll().execute();
@@ -89,15 +90,13 @@ describe('autoCreateUser', () => {
     test('should handle database errors gracefully', async () => {
       // Mock repository to simulate database error
       jest
-        .spyOn(UserRepository.prototype, 'create')
+        .spyOn(userRepository.constructor.prototype, 'create')
         .mockRejectedValue(new Error('Database connection failed'));
 
-      await expect(autoCreateUser(testDb)).rejects.toThrow('Database connection failed');
+      await expect(autoCreateUser()).rejects.toThrow('Database connection failed');
     });
 
     test('should handle duplicate key errors', async () => {
-      const userRepository = createUserRepository(testDb);
-
       // Create a user with a specific username first
       await userRepository.create({
         username: 'duplicate_user',
@@ -119,24 +118,23 @@ describe('autoCreateUser', () => {
     test('should handle database connection errors', async () => {
       // Mock repository to simulate connection error
       jest
-        .spyOn(UserRepository.prototype, 'create')
+        .spyOn(userRepository.constructor.prototype, 'create')
         .mockRejectedValue(new Error('connection timeout'));
 
-      await expect(autoCreateUser(testDb)).rejects.toThrow('connection timeout');
+      await expect(autoCreateUser()).rejects.toThrow('connection timeout');
     });
   });
 
   describe('username generation collision handling', () => {
     test('should handle username collisions and find unique username', async () => {
       // Pre-create a user with a specific username pattern
-      const userRepository = createUserRepository(testDb);
       await userRepository.create({
         username: 'Player_123456',
         user_key: randomUUID(),
       });
 
       // Create new user - should avoid collision
-      const result = await autoCreateUser(testDb);
+      const result = await autoCreateUser();
 
       expect(result.user.username).not.toBe('Player_123456');
       expect(result.user.username).toMatch(/^Player_\d{6}$/);
@@ -158,60 +156,34 @@ describe('autoCreateUser', () => {
       });
 
       // Pre-create a user to cause collisions
-      const userRepository = createUserRepository(testDb);
+      // const userRepository = createUserRepository(testDb);
       await userRepository.create({
         username: 'Player_550000',
         user_key: randomUUID(),
       });
 
-      const result = await autoCreateUser(testDb);
+      const result = await autoCreateUser();
 
       // Should have fallen back to timestamp-based generation
       expect(result.user.username).toMatch(/^Player_\d{6}$/);
       expect(result.user.username).not.toBe('Player_550000');
       expect(result.isNewUser).toBe(true);
 
-      // Restore Math.random
       Math.random = originalMathRandom;
-    });
-
-    test('should throw error when even fallback username exists', async () => {
-      // This test verifies the extreme edge case behavior
-      // Mock the generateUniqueUsername function to throw the specific error
-      const autoCreateUserModule = await import('./auto-create-user');
-      const originalFunction = autoCreateUserModule.autoCreateUser;
-
-      // Mock the entire function to simulate the specific error condition
-      const mockAutoCreateUser = jest
-        .fn()
-        .mockRejectedValue(
-          new Error('Failed to generate unique username after all attempts'),
-        );
-
-      try {
-        await mockAutoCreateUser();
-        fail('Should have thrown an error');
-      } catch (error) {
-        expect(error).toBeInstanceOf(Error);
-        expect((error as Error).message).toBe(
-          'Failed to generate unique username after all attempts',
-        );
-      }
     });
   });
 
   describe('integration with existing data', () => {
     test('should work when database has existing users', async () => {
       // Pre-create a user with a non-Player username to avoid conflicts
-      await createUser('existing_user_1', testDb);
+      await createUser('existing_user_1');
 
-      const result = await autoCreateUser(testDb);
+      const result = await autoCreateUser();
 
       expect(result.user.username).toMatch(/^Player_\d{6}$/);
       expect(result.user.username).not.toBe('existing_user_1');
       expect(result.isNewUser).toBe(true);
 
-      // Verify total user count
       const users = await testDb.selectFrom('users').selectAll().execute();
       expect(users).toHaveLength(2);
     });

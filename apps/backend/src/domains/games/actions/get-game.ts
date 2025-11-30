@@ -1,19 +1,10 @@
-import { Kysely } from 'kysely';
 import { GameId } from '@kernel/ids';
 import { GameWithPlayers } from '@platform/domains/games/types';
 
-import { Database } from '@/types';
-import {
-  gameRepository,
-  createGameRepository,
-} from '@/domains/games/game-repository';
+import { gameRepository } from '@/domains/games/game-repository';
 
-async function getGame(
-  id: GameId,
-  dbInstance?: Kysely<Database>,
-): Promise<GameWithPlayers | null> {
-  const repo = dbInstance ? createGameRepository(dbInstance) : gameRepository;
-  return await repo.findByIdWithPlayers(id);
+async function getGame(id: GameId): Promise<GameWithPlayers | null> {
+  return await gameRepository.findByIdWithPlayers(id);
 }
 
 export { getGame };

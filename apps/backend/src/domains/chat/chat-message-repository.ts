@@ -1,36 +1,31 @@
-import { Insertable, Kysely } from 'kysely';
+import { Insertable } from 'kysely';
 
 import { invariant } from '@utils/assertions/invariant';
 import { GameId } from '@kernel/ids';
 import { idToNumber } from '@kernel/branded-type';
 
-import { Database } from '@/types';
-import { db } from '@/services/db';
+import { BaseRepository } from '@/utils/base-repository';
 import { userRepository } from '@/domains/users/user-repository';
 import { GameChatMessagesTable } from '@/domains/chat/chat.db';
 import { ChatMessageEntity } from '@/domains/chat/types';
 import { ChatMessageRow, toEntity } from '@/domains/chat/serializers';
 
-class ChatMessageRepository {
-  constructor(private dbInstance: Kysely<Database> = db) {}
-
-  // TODO: should take branded IDs
+class ChatMessageRepository extends BaseRepository {
   async createGameChat(data: Insertable<GameChatMessagesTable>): Promise<ChatMessageRow> {
-    const message = await this.dbInstance
+    const message = await this.db
       .insertInto('game_chat_messages')
       .values(data)
       .returningAll()
       .executeTakeFirstOrThrow();
 
     const user = await userRepository.findById(message.user_id);
-    // This should never happen...
     invariant(!!user, `User with id ${message.user_id} not found`);
 
     return { ...message, username: user.username };
   }
 
   async findGameChatsByGameId(gameId: GameId): Promise<ChatMessageEntity[]> {
-    const messages = await this.dbInstance
+    const messages = await this.db
       .selectFrom('game_chat_messages')
       .innerJoin('users', 'users.id', 'game_chat_messages.user_id')
       .select([
@@ -50,10 +45,6 @@ class ChatMessageRepository {
   }
 }
 
-const chatMessageRepository = new ChatMessageRepository(db);
+const chatMessageRepository = new ChatMessageRepository();
 
-function createChatMessageRepository(dbInstance: Kysely<Database>) {
-  return new ChatMessageRepository(dbInstance);
-}
-
-export { chatMessageRepository, createChatMessageRepository };
+export { chatMessageRepository };

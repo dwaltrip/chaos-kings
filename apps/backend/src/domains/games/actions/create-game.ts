@@ -1,11 +1,4 @@
-import { Kysely } from 'kysely';
-
-import {
-  // TODO: TS wasn't complainining when I didn't have `type` here??
-  // probably different ts configs in core vs backend vs frontend
-  type MapGenerationParams,
-  generateGameMapV2,
-} from '@core/terrain-generation';
+import { type MapGenerationParams, generateGameMapV2 } from '@core/terrain-generation';
 import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
 import {
   TICK_RATE_MS,
@@ -17,22 +10,12 @@ import { calcMapSizeForPlayers } from '@core/map/calc-map-size';
 import { colorsForPlayerCount } from '@core/colors';
 
 import { logger } from '@/utils/logger';
-import { Database } from '@/types';
-import { db } from '@/services/db';
 import { GameStatus, Game, NewGame } from '@/domains/games/types';
-import {
-  gameRepository,
-  createGameRepository,
-} from '@/domains/games/game-repository';
-import {
-  gamePlayersRepository,
-  createGamePlayersRepository,
-} from '@/domains/games/game-players-repository';
+import { gameRepository } from '@/domains/games/game-repository';
+import { gamePlayersRepository } from '@/domains/games/game-players-repository';
+import { userRepository } from '@/domains/users/user-repository';
 
-async function createGame(
-  playerIds: number[],
-  dbInstance: Kysely<Database> = db,
-): Promise<Game> {
+async function createGame(playerIds: number[]): Promise<Game> {
   const playerCount = playerIds.length;
   logger.info(`Creating game with ${playerCount} players: ${playerIds.join(', ')}`);
 
@@ -44,14 +27,7 @@ async function createGame(
     throw new Error(`Invalid game configuration:\n${errors?.join('\n  -')}`);
   }
 
-  // TODO: Should be fetching via UsersRepository
-  // Validate that all player IDs exist in the database
-  const existingUsers = await dbInstance
-    .selectFrom('users')
-    .select('id')
-    .where('id', 'in', playerIds)
-    .execute();
-
+  const existingUsers = await userRepository.findByIds(playerIds);
   const existingUserIds = new Set(existingUsers.map((user) => user.id));
   const invalidUserIds = playerIds.filter((id) => !existingUserIds.has(id));
   if (invalidUserIds.length > 0) {
@@ -81,18 +57,15 @@ async function createGame(
     status: GameStatus.NOT_STARTED,
   };
 
-  const repo = dbInstance === db ? gameRepository : createGameRepository(dbInstance);
-  const game = await repo.create(newGame);
+  const game = await gameRepository.create(newGame);
 
-  const playersRepo =
-    dbInstance === db ? gamePlayersRepository : createGamePlayersRepository(dbInstance);
   const gamePlayersData = playerIds.map((playerId, index) => ({
     game_id: game.id,
     user_id: playerId,
-    player_index: index, // 0-based indexing
+    player_index: index,
   }));
 
-  await playersRepo.bulkCreate(gamePlayersData);
+  await gamePlayersRepository.bulkCreate(gamePlayersData);
   return game;
 }
 

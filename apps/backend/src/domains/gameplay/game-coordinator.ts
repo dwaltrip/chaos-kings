@@ -1,9 +1,10 @@
-import { createScopedLogger } from '@/utils/scoped-logger';
 import { GameId } from '@kernel/ids';
 
 import { TICK_RATE_MS } from '@core/game-timing-config';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
+import { createScopedLogger } from '@/utils/scoped-logger';
+import { runInContextWithTransaction } from '@/context/app-context';
 import { GameServer } from '@/domains/gameplay/game-server';
 
 const moduleLogger = createScopedLogger('GameCoordinator');
@@ -25,7 +26,9 @@ class GameCoordinator {
 
     this.log.info(`Starting global tick system at ${TICK_RATE_MS}ms intervals`);
     this.tickInterval = setInterval(() => {
-      this.tick();
+      void runInContextWithTransaction(async () => {
+        await this.tick();
+      });
     }, TICK_RATE_MS);
   }
 

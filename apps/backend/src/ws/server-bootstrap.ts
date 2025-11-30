@@ -4,8 +4,9 @@ import { createWSServer } from '@/ws-lib';
 import type { HandlerMapWithCtx } from '@/ws-lib/types';
 
 import type { ClientMessage, ServerMessage } from '@/ws/message-types';
-import type { AppHandlerContext } from '@/ws/app-handler-context';
+import type { ConnectionContext } from '@/ws/connection-context';
 import { wsBridge } from '@/ws/server-bridge-bootstrap';
+import { runInContextWithTransaction } from '@/context/app-context';
 
 import { chatHandlers } from '@/domains/chat/handlers';
 import { matchmakingHandlers } from '@/domains/matchmaking/handlers';
@@ -15,18 +16,18 @@ import { roomMembershipTracker } from '@/domains/system/membership-tracker';
 import { systemWsEffects } from '@/domains/system/ws-effects';
 
 // Merge all domain handlers into single map
-const mergedHandlers: HandlerMapWithCtx<ClientMessage, AppHandlerContext> = {
+const mergedHandlers: HandlerMapWithCtx<ClientMessage, ConnectionContext> = {
   ...chatHandlers,
   ...matchmakingHandlers,
   ...systemHandlers,
   ...gameplayHandlers,
-} satisfies HandlerMapWithCtx<ClientMessage, AppHandlerContext>;
+} satisfies HandlerMapWithCtx<ClientMessage, ConnectionContext>;
 
 function setupWebSocketV2() {
   // Create WS server with typed config
-  const wsServer = createWSServer<ClientMessage, ServerMessage, AppHandlerContext, User>({
+  const wsServer = createWSServer<ClientMessage, ServerMessage, ConnectionContext, User>({
     handlers: mergedHandlers,
-    createContext: (user, connectionId) => ({
+    createConnectionContext: (user, connectionId) => ({
       userId: user.id,
       connectionId,
     }),
@@ -40,6 +41,10 @@ function setupWebSocketV2() {
         const memberIds = roomMembershipTracker.getUserIds(roomId);
         systemWsEffects.broadcastRoomStatus({ roomId, memberIds });
       });
+    },
+    // Wrap each message in AppContext scope
+    setupHandlerContext: async (execute) => {
+      return await runInContextWithTransaction(execute);
     },
   });
 

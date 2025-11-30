@@ -1,11 +1,12 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
+import { runInContextWithTransaction } from '@/context/app-context';
 
 type RouteHandler = (request: FastifyRequest, reply: FastifyReply) => Promise<any>;
 
 function asyncHandler(handler: RouteHandler) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      return await handler(request, reply);
+      return await runInContextWithTransaction(() => handler(request, reply));
     } catch (error) {
       if (error instanceof Error) {
         // Handle known error types with specific status codes

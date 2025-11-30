@@ -2,7 +2,7 @@ import { UserId } from '@kernel/ids';
 import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
 import type { MatchmakingClientMessage } from '@protocol/domains/matchmaking/client-messages';
 
-import type { AppHandlerContext } from '@/ws/app-handler-context';
+import type { ConnectionContext } from '@/ws/connection-context';
 import { joinQueue, leaveQueue, earlyStartVote } from '@/domains/matchmaking/actions';
 
 const matchmakingHandlers = {
@@ -17,6 +17,6 @@ const matchmakingHandlers = {
   'matchmaking:early-start-vote': ({ vote }, ctx) => {
     earlyStartVote(vote, UserId(ctx.userId));
   },
-} satisfies HandlerMapWithCtx<MatchmakingClientMessage, AppHandlerContext>;
+} satisfies HandlerMapWithCtx<MatchmakingClientMessage, ConnectionContext>;
 
 export { matchmakingHandlers };

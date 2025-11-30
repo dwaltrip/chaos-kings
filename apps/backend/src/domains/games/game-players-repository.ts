@@ -1,7 +1,6 @@
-import { Kysely, Selectable, Insertable } from 'kysely';
+import { Selectable, Insertable } from 'kysely';
 
-import { db } from '@/services/db';
-import { Database } from '@/types';
+import { BaseRepository } from '@/utils/base-repository';
 import { GamePlayersTable, GamePlayerStatus } from '@/domains/games/game-players.db';
 
 type GamePlayer = Selectable<GamePlayersTable>;
@@ -15,11 +14,9 @@ interface CreateGamePlayerData {
   data?: object;
 }
 
-class GamePlayersRepository {
-  constructor(private dbInstance: Kysely<Database>) {}
-
+class GamePlayersRepository extends BaseRepository {
   async findByGameId(gameId: number): Promise<GamePlayer[]> {
-    const players = await this.dbInstance
+    const players = await this.db
       .selectFrom('game_players')
       .selectAll()
       .where('game_id', '=', gameId)
@@ -38,7 +35,7 @@ class GamePlayersRepository {
       data: data.data || null,
     };
 
-    const gamePlayer = await this.dbInstance
+    const gamePlayer = await this.db
       .insertInto('game_players')
       .values(gamePlayerData)
       .returningAll()
@@ -56,7 +53,7 @@ class GamePlayersRepository {
       data: data.data || null,
     }));
 
-    const gamePlayers = await this.dbInstance
+    const gamePlayers = await this.db
       .insertInto('game_players')
       .values(gamePlayersData)
       .returningAll()
@@ -66,12 +63,6 @@ class GamePlayersRepository {
   }
 }
 
-// Singleton instance for production use
-const gamePlayersRepository = new GamePlayersRepository(db);
+const gamePlayersRepository = new GamePlayersRepository();
 
-// Factory for tests
-function createGamePlayersRepository(dbInstance: Kysely<Database>): GamePlayersRepository {
-  return new GamePlayersRepository(dbInstance);
-}
-
-export { gamePlayersRepository, createGamePlayersRepository, GamePlayer, NewGamePlayer, CreateGamePlayerData };
+export { gamePlayersRepository, GamePlayer, NewGamePlayer, CreateGamePlayerData };

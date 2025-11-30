@@ -2,7 +2,7 @@ import { GameId, UserId } from '@kernel/ids';
 import type { HandlerMapWithCtx } from '@protocol/utils/message-helpers';
 import type { GameplayClientMessage } from '@protocol/domains/gameplay/client-messages';
 
-import type { AppHandlerContext } from '@/ws/app-handler-context';
+import type { ConnectionContext } from '@/ws/connection-context';
 import {
   queueMove,
   cancelQueuedMoves,
@@ -31,6 +31,6 @@ const gameplayHandlers = {
   'gameplay:undo-move': ({ gameId }, ctx) => {
     undoLastQueuedMove(UserId(ctx.userId), GameId(gameId));
   },
-} satisfies HandlerMapWithCtx<GameplayClientMessage, AppHandlerContext>;
+} satisfies HandlerMapWithCtx<GameplayClientMessage, ConnectionContext>;
 
 export { gameplayHandlers };

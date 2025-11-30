@@ -24,7 +24,7 @@ type WSServerConfig<
   TConnectionContext,
 > = {
   handlers: HandlerMapWithCtx<TIncoming, TContext>;
-  createContext: (
+  createConnectionContext: (
     connectionContext: TConnectionContext,
     connectionId: ConnectionId,
   ) => TContext;
@@ -32,6 +32,8 @@ type WSServerConfig<
   onDisconnect?: (context: TContext) => void;
   encode?: (msg: TOutgoing) => string;
   decode?: (raw: string) => TIncoming;
+  // Optional wrapper for message execution (sets up AppContext)
+  setupHandlerContext?: <T>(execute: () => Promise<T>) => Promise<T>;
 };
 
 // Server instance (what bootstrap uses)
@@ -52,7 +54,15 @@ function createWSServer<
 >(
   config: WSServerConfig<TIncoming, TOutgoing, TContext, TConnectionContext>,
 ): WSServerInstance<TOutgoing, TConnectionContext> {
-  const { handlers, createContext, getUserKey, onDisconnect, encode, decode } = config;
+  const {
+    handlers,
+    createConnectionContext,
+    getUserKey,
+    onDisconnect,
+    encode,
+    decode,
+    setupHandlerContext,
+  } = config;
 
   const clients = new Map<ConnectionId, WsClient>();
   const roomManager = new RoomManager();
@@ -73,35 +83,44 @@ function createWSServer<
     clients.set(connectionId, client);
 
     // Create context with the generated connectionId
-    const context = createContext(connectionContext, connectionId);
+    const context = createConnectionContext(connectionContext, connectionId);
 
     console.log(`[WS] Client connected: ${connectionId}`);
 
     // Handle incoming messages
     ws.on('message', async (raw: RawData) => {
-      try {
-        // Fastify passes Buffer | ArrayBuffer | Buffer[] | string. Normalize before decoding.
-        // TODO: Are these checks / normalizations a fine way to do this?
-        const rawString =
-          typeof raw === 'string'
-            ? raw
-            : Array.isArray(raw)
-              ? Buffer.concat(raw).toString('utf8')
-              : Buffer.isBuffer(raw)
-                ? raw.toString('utf8')
-                : Buffer.from(raw).toString('utf8');
-        const message = decodeMsg(rawString);
-        const handler = handlers[message.type as keyof typeof handlers];
+      const executeHandler = async () => {
+        try {
+          // Fastify passes Buffer | ArrayBuffer | Buffer[] | string. Normalize before decoding.
+          // TODO: Are these checks / normalizations a fine way to do this?
+          const rawString =
+            typeof raw === 'string'
+              ? raw
+              : Array.isArray(raw)
+                ? Buffer.concat(raw).toString('utf8')
+                : Buffer.isBuffer(raw)
+                  ? raw.toString('utf8')
+                  : Buffer.from(raw).toString('utf8');
+          const message = decodeMsg(rawString);
+          const handler = handlers[message.type as keyof typeof handlers];
 
-        if (!handler) {
-          console.warn(`[WS] No handler for message type: ${message.type}`);
-          return;
+          if (!handler) {
+            console.warn(`[WS] No handler for message type: ${message.type}`);
+            return;
+          }
+
+          await handler(message.payload as any, context);
+        } catch (error) {
+          console.error('[WS] Error handling message:', error);
+          // TODO: Send error message back to client?
         }
+      };
 
-        await handler(message.payload as any, context);
-      } catch (error) {
-        console.error('[WS] Error handling message:', error);
-        // TODO: Send error message back to client?
+      // Use wrapper if provided, otherwise execute directly
+      if (setupHandlerContext) {
+        await setupHandlerContext(executeHandler);
+      } else {
+        await executeHandler();
       }
     });
 

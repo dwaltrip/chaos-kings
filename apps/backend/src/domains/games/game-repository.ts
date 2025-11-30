@@ -1,18 +1,13 @@
-import { Kysely } from 'kysely';
-
 import { GameId } from '@kernel/ids';
 import { idToNumber } from '@kernel/branded-type';
 
-import { db } from '@/services/db';
-import { Database } from '@/types';
+import { BaseRepository } from '@/utils/base-repository';
 import { DBGame, Game, NewGame } from '@/domains/games/types';
 import { GamePlayer } from '@/domains/games/game-players-repository';
 
-class GameRepository {
-  constructor(private dbInstance: Kysely<Database>) {}
-
+class GameRepository extends BaseRepository {
   async findAll(): Promise<(Game & { players: GamePlayer[] })[]> {
-    const games = await this.dbInstance
+    const games = await this.db
       .selectFrom('games')
       .selectAll()
       .orderBy('created_at', 'desc')
@@ -31,7 +26,7 @@ class GameRepository {
   }
 
   async findById(id: GameId): Promise<Game | null> {
-    const game = await this.dbInstance
+    const game = await this.db
       .selectFrom('games')
       .selectAll()
       .where('id', '=', idToNumber(id))
@@ -41,7 +36,7 @@ class GameRepository {
   }
 
   async create(gameData: NewGame): Promise<Game> {
-    const game = await this.dbInstance
+    const game = await this.db
       .insertInto('games')
       .values(gameData)
       .returningAll()
@@ -53,7 +48,7 @@ class GameRepository {
   async findByIdWithPlayers(
     id: GameId,
   ): Promise<(Game & { players: GamePlayer[] }) | null> {
-    const game = await this.dbInstance
+    const game = await this.db
       .selectFrom('games')
       .selectAll()
       .where('id', '=', idToNumber(id))
@@ -71,7 +66,7 @@ class GameRepository {
   }
 
   async updateStatus(id: GameId, status: string): Promise<void> {
-    await this.dbInstance
+    await this.db
       .updateTable('games')
       .set({ status })
       .where('id', '=', idToNumber(id))
@@ -79,7 +74,7 @@ class GameRepository {
   }
 
   async updateMoveHistory(id: GameId, moveHistory: object): Promise<void> {
-    await this.dbInstance
+    await this.db
       .updateTable('games')
       .set({ move_history: moveHistory })
       .where('id', '=', idToNumber(id))
@@ -92,17 +87,15 @@ class GameRepository {
     gameState: object,
     moveHistory: object,
   ): Promise<void> {
-    await this.dbInstance
+    await this.db
       .updateTable('games')
       .set({ status, game_state: gameState, move_history: moveHistory })
       .where('id', '=', idToNumber(id))
       .execute();
   }
 
-  // TODO: turn into domain object / entity
-  // e.g. { user_id: number, ... } -> { userId: UserId, ... }
   private async playersForGameIdQuery(id: GameId) {
-    return await this.dbInstance
+    return await this.db
       .selectFrom('game_players')
       .innerJoin('users', 'users.id', 'game_players.user_id')
       .select([
@@ -140,12 +133,6 @@ function deserializeGame(game: DBGame): Game {
   };
 }
 
-// Singleton instance for production use
-const gameRepository = new GameRepository(db);
+const gameRepository = new GameRepository();
 
-// Factory for tests
-function createGameRepository(dbInstance: Kysely<Database>): GameRepository {
-  return new GameRepository(dbInstance);
-}
-
-export { gameRepository, createGameRepository, GamePlayer };
+export { gameRepository, GamePlayer };

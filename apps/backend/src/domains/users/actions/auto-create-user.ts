@@ -1,11 +1,7 @@
-import { Selectable, Insertable, Kysely } from 'kysely';
+import { Selectable, Insertable } from 'kysely';
 
-import { Database } from '@/types';
 import { UsersTable } from '@/domains/users/user.db';
-import {
-  userRepository,
-  createUserRepository,
-} from '@/domains/users/user-repository';
+import { userRepository } from '@/domains/users/user-repository';
 
 type User = Selectable<UsersTable>;
 type NewUser = Insertable<UsersTable>;
@@ -19,9 +15,7 @@ const MAX_ATTEMPTS = 50;
 const MIN_RANDOM_NUMBER = 100000;
 const MAX_RANDOM_NUMBER = 999999;
 
-async function generateUniqueUsername(
-  repository: ReturnType<typeof createUserRepository>,
-): Promise<string> {
+async function generateUniqueUsername(): Promise<string> {
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     const randomNum = Math.floor(
       Math.random() * (MAX_RANDOM_NUMBER - MIN_RANDOM_NUMBER + 1) + MIN_RANDOM_NUMBER,
@@ -29,7 +23,7 @@ async function generateUniqueUsername(
     const username = `Player_${randomNum}`;
 
     // Check if username exists
-    const existingUser = await repository.findByUsername(username);
+    const existingUser = await userRepository.findByUsername(username);
     if (!existingUser) {
       return username;
     }
@@ -42,9 +36,8 @@ async function generateUniqueUsername(
   return fallbackUsername;
 }
 
-async function autoCreateUser(dbInstance?: Kysely<Database>): Promise<AutoCreateResult> {
-  const repo = dbInstance ? createUserRepository(dbInstance) : userRepository;
-  const username = await generateUniqueUsername(repo);
+async function autoCreateUser(): Promise<AutoCreateResult> {
+  const username = await generateUniqueUsername();
   const userKey = crypto.randomUUID();
 
   const newUser: NewUser = {
@@ -52,7 +45,7 @@ async function autoCreateUser(dbInstance?: Kysely<Database>): Promise<AutoCreate
     user_key: userKey,
   };
 
-  const user = await repo.create(newUser);
+  const user = await userRepository.create(newUser);
   return {
     user,
     isNewUser: true,

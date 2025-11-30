@@ -1,17 +1,14 @@
-import { Selectable, Insertable, Kysely } from 'kysely';
+import { Selectable, Insertable } from 'kysely';
 
-import { Database } from '@/types';
-import { db } from '@/services/db';
+import { BaseRepository } from '@/utils/base-repository';
 import { UsersTable } from '@/domains/users/user.db';
 
 type User = Selectable<UsersTable>;
 type NewUser = Insertable<UsersTable>;
 
-class UserRepository {
-  constructor(private dbInstance: Kysely<Database>) {}
-
+class UserRepository extends BaseRepository {
   async findById(id: number): Promise<User | null> {
-    const user = await this.dbInstance
+    const user = await this.db
       .selectFrom('users')
       .selectAll()
       .where('id', '=', id)
@@ -20,8 +17,12 @@ class UserRepository {
     return user || null;
   }
 
+  async findByIds(ids: number[]): Promise<User[]> {
+    return this.db.selectFrom('users').selectAll().where('id', 'in', ids).execute();
+  }
+
   async findByUserKey(userKey: string): Promise<User | null> {
-    const user = await this.dbInstance
+    const user = await this.db
       .selectFrom('users')
       .selectAll()
       .where('user_key', '=', userKey)
@@ -31,7 +32,7 @@ class UserRepository {
   }
 
   async findByUsername(username: string): Promise<User | null> {
-    const user = await this.dbInstance
+    const user = await this.db
       .selectFrom('users')
       .selectAll()
       .where('username', '=', username)
@@ -41,7 +42,7 @@ class UserRepository {
   }
 
   async create(userData: NewUser): Promise<User> {
-    const user = await this.dbInstance
+    const user = await this.db
       .insertInto('users')
       .values(userData)
       .returningAll()
@@ -51,7 +52,7 @@ class UserRepository {
   }
 
   async updateUsername(id: number, username: string): Promise<User | null> {
-    const updatedUser = await this.dbInstance
+    const updatedUser = await this.db
       .updateTable('users')
       .set({ username })
       .where('id', '=', id)
@@ -62,12 +63,6 @@ class UserRepository {
   }
 }
 
-// Singleton instance for production use
-const userRepository = new UserRepository(db);
+const userRepository = new UserRepository();
 
-// Factory for tests
-function createUserRepository(dbInstance: Kysely<Database>): UserRepository {
-  return new UserRepository(dbInstance);
-}
-
-export { userRepository, createUserRepository };
+export { userRepository };

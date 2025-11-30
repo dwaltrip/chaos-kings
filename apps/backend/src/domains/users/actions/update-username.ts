@@ -1,21 +1,12 @@
-import { Selectable, Kysely } from 'kysely';
+import { Selectable } from 'kysely';
 
 import { validateUsername } from '@/domains/users/validation/username';
-import { Database } from '@/types';
-
 import { UsersTable } from '@/domains/users/user.db';
-import {
-  userRepository,
-  createUserRepository,
-} from '@/domains/users/user-repository';
+import { userRepository } from '@/domains/users/user-repository';
 
 type User = Selectable<UsersTable>;
 
-async function updateUsername(
-  userId: number,
-  newUsername: string,
-  dbInstance?: Kysely<Database>,
-): Promise<User> {
+async function updateUsername(userId: number, newUsername: string): Promise<User> {
   const validation = validateUsername(newUsername);
   if (!validation.isValid) {
     throw new Error(validation.error);
@@ -24,8 +15,7 @@ async function updateUsername(
   const trimmedUsername = newUsername.trim();
 
   try {
-    const repo = dbInstance ? createUserRepository(dbInstance) : userRepository;
-    const updatedUser = await repo.updateUsername(userId, trimmedUsername);
+    const updatedUser = await userRepository.updateUsername(userId, trimmedUsername);
 
     if (!updatedUser) {
       throw new Error('User not found');
