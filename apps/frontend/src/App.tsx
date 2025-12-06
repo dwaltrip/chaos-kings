@@ -4,6 +4,7 @@ import { HomePage } from '@/pages/home/home-page';
 import { GameplayPage } from '@/pages/gameplay/gameplay-page';
 import { GameListPage } from '@/pages/games-list/game-list-page';
 import { JoinGamePage } from '@/pages/join-game/join-game-page';
+import { ReplayPage } from '@/pages/replay/replay-page';
 import { useUserSessionAndWsInit } from '@/hooks/use-user-session-and-ws-init';
 
 function App() {
@@ -15,10 +16,12 @@ function App() {
   }
 
   const isGamePage = location.pathname.match(/^\/games\/[^/]+$/);
+  const isReplayPage = location.pathname.match(/^\/replay\/[^/]+$/);
+  const hideNav = isGamePage || isReplayPage;
 
   return (
     <div className="app">
-      {!isGamePage && (
+      {!hideNav && (
         <nav className="p-5 border-b border-gray-300 mb-5">
           <NavLink to="/" className="mr-5">
             Home
@@ -37,6 +40,7 @@ function App() {
         <Route path="games" element={<GameListPage />} />
         <Route path="games/:gameId" element={<GameplayPage />} />
         <Route path="join-game" element={<JoinGamePage />} />
+        <Route path="replay/:gameId" element={<ReplayPage />} />
       </Routes>
     </div>
   );
