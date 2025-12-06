@@ -1,5 +1,3 @@
-import { Board } from '@core/board';
-import { isPlayerSquare } from '@core/square';
 import { applyMovement } from '@core/engine';
 import type { BoardState } from '@core/types';
 import type { MoveEvent } from '@core/replay/types';
