@@ -2,7 +2,7 @@ import type { BoardState } from '@core/types';
 import { serializeCoord } from '@core/utils/coordinate-utils';
 
 import { useGridLayout } from '@/domains/gameplay/hooks/use-grid-layout';
-import { ReplayTile } from '@/domains/replay/ui/replay-tile';
+import { ReplayTile } from '@/domains/replay/pages/replay-tile';
 
 import '@/domains/gameplay/ui/game-board.css';
 

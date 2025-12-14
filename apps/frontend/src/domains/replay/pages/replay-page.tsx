@@ -3,8 +3,8 @@ import { useParams, Link } from 'react-router';
 
 import { useReplayStore, replayActions } from '@/domains/replay/stores/replay-store';
 import { loadReplay } from '@/domains/replay/actions';
-import { ReplayBoard } from '@/domains/replay/ui/replay-board';
-import { ReplayControls } from '@/pages/replay/components/replay-controls';
+import { ReplayBoard } from '@/domains/replay/pages/replay-board';
+import { ReplayControls } from '@/domains/replay/pages/replay-controls';
 
 function ReplayPage() {
   const { gameId } = useParams();

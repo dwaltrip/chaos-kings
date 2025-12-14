@@ -4,7 +4,7 @@ import { HomePage } from '@/pages/home/home-page';
 import { GameplayPage } from '@/pages/gameplay/gameplay-page';
 import { GameListPage } from '@/pages/games-list/game-list-page';
 import { JoinGamePage } from '@/pages/join-game/join-game-page';
-import { ReplayPage } from '@/pages/replay/replay-page';
+import { ReplayPage } from '@/domains/replay/pages/replay-page';
 import { useUserSessionAndWsInit } from '@/hooks/use-user-session-and-ws-init';
 
 function App() {
