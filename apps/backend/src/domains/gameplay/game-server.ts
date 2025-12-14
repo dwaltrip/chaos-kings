@@ -9,7 +9,9 @@ import {
 } from '@core/ui-timing-config';
 import { processStep as coreProcessStep } from '@core/step-processor';
 import type { MoveEvent } from '@core/replay/types';
+import { isPlayerSquare } from '@core/square';
 import { buildGameRoomId } from '@platform/domains/gameplay/helpers';
+import type { PlayerStats } from '@platform/domains/gameplay/types';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
 import { createScopedLogger } from '@/utils/scoped-logger';
@@ -208,11 +210,13 @@ export class GameServer {
 
   private broadcastGameState(): void {
     try {
+      const playerStats = this.calculatePlayerStats(this.gameState.board);
       gameplayWsEffects.broadcastGameState(
         this.roomName,
         this.gameState.tick,
         this.gameState.board,
         this.getPlayerQueuesForBroadcast(),
+        playerStats,
       );
     } catch (error) {
       this.log.error('Failed to broadcast game state. Error:', error);
@@ -229,6 +233,33 @@ export class GameServer {
     } catch (error) {
       this.log.error(`Failed to broadcast game end. Error:`, error);
     }
+  }
+
+  // TODO: We need to move stuff like this out of the game server.
+  // It should be agnostic as possible to game rules / logic.
+  // Mostly should be handling move queues, timing, and broadcasting state.
+  private calculatePlayerStats(board: BoardState): PlayerStats[] {
+    const stats: PlayerStats[] = Array.from(
+      { length: this.expectedPlayerCount },
+      (_, index) => ({
+        playerIndex: index as PlayerIndex,
+        armyCount: 0,
+        landCount: 0,
+      }),
+    );
+
+    for (const row of board.grid) {
+      for (const square of row) {
+        if (!isPlayerSquare(square)) continue;
+        const playerStat = stats[square.playerIndex];
+        if (playerStat) {
+          playerStat.armyCount += square.units;
+          playerStat.landCount += 1;
+        }
+      }
+    }
+
+    return stats;
   }
 
   queueMove(userId: UserId, source: Coord, movement: Direction): void {

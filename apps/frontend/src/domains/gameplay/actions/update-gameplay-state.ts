@@ -1,6 +1,6 @@
 import type { BoardState, Movement } from '@core/types';
 import { Board } from '@core/board';
-import type { PlayerQueuesMap } from '@platform/domains/gameplay/types';
+import type { PlayerQueuesMap, PlayerStats } from '@platform/domains/gameplay/types';
 
 import {
   gameplayActions,
@@ -12,9 +12,10 @@ import { tileOrchestrator } from '@/domains/gameplay/stores/tile-orchestrator';
 function updateGameplayState(
   tick: number,
   board: BoardState,
-  playerQueues: PlayerQueuesMap,
+  playerQueues: PlayerQueuesMap = {},
+  playerStats: PlayerStats[],
 ) {
-  const { setVisibleSquares, updateBoard, setTick } = gameplayActions();
+  const { setVisibleSquares, updateBoard, setTick, setPlayerStats } = gameplayActions();
   // Get currentPlayerIndex for both visible squares and queue updates
   const playerIndex = useGameplayStoreV2.getState().currentPlayerIndex();
   if (playerIndex === null) {
@@ -24,17 +25,16 @@ function updateGameplayState(
   setTick(tick);
   updateBoard(board);
 
-  let visibleSquares = new Set<string>();
-  if (board && playerIndex !== null && playerIndex !== undefined) {
-    visibleSquares = Board.getVisibleSquares(board, playerIndex);
-  }
+  const visibleSquares = board
+    ? Board.getVisibleSquares(board, playerIndex)
+    : new Set<string>();
   setVisibleSquares(visibleSquares);
 
   // Handle queue updates
-  if (playerQueues) {
-    const newMovesQueue = playerIndex !== null ? playerQueues[playerIndex] || [] : [];
-    updateQueuedMoves(board, newMovesQueue);
-  }
+  const newMovesQueue = playerIndex !== null ? playerQueues[playerIndex] || [] : [];
+  updateQueuedMoves(board, newMovesQueue);
+
+  setPlayerStats(playerStats);
 }
 
 function updateQueuedMoves(board: BoardState, moves: Movement[]) {

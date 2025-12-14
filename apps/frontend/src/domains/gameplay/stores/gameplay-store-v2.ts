@@ -5,6 +5,7 @@ import { areCoordsEqual } from '@core/utils/coordinate-utils';
 import { hasCompletedGameState, isEnded } from '@core/game';
 
 import type { GameWithPlayers } from '@platform/domains/games/types';
+import type { PlayerStats } from '@platform/domains/gameplay/types';
 import { getCurrentPlayerIndex } from '@platform/domains/games/get-current-player-index';
 
 import type { User } from '@/domains/users/user-service';
@@ -24,6 +25,7 @@ interface GameplayStateV2 {
   selectedTile: Coord | null;
   visibleSquares: Set<string>;
   queuedMoves: Movement[];
+  playerStats: PlayerStats[];
 
   // derived state
   currentPlayerIndex: () => number | null;
@@ -37,6 +39,7 @@ interface GameplayStateV2 {
     updateBoard: (boardState: BoardState) => void;
     setVisibleSquares: (visibleSquares: Set<string>) => void;
     setQueuedMoves: (moves: Movement[]) => void;
+    setPlayerStats: (playerStats: PlayerStats[]) => void;
     addQueuedMove: (move: Movement) => void;
     setWinner: (winner: PlayerIndex) => void;
   };
@@ -73,6 +76,7 @@ const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
     selectedTile: null,
     visibleSquares: new Set<string>(),
     queuedMoves: [],
+    playerStats: [],
 
     isGameEnded() {
       const { game } = get();
@@ -96,6 +100,7 @@ const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
       },
       setVisibleSquares: (visibleSquares) => set({ visibleSquares }),
       setQueuedMoves: (moves) => set({ queuedMoves: moves }),
+      setPlayerStats: (playerStats) => set({ playerStats }),
       addQueuedMove: (move) => {
         const { queuedMoves } = get();
         set({ queuedMoves: [...queuedMoves, move] });

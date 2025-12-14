@@ -11,7 +11,12 @@ import {
 
 const gameplayHandlers = {
   'gameplay:state-update': (payload) => {
-    updateGameplayState(payload.tick, payload.boardState, payload.playerQueues || {});
+    updateGameplayState(
+      payload.tick,
+      payload.boardState,
+      payload.playerQueues,
+      payload.playerStats,
+    );
   },
 
   'gameplay:game-starting': (payload) => {

@@ -10,6 +10,7 @@ import {
 } from '@/domains/gameplay/stores/game-metadata-store';
 import { joinGameplay, leaveGameplay } from '@/domains/gameplay/actions';
 import { GameChat } from '@/domains/chat/components/game-chat';
+import { GameplayArmyInfo } from '@/domains/gameplay/pages/gameplay/army-info';
 import { GameHeader } from '@/pages/gameplay/components/gameplay-header';
 import { GameplayMainContent } from '@/pages/gameplay/components/gameplay-main-content';
 
@@ -95,6 +96,7 @@ function GamePageContent({ gameId }: { gameId: string }) {
       <GameHeader game={game} user={user} playerMapping={playerMapping} winner={winner} />
 
       <aside className="game-sidebar">
+        <GameplayArmyInfo />
         <GameChat game={game} />
       </aside>
 
