@@ -2,11 +2,11 @@ import { logger } from '@/utils/logger';
 
 import { GameId } from '@kernel/ids';
 import { GameState } from '@core/types';
+import { GameStatus } from '@core/game/types';
 import type { MoveHistoryV1 } from '@core/replay/types';
 import { GameWithPlayers } from '@platform/domains/games/types';
 
 import { gameRepository } from '@/domains/games/game-repository';
-import { GameStatus } from '@/domains/games/types';
 
 interface EndGameParams {
   game: GameWithPlayers;
@@ -28,7 +28,6 @@ async function endGame({
   );
 
   try {
-
     // Prepare the final game state to persist
     const gameStateToSave = {
       board: finalGameState.board,

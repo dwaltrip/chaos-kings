@@ -1,3 +1,5 @@
+import { GameStatus } from '@core/game/types';
+
 import { loadGame as apiLoadGame } from '@/domains/games/games-api';
 import { gameMetadataStore } from '@/domains/gameplay/stores/game-metadata-store';
 import { gameplayActions } from '@/domains/gameplay/stores/gameplay-store-v2';
@@ -17,7 +19,7 @@ async function loadGame(gameId: string): Promise<void> {
   setPlayerData(game.players, currentUser?.id ?? null);
 
   // Initialize countdown if needed
-  if (game.status === 'not_started') {
+  if (game.status === GameStatus.NOT_STARTED) {
     setCountdownActive(true);
   }
 }

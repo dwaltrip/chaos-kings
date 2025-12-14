@@ -1,11 +1,11 @@
 import { PLAYER_COLORS } from '@core/colors';
+import { GameStatus } from '@core/game/types';
 
 import { test } from '@/tests/wrapped-test-fn';
 import { setupTestDb, cleanupTestDb, teardownTestDb } from '@/tests/test-helpers';
 import { getContext } from '@/context/app-context';
 
 import { createUser } from '@/domains/users/actions';
-import { GameStatus } from '@/domains/games/types';
 import { createGame } from '@/domains/games/actions/create-game';
 
 describe('createGame', () => {

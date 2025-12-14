@@ -5,6 +5,7 @@ import type { Player } from '@platform/domains/games/types';
 import { BaseRepository } from '@/utils/base-repository';
 import { DBGame, Game, NewGame } from '@/domains/games/types';
 import { GamePlayer } from '@/domains/games/game-players-repository';
+import { validateGameStatus } from '@core/game/types';
 
 class GameRepository extends BaseRepository {
   async findAll(): Promise<(Game & { players: Player[] })[]> {
@@ -128,6 +129,7 @@ function deserializeGameOrNull(game: DBGame | undefined): Game | null {
 function deserializeGame(game: DBGame): Game {
   return {
     ...game,
+    status: validateGameStatus(game.status),
     id: GameId(game.id),
   };
 }

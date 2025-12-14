@@ -1,5 +1,6 @@
 import { GameId, RoomId, UserId } from '@kernel/ids';
 import { GameState, BoardState, Direction, Coord, PlayerIndex } from '@core/types';
+import { GameStatus } from '@core/game/types';
 import { Board } from '@core/board';
 import type { GameConfig } from '@core/game-config';
 import {
@@ -16,7 +17,6 @@ import type { GameWithPlayers } from '@platform/domains/games/types';
 
 import { createScopedLogger } from '@/utils/scoped-logger';
 import { runInContextWithTransaction } from '@/context/app-context';
-import { GameStatus } from '@/domains/games/types';
 import { gameRepository } from '@/domains/games/game-repository';
 import { getGame, endGame } from '@/domains/games/actions';
 import { gameplayWsEffects } from '@/domains/gameplay/ws-effects';

@@ -11,7 +11,7 @@
 //   - common/types/player.ts
 // ----------------------------------------------------------------------------
 
-import { GameStatus, type Game } from '@core/game/types';
+import { type Game } from '@core/game/types';
 import type { PlayerIndex } from '@core/types';
 
 type GamePlayerStatus = 'active' | 'captured' | 'inactive';
@@ -30,7 +30,5 @@ interface Player {
 interface GameWithPlayers extends Game {
   players: Player[];
 }
-
-export { GameStatus };
 
 export type { Game, GameWithPlayers, Player, GamePlayerStatus };

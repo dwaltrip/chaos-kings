@@ -5,12 +5,13 @@ import {
   GENERAL_PRODUCTION_TICKS,
   ARMY_PRODUCTION_TICKS,
 } from '@core/game-timing-config';
+import { GameStatus } from '@core/game/types';
 import { isValidForCreateGame } from '@core/game/validation';
 import { calcMapSizeForPlayers } from '@core/map/calc-map-size';
 import { colorsForPlayerCount } from '@core/colors';
 
 import { logger } from '@/utils/logger';
-import { GameStatus, Game, NewGame } from '@/domains/games/types';
+import { Game, NewGame } from '@/domains/games/types';
 import { gameRepository } from '@/domains/games/game-repository';
 import { gamePlayersRepository } from '@/domains/games/game-players-repository';
 import { userRepository } from '@/domains/users/user-repository';
