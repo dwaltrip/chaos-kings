@@ -8,6 +8,7 @@ This project is a revamp + extension of the web-based real time strategy game, *
 
 **📚 Key Documentation:**
 - **docs/architecture.md** - Complete architecture guide (start here for understanding the system)
+- **docs/frontend-component-organization.md** - Frontend component patterns (experimental, Dec 2025)
 - **docs/open-questions.md** - Known loose ends, future work, architectural decisions needed
 - **AGENTS.md** (this file) - Coding conventions and patterns
 
@@ -78,8 +79,9 @@ import { WebSocketService } from '@/services/websocket';        // FE-specific u
 import { GameState } from '@/domains/game/types';               // FE domain types
 import { useGameStore } from '@/domains/game/store';            // FE stores
 import { gameActions } from '@/domains/game/actions';           // FE domain actions
-import { Button } from '@/components/ui/button';                // FE UI (generic)
-import { GameBoard } from '@/pages/game/components/game-board'; // FE UI (page-specific)
+import { Button } from '@/ui/button';                           // FE UI (generic)
+import { GameBoard } from '@/domains/game/ui/game-board';       // FE UI (domain)
+import { GameHeader } from '@/domains/game/pages/game-header';  // FE UI (page-specific)
 ```
 
 **Backend example:**
@@ -146,9 +148,10 @@ Each frontend domain typically has:
 - `handlers.ts` - Updates stores/state from incoming messages
 - `actions.ts` - Domain operations (user interactions, UI logic)
 - `stores/` - Zustand stores for domain state
-- `components/` - Reusable domain components (used across pages)
+- `pages/` - Route entry points and page-specific UI
+- `ui/` - Reusable UI components (shared across pages/domains)
 
-**See docs/architecture.md for complete details on domain organization.**
+**See docs/frontend-component-organization.md for detailed component placement rules.**
 
 ---
 
@@ -217,9 +220,10 @@ type GameId = string & { readonly __brand: 'GameId' };
 - Pre-commit hooks automatically format staged files using Prettier
 
 ### Frontend Pages
-- Each page gets own directory: `frontend/src/pages/$page_name/`
-- Page-specific components stored in page directory
-- Reusable components in `domains/[domain]/components/` or shared UI components dir
+- Each page gets own directory: `frontend/src/domains/$domain/pages/`
+- Page-specific components are siblings to the page file
+- Reusable components in `domains/$domain/ui/` or `src/ui/` for generic UI
+- See **docs/frontend-component-organization.md** for full details
 
 ### Comments
 - Use **very sparingly** - NEVER explain what code does, only WHY or crucial context
@@ -280,5 +284,7 @@ type GameId = string & { readonly __brand: 'GameId' };
 ## Related Documentation
 
 - **docs/architecture.md** - Complete architecture guide
+- **docs/frontend-component-organization.md** - Frontend component patterns (experimental)
 - **docs/open-questions.md** - Known loose ends and future work
+- **docs/open-questions-history.md** - Resolved questions and historical context
 - **docs/DEBUGGING-GUIDE.md** - Debugging patterns and gotchas

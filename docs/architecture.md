@@ -1,6 +1,6 @@
 # Chaos Kings - Architecture Guide
 
-**Last Updated:** 2025-11-28
+**Last Updated:** 2025-12-13
 **Status:** v2 WebSocket architecture refactor complete
 
 This document describes the current state of the codebase after the October 2025 WebSocket architecture and monorepo refactor. For historical context on the refactor itself, see `epics/2025-10/1-refactor-ws-arch-and-monorepo-structure/`.
@@ -102,10 +102,11 @@ apps/frontend/src/domains/[domain]/
 ├── ws-effects.ts     # Outbound message sending (optional - some use actions directly)
 ├── stores/           # Zustand stores for domain state
 ├── types.ts          # Domain-specific types
-└── components/       # Reusable domain components (used across pages)
+├── pages/            # Route entry points and page-specific UI
+└── ui/               # Reusable UI components (shared across pages/domains)
 ```
 
-**Note:** Frontend also has `src/pages/[page]/` for page-specific components and orchestration.
+**See docs/frontend-component-organization.md** for detailed component placement rules.
 
 ---
 
@@ -380,21 +381,25 @@ Both patterns exist. See `docs/open-questions.md` for discussion.
 
 ### Page Organization
 
-Frontend code is organized by:
-- `src/domains/[domain]/` - Domain logic, stores, reusable components
-- `src/pages/[page]/` - Page-specific orchestration and components
+Domains own their full vertical slice, including pages:
 
-**Current heuristic:**
-- **domains/[domain]/** gets:
-  - Core domain logic (actions, handlers, stores, types)
-  - Components representing domain concepts that may be used across pages
-- **pages/[page]/** gets:
-  - Page orchestration (layout, routing, side effects)
-  - Components tightly coupled to that page's specific UX flow
+```
+src/domains/[domain]/
+├── pages/     # Route entry points + page-specific UI
+├── ui/        # Reusable components (shared across pages/domains)
+├── stores/    # Zustand stores
+├── actions/   # Business logic
+└── ...
+```
 
-**Example:** `GameBoard` component lives in `domains/gameplay/components/` because it's a reusable domain concept. `JoinGameForm` lives in `pages/join-game/` because it's specific to that page's flow.
+**Key rules:**
+- Page-specific components are siblings to the page file in `pages/`
+- Reusable UI goes in `ui/` (promote when second consumer appears)
+- Generic UI (no business logic) goes in `src/ui/`
 
-**Note:** This heuristic is working well but not yet formalized. See `docs/open-questions.md`.
+**Note:** Some older code still uses `src/pages/` - migrate opportunistically as you touch it.
+
+**See docs/frontend-component-organization.md** for full details.
 
 ### State Management
 
@@ -454,6 +459,7 @@ See `docs/open-questions.md` for testing strategy discussion.
 ## Related Documentation
 
 - **AGENTS.md** - High-level project overview, coding conventions, import/export patterns
+- **docs/frontend-component-organization.md** - Frontend component patterns (experimental)
 - **docs/open-questions.md** - Remaining work, architectural decisions needed, loose ends
 - **epics/2025-10/1-refactor-ws-arch-and-monorepo-structure/** - Historical refactor docs
 
@@ -481,6 +487,9 @@ See `docs/open-questions.md` for testing strategy discussion.
 
 - **WebSocket message definitions:** `packages/protocol/domains/[domain]/`
 - **Backend domain logic:** `apps/backend/src/domains/[domain]/actions.ts`
-- **Frontend UI components:** `apps/frontend/src/pages/[page]/` or `apps/frontend/src/domains/[domain]/components/`
+- **Frontend UI components:**
+  - Domain-specific, reusable: `apps/frontend/src/domains/[domain]/ui/`
+  - Page-specific: `apps/frontend/src/domains/[domain]/pages/`
+  - Generic (design system): `apps/frontend/src/ui/`
 - **Game engine logic:** `packages/core/src/`
 - **Type definitions:** Look in domain's `types.ts` or in protocol packages

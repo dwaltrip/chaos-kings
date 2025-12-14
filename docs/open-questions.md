@@ -1,6 +1,6 @@
 # Open Questions & Future Work
 
-**Last Updated:** 2025-11-28
+**Last Updated:** 2025-12-13
 
 This document tracks architectural questions, loose ends, and areas needing decisions or cleanup after the v2 WebSocket refactor. These items don't block current functionality but should be addressed as the codebase evolves.
 
@@ -142,29 +142,6 @@ export async function doSomething(userId: UserId) {
 
 ---
 
-## UI Organization
-
-### Pages vs Domains - Component Placement
-
-**Current heuristic:**
-- `domains/[domain]/components/` - Reusable domain components used across pages
-- `pages/[page]/components/` - Page-specific components tightly coupled to that page's UX
-
-**Works well so far** but not formalized.
-
-**Open questions:**
-1. When should domain-specific UI move to domains/ vs stay in pages/?
-2. How to handle page-specific variations of domain components?
-3. When does page-coupled logic belong in pages/ vs domains/?
-
-**Example ambiguities:**
-- Should `GameBoard` live in `domains/gameplay/` or `pages/game/`? (Currently: domains)
-- Should `MatchmakingQueue` UI live in `domains/matchmaking/` or `pages/lobby/`?
-
-**Needs:** More experience and examples to solidify the pattern.
-
----
-
 ## Data Enrichment Strategy
 
 ### When to Populate Extra Fields in WS Messages
@@ -288,9 +265,14 @@ export async function doSomething(userId: UserId) {
 
 This document tracks **known unknowns** - things we're aware need decisions or work but don't block current development.
 
-**When to update:**
+**When to add items:**
 - Add items when you discover something that needs future work
-- Remove/move items when decisions are made or work is completed
 - Link to tactical docs for detailed analysis
+
+**When questions are resolved:**
+1. Move the content to **docs/open-questions-history.md**
+2. Restructure as historical context (what was decided, when, why)
+3. Remove from this document
+4. Keep context on what the question was and how it was resolved
 
 **This is NOT a backlog.** It's a reference for architectural discussions and future planning.
