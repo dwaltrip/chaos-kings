@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { useShallow } from 'zustand/shallow';
 
 import { isEnded } from '@core/game';
 import { PRE_GAME_COUNTDOWN_SECONDS } from '@core/ui-timing-config';
@@ -8,8 +7,6 @@ import type { GameWithPlayers } from '@platform/domains/games/types';
 interface GameMetadataState {
   // Static metadata from API
   game: GameWithPlayers | null;
-  loading: boolean;
-  error: string | null;
 
   // Game start countdown
   countdownActive: boolean;
@@ -25,8 +22,6 @@ interface GameMetadataState {
   actions: {
     setGame: (game: GameWithPlayers) => void;
     updateGame: (updates: Partial<GameWithPlayers>) => void;
-    setLoading: (loading: boolean) => void;
-    setError: (error: string | null) => void;
     setCountdownActive: (active: boolean) => void;
     setCountdownSeconds: (seconds: number) => void;
     setWinner: (winner: number) => void;
@@ -36,8 +31,6 @@ interface GameMetadataState {
 const gameMetadataStore = create<GameMetadataState>((set, get) => ({
   // Static metadata
   game: null,
-  loading: false,
-  error: null,
 
   // Game start countdown
   countdownActive: false,
@@ -64,14 +57,6 @@ const gameMetadataStore = create<GameMetadataState>((set, get) => ({
       console.log('[game-metadata-store] Updated game object:', get().game);
     },
 
-    setLoading: (loading: boolean) => {
-      set({ loading });
-    },
-
-    setError: (error: string | null) => {
-      set({ error });
-    },
-
     setCountdownActive: (active: boolean) => {
       set({ countdownActive: active });
     },
@@ -84,17 +69,6 @@ const gameMetadataStore = create<GameMetadataState>((set, get) => ({
   },
 }));
 
-// TODO: REFACTOR
-const useGameLoadingState = () => {
-  return gameMetadataStore(
-    useShallow((state) => ({
-      game: state.game,
-      loading: state.loading,
-      error: state.error,
-    })),
-  );
-};
-
 // TODO: resolve duplication of this in gameplay-store-v2
 function useIsGameEnded(state: GameMetadataState): boolean {
   return state.isGameEnded();
@@ -102,4 +76,4 @@ function useIsGameEnded(state: GameMetadataState): boolean {
 
 const useGameMetadataStore = gameMetadataStore;
 
-export { gameMetadataStore, useGameMetadataStore, useGameLoadingState, useIsGameEnded };
+export { gameMetadataStore, useGameMetadataStore, useIsGameEnded };

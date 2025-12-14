@@ -1,5 +1,6 @@
 // import { GameId } from '@kernel/domains/game';
 import type { GameplayServerMessage } from '@protocol/domains/gameplay/server-messages';
+import { deserializeGameWithPlayers } from '@platform/domains/games/serializers';
 
 import type { HandlerMap } from '@/ws-lib';
 import {
@@ -25,7 +26,7 @@ const gameplayHandlers = {
   },
 
   'gameplay:game-started': (payload) => {
-    updateForGameStart(payload.game, payload.boardState);
+    updateForGameStart(deserializeGameWithPlayers(payload.game), payload.boardState);
   },
 
   'gameplay:game-ended': (payload) => {

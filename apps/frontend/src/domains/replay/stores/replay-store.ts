@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import type { GameId } from '@kernel/ids';
 import type { BoardState } from '@core/types';
 import type { GameConfig } from '@core/game-config';
 import type { MoveEvent, MoveHistoryV1 } from '@core/replay/types';
@@ -20,7 +21,7 @@ interface ReplayState {
   error: string | null;
 
   // Game data
-  gameId: string | null;
+  gameId: GameId | null;
   config: GameConfig | null;
   history: MoveHistoryV1 | null;
   players: { username?: string; playerIndex: number }[];
@@ -70,7 +71,7 @@ function replayActions() {
     setError: (error: string | null) => useReplayStore.setState({ error }),
 
     setGameData: (data: {
-      gameId: string;
+      gameId: GameId;
       config: GameConfig;
       history: MoveHistoryV1;
       players: { username?: string; playerIndex: number }[];

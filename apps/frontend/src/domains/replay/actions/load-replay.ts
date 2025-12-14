@@ -1,3 +1,5 @@
+import { GameId } from '@kernel/ids';
+
 import type { BoardState } from '@core/types';
 import type { MoveEvent, MoveHistoryV1 } from '@core/replay/types';
 
@@ -22,7 +24,7 @@ function getLastEventStep(events: MoveEvent[]): number {
   return lastStep;
 }
 
-async function loadReplay(gameId: string): Promise<void> {
+async function loadReplay(gameId: GameId): Promise<void> {
   const actions = replayActions();
   const state = actions.getState();
 

@@ -14,7 +14,7 @@ function updateForGameEnded(finalBoardState: BoardState, winner: PlayerIndex) {
   // -----------------------------------------------------------
   updateGame({
     status: GameStatus.COMPLETE,
-    updated_at: new Date().toISOString(),
+    updated_at: new Date(),
   });
 
   updateBoard(finalBoardState);

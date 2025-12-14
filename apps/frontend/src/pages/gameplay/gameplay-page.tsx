@@ -1,15 +1,18 @@
 import { useEffect } from 'react';
 import { useParams, Navigate } from 'react-router';
+
 import { GameId } from '@kernel/ids';
+import { GameIdFromURLParam } from '@kernel/domains/game';
 
 import { useWsConnectionStore } from '@/ws-lib';
+import { useAsyncLoader } from '@/hooks/use-async-loader';
+
 import { userStore } from '@/domains/users/user-store';
-import {
-  gameMetadataStore,
-  useGameLoadingState,
-} from '@/domains/gameplay/stores/game-metadata-store';
+import { gameMetadataStore } from '@/domains/gameplay/stores/game-metadata-store';
 import { joinGameplay, leaveGameplay } from '@/domains/gameplay/actions';
 import { loadGame } from '@/domains/gameplay/actions/load-game';
+import { setupGameState } from '@/domains/gameplay/actions/setup-game-state';
+
 import { GameChat } from '@/domains/chat/components/game-chat';
 import { GameplayArmyInfo } from '@/domains/gameplay/pages/gameplay/army-info';
 import { GameHeader } from '@/pages/gameplay/components/gameplay-header';
@@ -27,7 +30,7 @@ function GameplayPage() {
     );
   }
 
-  return <GamePageContent gameId={gameId} />;
+  return <GamePageContent gameId={GameIdFromURLParam(gameId)} />;
 }
 
 function MessageDisplay({
@@ -47,28 +50,40 @@ function MessageDisplay({
   );
 }
 
-function GamePageContent({ gameId }: { gameId: string }) {
+function GamePageContent({ gameId }: { gameId: GameId }) {
   const user = userStore((state) => state.user);
-
-  // Get critical game loading state with proper selector
-  const { game, loading: isLoadingGame, error } = useGameLoadingState();
-
+  const game = gameMetadataStore((state) => state.game);
   const countdownActive = gameMetadataStore((state) => state.countdownActive);
   const countdownSeconds = gameMetadataStore((state) => state.countdownSeconds);
   const winner = gameMetadataStore((state) => state.winner);
-
   const isConnected = useWsConnectionStore((state) => state.isConnected);
 
+  // Load game data
+  const {
+    data: loadedGame,
+    loading: isLoadingGame,
+    error,
+    execute: executeLoad,
+  } = useAsyncLoader(loadGame);
+
+  // Load game on mount
   useEffect(() => {
     if (!game && gameId && !isLoadingGame) {
-      loadGame(gameId);
+      executeLoad(gameId);
     }
-  }, [gameId, game, isLoadingGame]);
+  }, [gameId, game, isLoadingGame, executeLoad]);
 
+  // Set up game state in stores when loaded
   useEffect(() => {
-    const numericGameId = GameId(parseInt(gameId, 10));
-    joinGameplay(numericGameId);
-    return () => leaveGameplay(numericGameId);
+    if (loadedGame) {
+      setupGameState(loadedGame);
+    }
+  }, [loadedGame]);
+
+  // Join/leave gameplay room - convert URL param (string) to GameId at I/O boundary
+  useEffect(() => {
+    joinGameplay(gameId);
+    return () => leaveGameplay(gameId);
   }, [gameId]);
 
   if (!user) {

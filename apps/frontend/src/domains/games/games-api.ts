@@ -1,14 +1,17 @@
-import type { GameWithPlayers } from '@platform/domains/games/types';
+import type { GameId } from '@kernel/ids';
+import type { GameWithPlayers, GameWithPlayersDTO } from '@platform/domains/games/types';
+import { deserializeGameWithPlayers } from '@platform/domains/games/serializers';
+
 import { apiService } from '@/services/api-service';
 
 // TODO: Is this a useful interface? think about where to put stuff like this
 // Feels analogous to the WS types in @protocol
 interface GetGameResponse {
-  game: GameWithPlayers;
+  game: GameWithPlayersDTO;
 }
 
 class GameNotFoundError extends Error {
-  constructor(gameId: string) {
+  constructor(gameId: GameId) {
     super(`Game with ID ${gameId} not found`);
     this.name = 'GameNotFoundError';
   }
@@ -24,7 +27,7 @@ class GameApiError extends Error {
   }
 }
 
-async function loadGame(gameId: string): Promise<GameWithPlayers> {
+async function loadGame(gameId: GameId): Promise<GameWithPlayers> {
   try {
     const response = await apiService.get(`/api/games/${gameId}`);
 
@@ -40,7 +43,7 @@ async function loadGame(gameId: string): Promise<GameWithPlayers> {
     }
 
     const data: GetGameResponse = await response.json();
-    return data.game;
+    return deserializeGameWithPlayers(data.game);
   } catch (error) {
     if (error instanceof GameNotFoundError || error instanceof GameApiError) {
       throw error;

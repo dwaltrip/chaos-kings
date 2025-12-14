@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 
+import { GameId } from '@kernel/ids';
+import { GameIdFromURLParam } from '@kernel/domains/game';
+
 import { useReplayStore, replayActions } from '@/domains/replay/stores/replay-store';
 import { loadReplay } from '@/domains/replay/actions';
 import { ReplayBoard } from '@/domains/replay/pages/replay-board';
@@ -21,10 +24,10 @@ function ReplayPage() {
     );
   }
 
-  return <ReplayPageContent gameId={gameId} />;
+  return <ReplayPageContent gameId={GameIdFromURLParam(gameId)} />;
 }
 
-function ReplayPageContent({ gameId }: { gameId: string }) {
+function ReplayPageContent({ gameId }: { gameId: GameId }) {
   const loading = useReplayStore((state) => state.loading);
   const error = useReplayStore((state) => state.error);
   const currentFrame = useReplayStore((state) => state.currentFrame);

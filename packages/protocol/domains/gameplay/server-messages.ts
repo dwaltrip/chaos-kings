@@ -2,7 +2,7 @@ import type { MessageUnion } from '@protocol/utils/message-helpers';
 import type { ExtractMsg } from '@protocol/utils/type-helpers';
 
 import type { BoardState, PlayerIndex } from '@core/types';
-import type { GameWithPlayers } from '@platform/domains/games/types';
+import type { GameWithPlayersDTO } from '@platform/domains/games/types';
 import type { PlayerQueuesMap, PlayerStats } from '@platform/domains/gameplay/types';
 
 type GameplayServerPayloadMap = {
@@ -21,7 +21,7 @@ type GameplayServerPayloadMap = {
   'gameplay:game-started': {
     gameId: number;
     boardState: BoardState;
-    game: GameWithPlayers;
+    game: GameWithPlayersDTO;
   };
 
   'gameplay:game-ended': {
@@ -58,7 +58,7 @@ const MsgCreators = {
   createGameStartedMessage: (
     gameId: number,
     boardState: BoardState,
-    game: GameWithPlayers,
+    game: GameWithPlayersDTO,
   ): GameStartedMessage => ({
     type: 'gameplay:game-started',
     payload: { gameId, boardState, game },

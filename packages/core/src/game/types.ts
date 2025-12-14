@@ -18,19 +18,19 @@ function validateGameStatus(value: string): GameStatusType {
 }
 
 // -----------------------------------------------------------
-// TODO: this is duplicate w/ GamesTable interface in backend.
+// TODO: Revisit naming and patterns
+// CoreGameAttrs: Base attributes for extension - not meant to be used directly
+// AbstractGame: Type for core game functions - currently an alias but semantically different
 // -----------------------------------------------------------
-interface Game {
-  id: number;
+interface CoreGameAttrs {
   game_state: {} | CompletedGameState;
   config: GameConfig;
   move_history: object | null;
   status: GameStatusType;
-  // TODO: I don't like having these as possibly Date or string
-  created_at: Date | string;
-  updated_at: Date | string;
 }
 
-export type { Game, GameStatusType };
+type AbstractGame = CoreGameAttrs;
+
+export type { CoreGameAttrs, AbstractGame, GameStatusType };
 
 export { GameStatus, validateGameStatus };

@@ -1,13 +1,13 @@
 import type { CompletedGameState } from '@core/types';
-import { GameStatus, type Game } from '@core/game/types';
+import { GameStatus, type AbstractGame } from '@core/game/types';
 
-function isEnded(game: Game) {
+function isEnded(game: AbstractGame) {
   return game.status === GameStatus.COMPLETE;
 }
 
 function hasCompletedGameState(
-  game: Game,
-): game is Game & { game_state: CompletedGameState } {
+  game: AbstractGame,
+): game is AbstractGame & { game_state: CompletedGameState } {
   return (
     isEnded(game) &&
     game.game_state !== null &&

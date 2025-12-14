@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { GameId } from '@kernel/ids';
+import { serializeGameWithPlayers } from '@platform/domains/games/serializers';
 
 import { asyncHandler, parseId } from '@/utils/route-handler';
 import { getGame, listGames } from '@/domains/games/actions';
@@ -16,7 +17,8 @@ async function gameRoutes(fastify: FastifyInstance) {
     '/games',
     asyncHandler(async (request, reply) => {
       const games = await listGames();
-      return reply.send({ games });
+      const gamesDTO = games.map(serializeGameWithPlayers);
+      return reply.send({ games: gamesDTO });
     }),
   );
 
@@ -33,7 +35,7 @@ async function gameRoutes(fastify: FastifyInstance) {
       if (!game) {
         return reply.status(404).send({ error: 'Game not found' });
       }
-      return reply.send({ game });
+      return reply.send({ game: serializeGameWithPlayers(game) });
     }),
   );
 }
