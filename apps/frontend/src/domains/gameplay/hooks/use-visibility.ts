@@ -29,7 +29,7 @@ const useIsVisible = (coord: Coord) =>
   useShallow((state: GameplayStateV2) => {
     return (
       state.isGameEnded() ||
-      isSquareVisible(coord, state.visibleSquares, state.currentPlayerIndex())
+      isSquareVisible(coord, state.visibleSquares, state.currentPlayerIndex)
     );
   });
 

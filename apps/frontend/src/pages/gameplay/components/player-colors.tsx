@@ -1,38 +1,30 @@
+import type { Player } from '@platform/domains/games/types';
+import type { PlayerIndex } from '@core/types';
+
 import { getPlayerColor } from '@/utils/player-colors';
-import type { GameWithPlayers } from '@platform/domains/games/types';
 
 interface PlayerColorsProps {
-  game: GameWithPlayers;
-  playerMapping: { playerId: string; playerIndex: number }[] | null;
-  currentUserId: number;
+  players: Player[];
+  currentPlayerIndex: PlayerIndex | null;
 }
 
-function PlayerColors({ game, playerMapping, currentUserId }: PlayerColorsProps) {
-  if (!game.players.length) {
-    return null;
-  }
+function PlayerColors({ players, currentPlayerIndex }: PlayerColorsProps) {
+  if (!players.length) return null;
 
   return (
     <div className="flex gap-3 items-center">
       <span className="font-medium">Players:</span>
       <div className="flex gap-2">
-        {game.players.map((player) => {
-          const mapping = playerMapping?.find(
-            (m) => m.playerId === player.user_id.toString(),
-          );
-          const playerIndex = mapping?.playerIndex ?? player.player_index;
-          const color = getPlayerColor(playerIndex);
-          const isCurrentUser = player.user_id === currentUserId;
-
+        {players.map((player) => {
+          const isCurrentPlayer = player.player_index === currentPlayerIndex;
           return (
             <div key={player.id} className="flex items-center gap-1">
               <div
                 className="w-3 h-3 rounded border border-gray-400"
-                style={{ backgroundColor: color }}
-                title={`Player ${playerIndex + 1}`}
+                style={{ backgroundColor: getPlayerColor(player.player_index) }}
               />
-              <span className={`text-xs ${isCurrentUser ? 'font-bold' : ''}`}>
-                {isCurrentUser ? 'You' : `Player ${player.user_id}`}
+              <span className={`text-xs ${isCurrentPlayer ? 'font-bold' : ''}`}>
+                {isCurrentPlayer ? 'You' : player.username}
               </span>
             </div>
           );

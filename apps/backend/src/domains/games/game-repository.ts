@@ -1,12 +1,13 @@
 import { GameId } from '@kernel/ids';
 import { idToNumber } from '@kernel/branded-type';
+import type { Player } from '@platform/domains/games/types';
 
 import { BaseRepository } from '@/utils/base-repository';
 import { DBGame, Game, NewGame } from '@/domains/games/types';
 import { GamePlayer } from '@/domains/games/game-players-repository';
 
 class GameRepository extends BaseRepository {
-  async findAll(): Promise<(Game & { players: GamePlayer[] })[]> {
+  async findAll(): Promise<(Game & { players: Player[] })[]> {
     const games = await this.db
       .selectFrom('games')
       .selectAll()
@@ -18,7 +19,7 @@ class GameRepository extends BaseRepository {
         const players = await this.playersForGameIdQuery(GameId(game.id));
         return {
           ...deserializeGame(game),
-          players: players as GamePlayer[],
+          players: players as Player[],
         };
       }),
     );
@@ -45,9 +46,7 @@ class GameRepository extends BaseRepository {
     return deserializeGame(game);
   }
 
-  async findByIdWithPlayers(
-    id: GameId,
-  ): Promise<(Game & { players: GamePlayer[] }) | null> {
+  async findByIdWithPlayers(id: GameId): Promise<(Game & { players: Player[] }) | null> {
     const game = await this.db
       .selectFrom('games')
       .selectAll()
@@ -61,7 +60,7 @@ class GameRepository extends BaseRepository {
     const players = await this.playersForGameIdQuery(id);
     return {
       ...deserializeGame(game),
-      players: players as GamePlayer[],
+      players: players as Player[],
     };
   }
 

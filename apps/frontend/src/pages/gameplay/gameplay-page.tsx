@@ -55,7 +55,6 @@ function GamePageContent({ gameId }: { gameId: string }) {
   const countdownActive = gameMetadataStore((state) => state.countdownActive);
   const countdownSeconds = gameMetadataStore((state) => state.countdownSeconds);
   const winner = gameMetadataStore((state) => state.winner);
-  const playerMapping = gameMetadataStore((state) => state.playerMapping);
   const { actions } = gameMetadataStore.getState();
 
   const isConnected = useWsConnectionStore((state) => state.isConnected);
@@ -93,7 +92,7 @@ function GamePageContent({ gameId }: { gameId: string }) {
 
   return (
     <div className="game-page game-layout">
-      <GameHeader game={game} user={user} playerMapping={playerMapping} winner={winner} />
+      <GameHeader game={game} user={user} winner={winner} />
 
       <aside className="game-sidebar">
         <GameplayArmyInfo />

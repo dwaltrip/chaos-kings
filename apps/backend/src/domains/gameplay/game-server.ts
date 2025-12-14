@@ -39,7 +39,6 @@ export class GameServer {
   private roomName: RoomId;
   private playerMapping: Map<UserId, PlayerIndex> = new Map(); // userId -> playerIndex
   private connectedPlayers: Set<UserId> = new Set(); // userIds who joined gameplay room
-  private expectedPlayerCount: number = 0;
   private gameStarted: boolean = false;
   private gameEnded: boolean = false;
   private initialized: boolean = false;
@@ -58,12 +57,11 @@ export class GameServer {
     this.log.debug('New GameServer');
 
     // setup player mappings and move queues
-    game.players.forEach((player, playerIndex) => {
-      this.playerMapping.set(UserId(player.user_id), playerIndex);
-      this.playerQueues.set(playerIndex, []);
-    });
+    for (const player of game.players) {
+      this.playerMapping.set(UserId(player.user_id), player.player_index);
+      this.playerQueues.set(player.player_index, []);
+    }
 
-    this.expectedPlayerCount = game.players.length;
     this.initialized = true;
 
     // Start fallback timer to ensure countdown starts even if not all players join
@@ -239,14 +237,11 @@ export class GameServer {
   // It should be agnostic as possible to game rules / logic.
   // Mostly should be handling move queues, timing, and broadcasting state.
   private calculatePlayerStats(board: BoardState): PlayerStats[] {
-    const stats: PlayerStats[] = Array.from(
-      { length: this.expectedPlayerCount },
-      (_, index) => ({
-        playerIndex: index as PlayerIndex,
-        armyCount: 0,
-        landCount: 0,
-      }),
-    );
+    const stats: PlayerStats[] = this.game.players.map((p) => ({
+      playerIndex: p.player_index,
+      armyCount: 0,
+      landCount: 0,
+    }));
 
     for (const row of board.grid) {
       for (const square of row) {
@@ -329,12 +324,12 @@ export class GameServer {
     }
 
     this.connectedPlayers.add(userId);
-    const playerCountStr = `${this.connectedPlayers.size}/${this.expectedPlayerCount}`;
+    const playerCountStr = `${this.connectedPlayers.size}/${this.game.players.length}`;
     this.log.debug(`Player ${userId} joined game room (${playerCountStr})`);
 
     // Start countdown when we have enough players (or at least 1)
     if (
-      this.connectedPlayers.size >= Math.min(2, this.expectedPlayerCount) &&
+      this.connectedPlayers.size >= Math.min(2, this.game.players.length) &&
       !this.countdownActive &&
       !this.gameStarted
     ) {
@@ -452,7 +447,6 @@ export class GameServer {
       gameplayWsEffects.broadcastGameStarted(
         this.roomName,
         GameId(this.game.id),
-        this.getPlayerMapping(),
         this.gameState.board,
         game,
       );
@@ -463,13 +457,6 @@ export class GameServer {
 
   getRoomName() {
     return this.roomName;
-  }
-
-  getPlayerMapping(): Array<{ playerId: string; playerIndex: PlayerIndex }> {
-    return Array.from(this.playerMapping.entries()).map(([userId, playerIndex]) => ({
-      playerId: String(userId),
-      playerIndex,
-    }));
   }
 
   isGameEnded(): boolean {

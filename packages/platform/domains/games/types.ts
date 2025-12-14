@@ -14,14 +14,17 @@
 import { GameStatus, type Game } from '@core/game/types';
 import type { PlayerIndex } from '@core/types';
 
+type GamePlayerStatus = 'active' | 'captured' | 'inactive';
+
 interface Player {
   id: number;
   game_id: number;
   user_id: number;
   joined_at: Date | string | undefined;
-  status: string; // GamePlayerStatus
+  status: GamePlayerStatus;
   player_index: PlayerIndex;
   data: object | null;
+  username: string;
 }
 
 interface GameWithPlayers extends Game {
@@ -30,4 +33,4 @@ interface GameWithPlayers extends Game {
 
 export { GameStatus };
 
-export type { Game, GameWithPlayers, Player };
+export type { Game, GameWithPlayers, Player, GamePlayerStatus };

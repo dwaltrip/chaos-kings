@@ -2,7 +2,7 @@ import { idToString, idToNumber } from '@kernel/branded-type';
 import { GameId, RoomId } from '@kernel/ids';
 import { MsgCreators } from '@protocol/domains/gameplay/server-messages';
 
-import type { BoardState, PlayerIndex, PlayerMapping } from '@core/types';
+import type { BoardState, PlayerIndex } from '@core/types';
 import type { PlayerQueuesMap, PlayerStats } from '@platform/domains/gameplay/types';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
@@ -44,18 +44,12 @@ const gameplayWsEffects = {
   broadcastGameStarted(
     roomId: RoomId,
     gameId: GameId,
-    playerMapping: PlayerMapping,
     boardState: BoardState,
     game: GameWithPlayers,
   ) {
     wsBridge.broadcastToRoom(
       idToString(roomId),
-      MsgCreators.createGameStartedMessage(
-        idToNumber(gameId),
-        playerMapping,
-        boardState,
-        game,
-      ),
+      MsgCreators.createGameStartedMessage(idToNumber(gameId), boardState, game),
     );
   },
 

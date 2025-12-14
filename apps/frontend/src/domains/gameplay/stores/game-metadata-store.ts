@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/shallow';
 
 import { isEnded } from '@core/game';
-import type { PlayerIndex } from '@core/types';
 import { PRE_GAME_COUNTDOWN_SECONDS } from '@core/ui-timing-config';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
@@ -20,7 +19,6 @@ interface GameMetadataState {
 
   // TODO: should derive `winner` from game object instead of separate state
   winner: number | null;
-  playerMapping: { playerId: string; playerIndex: PlayerIndex }[] | null;
 
   // helpers
   isGameEnded: () => boolean;
@@ -34,7 +32,6 @@ interface GameMetadataState {
     setCountdownActive: (active: boolean) => void;
     setCountdownSeconds: (seconds: number) => void;
     setWinner: (winner: number) => void;
-    setPlayerMapping: (mapping: { playerId: string; playerIndex: PlayerIndex }[]) => void;
   };
 }
 
@@ -50,7 +47,6 @@ const gameMetadataStore = create<GameMetadataState>((set, get) => ({
 
   // Dynamic gameplay metadata
   winner: null,
-  playerMapping: null,
 
   // helpers
   isGameEnded: () => {
@@ -120,10 +116,6 @@ const gameMetadataStore = create<GameMetadataState>((set, get) => ({
     },
 
     setWinner: (winner: number) => set({ winner }),
-
-    setPlayerMapping: (mapping: { playerId: string; playerIndex: number }[]) => {
-      set({ playerMapping: mapping });
-    },
   },
 }));
 

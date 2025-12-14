@@ -17,7 +17,7 @@ function updateGameplayState(
 ) {
   const { setVisibleSquares, updateBoard, setTick, setPlayerStats } = gameplayActions();
   // Get currentPlayerIndex for both visible squares and queue updates
-  const playerIndex = useGameplayStoreV2.getState().currentPlayerIndex();
+  const playerIndex = useGameplayStoreV2.getState().currentPlayerIndex;
   if (playerIndex === null) {
     throw new Error('[updateGameplayState] currentPlayerIndex is null');
   }

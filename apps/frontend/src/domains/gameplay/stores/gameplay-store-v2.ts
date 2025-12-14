@@ -4,9 +4,8 @@ import type { BoardState, Coord, Movement, PlayerIndex } from '@core/types';
 import { areCoordsEqual } from '@core/utils/coordinate-utils';
 import { hasCompletedGameState, isEnded } from '@core/game';
 
-import type { GameWithPlayers } from '@platform/domains/games/types';
+import type { GameWithPlayers, Player } from '@platform/domains/games/types';
 import type { PlayerStats } from '@platform/domains/gameplay/types';
-import { getCurrentPlayerIndex } from '@platform/domains/games/get-current-player-index';
 
 import type { User } from '@/domains/users/user-service';
 import { userStore } from '@/domains/users/user-store';
@@ -27,8 +26,14 @@ interface GameplayStateV2 {
   queuedMoves: Movement[];
   playerStats: PlayerStats[];
 
+  // Player identity (set once at game load)
+  players: Player[];
+  playersByIndex: Map<PlayerIndex, Player>;
+  playersByUserId: Map<number, Player>;
+  currentPlayerIndex: PlayerIndex | null;
+  currentPlayer: Player | null;
+
   // derived state
-  currentPlayerIndex: () => number | null;
   isGameEnded: () => boolean;
 
   // TODO / QUESTION: TS doesn't seem to complain if I don't define these here?
@@ -42,6 +47,7 @@ interface GameplayStateV2 {
     setPlayerStats: (playerStats: PlayerStats[]) => void;
     addQueuedMove: (move: Movement) => void;
     setWinner: (winner: PlayerIndex) => void;
+    setPlayerData: (players: Player[], currentUserId: number | null) => void;
   };
 }
 
@@ -78,14 +84,16 @@ const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
     queuedMoves: [],
     playerStats: [],
 
+    // Player identity
+    players: [],
+    playersByIndex: new Map<PlayerIndex, Player>(),
+    playersByUserId: new Map<number, Player>(),
+    currentPlayerIndex: null,
+    currentPlayer: null,
+
     isGameEnded() {
       const { game } = get();
       return game ? isEnded(game) : false;
-    },
-
-    currentPlayerIndex() {
-      const { game, user } = get();
-      return game && user ? getCurrentPlayerIndex(game, user?.id ?? null) : null;
     },
 
     actions: {
@@ -106,6 +114,21 @@ const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
         set({ queuedMoves: [...queuedMoves, move] });
       },
       setWinner: (winner) => set({ winner }),
+      setPlayerData: (players: Player[], currentUserId: number | null) => {
+        const playersByIndex = new Map(players.map((p) => [p.player_index, p]));
+        const playersByUserId = new Map(players.map((p) => [p.user_id, p]));
+        const currentPlayer = currentUserId
+          ? (playersByUserId.get(currentUserId) ?? null)
+          : null;
+
+        set({
+          players,
+          playersByIndex,
+          playersByUserId,
+          currentPlayer,
+          currentPlayerIndex: currentPlayer?.player_index ?? null,
+        });
+      },
     },
   };
 });
@@ -161,7 +184,7 @@ function getBoardState(
 }
 
 function useCurrentPlayerIndex(state: GameplayStateV2) {
-  return state.currentPlayerIndex();
+  return state.currentPlayerIndex;
 }
 
 // ---------------------------------

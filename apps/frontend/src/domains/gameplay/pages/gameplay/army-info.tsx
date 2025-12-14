@@ -1,8 +1,4 @@
-import type { PlayerStats } from '@platform/domains/gameplay/types';
-
 import { getPlayerColor } from '@/utils/player-colors';
-import { userStore } from '@/domains/users/user-store';
-import { gameMetadataStore } from '@/domains/gameplay/stores/game-metadata-store';
 import { useGameplayStoreV2 } from '@/domains/gameplay/stores/gameplay-store-v2';
 
 interface ArmyInfoRowProps {
@@ -32,63 +28,15 @@ function ArmyInfoRow({ name, color, armyCount, landCount }: ArmyInfoRowProps) {
   );
 }
 
-interface PlayerRow {
-  key: string;
-  name: string;
-  color: string;
-  stats?: PlayerStats;
-}
-
-function buildPlayerRows(
-  playerMapping: { playerId: string; playerIndex: number }[],
-  playerStats: PlayerStats[],
-  game: ReturnType<typeof gameMetadataStore.getState>['game'],
-  currentUser: ReturnType<typeof userStore.getState>['user'],
-): PlayerRow[] {
-  return playerMapping.map((mapping) => {
-    const player = game?.players.find(
-      (p) => p.user_id === Number.parseInt(mapping.playerId, 10),
-    );
-    const playerUsername =
-      player &&
-      'username' in player &&
-      typeof (player as { username?: string }).username === 'string'
-        ? (player as { username?: string }).username
-        : undefined;
-    const name =
-      playerUsername ||
-      (player?.user_id === currentUser?.id ? currentUser?.username : undefined) ||
-      `Player ${mapping.playerIndex + 1}`;
-    const stats = playerStats[mapping.playerIndex];
-
-    return {
-      key: `${mapping.playerIndex}-${mapping.playerId}`,
-      name,
-      color: getPlayerColor(mapping.playerIndex),
-      stats,
-    };
-  });
-}
-
 function GameplayArmyInfo() {
+  const players = useGameplayStoreV2((state) => state.players);
+  const playersByIndex = useGameplayStoreV2((state) => state.playersByIndex);
   const playerStats = useGameplayStoreV2((state) => state.playerStats);
-  const game = gameMetadataStore((state) => state.game);
-  const playerMapping = gameMetadataStore((state) => state.playerMapping);
-  const currentUser = userStore((state) => state.user);
+  const currentPlayerIndex = useGameplayStoreV2((state) => state.currentPlayerIndex);
 
-  if (!game || !playerMapping) {
+  if (!players.length || !playerStats.length) {
     return null;
   }
-
-  if (!playerStats.length) {
-    return (
-      <div className="mb-4 rounded border border-gray-200 bg-white/80 p-3 shadow-sm text-sm text-gray-500">
-        Stats missing...
-      </div>
-    );
-  }
-
-  const rows = buildPlayerRows(playerMapping, playerStats, game, currentUser);
 
   return (
     <div className="mb-4 rounded border border-gray-200 bg-white/80 p-3 shadow-sm">
@@ -98,15 +46,19 @@ function GameplayArmyInfo() {
         <span className="text-right">Land</span>
       </div>
       <div className="space-y-2">
-        {rows.map((row) => (
-          <ArmyInfoRow
-            key={row.key}
-            name={row.name}
-            color={row.color}
-            armyCount={row.stats?.armyCount}
-            landCount={row.stats?.landCount}
-          />
-        ))}
+        {playerStats.map((stat) => {
+          const player = playersByIndex.get(stat.playerIndex)!;
+          const isCurrentPlayer = player.player_index === currentPlayerIndex;
+          return (
+            <ArmyInfoRow
+              key={player.id}
+              name={isCurrentPlayer ? 'You' : player.username}
+              color={getPlayerColor(player.player_index)}
+              armyCount={stat.armyCount}
+              landCount={stat.landCount}
+            />
+          );
+        })}
       </div>
     </div>
   );

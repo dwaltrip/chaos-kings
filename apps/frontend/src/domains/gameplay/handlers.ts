@@ -25,7 +25,7 @@ const gameplayHandlers = {
   },
 
   'gameplay:game-started': (payload) => {
-    updateForGameStart(payload.game, payload.boardState, payload.playerMapping);
+    updateForGameStart(payload.game, payload.boardState);
   },
 
   'gameplay:game-ended': (payload) => {

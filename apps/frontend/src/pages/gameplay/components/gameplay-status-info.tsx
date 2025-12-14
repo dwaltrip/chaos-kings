@@ -1,54 +1,29 @@
-import { useMemo } from 'react';
-
-import type { GameWithPlayers } from '@platform/domains/games/types';
+import type { GameWithPlayers, Player } from '@platform/domains/games/types';
+import type { PlayerIndex } from '@core/types';
 
 interface GameStatusInfoProps {
   game: GameWithPlayers;
   isGameEnded: boolean;
-  winner: number | null;
-  playerMapping: { playerId: string; playerIndex: number }[] | null;
-}
-
-interface WinnerInfo {
-  playerName: string;
+  winner: PlayerIndex | null;
+  playersByIndex: Map<PlayerIndex, Player>;
 }
 
 function GameStatusInfo({
   game,
   isGameEnded,
   winner,
-  playerMapping,
+  playersByIndex,
 }: GameStatusInfoProps) {
-  const gameStatus = useMemo(() => {
-    if (isGameEnded) {
-      return 'COMPLETED';
-    }
-    return game.status || 'UNKNOWN';
-  }, [isGameEnded, game.status]);
-
-  const winnerInfo = useMemo((): WinnerInfo | null => {
-    if (!isGameEnded || winner === null || !playerMapping) {
-      return null;
-    }
-
-    const winnerMapping = playerMapping.find((p) => p.playerIndex === winner);
-    const winnerPlayer = winnerMapping
-      ? game.players.find((p) => p.user_id.toString() === winnerMapping.playerId)
-      : null;
-
-    return {
-      playerName: winnerPlayer ? `Player ${winnerPlayer.user_id}` : `Player ${winner}`,
-    };
-  }, [isGameEnded, winner, playerMapping, game.players]);
+  const winnerPlayer = winner !== null ? playersByIndex.get(winner) : null;
 
   return (
     <>
       <span>
-        <strong>Status:</strong> {gameStatus}
+        <strong>Status:</strong> {isGameEnded ? 'COMPLETED' : game.status}
       </span>
-      {winnerInfo && (
+      {winnerPlayer && (
         <span>
-          <strong>Winner:</strong> {winnerInfo.playerName}
+          <strong>Winner:</strong> {winnerPlayer.username}
         </span>
       )}
     </>
@@ -56,4 +31,4 @@ function GameStatusInfo({
 }
 
 export { GameStatusInfo };
-export type { GameStatusInfoProps, WinnerInfo };
+export type { GameStatusInfoProps };
