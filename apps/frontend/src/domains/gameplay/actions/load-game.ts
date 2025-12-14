@@ -1,26 +1,52 @@
 import { GameStatus } from '@core/game/types';
 
-import { loadGame as apiLoadGame } from '@/domains/games/games-api';
+import { loadGame as apiLoadGame, GameNotFoundError } from '@/domains/games/games-api';
 import { gameMetadataStore } from '@/domains/gameplay/stores/game-metadata-store';
 import { gameplayActions } from '@/domains/gameplay/stores/gameplay-store-v2';
 import { userStore } from '@/domains/users/user-store';
 
 async function loadGame(gameId: string): Promise<void> {
-  const { setGame, setCountdownActive } = gameMetadataStore.getState().actions;
+  const store = gameMetadataStore.getState();
+  const { setGame, setCountdownActive, setLoading, setError } = store.actions;
   const { setPlayerData } = gameplayActions();
-  const currentUser = userStore.getState().user;
 
-  const game = await apiLoadGame(gameId);
+  // Prevent duplicate loads
+  if (store.loading || (store.game && String(store.game.id) === gameId) || store.error) {
+    return;
+  }
 
-  // Set game in metadata store
-  setGame(game);
+  try {
+    setLoading(true);
+    setError(null);
 
-  // Process and store player identity data
-  setPlayerData(game.players, currentUser?.id ?? null);
+    const game = await apiLoadGame(gameId);
 
-  // Initialize countdown if needed
-  if (game.status === GameStatus.NOT_STARTED) {
-    setCountdownActive(true);
+    // Set game in metadata store
+    setGame(game);
+
+    // TODO: Should pass userId as parameter instead of fetching from store
+    // Long-term: only call loadGame in context of a user, pass userId directly
+    const currentUser = userStore.getState().user;
+    setPlayerData(game.players, currentUser?.id ?? null);
+
+    // -------------------------------------------------------------
+    // TODO: This isn't how the countdown should be setup
+    // Should happen somewhere more obvious and a distinct action
+    // -------------------------------------------------------------
+    // Initialize countdown if game hasn't started yet
+    if (game.status === GameStatus.NOT_STARTED) {
+      setCountdownActive(true);
+    }
+
+    setLoading(false);
+  } catch (err) {
+    let errorMessage = 'Failed to load game';
+    if (err instanceof GameNotFoundError) {
+      errorMessage = 'Game not found';
+    }
+    console.error(`Error loading game (id=${gameId}):`, err);
+    setError(errorMessage);
+    setLoading(false);
   }
 }
 

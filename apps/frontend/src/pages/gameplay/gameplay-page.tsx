@@ -9,6 +9,7 @@ import {
   useGameLoadingState,
 } from '@/domains/gameplay/stores/game-metadata-store';
 import { joinGameplay, leaveGameplay } from '@/domains/gameplay/actions';
+import { loadGame } from '@/domains/gameplay/actions/load-game';
 import { GameChat } from '@/domains/chat/components/game-chat';
 import { GameplayArmyInfo } from '@/domains/gameplay/pages/gameplay/army-info';
 import { GameHeader } from '@/pages/gameplay/components/gameplay-header';
@@ -55,15 +56,14 @@ function GamePageContent({ gameId }: { gameId: string }) {
   const countdownActive = gameMetadataStore((state) => state.countdownActive);
   const countdownSeconds = gameMetadataStore((state) => state.countdownSeconds);
   const winner = gameMetadataStore((state) => state.winner);
-  const { actions } = gameMetadataStore.getState();
 
   const isConnected = useWsConnectionStore((state) => state.isConnected);
 
   useEffect(() => {
     if (!game && gameId && !isLoadingGame) {
-      actions.loadGame(gameId);
+      loadGame(gameId);
     }
-  }, [gameId, game, isLoadingGame, actions]);
+  }, [gameId, game, isLoadingGame]);
 
   useEffect(() => {
     const numericGameId = GameId(parseInt(gameId, 10));
