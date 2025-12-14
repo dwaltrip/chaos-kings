@@ -34,7 +34,9 @@ async function clearDatabase() {
   );
 
   // Clear each table in order (reverse dependency order)
-  const tableOrder = ['game_players', 'games', 'users'];
+  // TODO: Dynamically construct this list somehow,
+  // shouldn't have to be manually maintained.
+  const tableOrder = ['game_chat_messages', 'game_players', 'games', 'users'];
   const tablesToClear = tableOrder.filter(
     (table) => tableNames.includes(table) && !migrationTables.includes(table),
   );
