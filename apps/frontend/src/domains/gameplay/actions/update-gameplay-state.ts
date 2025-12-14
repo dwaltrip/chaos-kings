@@ -1,4 +1,4 @@
-import type { BoardState, Movement } from '@core/types';
+import type { BoardState, Movement, PlayerIndex } from '@core/types';
 import { Board } from '@core/board';
 import type { PlayerQueuesMap, PlayerStats } from '@platform/domains/gameplay/types';
 
@@ -15,12 +15,33 @@ function updateGameplayState(
   playerQueues: PlayerQueuesMap = {},
   playerStats: PlayerStats[],
 ) {
-  const { setVisibleSquares, updateBoard, setTick, setPlayerStats } = gameplayActions();
-  // Get currentPlayerIndex for both visible squares and queue updates
-  const playerIndex = useGameplayStoreV2.getState().currentPlayerIndex;
-  if (playerIndex === null) {
-    throw new Error('[updateGameplayState] currentPlayerIndex is null');
+  const state = useGameplayStoreV2.getState();
+
+  // TODO: This may guard can cause us to miss WS update messages.
+  // Possible fix: request a snapshot or have server send one on join if needed.
+  // Not a huge issue for MPV as we will get an update on next tick anyway.
+  if (!state.gameplayReady || state.currentPlayerIndex === null) {
+    // TODO: If messages arrive before join/setup, request a snapshot or buffer updates.
+    return;
   }
+
+  applyGameplayStateUpdate(
+    tick,
+    board,
+    playerQueues,
+    playerStats,
+    state.currentPlayerIndex,
+  );
+}
+
+function applyGameplayStateUpdate(
+  tick: number,
+  board: BoardState,
+  playerQueues: PlayerQueuesMap = {},
+  playerStats: PlayerStats[],
+  playerIndex: PlayerIndex,
+) {
+  const { setVisibleSquares, updateBoard, setTick, setPlayerStats } = gameplayActions();
 
   setTick(tick);
   updateBoard(board);

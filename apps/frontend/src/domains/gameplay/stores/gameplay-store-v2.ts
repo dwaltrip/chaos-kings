@@ -11,7 +11,7 @@ import type { User } from '@/domains/users/user-service';
 import { userStore } from '@/domains/users/user-store';
 
 import { isAdjacentTo } from '@/domains/gameplay/utils/tile-utils';
-import { gameMetadataStore } from '@/domains/gameplay/stores/game-metadata-store';
+import { gameplayPageStore } from '@/domains/gameplay/stores/gameplay-page-store';
 import { tileOrchestrator } from '@/domains/gameplay/stores/tile-orchestrator';
 
 interface GameplayStateV2 {
@@ -19,6 +19,7 @@ interface GameplayStateV2 {
   game: GameWithPlayers | null;
   tick: number;
   winner: PlayerIndex | null;
+  gameplayReady: boolean;
 
   boardState: BoardState | null;
   selectedTile: Coord | null;
@@ -39,6 +40,7 @@ interface GameplayStateV2 {
   // TODO / QUESTION: TS doesn't seem to complain if I don't define these here?
   actions: {
     setTick: (tick: number) => void;
+    setGameplayReady: (ready: boolean) => void;
     setSelectedTileV2: (coord: Coord) => void;
     clearSelectedTile: () => void;
     updateBoard: (boardState: BoardState) => void;
@@ -60,23 +62,24 @@ const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
     }
   };
   const syncGame = () => {
-    const newGame = gameMetadataStore.getState().game;
+    const newGame = gameplayPageStore.getState().game;
     if (newGame !== get().game) {
       set({ game: newGame || null });
       console.log('[gameplay-store-v2] Updated game object:', get().game);
     }
   };
 
-  gameMetadataStore.subscribe(syncGame);
+  gameplayPageStore.subscribe(syncGame);
   userStore.subscribe(syncUser);
 
   const user = userStore.getState().user || null;
-  const game = gameMetadataStore.getState().game || null;
+  const game = gameplayPageStore.getState().game || null;
   return {
     user,
     game,
     tick: 0,
     winner: null,
+    gameplayReady: false,
 
     boardState: null,
     selectedTile: null,
@@ -98,6 +101,7 @@ const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
 
     actions: {
       setTick: (tick) => set({ tick }),
+      setGameplayReady: (ready) => set({ gameplayReady: ready }),
 
       setSelectedTileV2: (coord: Coord) => set({ selectedTile: coord }),
       clearSelectedTile: () => set({ selectedTile: null }),

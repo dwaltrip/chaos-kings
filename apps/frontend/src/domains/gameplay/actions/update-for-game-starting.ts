@@ -1,8 +1,8 @@
-import { gameMetadataStore } from '@/domains/gameplay/stores/game-metadata-store';
+import { gameplayPageStore } from '@/domains/gameplay/stores/gameplay-page-store';
 
 function updateForGameStarting(countdownSeconds: number) {
   const { setCountdownActive, setCountdownSeconds } =
-    gameMetadataStore.getState().actions;
+    gameplayPageStore.getState().actions;
   setCountdownActive(true);
   setCountdownSeconds(countdownSeconds);
 }

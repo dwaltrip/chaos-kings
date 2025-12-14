@@ -1,11 +1,11 @@
 import type { BoardState, PlayerIndex } from '@core/types';
 import { GameStatus } from '@core/game/types';
 
-import { gameMetadataStore } from '@/domains/gameplay/stores/game-metadata-store';
+import { gameplayPageStore } from '@/domains/gameplay/stores/gameplay-page-store';
 import { gameplayActions } from '@/domains/gameplay/stores/gameplay-store-v2';
 
 function updateForGameEnded(finalBoardState: BoardState, winner: PlayerIndex) {
-  const { updateGame } = gameMetadataStore.getState().actions;
+  const { updateGame } = gameplayPageStore.getState().actions;
   const { updateBoard, setWinner, setVisibleSquares, clearSelectedTile } =
     gameplayActions();
 

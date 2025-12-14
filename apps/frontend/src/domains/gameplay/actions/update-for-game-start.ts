@@ -2,14 +2,14 @@ import { Board } from '@core/board';
 import type { BoardState } from '@core/types';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
-import { gameMetadataStore } from '@/domains/gameplay/stores/game-metadata-store';
+import { gameplayPageStore } from '@/domains/gameplay/stores/gameplay-page-store';
 import {
   gameplayActions,
   useGameplayStoreV2,
 } from '@/domains/gameplay/stores/gameplay-store-v2';
 
 function updateForGameStart(game: GameWithPlayers, boardState: BoardState) {
-  const { setCountdownActive, setGame } = gameMetadataStore.getState().actions;
+  const { setCountdownActive, setGame } = gameplayPageStore.getState().actions;
   const { updateBoard, setVisibleSquares } = gameplayActions();
 
   setCountdownActive(false);

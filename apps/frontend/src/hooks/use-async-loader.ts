@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// TODO: This is currently dead code!!
+// Possibly delete. It was created during the refactor of the loading logic on
+//   the gameplay page.
+// But then we went with the new `createLoaderSlice` instead.
+// Keeping it for the moment, might try a hook-based "loaders" again later.
+// -----------------------------------------------------------------------------
 import { useState, useCallback } from 'react';
 
 interface AsyncLoaderState<T> {
