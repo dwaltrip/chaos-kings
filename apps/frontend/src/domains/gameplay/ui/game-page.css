@@ -2,8 +2,7 @@
 .game-layout {
   display: grid;
   grid-template-rows: auto 1fr;
-  /* grid-template-columns: 1fr 280px; */
-  grid-template-columns: 1fr 150px;
+  grid-template-columns: 1fr 180px;
   grid-template-areas:
     'header header'
     'main sidebar';

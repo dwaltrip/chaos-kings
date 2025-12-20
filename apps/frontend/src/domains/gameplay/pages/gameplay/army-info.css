@@ -1,0 +1,8 @@
+.army-info-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px 40px;
+}
+
+.army-info-grid .player-color-bubble {
+  flex-shrink: 0;
+}
