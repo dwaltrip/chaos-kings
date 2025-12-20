@@ -1,0 +1,14 @@
+.turn-counter-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+}
+
+.turn-dots {
+  font-size: 13px;
+  line-height: 1;
+  /* color: #374151; */
+  color: #666;
+  text-align: left;
+}

@@ -16,6 +16,7 @@ import {
 
 import { GameChat } from '@/domains/chat/components/game-chat';
 import { GameplayArmyInfo } from '@/domains/gameplay/pages/gameplay/army-info';
+import { TurnCounter } from '@/domains/gameplay/pages/gameplay/turn-counter';
 import { GameHeader } from '@/pages/gameplay/components/gameplay-header';
 import { GameplayMainContent } from '@/pages/gameplay/components/gameplay-main-content';
 
@@ -106,6 +107,7 @@ function GamePageContent({ gameId }: { gameId: GameId }) {
       <GameHeader game={game} user={user} winner={winner} />
 
       <aside className="game-sidebar">
+        <TurnCounter />
         <GameplayArmyInfo />
         <GameChat game={game} />
       </aside>
