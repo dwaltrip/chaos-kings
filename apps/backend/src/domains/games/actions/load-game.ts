@@ -10,6 +10,9 @@ class GameNotFoundError extends Error {
   }
 }
 
+// TODO: This overlaps with getGame action...
+// * Happened during some vibe-engineered refactoring.
+// * Figure out later resolve this.
 async function loadGame(gameId: GameId): Promise<GameWithPlayers> {
   const game = await gameRepository.findByIdWithPlayers(gameId);
   if (!game) throw new GameNotFoundError(gameId);

@@ -19,7 +19,8 @@ function setupGameState(game: GameWithPlayers): void {
   setGameplayReady(true);
 
   // TODO: Think about if this logic should go here.
-  // Now that we have `setupGameState` action, it's much better than before.
+  // Now that it's here inside this `setupGameState` action,
+  //   it's much better than before (it was in a zustand store action).
   // But still feels a bit like a side-effect / confusing flow.
   if (game.status === GameStatus.NOT_STARTED) {
     setCountdownActive(true);
