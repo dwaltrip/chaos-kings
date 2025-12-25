@@ -17,7 +17,7 @@ import {
   resetGameplayPage,
 } from '@/domains/gameplay/actions/load-gameplay-page';
 
-import { GameChat } from '@/domains/chat/components/game-chat';
+import { GameChat } from '@/domains/chat/ui/game-chat';
 import { GameplayArmyInfo } from '@/domains/gameplay/pages/gameplay/army-info';
 import { TurnCounter } from '@/domains/gameplay/pages/gameplay/turn-counter';
 import { GameHeader } from '@/pages/gameplay/components/gameplay-header';

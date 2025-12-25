@@ -13,7 +13,7 @@ import {
   loadChatHistory,
 } from '@/domains/chat/actions';
 
-import '@/domains/chat/components/game-chat.css';
+import '@/domains/chat/ui/game-chat.css';
 
 function GameChat({ game }: { game: Game }) {
   const messages = chatStore((state) => state.messages);
