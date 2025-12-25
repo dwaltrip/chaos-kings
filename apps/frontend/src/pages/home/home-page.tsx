@@ -3,8 +3,18 @@ import { useState } from 'react';
 import { userStore } from '@/domains/users/user-store';
 
 import { UsernameForm } from './username-form';
+import { AppNav } from '@/domains/ui-lib/app-nav';
 
 function HomePage() {
+  return (
+    <>
+      <AppNav />
+      <HomePageContent />
+    </>
+  );
+}
+
+function HomePageContent() {
   // TODO: user should never be null, we auto-create a user on first visit
   const user = userStore((state) => state.data);
   const isLoading = userStore((state) => state.isLoading());

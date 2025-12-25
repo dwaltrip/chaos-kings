@@ -8,6 +8,7 @@ import { useReplayStore, replayActions } from '@/domains/replay/stores/replay-st
 import { loadReplay } from '@/domains/replay/actions';
 import { ReplayBoard } from '@/domains/replay/pages/replay-board';
 import { ReplayControls } from '@/domains/replay/pages/replay-controls';
+import { AppNav } from '@/domains/ui-lib/app-nav';
 
 function ReplayPage() {
   const { gameId } = useParams();
@@ -24,7 +25,12 @@ function ReplayPage() {
     );
   }
 
-  return <ReplayPageContent gameId={GameIdFromURLParam(gameId)} />;
+  return (
+    <>
+      <AppNav></AppNav>
+      <ReplayPageContent gameId={GameIdFromURLParam(gameId)} />
+    </>
+  );
 }
 
 function ReplayPageContent({ gameId }: { gameId: GameId }) {

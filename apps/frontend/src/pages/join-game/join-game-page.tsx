@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { useState, useEffect } from 'react';
 
 import { FFA_NUM_PLAYERS_MAX } from '@platform/domains/matchmaking/constants';
@@ -7,8 +8,18 @@ import { useWsConnectionStore } from '@/ws-lib';
 import { userStore } from '@/domains/users/user-store';
 import { gameMatchmakingStore } from '@/domains/matchmaking/matchmaking-store';
 import { joinQueue, leaveQueue, voteEarlyStart } from '@/domains/matchmaking/actions';
+import { AppNav } from '@/domains/ui-lib/app-nav';
 
 function JoinGamePage() {
+  return (
+    <>
+      <AppNav />
+      <JoinGamePageContent />
+    </>
+  );
+}
+
+function JoinGamePageContent() {
   const queueSize = gameMatchmakingStore((state) => state.queueSize);
   const playersNeeded = gameMatchmakingStore((state) => state.playersNeeded);
   const isInQueue = gameMatchmakingStore((state) => state.isInQueue);
@@ -59,7 +70,10 @@ function JoinGamePage() {
         <button
           onClick={handleJoinQueue}
           disabled={!isConnected}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className={clsx(
+            'bg-blue-500 hover:bg-blue-600 text-white px-4 py-2',
+            'rounded disabled:bg-gray-400 disabled:cursor-not-allowed',
+          )}
         >
           Join queue
         </button>

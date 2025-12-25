@@ -17,6 +17,7 @@ import {
   resetGameplayPage,
 } from '@/domains/gameplay/actions/load-gameplay-page';
 
+import { AppNav } from '@/domains/ui-lib/app-nav';
 import { GameChat } from '@/domains/chat/ui/game-chat';
 import { GameplayArmyInfo } from '@/domains/gameplay/pages/gameplay/army-info';
 import { TurnCounter } from '@/domains/gameplay/pages/gameplay/turn-counter';
@@ -35,7 +36,12 @@ function GameplayPage() {
     );
   }
 
-  return <GamePageContent gameId={GameIdFromURLParam(gameId)} />;
+  return (
+    <>
+      <AppNav />
+      <GamePageContent gameId={GameIdFromURLParam(gameId)} />
+    </>
+  );
 }
 
 function MessageDisplay({
