@@ -53,7 +53,7 @@ function MessageDisplay({
 }
 
 function GamePageContent({ gameId }: { gameId: GameId }) {
-  const user = userStore((state) => state.user);
+  const user = userStore((state) => state.data);
   const game = gameplayPageStore((state) => state.game);
   const countdownActive = gameplayPageStore((state) => state.countdownActive);
   const countdownSeconds = gameplayPageStore((state) => state.countdownSeconds);

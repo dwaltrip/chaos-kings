@@ -124,7 +124,6 @@ class MatchmakingService {
   async createGame(playerCount: number): Promise<MatchmakingGame | null> {
     try {
       const playerIds = await this.redis.zRange(this.queueKey, 0, playerCount - 1);
-
       if (playerIds.length < playerCount) {
         return null;
       }

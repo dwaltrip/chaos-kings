@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { initializeWsClient } from '@/ws';
-import { userStore } from '@/domains/users/user-store';
+import { initializeUser } from '@/domains/users/actions/initialize-user';
 
 /**
  * Orchestrates app initialization with proper sequencing:
@@ -18,10 +18,9 @@ function useUserSessionAndWsInit() {
 
   // Step 1: Initialize user FIRST (establishes session cookie)
   useEffect(() => {
-    userStore
-      .getState()
-      .actions.initializeUser()
-      .finally(() => setUserReady(true));
+    initializeUser()
+      .then(() => setUserReady(true))
+      .catch(() => setUserReady(true)); // Still proceed even on error
   }, []);
 
   // Step 2: Initialize WS only AFTER user is ready

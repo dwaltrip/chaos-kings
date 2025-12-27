@@ -14,7 +14,7 @@ function setupGameState(game: GameWithPlayers): void {
 
   // TODO: Should pass userId as parameter instead of fetching from store
   // Long-term: only call setupGameState in context of a user, pass userId directly
-  const currentUser = userStore.getState().user;
+  const currentUser = userStore.getState().data;
   setPlayerData(game.players, currentUser?.id ?? null);
   setGameplayReady(true);
 

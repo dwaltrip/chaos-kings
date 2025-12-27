@@ -1,48 +1,18 @@
-import { create } from 'zustand';
-import { userService, type User } from '@/domains/users/user-service';
+import { createAsyncStore } from '@/utils/create-async-store';
 
-interface UserState {
-  user: User | null;
-  isLoading: boolean;
-  isInitialized: boolean;
-  actions: {
-    initializeUser(): Promise<void>;
-    updateUsername(username: string): Promise<void>;
-    clearUser(): void;
-  };
-}
+import type { User } from '@/domains/users/types';
 
-const userStore = create<UserState>((set) => ({
-  user: null,
-  isLoading: false,
-  isInitialized: false,
-  actions: {
-    initializeUser: async () => {
-      set({ isLoading: true });
-      try {
-        const user = await userService.initializeUser();
-        set({ user, isLoading: false, isInitialized: true });
-      } catch (error) {
-        console.error('Failed to initialize user:', error);
-        set({ isLoading: false, isInitialized: true });
-      }
-    },
+const userStore = createAsyncStore<User>();
 
-    updateUsername: async (username: string) => {
-      set({ isLoading: true });
-      try {
-        const updatedUser = await userService.updateUsername(username);
-        set({ user: updatedUser, isLoading: false });
-      } catch (error) {
-        set({ isLoading: false });
-        throw error;
-      }
-    },
+type UserState = ReturnType<typeof userStore.getState>;
 
-    clearUser: () => {
-      set({ user: null, isInitialized: false });
-    },
-  },
-}));
+// Convenience selectors
 
-export { userStore };
+const selectUser = (state: UserState): User | null => state.data;
+
+const selectIsLoading = (state: UserState): boolean => state.loading;
+
+const selectIsReady = (state: UserState): boolean => state.isReady();
+
+export type { User };
+export { userStore, selectUser, selectIsLoading, selectIsReady };

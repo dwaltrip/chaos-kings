@@ -53,6 +53,17 @@ async function userRoutes(fastify: FastifyInstance) {
   fastify.post(
     '/users/auto-create',
     asyncHandler(async (request, reply) => {
+      // If user is already authenticated, return existing user instead of creating new one
+      // This prevents cookie overwrites when multiple auto-create calls race
+      if (request.currentUser) {
+        const existingUser = await userRepository.findByUserKey(
+          request.currentUser.user_key,
+        );
+        if (existingUser) {
+          return reply.status(200).send({ user: existingUser, isNewUser: false });
+        }
+      }
+
       const result = await autoCreateUser();
       reply.setCookie(
         USER_KEY_COOKIE_NAME,

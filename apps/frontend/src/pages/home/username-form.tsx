@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import { userStore } from '@/domains/users/user-store';
 import { validateUsername } from '@/utils/username-validation';
+import { updateUsername } from '@/domains/users/actions/update-username';
 
 interface UsernameFormProps {
   onUsernameSet?: () => void;
@@ -10,7 +10,6 @@ interface UsernameFormProps {
 function UsernameForm({ onUsernameSet }: UsernameFormProps) {
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
-  const { actions } = userStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,11 +22,11 @@ function UsernameForm({ onUsernameSet }: UsernameFormProps) {
 
     try {
       setError('');
-      await actions.updateUsername(inputValue);
+      await updateUsername(inputValue);
       setInputValue('');
       onUsernameSet?.();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to update username');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update username');
     }
   };
 

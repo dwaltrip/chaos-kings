@@ -7,7 +7,7 @@ import { hasCompletedGameState, isEnded } from '@core/game';
 import type { GameWithPlayers, Player } from '@platform/domains/games/types';
 import type { PlayerStats } from '@platform/domains/gameplay/types';
 
-import type { User } from '@/domains/users/user-service';
+import type { User } from '@/domains/users/types';
 import { userStore } from '@/domains/users/user-store';
 
 import { isAdjacentTo } from '@/domains/gameplay/utils/tile-utils';
@@ -56,7 +56,7 @@ interface GameplayStateV2 {
 // TODO: make this the source of truth and only place that "stores" currentPlayerIndex
 const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
   const syncUser = () => {
-    const newUser = userStore.getState().user;
+    const newUser = userStore.getState().data;
     if (newUser?.id !== get().user?.id) {
       set({ user: newUser || null });
     }
@@ -72,7 +72,7 @@ const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
   gameplayPageStore.subscribe(syncGame);
   userStore.subscribe(syncUser);
 
-  const user = userStore.getState().user || null;
+  const user = userStore.getState().data || null;
   const game = gameplayPageStore.getState().game || null;
   return {
     user,

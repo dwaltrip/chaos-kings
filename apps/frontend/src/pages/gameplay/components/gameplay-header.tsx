@@ -2,7 +2,7 @@ import { isEnded } from '@core/game';
 import type { PlayerIndex } from '@core/types';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
-import type { User } from '@/domains/users/user-service';
+import type { User } from '@/domains/users/types';
 import { useGameplayStoreV2 } from '@/domains/gameplay/stores/gameplay-store-v2';
 import { PlayerColors } from '@/pages/gameplay/components/player-colors';
 import { GameStatusInfo } from '@/pages/gameplay/components/gameplay-status-info';

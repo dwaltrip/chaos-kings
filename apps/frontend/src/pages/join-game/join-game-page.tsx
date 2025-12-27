@@ -15,7 +15,7 @@ function JoinGamePage() {
   const gameReady = gameMatchmakingStore((state) => state.gameReady);
   const earlyStartVoters = gameMatchmakingStore((state) => state.earlyStartVoters);
   const allVoted = gameMatchmakingStore((state) => state.allVoted);
-  const user = userStore((state) => state.user);
+  const user = userStore((state) => state.data);
   const [waitingTime, setWaitingTime] = useState(0);
 
   // TODO: re-think how we display connection status in the UI in general,

@@ -319,7 +319,9 @@ export class GameServer {
 
   onPlayerJoinedRoom(userId: UserId): void {
     if (!this.playerMapping.has(userId)) {
-      this.log.error(`User ${userId} not part of game, ignoring join`);
+      this.log.error(
+        `User ${userId} not part of game, ignoring join. Expected players: ${[...this.playerMapping.keys()].join(', ')}`,
+      );
       return;
     }
 

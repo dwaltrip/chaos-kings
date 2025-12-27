@@ -6,8 +6,8 @@ import { UsernameForm } from './username-form';
 
 function HomePage() {
   // TODO: user should never be null, we auto-create a user on first visit
-  const user = userStore((state) => state.user);
-  const isLoading = userStore((state) => state.isLoading);
+  const user = userStore((state) => state.data);
+  const isLoading = userStore((state) => state.loading);
   const [isEditing, setIsEditing] = useState(false);
 
   const handleChangeUsername = () => {
