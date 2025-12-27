@@ -18,7 +18,7 @@ type AsyncStoreActions<T> = {
 type AsyncStore<T> = AsyncStoreState<T> & AsyncStoreActions<T>;
 
 type ExtendFn<T, E extends Record<string, unknown>> = (
-  set: (updates: Partial<AsyncStoreState<T>>) => void,
+  set: (updates: Partial<AsyncStoreState<T> & E>) => void,
   get: () => AsyncStore<T> & E,
 ) => E;
 
@@ -30,12 +30,17 @@ function createAsyncStore<T, E extends Record<string, unknown> = {}>(
   return create<FullStore>((zustandSet, zustandGet) => {
     let pendingPromise: Promise<T> | null = null;
 
-    // Wrapper that only allows updating base state (not actions or extensions)
-    const set = (updates: Partial<AsyncStoreState<T>>) => {
+    const get = zustandGet;
+
+    // For base store internals - only updates AsyncStoreState fields
+    const setBase = (updates: Partial<AsyncStoreState<T>>) => {
       zustandSet(updates as Partial<FullStore>);
     };
 
-    const get = zustandGet;
+    // For extensions - can update both base and extension state
+    const set = (updates: Partial<AsyncStoreState<T> & E>) => {
+      zustandSet(updates as Partial<FullStore>);
+    };
 
     const base: AsyncStore<T> = {
       data: null,
@@ -57,16 +62,16 @@ function createAsyncStore<T, E extends Record<string, unknown> = {}>(
           return pendingPromise;
         }
 
-        set({ loading: true, error: null });
+        setBase({ loading: true, error: null });
 
         pendingPromise = (async () => {
           try {
             const data = await fetchFn();
-            set({ data, loading: false, error: null });
+            setBase({ data, loading: false, error: null });
             return data;
           } catch (err) {
             const error = err instanceof Error ? err : new Error(String(err));
-            set({ loading: false, error });
+            setBase({ loading: false, error });
             throw error;
           } finally {
             pendingPromise = null;
@@ -83,7 +88,7 @@ function createAsyncStore<T, E extends Record<string, unknown> = {}>(
 
       reset: () => {
         pendingPromise = null;
-        set({ data: null, loading: false, error: null });
+        setBase({ data: null, loading: false, error: null });
       },
     };
 

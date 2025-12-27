@@ -7,7 +7,10 @@ import { GameIdFromURLParam } from '@kernel/domains/game';
 import { useWsConnectionStore } from '@/ws-lib';
 
 import { userStore } from '@/domains/users/user-store';
-import { gameplayPageStore } from '@/domains/gameplay/stores/gameplay-page-store';
+import {
+  gameplayPageStore,
+  selectGame,
+} from '@/domains/gameplay/stores/gameplay-page-store';
 import { joinGameplay, leaveGameplay } from '@/domains/gameplay/actions';
 import {
   loadGameplayPage,
@@ -54,13 +57,14 @@ function MessageDisplay({
 
 function GamePageContent({ gameId }: { gameId: GameId }) {
   const user = userStore((state) => state.data);
-  const game = gameplayPageStore((state) => state.game);
+  const game = gameplayPageStore(selectGame);
   const countdownActive = gameplayPageStore((state) => state.countdownActive);
   const countdownSeconds = gameplayPageStore((state) => state.countdownSeconds);
   const winner = gameplayPageStore((state) => state.winner);
-  const loader = gameplayPageStore((state) => state.loader);
+  const loading = gameplayPageStore((state) => state.loading);
+  const error = gameplayPageStore((state) => state.error);
   const isConnected = useWsConnectionStore((state) => state.isConnected);
-  const isGameReady = gameplayPageStore.getState().actions.loader.isReady(gameId);
+  const isGameReady = gameplayPageStore.getState().isReady();
 
   // Load game on mount / gameId change
   useEffect(() => {
@@ -87,11 +91,11 @@ function GamePageContent({ gameId }: { gameId: GameId }) {
     return <Navigate to="/" replace />;
   }
 
-  if (!isConnected || loader.loading) {
+  if (!isConnected || loading) {
     return <MessageDisplay message="Loading game..." />;
   }
-  if (loader.error) {
-    return <MessageDisplay header="Error" message={loader.error} asError />;
+  if (error) {
+    return <MessageDisplay header="Error" message={error.message} asError />;
   }
   if (!game) {
     return (

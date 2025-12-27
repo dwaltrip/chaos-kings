@@ -2,7 +2,10 @@ import { getTicksPerTurn } from '@core/timing/helpers';
 import { invariant } from '@utils/assertions/invariant';
 
 import { useGameplayStoreV2 } from '@/domains/gameplay/stores/gameplay-store-v2';
-import { gameplayPageStore } from '@/domains/gameplay/stores/gameplay-page-store';
+import {
+  gameplayPageStore,
+  selectGame,
+} from '@/domains/gameplay/stores/gameplay-page-store';
 
 import './turn-counter.css';
 
@@ -10,7 +13,7 @@ const MAX_TICKS_PER_TURN = 8;
 
 function TurnCounter() {
   const tick = useGameplayStoreV2((state) => state.tick);
-  const game = gameplayPageStore((state) => state.game);
+  const game = gameplayPageStore(selectGame);
 
   if (!game) {
     return null;

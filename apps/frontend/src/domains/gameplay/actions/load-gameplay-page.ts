@@ -5,24 +5,22 @@ import { setupGameState } from '@/domains/gameplay/actions/setup-game-state';
 import { gameplayPageStore } from '@/domains/gameplay/stores/gameplay-page-store';
 
 async function loadGameplayPage(gameId: GameId): Promise<void> {
-  const { loader, actions } = gameplayPageStore.getState();
-  const { reset, setGame, loader: loaderActions } = actions;
+  const state = gameplayPageStore.getState();
 
-  // Skip if already loading the same game
-  if (loader.loading && loader.loadedId === gameId) {
+  // Skip if already loading
+  if (state.loading) {
     return;
   }
 
   // Always reset before loading a new game to avoid stale state
-  reset();
+  state.actions.resetAll();
 
-  const game = await loaderActions.run(gameId, () => loadGame(gameId));
-  setGame(game);
+  const game = await state.load(() => loadGame(gameId));
   setupGameState(game);
 }
 
 function resetGameplayPage(): void {
-  gameplayPageStore.getState().actions.reset();
+  gameplayPageStore.getState().actions.resetAll();
 }
 
 export { loadGameplayPage, resetGameplayPage };

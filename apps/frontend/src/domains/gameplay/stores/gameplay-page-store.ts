@@ -1,20 +1,14 @@
-import { create } from 'zustand';
-
-import type { GameId } from '@kernel/ids';
 import { isEnded } from '@core/game';
 import { PRE_GAME_COUNTDOWN_SECONDS } from '@core/ui-timing-config';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
-import type { LoaderActions, LoaderState } from '@/utils/create-loader-slice';
-import { createLoaderSlice } from '@/utils/create-loader-slice';
+import { createAsyncStore } from '@/utils/create-async-store';
 
-interface GameplayPageState {
-  game: GameWithPlayers | null;
+type GameplayPageExtensions = {
   countdownActive: boolean;
   countdownSeconds: number;
   // TODO: should derive `winner` from game object instead of separate state
   winner: number | null;
-  loader: LoaderState<GameId>;
   isGameEnded: () => boolean;
   actions: {
     setGame: (game: GameWithPlayers) => void;
@@ -22,50 +16,56 @@ interface GameplayPageState {
     setCountdownActive: (active: boolean) => void;
     setCountdownSeconds: (seconds: number) => void;
     setWinner: (winner: number) => void;
-    reset: () => void;
-    loader: LoaderActions<GameId>;
+    resetAll: () => void;
   };
-}
+};
 
-const { initial: loaderInitial, actions: loaderActions } = createLoaderSlice<GameId>();
-
-const initialState = {
-  game: null as GameWithPlayers | null,
+const extensionInitialState = {
   countdownActive: false,
   countdownSeconds: PRE_GAME_COUNTDOWN_SECONDS,
   winner: null as number | null,
-  loader: loaderInitial,
 };
 
-const gameplayPageStore = create<GameplayPageState>((set, get) => ({
-  ...initialState,
-  isGameEnded: () => {
-    const game = get().game;
-    return game ? isEnded(game) : false;
-  },
-  actions: {
-    setGame: (game: GameWithPlayers) => {
-      set({ game });
+const gameplayPageStore = createAsyncStore<GameWithPlayers, GameplayPageExtensions>(
+  (set, get) => ({
+    ...extensionInitialState,
+
+    isGameEnded: () => {
+      const game = get().data;
+      return game ? isEnded(game) : false;
     },
-    updateGame: (updates: Partial<GameWithPlayers>) => {
-      set((state) => ({
-        game: state.game ? { ...state.game, ...updates } : null,
-      }));
+
+    actions: {
+      setGame: (game: GameWithPlayers) => {
+        set({ data: game });
+      },
+      updateGame: (updates: Partial<GameWithPlayers>) => {
+        const current = get().data;
+        if (current) {
+          set({ data: { ...current, ...updates } });
+        }
+      },
+      setCountdownActive: (active: boolean) => {
+        set({ countdownActive: active });
+      },
+      setCountdownSeconds: (seconds: number) => {
+        set({ countdownSeconds: seconds });
+      },
+      setWinner: (winner: number) => {
+        set({ winner });
+      },
+      resetAll: () => {
+        get().reset(); // Reset base async store (data, loading, error)
+        set({ ...extensionInitialState }); // Reset extension state
+      },
     },
-    setCountdownActive: (active: boolean) => {
-      set({ countdownActive: active });
-    },
-    setCountdownSeconds: (seconds: number) => {
-      set({ countdownSeconds: seconds });
-    },
-    setWinner: (winner: number) => set({ winner }),
-    reset: () => set({ ...initialState }),
-    loader: loaderActions(
-      (updates) => set((state) => ({ loader: { ...state.loader, ...updates } })),
-      () => get().loader,
-    ),
-  },
-}));
+  }),
+);
+
+type GameplayPageState = ReturnType<typeof gameplayPageStore.getState>;
+
+// Selectors
+const selectGame = (state: GameplayPageState) => state.data;
 
 function useIsGameEnded(state: GameplayPageState): boolean {
   return state.isGameEnded();
@@ -74,4 +74,5 @@ function useIsGameEnded(state: GameplayPageState): boolean {
 // TODO: resolve duplication of this in gameplay-store-v2
 const useGameplayPageStore = gameplayPageStore;
 
-export { gameplayPageStore, useGameplayPageStore, useIsGameEnded };
+export type { GameplayPageState };
+export { gameplayPageStore, useGameplayPageStore, useIsGameEnded, selectGame };

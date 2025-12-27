@@ -11,7 +11,10 @@ import type { User } from '@/domains/users/types';
 import { userStore } from '@/domains/users/user-store';
 
 import { isAdjacentTo } from '@/domains/gameplay/utils/tile-utils';
-import { gameplayPageStore } from '@/domains/gameplay/stores/gameplay-page-store';
+import {
+  gameplayPageStore,
+  selectGame,
+} from '@/domains/gameplay/stores/gameplay-page-store';
 import { tileOrchestrator } from '@/domains/gameplay/stores/tile-orchestrator';
 
 interface GameplayStateV2 {
@@ -62,7 +65,7 @@ const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
     }
   };
   const syncGame = () => {
-    const newGame = gameplayPageStore.getState().game;
+    const newGame = selectGame(gameplayPageStore.getState());
     if (newGame !== get().game) {
       set({ game: newGame || null });
       console.log('[gameplay-store-v2] Updated game object:', get().game);
@@ -73,7 +76,7 @@ const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
   userStore.subscribe(syncUser);
 
   const user = userStore.getState().data || null;
-  const game = gameplayPageStore.getState().game || null;
+  const game = selectGame(gameplayPageStore.getState()) || null;
   return {
     user,
     game,
