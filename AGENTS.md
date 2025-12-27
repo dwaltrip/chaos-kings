@@ -256,12 +256,13 @@ type GameId = string & { readonly __brand: 'GameId' };
 ### Backend (`apps/backend`)
 - `npm run start` - Start development server with hot reload
 - `npm run build` - Build TypeScript to JS (check for TS errors)
-- `npm test` / `npm run test:watch` - Run Jest tests
+- `npm test` - Run Jest tests
 - `npm run migrate:latest` - Run database migrations
 
 ### Frontend (`apps/frontend`)
 - `npm run dev` - Start Vite dev server
 - `npm run build` - Build for production (check for TS errors)
+- `npm test` - Run tests (using vitest)
 
 ### Core (`packages/core`)
 - `npm test` / `npm run test:watch` - Run Jest tests for game logic

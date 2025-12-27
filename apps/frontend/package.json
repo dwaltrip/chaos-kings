@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --reporter=dot",
+    "test:verbose": "vitest run",
     "test:watch": "vitest"
   },
   "devDependencies": {

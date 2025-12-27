@@ -28,4 +28,10 @@ fnm use
 npm test
 
 echo ""
+echo "Running frontend tests..."
+cd "$PROJECT_ROOT/apps/frontend"
+fnm use
+npm test
+
+echo ""
 echo "✅ All tests completed successfully!"
