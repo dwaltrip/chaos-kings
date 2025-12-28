@@ -3,22 +3,34 @@
 
 import { create } from 'zustand';
 
+const AsyncStatus = {
+  Idle: 'idle',
+  Loading: 'loading',
+  Success: 'success',
+  Error: 'error',
+} as const;
+
+type AsyncStatus = (typeof AsyncStatus)[keyof typeof AsyncStatus];
+
 type AsyncStoreState<T> = {
+  status: AsyncStatus;
   data: T | null;
-  loading: boolean;
   error: Error | null;
 };
 
 type AsyncStoreActions<T> = {
   load: (fetchFn: () => Promise<T>) => Promise<T>;
+  isIdle: () => boolean;
+  isLoading: () => boolean;
   isReady: () => boolean;
+  isError: () => boolean;
   reset: () => void;
 };
 
 type AsyncStore<T> = AsyncStoreState<T> & AsyncStoreActions<T>;
 
 type ExtendFn<T, E extends Record<string, unknown>> = (
-  set: (updates: Partial<AsyncStoreState<T> & E>) => void,
+  set: (updates: Partial<AsyncStoreState<T>> | Partial<AsyncStoreState<T> & E>) => void,
   get: () => AsyncStore<T> & E,
 ) => E;
 
@@ -30,48 +42,42 @@ function createAsyncStore<T, E extends Record<string, unknown> = {}>(
   return create<FullStore>((zustandSet, zustandGet) => {
     let pendingPromise: Promise<T> | null = null;
 
-    const get = zustandGet;
-
-    // For base store internals - only updates AsyncStoreState fields
-    const setBase = (updates: Partial<AsyncStoreState<T>>) => {
-      zustandSet(updates as Partial<FullStore>);
-    };
-
-    // For extensions - can update both base and extension state
-    const set = (updates: Partial<AsyncStoreState<T> & E>) => {
+    const set = (
+      updates: Partial<AsyncStoreState<T>> | Partial<AsyncStoreState<T> & E>,
+    ) => {
       zustandSet(updates as Partial<FullStore>);
     };
 
     const base: AsyncStore<T> = {
+      status: AsyncStatus.Idle,
       data: null,
-      loading: false,
       error: null,
 
       // NOTE: If we need per-key caching (e.g., loading different games by ID),
       // add `loadFor(key, fetchFn)` that tracks `dataKey` and only refetches on key change.
       load: async (fetchFn) => {
-        const state = get();
+        const state = zustandGet();
 
         // Already loaded → return cached data
-        if (state.data !== null && !state.loading) {
-          return state.data;
+        if (state.status === AsyncStatus.Success) {
+          return state.data as T;
         }
 
         // Currently loading → return existing promise (dedupe concurrent calls)
-        if (state.loading && pendingPromise) {
+        if (state.status === AsyncStatus.Loading && pendingPromise) {
           return pendingPromise;
         }
 
-        setBase({ loading: true, error: null });
+        set({ status: AsyncStatus.Loading, error: null });
 
         pendingPromise = (async () => {
           try {
             const data = await fetchFn();
-            setBase({ data, loading: false, error: null });
+            set({ status: AsyncStatus.Success, data, error: null });
             return data;
           } catch (err) {
             const error = err instanceof Error ? err : new Error(String(err));
-            setBase({ loading: false, error });
+            set({ status: AsyncStatus.Error, error });
             throw error;
           } finally {
             pendingPromise = null;
@@ -81,21 +87,21 @@ function createAsyncStore<T, E extends Record<string, unknown> = {}>(
         return pendingPromise;
       },
 
-      isReady: () => {
-        const state = get();
-        return !state.loading && state.error === null && state.data !== null;
-      },
+      isIdle: () => zustandGet().status === AsyncStatus.Idle,
+      isLoading: () => zustandGet().status === AsyncStatus.Loading,
+      isReady: () => zustandGet().status === AsyncStatus.Success,
+      isError: () => zustandGet().status === AsyncStatus.Error,
 
       reset: () => {
         pendingPromise = null;
-        setBase({ data: null, loading: false, error: null });
+        set({ status: AsyncStatus.Idle, data: null, error: null });
       },
     };
 
-    const extensions = extend ? extend(set, get) : ({} as E);
+    const extensions = extend ? extend(set, zustandGet) : ({} as E);
     return { ...base, ...extensions };
   });
 }
 
 export type { AsyncStore, AsyncStoreState, AsyncStoreActions };
-export { createAsyncStore };
+export { AsyncStatus, createAsyncStore };

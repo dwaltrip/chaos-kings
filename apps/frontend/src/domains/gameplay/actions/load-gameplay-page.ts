@@ -8,7 +8,7 @@ async function loadGameplayPage(gameId: GameId): Promise<void> {
   const state = gameplayPageStore.getState();
 
   // Skip if already loading
-  if (state.loading) {
+  if (state.isLoading()) {
     return;
   }
 

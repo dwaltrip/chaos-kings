@@ -8,14 +8,14 @@ describe('createAsyncStore', () => {
       const useStore = createAsyncStore<string>();
 
       expect(useStore.getState().data).toBe(null);
-      expect(useStore.getState().loading).toBe(false);
+      expect(useStore.getState().status).toBe('idle');
       expect(useStore.getState().error).toBe(null);
 
       const result = await useStore.getState().load(() => Promise.resolve('test data'));
 
       expect(result).toBe('test data');
       expect(useStore.getState().data).toBe('test data');
-      expect(useStore.getState().loading).toBe(false);
+      expect(useStore.getState().status).toBe('success');
       expect(useStore.getState().error).toBe(null);
     });
 
@@ -28,7 +28,7 @@ describe('createAsyncStore', () => {
       );
 
       expect(useStore.getState().data).toBe(null);
-      expect(useStore.getState().loading).toBe(false);
+      expect(useStore.getState().status).toBe('error');
       expect(useStore.getState().error).toBe(error);
     });
 
@@ -68,7 +68,7 @@ describe('createAsyncStore', () => {
       useStore.getState().reset();
 
       expect(useStore.getState().data).toBe(null);
-      expect(useStore.getState().loading).toBe(false);
+      expect(useStore.getState().status).toBe('idle');
       expect(useStore.getState().error).toBe(null);
     });
   });

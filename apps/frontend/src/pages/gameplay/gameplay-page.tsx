@@ -61,7 +61,7 @@ function GamePageContent({ gameId }: { gameId: GameId }) {
   const countdownActive = gameplayPageStore((state) => state.countdownActive);
   const countdownSeconds = gameplayPageStore((state) => state.countdownSeconds);
   const winner = gameplayPageStore((state) => state.winner);
-  const loading = gameplayPageStore((state) => state.loading);
+  const loading = gameplayPageStore((state) => state.isLoading());
   const error = gameplayPageStore((state) => state.error);
   const isConnected = useWsConnectionStore((state) => state.isConnected);
   const isGameReady = gameplayPageStore.getState().isReady();

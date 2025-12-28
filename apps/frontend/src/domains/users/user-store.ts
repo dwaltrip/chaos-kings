@@ -10,7 +10,7 @@ type UserState = ReturnType<typeof userStore.getState>;
 
 const selectUser = (state: UserState): User | null => state.data;
 
-const selectIsLoading = (state: UserState): boolean => state.loading;
+const selectIsLoading = (state: UserState): boolean => state.isLoading();
 
 const selectIsReady = (state: UserState): boolean => state.isReady();
 
