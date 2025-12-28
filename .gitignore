@@ -4,4 +4,6 @@ node_modules/
 !.claude/settings.json
 **/.claude/settings.local.json
 
+.codex/zsh/
+
 tmp/
