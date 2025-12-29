@@ -8,7 +8,7 @@ import { useWsConnectionStore } from '@/ws-lib';
 import { userStore } from '@/domains/users/user-store';
 import { gameMatchmakingStore } from '@/domains/matchmaking/matchmaking-store';
 import { joinQueue, leaveQueue, voteEarlyStart } from '@/domains/matchmaking/actions';
-import { AppNav } from '@/domains/ui-lib/app-nav';
+import { AppNav } from '@/ui-lib/components/app-nav';
 
 function JoinGamePage() {
   return (

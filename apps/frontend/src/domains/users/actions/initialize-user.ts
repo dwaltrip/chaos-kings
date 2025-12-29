@@ -1,14 +1,15 @@
 import { apiService } from '@/services/api-service';
 import { userStore } from '@/domains/users/user-store';
 
-import type { User } from '@/domains/users/types';
+import type { User, UserDTO } from '@/domains/users/types';
+import { toUser } from '@/domains/users/data-mappers';
 
 async function fetchUser(): Promise<User> {
   const meResponse = await apiService.get('/api/users/me');
   if (meResponse.ok) {
     const data = await meResponse.json();
     if (data.user) {
-      return data.user;
+      return toUser(data.user);
     }
   }
 
@@ -18,8 +19,8 @@ async function fetchUser(): Promise<User> {
     throw new Error('Failed to create user');
   }
 
-  const data = await createResponse.json();
-  return data.user;
+  const data: UserDTO = await createResponse.json();
+  return toUser(data);
 }
 
 async function initializeUser(): Promise<User> {

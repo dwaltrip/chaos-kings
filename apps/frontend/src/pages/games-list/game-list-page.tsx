@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 import { apiService } from '@/services/api-service';
 
-import { AppNav } from '@/domains/ui-lib/app-nav';
+import { AppNav } from '@/ui-lib/components/app-nav';
 import { GameListPlayerInfo } from '@/pages/games-list/game-list-player-info';
 
 // TODO: Is this a useful interface? think about where to put stuff like this

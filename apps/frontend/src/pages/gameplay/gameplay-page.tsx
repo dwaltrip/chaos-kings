@@ -17,7 +17,7 @@ import {
   resetGameplayPage,
 } from '@/domains/gameplay/actions/load-gameplay-page';
 
-import { AppNav } from '@/domains/ui-lib/app-nav';
+import { AppNav } from '@/ui-lib/components/app-nav';
 import { GameChat } from '@/domains/chat/ui/game-chat';
 import { GameplayArmyInfo } from '@/domains/gameplay/pages/gameplay/army-info';
 import { TurnCounter } from '@/domains/gameplay/pages/gameplay/turn-counter';
@@ -79,7 +79,9 @@ function GamePageContent({ gameId }: { gameId: GameId }) {
   }, [gameId]);
 
   // Join/leave gameplay room after game load succeeds.
-  // TODO: We may miss early server updates before join; request a snapshot or have server send one on join if needed.
+  // TODO: We may miss early server updates before join.
+  // Not a big deal for MVP, as we get the full state on the next tick.
+  // Long term: request a snapshot or have server send one on join.
   useEffect(() => {
     let joined = false;
     if (isGameReady) {

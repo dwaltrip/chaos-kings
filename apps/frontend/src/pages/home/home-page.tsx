@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { userStore } from '@/domains/users/user-store';
 
 import { UsernameForm } from './username-form';
-import { AppNav } from '@/domains/ui-lib/app-nav';
+import { AppNav } from '@/ui-lib/components/app-nav';
 
 function HomePage() {
   return (
