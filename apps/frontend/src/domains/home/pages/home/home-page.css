@@ -1,14 +1,2 @@
-.home-page {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    height: 100%;
+.home-page {}
 
-    & .col {
-        height: 100%;
-        
-        & + .col {
-            border-left: 1px solid #bbb;
-        }
-    }
-}

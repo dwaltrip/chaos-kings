@@ -5,8 +5,10 @@ import {
   type User,
 } from '@/domains/users/user-store';
 
+import { Col, ColSection } from './home-page-layout';
 import { UserInfo } from './user-info';
 import { LobbyChat } from './lobby-chat';
+import { ServerPlayerStats } from './server-player-stats';
 import { PlayGameControls } from './play-game-controls';
 
 import './home-page.css';
@@ -22,7 +24,7 @@ function HomePage() {
   const error = userStore((state) => state.error);
 
   return (
-    <div className="home-page">
+    <div className="home-page home-page-layout">
       {error && <ErrorMessage message={`Error loading user: ${error.message}`} />}
       {isUserLoading && <Loading />}
       {user && <HomePageContent user={user} />}
@@ -33,18 +35,30 @@ function HomePage() {
 function HomePageContent({ user }: { user: User }) {
   return (
     <>
-      <div className="col">
-        <UserInfo user={user} />
-      </div>
+      <Col>
+        <ColSection>
+          <UserInfo user={user} />
+        </ColSection>
+      </Col>
 
-      <div className="col">
-        <PlayGameControls />
+      <Col>
+        <ColSection>
+          <ServerPlayerStats />
+        </ColSection>
+
+        <ColSection>
+          {/* active players per mode */}
+          <PlayGameControls />
+        </ColSection>
+
         {/* <GamesSpotlight /> */}
-      </div>
+      </Col>
 
-      <div className="col">
-        <LobbyChat />
-      </div>
+      <Col>
+        <ColSection>
+          <LobbyChat />
+        </ColSection>
+      </Col>
     </>
   );
 }

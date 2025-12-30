@@ -1,0 +1,20 @@
+.home-page-layout {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    height: 100%;
+    width: 100%;
+
+    & .layout-col {
+        height: 100%;
+        
+        & + .layout-col {
+            border-left: 1px solid #aaa;
+        }
+
+        & .col-section {
+            padding: 8px;
+            border-bottom: 1px solid #aaa;
+        }
+    }
+}
