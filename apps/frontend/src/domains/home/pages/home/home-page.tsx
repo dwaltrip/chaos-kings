@@ -6,6 +6,9 @@ import {
 } from '@/domains/users/user-store';
 
 import { UserInfo } from './user-info';
+import { LobbyChat } from './lobby-chat';
+import { GamesSpotlight } from './games-spotlight';
+import { PlayGameControls } from './play-game-controls';
 
 import './home-page.css';
 
@@ -31,17 +34,17 @@ function HomePage() {
 function HomePageContent({ user }: { user: User }) {
   return (
     <>
-      <UserInfo user={user} />
-
-      <div className="lobby-chat">- user list - message list - message input</div>
-
-      <div className="games-spotlight">
-        - featured / cool / recently played games list
+      <div className="col">
+        <UserInfo user={user} />
       </div>
 
-      <div className="play-game-controls">
-        - game mode selection - start game button - queue status - active players per mode
-        - queue settings
+      <div className="col">
+        <PlayGameControls />
+        <GamesSpotlight />
+      </div>
+
+      <div className="col">
+        <LobbyChat />
       </div>
     </>
   );
