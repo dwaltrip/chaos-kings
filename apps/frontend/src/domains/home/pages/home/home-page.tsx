@@ -35,13 +35,13 @@ function HomePage() {
 function HomePageContent({ user }: { user: User }) {
   return (
     <>
-      <Col>
+      <Col className="user-col">
         <ColSection>
           <UserInfo user={user} />
         </ColSection>
       </Col>
 
-      <Col>
+      <Col className="main-col">
         <ColSection>
           <ServerPlayerStats />
         </ColSection>
@@ -54,7 +54,7 @@ function HomePageContent({ user }: { user: User }) {
         {/* <GamesSpotlight /> */}
       </Col>
 
-      <Col>
+      <Col className="chat-col">
         <ColSection>
           <LobbyChat />
         </ColSection>

@@ -1,2 +1,14 @@
-.home-page {}
+.home-page {
+  & .user-col {
+    width: 240px;
+  }
+
+  & .main-col {
+    flex: 1;
+  }
+
+  & .chat-col {
+    width: 320px;
+  }
+}
 

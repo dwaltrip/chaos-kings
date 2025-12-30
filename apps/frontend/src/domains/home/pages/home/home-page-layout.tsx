@@ -1,7 +1,9 @@
+import clsx from 'clsx';
+
 import './home-page-layout.css';
 
-function Col({ children }: { children: React.ReactNode }) {
-  return <div className="layout-col">{children}</div>;
+function Col({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={clsx('layout-col', className)}>{children}</div>;
 }
 
 function ColSection({ children }: { children: React.ReactNode }) {
