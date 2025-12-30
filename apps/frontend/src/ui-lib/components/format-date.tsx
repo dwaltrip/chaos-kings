@@ -1,8 +1,7 @@
 const fmtDate = (date: Date): string => {
   return date.toLocaleDateString(undefined, {
     year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    month: '2-digit',
   });
 };
 

@@ -4,7 +4,10 @@ import {
   userStore,
   type User,
 } from '@/domains/users/user-store';
+
 import { UserInfo } from './user-info';
+
+import './home-page.css';
 
 const Loading = () => <div>Loading...</div>;
 const ErrorMessage = ({ message }: { message: string }) => (
@@ -27,7 +30,7 @@ function HomePage() {
 
 function HomePageContent({ user }: { user: User }) {
   return (
-    <div>
+    <>
       <UserInfo user={user} />
 
       <div className="lobby-chat">- user list - message list - message input</div>
@@ -40,7 +43,7 @@ function HomePageContent({ user }: { user: User }) {
         - game mode selection - start game button - queue status - active players per mode
         - queue settings
       </div>
-    </div>
+    </>
   );
 }
 
