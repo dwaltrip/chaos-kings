@@ -1,8 +1,10 @@
 
 node_modules/
-.claude/*
-!.claude/settings.json
+
+# Claude Code
+# ignore personal config / claude.md files (in root and all subdirectories)
 **/.claude/settings.local.json
+**/.claude/CLAUDE.local.md
 
 .codex/zsh/
 
