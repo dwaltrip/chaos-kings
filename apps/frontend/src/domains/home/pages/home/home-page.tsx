@@ -7,7 +7,6 @@ import {
 
 import { UserInfo } from './user-info';
 import { LobbyChat } from './lobby-chat';
-import { GamesSpotlight } from './games-spotlight';
 import { PlayGameControls } from './play-game-controls';
 
 import './home-page.css';
@@ -40,7 +39,7 @@ function HomePageContent({ user }: { user: User }) {
 
       <div className="col">
         <PlayGameControls />
-        <GamesSpotlight />
+        {/* <GamesSpotlight /> */}
       </div>
 
       <div className="col">
