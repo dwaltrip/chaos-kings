@@ -54,11 +54,13 @@ function HomePageContent({ user }: { user: User }) {
         {/* <GamesSpotlight /> */}
       </Col>
 
+      {/*
       <Col className="chat-col">
         <ColSection>
           <LobbyChat />
         </ColSection>
       </Col>
+      */}
     </>
   );
 }
