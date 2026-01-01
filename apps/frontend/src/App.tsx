@@ -8,6 +8,8 @@ import { GameListPage } from '@/pages/games-list/game-list-page';
 import { JoinGamePage } from '@/pages/join-game/join-game-page';
 import { ReplayPage } from '@/domains/replay/pages/replay-page';
 
+import { BestStartMainPage, BestStartPlayPage } from '@/domains/puzzles/pages';
+
 import { useUserSessionAndWsInit } from '@/hooks/use-user-session-and-ws-init';
 
 function App() {
@@ -26,6 +28,9 @@ function App() {
         <Route path="games/:gameId" element={<GameplayPage />} />
         <Route path="join-game" element={<JoinGamePage />} />
         <Route path="replay/:gameId" element={<ReplayPage />} />
+
+        <Route path="puzzles" element={<BestStartMainPage />} />
+        <Route path="puzzles/:puzzleId" element={<BestStartPlayPage />} />
       </Routes>
     </div>
   );
