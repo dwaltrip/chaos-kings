@@ -1,9 +1,9 @@
 import type { User } from '@/domains/users/types';
-// import { apiService } from '@/services/api-service';
+import { puzzlesWsEffects } from '@/domains/puzzles/ws-effects';
 
 function startPlayingPuzzles(user: User) {
   console.log('startPlayingPuzzles:', user.username);
-  // const resp = apiService.post('puzzles');
+  puzzlesWsEffects.sendStartPlaying();
 }
 
 export { startPlayingPuzzles };

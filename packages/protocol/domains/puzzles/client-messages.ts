@@ -26,7 +26,7 @@ type CancelMovesMessage = ExtractMsg<PuzzlesClientMessage, 'puzzles:cancel-moves
 type UndoMoveMessage = ExtractMsg<PuzzlesClientMessage, 'puzzles:undo-move'>;
 
 const MsgCreators = {
-  createStartPlayingMessage: (gameId: number): PuzzlesStartPlayingMessage => ({
+  createStartPlayingMessage: (): PuzzlesStartPlayingMessage => ({
     type: 'puzzles:start-playing',
     payload: {},
   }),
