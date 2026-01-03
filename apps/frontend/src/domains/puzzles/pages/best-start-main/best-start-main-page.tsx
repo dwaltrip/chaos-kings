@@ -1,9 +1,36 @@
+import type { User } from '@/domains/users/types';
+
+import {
+  userStore,
+  selectUser,
+  // selectIsLoading,
+} from '@/domains/users/user-store';
+import { startPlayingPuzzles } from '@/domains/puzzles/actions';
+
 function BestStartMainPage() {
-  return <BestStartMainPageContent></BestStartMainPageContent>;
+  const currentUser = userStore(selectUser);
+  // const isLoading = userStore(selectIsLoading);
+
+  return currentUser ? (
+    <BestStartMainPageContent user={currentUser} />
+  ) : (
+    <div>Loading...</div>
+  );
 }
 
-function BestStartMainPageContent() {
-  return <div className="best-start-main-page">Best Start Main Page</div>;
+interface PageProps {
+  user: User;
+}
+function BestStartMainPageContent({ user }: PageProps) {
+  const startPuzzle = () => {
+    startPlayingPuzzles(user);
+  };
+
+  return (
+    <div className="best--main-page">
+      <button onClick={startPuzzle}>Start Puzzle!</button>
+    </div>
+  );
 }
 
 export { BestStartMainPage };
