@@ -4,6 +4,8 @@
 // --------------------------------------------------------------------------
 import type { GameGrid, Size2d, PlayerSquare, Coord } from '@core/types';
 import { SquareType } from '@core/types';
+import { makeGeneralSquare } from '@core/map/make-squares';
+
 import { generateTerrainWithCandidates } from '@core/terrain-generation/generate-terrain';
 import { MountainCandidateGenerator } from '@core/terrain-generation/mountain-candidate-generator';
 import { convertToGameGrid } from '@core/terrain-generation/game-grid-converter';
@@ -96,13 +98,7 @@ function addGeneralsWithDistanceConstraint(
       );
     }
 
-    const generalSquare: PlayerSquare = {
-      coord,
-      type: SquareType.GENERAL,
-      playerIndex: i,
-      units: 1,
-    };
-
+    const generalSquare = makeGeneralSquare(coord, i);
     grid[coord.y][coord.x] = generalSquare;
     generals.push(generalSquare);
   }
