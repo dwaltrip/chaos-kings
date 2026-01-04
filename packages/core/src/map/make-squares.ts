@@ -1,4 +1,5 @@
-import { Coord, PlayerSquare, SquareType } from '@core/types';
+import { SquareType } from '@core/types';
+import type { Coord, PlayerSquare } from '@core/types';
 
 function makeGeneralSquare(coord: Coord, playerIndex: number): PlayerSquare {
   return {

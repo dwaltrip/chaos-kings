@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { useNavigate } from 'react-router';
 
 import type { User } from '@/domains/users/types';
@@ -32,9 +33,24 @@ function BestStartMainPageContent({ user }: PageProps) {
   };
 
   return (
-    <div className="best--main-page">
-      <button onClick={startPuzzle}>Start Puzzle!</button>
+    <div className="best--main-page p-10">
+      <Button onClick={startPuzzle}>Start Puzzle!</Button>
     </div>
+  );
+}
+
+function Button({ children, onClick }: any) {
+  return (
+    <button
+      className={clsx(
+        'bg-transparent text-blue-700 font-semibold',
+        'py-2 px-4 border border-blue-500 rounded',
+        'hover:bg-blue-500 hover:text-white hover:border-transparent',
+      )}
+      onClick={onClick}
+    >
+      {children}
+    </button>
   );
 }
 
