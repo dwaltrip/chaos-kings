@@ -4,12 +4,12 @@ import type { GameWithPlayers } from '@platform/domains/games/types';
 import { gameplayPageStore } from '@/domains/gameplay/stores/gameplay-page-store';
 import { gameplayActions } from '@/domains/gameplay/stores/gameplay-store-v2';
 import { userStore } from '@/domains/users/user-store';
+import { updateGameplayState } from './update-gameplay-state';
 
 function setupGameState(game: GameWithPlayers): void {
   const { setGame, setCountdownActive } = gameplayPageStore.getState().actions;
   const { setPlayerData, setGameplayReady } = gameplayActions();
 
-  // Set game in metadata store
   setGame(game);
 
   // TODO: Should pass userId as parameter instead of fetching from store
@@ -17,6 +17,12 @@ function setupGameState(game: GameWithPlayers): void {
   const currentUser = userStore.getState().data;
   setPlayerData(game.players, currentUser?.id ?? null);
   setGameplayReady(true);
+
+  // TODO: better way to check this?
+  if ('board' in game.game_state) {
+    const { tick, board } = game.game_state;
+    updateGameplayState(tick, board);
+  }
 
   // TODO: Think about if this logic should go here.
   // Now that it's here inside this `setupGameState` action,

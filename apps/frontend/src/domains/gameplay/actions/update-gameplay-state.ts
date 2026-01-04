@@ -13,7 +13,7 @@ function updateGameplayState(
   tick: number,
   board: BoardState,
   playerQueues: PlayerQueuesMap = {},
-  playerStats: PlayerStats[],
+  playerStats: PlayerStats[] = [],
 ) {
   const state = useGameplayStoreV2.getState();
 
