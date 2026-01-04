@@ -12,6 +12,7 @@ import { ServerPlayerStats } from './server-player-stats';
 import { PlayGameControls } from './play-game-controls';
 
 import './home-page.css';
+import { Link } from 'react-router';
 
 const Loading = () => <div>Loading...</div>;
 const ErrorMessage = ({ message }: { message: string }) => (
@@ -49,6 +50,9 @@ function HomePageContent({ user }: { user: User }) {
         <ColSection>
           {/* active players per mode */}
           <PlayGameControls />
+          <div>
+            <Link to="/puzzles">Puzzles!</Link>
+          </div>
         </ColSection>
 
         {/* <GamesSpotlight /> */}

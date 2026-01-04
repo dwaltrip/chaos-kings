@@ -1,8 +1,4 @@
-import { useParams } from 'react-router';
-
 function BestStartPlayPage() {
-  const { puzzleId } = useParams();
-  console.log('puzzle id:', puzzleId);
   return <BestStartPlayPageContent></BestStartPlayPageContent>;
 }
 

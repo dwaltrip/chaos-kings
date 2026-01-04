@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router';
+
 import type { User } from '@/domains/users/types';
 
 import {
@@ -22,8 +24,11 @@ interface PageProps {
   user: User;
 }
 function BestStartMainPageContent({ user }: PageProps) {
+  const navigate = useNavigate();
+
   const startPuzzle = () => {
-    startPlayingPuzzles(user);
+    // startPlayingPuzzles(user);
+    navigate('/puzzles/play');
   };
 
   return (

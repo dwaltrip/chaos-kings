@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router';
 
+// import { HomePage } from '@/pages/home/home-page';
 import { HomePage } from '@/domains/home/pages/home/home-page';
 import { ProfilePage } from '@/domains/users/pages/profile/profile-page';
 
@@ -30,7 +31,7 @@ function App() {
         <Route path="replay/:gameId" element={<ReplayPage />} />
 
         <Route path="puzzles" element={<BestStartMainPage />} />
-        <Route path="puzzles/:puzzleId" element={<BestStartPlayPage />} />
+        <Route path="puzzles/play" element={<BestStartPlayPage />} />
       </Routes>
     </div>
   );
