@@ -5,7 +5,9 @@ import type { PuzzlesClientMessage } from '@protocol/domains/puzzles/client-mess
 import type { ConnectionContext } from '@/ws/connection-context';
 
 const puzzlesHandlers = {
-  'puzzles:start-playing': () => {},
+  'puzzles:start-playing': ({}, ctx) => {
+    console.log(ctx.userId);
+  },
   'puzzles:move-request': () => {},
   'puzzles:undo-move': () => {},
   'puzzles:cancel-moves': () => {},
