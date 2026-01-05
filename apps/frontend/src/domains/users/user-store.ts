@@ -14,5 +14,7 @@ const selectIsLoading = (state: UserState): boolean => state.isLoading();
 
 const selectIsReady = (state: UserState): boolean => state.isReady();
 
+const selectError = (state: UserState): Error | null => state.error;
+
 export type { User };
-export { userStore, selectUser, selectIsLoading, selectIsReady };
+export { userStore, selectUser, selectIsLoading, selectIsReady, selectError };

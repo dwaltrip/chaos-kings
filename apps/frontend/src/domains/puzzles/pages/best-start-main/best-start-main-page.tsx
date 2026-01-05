@@ -1,23 +1,26 @@
-import clsx from 'clsx';
-import { useNavigate } from 'react-router';
+import { Link } from 'react-router';
 
 import type { User } from '@/domains/users/types';
 
 import {
   userStore,
   selectUser,
-  // selectIsLoading,
+  selectIsLoading,
+  selectError,
 } from '@/domains/users/user-store';
-import { startPlayingPuzzles } from '@/domains/puzzles/actions';
 
 function BestStartMainPage() {
   const currentUser = userStore(selectUser);
-  // const isLoading = userStore(selectIsLoading);
+  const isLoading = userStore(selectIsLoading);
+  const error = userStore(selectError);
 
   return currentUser ? (
     <BestStartMainPageContent user={currentUser} />
-  ) : (
+  ) : // TODO: create nice abstraction for this?
+  isLoading ? (
     <div>Loading...</div>
+  ) : (
+    <div className="text-red">{error ? error.message : 'Unexpected error'}</div>
   );
 }
 
@@ -25,32 +28,11 @@ interface PageProps {
   user: User;
 }
 function BestStartMainPageContent({ user }: PageProps) {
-  const navigate = useNavigate();
-
-  const startPuzzle = () => {
-    // startPlayingPuzzles(user);
-    navigate('/puzzles/play');
-  };
-
+  console.log('Puzzles Main Page - user:', user.username);
   return (
     <div className="best--main-page p-10">
-      <Button onClick={startPuzzle}>Start Puzzle!</Button>
+      <Link to="/puzzles/play">Play Puzzles</Link>
     </div>
-  );
-}
-
-function Button({ children, onClick }: any) {
-  return (
-    <button
-      className={clsx(
-        'bg-transparent text-blue-700 font-semibold',
-        'py-2 px-4 border border-blue-500 rounded',
-        'hover:bg-blue-500 hover:text-white hover:border-transparent',
-      )}
-      onClick={onClick}
-    >
-      {children}
-    </button>
   );
 }
 
