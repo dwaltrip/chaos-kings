@@ -1,4 +1,5 @@
 import { GameId, RoomId, UserId } from '@kernel/ids';
+
 import { GameState, BoardState, Direction, Coord, PlayerIndex } from '@core/types';
 import { GameStatus } from '@core/game/types';
 import { Board } from '@core/board';
@@ -11,12 +12,14 @@ import {
 import { processStep as coreProcessStep } from '@core/step-processor';
 import type { MoveEvent } from '@core/replay/types';
 import { isPlayerSquare } from '@core/square';
+
 import { buildGameRoomId } from '@platform/domains/gameplay/helpers';
 import type { PlayerStats } from '@platform/domains/gameplay/types';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
 import { createScopedLogger } from '@/utils/scoped-logger';
 import { runInContextWithTransaction } from '@/context/app-context';
+
 import { gameRepository } from '@/domains/games/game-repository';
 import { getGame, endGame } from '@/domains/games/actions';
 import { gameplayWsEffects } from '@/domains/gameplay/ws-effects';

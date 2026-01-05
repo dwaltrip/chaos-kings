@@ -7,7 +7,7 @@ import { setupAndStartPuzzle } from '@/domains/puzzles/actions';
 
 const puzzlesHandlers = {
   'puzzles:start-playing': ({}, ctx) => {
-    setupAndStartPuzzle(UserId(ctx.userId));
+    setupAndStartPuzzle(UserId(ctx.userId), ctx.connectionId);
   },
   'puzzles:move-request': () => {},
   'puzzles:undo-move': () => {},
