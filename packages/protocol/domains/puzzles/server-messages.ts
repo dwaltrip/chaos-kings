@@ -1,6 +1,10 @@
 import type { MessageUnion } from '@protocol/utils/message-helpers';
 import type { ExtractMsg } from '@protocol/utils/type-helpers';
 
+// -----------------------------------------------------------
+// TODO: Fix usages of `any` in this file
+// -----------------------------------------------------------
+
 type PuzzlesServerPayloadMap = {
   'puzzles:state-update': {
     board: any;
@@ -11,11 +15,15 @@ type PuzzlesServerPayloadMap = {
 };
 
 type PuzzlesServerMessage = MessageUnion<PuzzlesServerPayloadMap>;
-type StateUpdateMessage = ExtractMsg<PuzzlesServerMessage, 'puzzle:state-update'>;
-type EndPuzzleMessage = ExtractMsg<PuzzlesServerMessage, 'puzzle:end-puzzle'>;
+type StateUpdateMessage = ExtractMsg<PuzzlesServerMessage, 'puzzles:state-update'>;
+type EndPuzzleMessage = ExtractMsg<PuzzlesServerMessage, 'puzzles:end-puzzle'>;
 
 const MsgCreators = {
-  // StateUpdateMessage
+  createStateUpdateMessage: (board: any): StateUpdateMessage => ({
+    type: 'puzzles:state-update',
+    payload: { board },
+  }),
+
   // EndPuzzleMessage
 };
 

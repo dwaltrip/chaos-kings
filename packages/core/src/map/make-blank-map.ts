@@ -1,6 +1,6 @@
 import { range } from '@utils/range';
 
-import { GameGrid } from '@core/types';
+import type { GameGrid } from '@core/types';
 import { blankSquare } from '@core/square';
 
 function makeBlankMap(height: number, width: number): GameGrid {

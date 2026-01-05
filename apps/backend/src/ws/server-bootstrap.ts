@@ -11,16 +11,19 @@ import { runInContextWithTransaction } from '@/context/app-context';
 import { chatHandlers } from '@/domains/chat/handlers';
 import { matchmakingHandlers } from '@/domains/matchmaking/handlers';
 import { gameplayHandlers } from '@/domains/gameplay/handlers';
+import { puzzlesHandlers } from '@/domains/puzzles/handlers';
 import { systemHandlers } from '@/domains/system/handlers';
+
 import { roomMembershipTracker } from '@/domains/system/membership-tracker';
 import { systemWsEffects } from '@/domains/system/ws-effects';
 
 // Merge all domain handlers into single map
 const mergedHandlers: HandlerMapWithCtx<ClientMessage, ConnectionContext> = {
+  ...systemHandlers,
   ...chatHandlers,
   ...matchmakingHandlers,
-  ...systemHandlers,
   ...gameplayHandlers,
+  ...puzzlesHandlers,
 } satisfies HandlerMapWithCtx<ClientMessage, ConnectionContext>;
 
 function setupWebSocketV2() {
