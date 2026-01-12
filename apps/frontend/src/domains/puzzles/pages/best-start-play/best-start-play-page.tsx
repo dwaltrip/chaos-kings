@@ -1,14 +1,18 @@
 import clsx from 'clsx';
 
+import type { Direction } from '@core/types';
+
 import {
   userStore,
   selectUser,
   selectIsLoading,
   selectError,
 } from '@/domains/users/user-store';
+import { useKeyboardControls } from '@/domains/gameplay/hooks/use-keyboard-controls';
 
 import {
   startPuzzle,
+  queueMove,
   undoMove,
   clearMoves,
 } from '@/domains/puzzles/actions/puzzle-actions';
@@ -18,6 +22,7 @@ import {
   selectBoard,
   selectTick,
   selectResult,
+  selectSelectedTile,
 } from '@/domains/puzzles/stores/puzzle-store';
 import { PuzzleBoard } from '@/domains/puzzles/ui/puzzle-board';
 
@@ -63,6 +68,18 @@ function IdleUI() {
 function PlayingUI() {
   const board = usePuzzleStore(selectBoard);
   const tick = usePuzzleStore(selectTick);
+  const selectedTile = usePuzzleStore(selectSelectedTile);
+
+  useKeyboardControls({
+    onMoveRequest: (dir: Direction) => {
+      if (selectedTile) {
+        queueMove(selectedTile, dir);
+      }
+    },
+    onUndoMove: undoMove,
+    onCancelMoves: clearMoves,
+    disabled: false,
+  });
 
   if (!board) return null;
 
@@ -84,7 +101,7 @@ function PlayingUI() {
   }
 
   return (
-    <div>
+    <div className="flex flex-col flex-1 min-h-0">
       <div className="mb-4 flex gap-6">
         <span>
           Turn: {turn}/{maxTurns}
@@ -93,12 +110,9 @@ function PlayingUI() {
         <span>Army: {armyCount}</span>
       </div>
 
-      <div className="mb-4 flex gap-2">
-        <Button onClick={undoMove}>Undo</Button>
-        <Button onClick={clearMoves}>Clear All</Button>
+      <div className="flex-1 min-h-0">
+        <PuzzleBoard boardState={board} />
       </div>
-
-      <PuzzleBoard boardState={board} />
     </div>
   );
 }
@@ -110,7 +124,7 @@ function EndedUI() {
   if (!result) return null;
 
   return (
-    <div>
+    <div className="flex flex-col flex-1 min-h-0">
       <div className="mb-4">
         <h4 className="text-lg font-semibold mb-2">Puzzle Complete!</h4>
         <div className="flex gap-6">
@@ -123,7 +137,11 @@ function EndedUI() {
         <Button onClick={startPuzzle}>Play Again</Button>
       </div>
 
-      {board && <PuzzleBoard boardState={board} />}
+      {board && (
+        <div className="flex-1 min-h-0">
+          <PuzzleBoard boardState={board} />
+        </div>
+      )}
     </div>
   );
 }
