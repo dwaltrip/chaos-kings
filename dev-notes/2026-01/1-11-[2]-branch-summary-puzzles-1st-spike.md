@@ -13,7 +13,9 @@ Inherits home page layout, nav refactor, and user domain improvements from `spik
 
 "Best Start" puzzle mode - a mini-game/practice mode for optimizing the first 25 turns (one "round") of gameplay.
 
-**Strategic rationale:** Puzzles are complementary to generals.io rather than competitive. Players can play real games there and do puzzles here. This is a community-friendly first release that adds value without fragmenting the player base.
+**Strategic rationale:** The game is currently a near-clone of generals.io, and Daniel is an active member of that community. Prematurely launching a competing clone could cause drama in the small, niche community. A full launch may happen eventually but will require careful thought and messaging, and the game should be much more polished with significant differentiation first.
+
+Puzzles are complementary rather than competitive—players can play real games on generals.io and do puzzles here. This is a safer, more community-friendly first release that adds value without fragmenting the player base.
 
 ---
 

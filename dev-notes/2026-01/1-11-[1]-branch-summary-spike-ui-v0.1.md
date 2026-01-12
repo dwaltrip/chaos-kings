@@ -9,7 +9,7 @@
 
 ## Summary
 
-First real pass at building the frontend UI beyond stubs. Previously, all UI except the GameBoard was placeholder/stub code while the game engine was being developed.
+First real pass at building the frontend UI beyond stubs. Previously, all UI was temporary / throwaway, solely to enable development and testing of the game engine and gameplay (the only exception is GameUI / GameBoard, which are somewhat polished).
 
 **Approach:** Minimal styling, focus on UX and layout fundamentals. Intentionally avoiding strong aesthetic/stylistic choices until the v1 vision is clearer.
 
@@ -17,10 +17,7 @@ First real pass at building the frontend UI beyond stubs. Previously, all UI exc
 
 ## Why This Work Was Paused
 
-The game is currently a near-clone of generals.io. Daniel is an active member of that community and doesn't want to:
-- Launch a competing clone that could fragment the small, niche community
-- Commit to long-term support before the game has meaningful differentiation
-
+The game is currently a near-clone of generals.io. Daniel is an active member of that community and doesn't want to pre-maturely launch a competing clone that could cause drama in the small, niche community. This may happen eventually but will require very careful thought and messaging, and the game should be much more polished and have significantly more differentiation.
 **Pivot:** Puzzles are a complementary feature - players can play real games on generals.io and do puzzles here. This is a safer, more community-friendly first release.
 
 Work continues in the `puzzles-1st-spike` branch.
