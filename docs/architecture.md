@@ -1,9 +1,9 @@
 # Chaos Kings - Architecture Guide
 
 **Last Updated:** 2025-12-13
-**Status:** v2 WebSocket architecture refactor complete
+**Status:** October 2025 WebSocket infra and monorepo structure refactor complete
 
-This document describes the current state of the codebase after the October 2025 WebSocket architecture and monorepo refactor. For historical context on the refactor itself, see `epics/2025-10/1-refactor-ws-arch-and-monorepo-structure/`.
+This document describes the current state of the codebase after the October 2025 refactor. For historical context on the refactor itself, see `epics/2025-10/1-refactor-ws-arch-and-monorepo-structure/`.
 
 ---
 
