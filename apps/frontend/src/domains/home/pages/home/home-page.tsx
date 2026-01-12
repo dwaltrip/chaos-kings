@@ -7,7 +7,6 @@ import {
 
 import { Col, ColSection } from './home-page-layout';
 import { UserInfo } from './user-info';
-import { LobbyChat } from './lobby-chat';
 import { ServerPlayerStats } from './server-player-stats';
 import { PlayGameControls } from './play-game-controls';
 

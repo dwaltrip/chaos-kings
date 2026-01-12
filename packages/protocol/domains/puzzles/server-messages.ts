@@ -1,16 +1,23 @@
 import type { MessageUnion } from '@protocol/utils/message-helpers';
 import type { ExtractMsg } from '@protocol/utils/type-helpers';
 
-// -----------------------------------------------------------
-// TODO: Fix usages of `any` in this file
-// -----------------------------------------------------------
+import type { BoardState, Movement } from '@core/types';
+
+// Result type for best-start puzzle (will move to @core/puzzles later)
+interface BestStartResult {
+  landCount: number;
+  armyCount: number;
+}
 
 type PuzzlesServerPayloadMap = {
   'puzzles:state-update': {
-    board: any;
+    tick: number;
+    board: BoardState;
+    moveQueue: Movement[];
   };
   'puzzles:end-puzzle': {
-    finalBoardState: any;
+    finalBoard: BoardState;
+    result: BestStartResult;
   };
 };
 
@@ -19,13 +26,23 @@ type StateUpdateMessage = ExtractMsg<PuzzlesServerMessage, 'puzzles:state-update
 type EndPuzzleMessage = ExtractMsg<PuzzlesServerMessage, 'puzzles:end-puzzle'>;
 
 const MsgCreators = {
-  createStateUpdateMessage: (board: any): StateUpdateMessage => ({
+  createStateUpdateMessage: (
+    tick: number,
+    board: BoardState,
+    moveQueue: Movement[],
+  ): StateUpdateMessage => ({
     type: 'puzzles:state-update',
-    payload: { board },
+    payload: { tick, board, moveQueue },
   }),
 
-  // EndPuzzleMessage
+  createEndPuzzleMessage: (
+    finalBoard: BoardState,
+    result: BestStartResult,
+  ): EndPuzzleMessage => ({
+    type: 'puzzles:end-puzzle',
+    payload: { finalBoard, result },
+  }),
 };
 
-export type { PuzzlesServerPayloadMap, PuzzlesServerMessage };
+export type { PuzzlesServerPayloadMap, PuzzlesServerMessage, BestStartResult };
 export { MsgCreators };

@@ -1,1 +1,1 @@
-export { setupAndStartPuzzle } from './setup-and-start-puzzle';
+export { puzzleActions } from './puzzle-actions';

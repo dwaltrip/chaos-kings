@@ -9,12 +9,14 @@ import type { ClientMessage, ServerMessage } from '@/ws/message-types';
 import { chatHandlers } from '@/domains/chat/handlers';
 import { gameplayHandlers } from '@/domains/gameplay/handlers';
 import { matchmakingHandlers } from '@/domains/matchmaking/handlers';
+import { puzzlesHandlers } from '@/domains/puzzles/handlers';
 import { systemHandlers } from '@/domains/system/handlers';
 
 const mergedHandlers = {
   ...chatHandlers,
   ...matchmakingHandlers,
   ...gameplayHandlers,
+  ...puzzlesHandlers,
   ...systemHandlers,
 } satisfies HandlerMap<ServerMessage>;
 

@@ -5,6 +5,7 @@ import type { GameplayClientMessage } from '@protocol/domains/gameplay/client-me
 import type { GameplayServerMessage } from '@protocol/domains/gameplay/server-messages';
 
 import type { PuzzlesClientMessage } from '@protocol/domains/puzzles/client-messages';
+import type { PuzzlesServerMessage } from '@protocol/domains/puzzles/server-messages';
 
 import type { MatchmakingClientMessage } from '@protocol/domains/matchmaking/client-messages';
 import type { MatchmakingServerMessage } from '@protocol/domains/matchmaking/server-messages';
@@ -23,6 +24,7 @@ type ServerMessage =
   | ChatServerMessage
   | MatchmakingServerMessage
   | GameplayServerMessage
+  | PuzzlesServerMessage
   | SystemServerMessage;
 
 export type { ClientMessage, ServerMessage };
