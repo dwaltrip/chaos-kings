@@ -1,8 +1,8 @@
 import { RoomId, UserId } from '@kernel/ids';
 
 import type { GameState, BoardState, Coord, Direction, Movement } from '@core/types';
+import { Board } from '@core/board';
 import { processStep as coreProcessStep } from '@core/step-processor';
-import { validateMove } from '@core/moves/validate-move';
 import type { MoveEvent } from '@core/replay/types';
 import {
   createBestStartPuzzle,
@@ -119,10 +119,10 @@ class PuzzleManager {
   queueMove(source: Coord, direction: Direction): void {
     if (this.ended) return;
 
-    // Validate move via core
-    const validation = validateMove(this.gameState.board, 0, source, direction);
-    if (!validation.ok) {
-      this.log.debug(`Invalid move: ${validation.reason}`);
+    // Basic validation at queue time - only check bounds, not ownership
+    // (matches gameplay behavior - allows queueing moves that will become valid)
+    if (!Board.isCoordValid(this.gameState.board, source)) {
+      this.log.debug(`Invalid coords ${source.x},${source.y}`);
       return;
     }
 

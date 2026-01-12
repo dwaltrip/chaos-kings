@@ -98,11 +98,11 @@ const PuzzleTile = React.memo(
       if (isPuzzleEnded) return;
 
       // If clicking a valid move target, queue the move
+      // queueMove handles advancing the selection to the destination
       if (selectedTile && isValidMove) {
         const direction = getDirection(selectedTile, coord);
         if (direction) {
           queueMove(selectedTile, direction);
-          setSelectedTile(null);
           return;
         }
       }

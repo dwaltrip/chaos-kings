@@ -24,6 +24,7 @@ interface PuzzleState {
     setEnded: (result: BestStartResult, finalBoard: BoardState) => void;
     reset: () => void;
     setSelectedTile: (coord: Coord | null) => void;
+    addQueuedMove: (move: Movement) => void;
   };
 }
 
@@ -62,6 +63,8 @@ const usePuzzleStore = create<PuzzleState>((set) => ({
       }),
 
     setSelectedTile: (coord) => set({ selectedTile: coord }),
+
+    addQueuedMove: (move) => set((state) => ({ moveQueue: [...state.moveQueue, move] })),
   },
 }));
 
