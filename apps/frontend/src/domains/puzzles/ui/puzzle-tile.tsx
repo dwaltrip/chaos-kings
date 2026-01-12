@@ -12,9 +12,11 @@ import {
   selectSelectedTile,
   selectMoveQueue,
   selectStatus,
+  selectTick,
   selectActions,
 } from '@/domains/puzzles/stores/puzzle-store';
 import { queueMove } from '@/domains/puzzles/actions/puzzle-actions';
+import { getVisibleSquaresForPuzzle } from '@/domains/puzzles/utils/visibility-cache';
 
 function getDirection(from: Coord, to: Coord): Direction | null {
   if (to.x === from.x + 1 && to.y === from.y) return 'RIGHT';
@@ -28,12 +30,16 @@ interface PuzzleTileProps {
   coord: Coord;
 }
 
+// TODO: review how GameTile uses selectors to avoid unnecessary re-renders
+// May want to remove React.memo. Should double check that we are using the
+// memo properly for GameTile as well.
 const PuzzleTile = React.memo(
   ({ coord }: PuzzleTileProps) => {
     const board = usePuzzleStore(selectBoard);
     const selectedTile = usePuzzleStore(selectSelectedTile);
     const moveQueue = usePuzzleStore(selectMoveQueue);
     const status = usePuzzleStore(selectStatus);
+    const tick = usePuzzleStore(selectTick);
     const { setSelectedTile } = usePuzzleStore(selectActions);
 
     if (!board) return null;
@@ -43,7 +49,7 @@ const PuzzleTile = React.memo(
     const isMountain = isMountainSquare(square);
     const isPuzzleEnded = status === 'ended';
 
-    // Calculate visibility (player 0 is always the puzzle player)
+    // Get visibility (cached by tick to avoid recalculating per tile)
     const visibleSquares = useMemo(() => {
       if (!board) return new Set<string>();
       // If puzzle ended, everything is visible
@@ -52,8 +58,8 @@ const PuzzleTile = React.memo(
         Board.forEachCoord(board, (c) => allVisible.add(serializeCoord(c)));
         return allVisible;
       }
-      return Board.getVisibleSquares(board, 0);
-    }, [board, isPuzzleEnded]);
+      return getVisibleSquaresForPuzzle(board, tick);
+    }, [board, isPuzzleEnded, tick]);
 
     const coordKey = serializeCoord(coord);
     const isVisible = visibleSquares.has(coordKey);

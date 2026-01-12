@@ -14,6 +14,7 @@ import { PuzzleManager } from '@/domains/puzzles/puzzle-manager';
 
 // Maps userId → active PuzzleManager instance
 // TODO: re-evaluate for multi-tab - currently one puzzle per user
+// TODO: wire cleanupPuzzle to disconnect handler (currently puzzles run until natural completion)
 const activePuzzles = new Map<UserId, PuzzleManager>();
 
 const DEFAULT_BEST_START_CONFIG: BestStartConfig = {

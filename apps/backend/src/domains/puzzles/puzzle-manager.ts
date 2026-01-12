@@ -1,7 +1,6 @@
 import { RoomId, UserId } from '@kernel/ids';
 
 import type { GameState, BoardState, Coord, Direction, Movement } from '@core/types';
-import { TICK_RATE_MS } from '@core/game-timing-config';
 import { processStep as coreProcessStep } from '@core/step-processor';
 import { validateMove } from '@core/moves/validate-move';
 import type { MoveEvent } from '@core/replay/types';

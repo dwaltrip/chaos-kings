@@ -66,6 +66,8 @@ function PlayingUI() {
 
   if (!board) return null;
 
+  // TODO: review tick-to-turn conversion logic (floor vs ceil), and move to @core
+  // TODO: maxTurns should come from puzzle config, not be hardcoded
   const turn = Math.floor(tick / 2);
   const maxTurns = 25;
 
