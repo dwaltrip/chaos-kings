@@ -73,7 +73,18 @@ interface BestStartResult {
 
 The "25 turns" in Best Start isn't a separate config - it comes from `timing.armyProductionTicks`. One "round" = one army production cycle. The puzzle ends when the first round completes.
 
-This means `isBestStartComplete` checks: `tick >= config.timing.armyProductionTicks`
+**Turns vs Ticks:** With default config, 2 ticks = 1 turn. So 25 turns = 50 ticks = `armyProductionTicks`.
+
+This means `isBestStartComplete` checks: `tick >= config.timing.armyProductionTicks` (50 for default config)
+
+### Tick Lifecycle (owned by @core)
+
+The tick lifecycle is a game rule, not an orchestration detail:
+- **Initial state:** `tick: 0`
+- **Each step:** Increment tick *before* processing (so first processed tick is 1)
+- **Completion:** `tick >= armyProductionTicks` (after 50 ticks processed for default config)
+
+PuzzleManager doesn't decide these rules - it just calls `processStep()` and asks `isBestStartComplete()`.
 
 ### Functions
 
@@ -96,10 +107,7 @@ This means `isBestStartComplete` checks: `tick >= config.timing.armyProductionTi
 
 - **`processStep()`** - Same function GameServer uses for move processing
 - **`GameState`, `BoardState`** - Existing types, no puzzle-specific state types needed
-
-### New Core Functions (to build for puzzles, later reuse in GameServer refactor)
-
-- **`isMoveValid()`** - Move validation (bounds, ownership, direction). Build as part of puzzle work, then GameServer refactor can adopt it.
+- **`validateMove()`** - Already exists at `@core/moves/validate-move.ts`. Validates bounds, ownership, sufficient units, and blocked destination. Returns `{ ok: true }` or `{ ok: false, reason }`. No new validation code needed.
 
 ---
 
@@ -155,7 +163,7 @@ class PuzzleManager {
 
   // Move queue (orchestration)
   queueMove(source: Coord, direction: Direction): void {
-    // Validate via core: isMoveValid(...)
+    // Validate via core: validateMove(board, playerIndex, source, direction)
     // Add to queue if valid
   }
 
@@ -305,8 +313,8 @@ Backend                                    Core
 Client                    Backend                      Core
   |                          |                           |
   |--puzzles:move-request--->|                           |
-  |                          |------isMoveValid()------->|
-  |                          |<-------- boolean ---------|
+  |                          |------validateMove()------>|
+  |                          |<-------- result ----------|
   |                          |                           |
   |                          | [if valid: add to queue]  |
   |                          |                           |
@@ -324,7 +332,7 @@ const DEFAULT_BEST_START_CONFIG: BestStartConfig = {
   timing: {
     tickRateMs: 500,           // from existing TICK_RATE_MS
     generalProductionTicks: 2, // from existing config
-    armyProductionTicks: 25,   // from existing config - this is maxTurns
+    armyProductionTicks: 50,   // from existing config - 50 ticks = 25 turns = 1 round
   },
   mapSize: { width: 21, height: 21 },
 };
@@ -339,17 +347,21 @@ const DEFAULT_BEST_START_CONFIG: BestStartConfig = {
 
 ---
 
-## Open Questions (To Resolve During Implementation)
+## Decisions Made
 
-1. **Move queue broadcast:** Should state updates include the player's move queue so UI can render pending moves? (Probably yes, GameServer does this)
+1. **Move queue broadcast:** Yes, state updates include the player's move queue so UI can render pending moves. (Same as GameServer)
 
-2. **Immediate feedback:** When player queues a move, should we broadcast state immediately, or wait for next tick? (GameServer waits for tick)
+2. **Immediate feedback:** Wait for next tick to broadcast. (Same as GameServer)
 
-3. **Pause/resume:** If player navigates away, should puzzle pause? Or just keep ticking? (Probably keep ticking for PoC)
+3. **Navigate away:** Clean up the puzzle. No pause/resume for PoC.
 
-4. **Multiple puzzles:** Can a user have multiple active puzzles? (Probably no - one at a time, new puzzle replaces old)
+4. **Multiple puzzles:** One at a time per user. New puzzle replaces old.
 
-5. **Puzzle persistence:** Save puzzle state to DB? (Not for PoC - in-memory only)
+5. **Multi-tab:** Ignore for PoC. Add TODOs in relevant code spots (e.g., `// TODO: re-evaluate for multi-tab`).
+
+6. **Puzzle persistence:** No persistence for PoC - in-memory only. Server restart loses puzzles.
+
+7. **Fog of war:** Attempt to implement (reuse visibility logic from gameplay). Defer if too complex to reuse.
 
 ---
 
@@ -590,10 +602,13 @@ function BestStartPlayPage() {
     return <ResultsScreen result={result} board={board} onRestart={startPuzzle} />;
   }
 
+  // Convert ticks to turns for display (2 ticks = 1 turn)
+  const turn = Math.ceil(tick / 2);
+
   return (
     <div>
-      <div>Turn: {tick}/25</div>
-      <GameBoard
+      <div>Turn: {turn}/25</div>
+      <PuzzleBoard
         boardState={board}
         onTileClick={handleTileClick}
         selectedTile={selectedTile}
@@ -605,15 +620,27 @@ function BestStartPlayPage() {
 }
 ```
 
-### Reusing GameBoard (Needs Investigation)
+### Component Reuse Strategy (Investigated)
 
-The existing `GameBoard` component from gameplay may be reusable, but needs investigation. Potential issues:
-- May be tightly coupled to gameplay stores
-- May need props for `onTileClick` callback (if not already present)
-- May need props for `selectedTile` highlighting
-- May have multiplayer/fog of war assumptions that don't apply to single-player puzzles
+**Investigation Results:**
 
-If reuse is too complicated, consider building a simpler puzzle-specific board component using `TileRenderer`.
+| Component | Reusable? | Notes |
+|-----------|-----------|-------|
+| `TileRenderer` | ✅ Yes | Pure component, all state via props |
+| `MoveArrow` | ✅ Yes | Pure component |
+| `GameBoard` | ⚠️ Partially | Simple grid, but renders coupled `GameTile` |
+| `GameTile` | ❌ No | Heavily coupled to `useGameplayStoreV2` |
+
+`GameTile` uses these gameplay-specific hooks:
+- `useIsGameEnded`, `useIsTileSelected`, `useIsAdjacentToSelected`
+- `useIsVisible`, `useNeighborVisibility`
+- `setSelectedTileV2` action
+
+**Decision:** Build puzzle-specific components using `TileRenderer`:
+- `PuzzleTile` - Wires puzzle store hooks to `TileRenderer`
+- `PuzzleBoard` - Renders grid of `PuzzleTile`
+
+This keeps puzzles isolated from gameplay. If shared patterns emerge later, we can extract them.
 
 ### Frontend Message Flow
 
@@ -754,6 +781,53 @@ These components from gameplay UI may be reusable, but there may be complication
 5. **Frontend puzzle-store** - state management
 6. **Frontend handlers + actions** - process incoming messages
 7. **Frontend UI** - wire up page to store, show results
+
+---
+
+## Existing Code State (from puzzles-1st-spike)
+
+### What Already Exists
+
+**Backend:**
+- `handlers.ts` - Has stubs for all 4 message types (start-playing works, others are empty)
+- `actions/setup-and-start-puzzle.ts` - Creates puzzle, joins room, but doesn't broadcast state
+- `utils.ts` - `buildPuzzleRoomId()` helper
+- `puzzles-manager.ts` - Empty file (just skeleton)
+
+**Frontend:**
+- `ws-effects.ts` - Complete (all 4 outbound message senders)
+- `actions/start-playing-puzzles.ts` - Sends start message
+- `pages/best-start-main/` - Entry page with link to play
+- `pages/best-start-play/` - Play page with hardcoded board, uses gameplay store (wrong)
+
+**Protocol:**
+- Client messages complete (4 messages defined)
+- Server messages incomplete: uses `any` types, missing `tick`/`moveQueue` in state-update, missing `result` in end-puzzle, `createEndPuzzleMessage` not implemented
+
+**@core:**
+- No puzzles folder yet - needs to be created
+
+### What Needs to Be Built
+
+**@core:**
+- `puzzles/best-start/` folder with types, create, is-complete, score
+
+**Backend:**
+- `PuzzleManager` class implementation
+- `ws-effects.ts` for broadcasting
+- Wire up handler stubs to PuzzleManager
+- Actions layer (activePuzzles map, startPuzzle, queueMove, etc.)
+
+**Frontend:**
+- `handlers.ts` - To receive server messages
+- `stores/puzzle-store.ts` - Puzzle state
+- `actions/puzzle-actions.ts` - Pure action functions
+- `ui/puzzle-board.tsx` and `ui/puzzle-tile.tsx` - Puzzle-specific components
+- Update `best-start-play-page.tsx` to use puzzle store (remove gameplay store usage)
+
+**Protocol:**
+- Fix server message types (add tick, moveQueue, result fields)
+- Implement `createEndPuzzleMessage`
 
 ---
 
