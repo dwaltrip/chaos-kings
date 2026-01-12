@@ -52,7 +52,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
         username: user.username,
         session_id: sessionId!,
         user_key: userKey!,
-        created_at: user.created_at.toISOString(),
+        created_at: user.created_at,
       };
     }
 
