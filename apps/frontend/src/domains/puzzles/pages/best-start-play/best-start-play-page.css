@@ -1,5 +1,43 @@
-.best-start-play-page {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+.puzzle-page {
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  grid-template-areas: 'main sidebar';
+  height: 100vh;
+  background-color: #777;
+}
+
+.puzzle-sidebar {
+  grid-area: sidebar;
+  border-left: 1px solid #444;
+  padding: 12px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.puzzle-main {
+  grid-area: main;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 12px;
+}
+
+.puzzle-empty-state {
+  color: #ccc;
+  font-size: 14px;
+}
+
+.puzzle-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
 }

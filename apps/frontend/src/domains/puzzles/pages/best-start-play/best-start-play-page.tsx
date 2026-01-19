@@ -1,5 +1,3 @@
-import clsx from 'clsx';
-
 import type { Direction } from '@core/types';
 
 import {
@@ -33,42 +31,24 @@ function BestStartPlayPage() {
   const isLoading = userStore(selectIsLoading);
   const error = userStore(selectError);
 
-  return currentUser ? (
-    <BestStartPlayPageContent />
-  ) : isLoading ? (
-    <div>Loading...</div>
-  ) : (
-    <div className="text-red">{error ? error.message : 'Unexpected error'}</div>
-  );
+  if (isLoading) return <div>Loading...</div>;
+  if (!currentUser) {
+    return <div className="text-red-500">{error?.message || 'Unexpected error'}</div>;
+  }
+
+  return <BestStartPlayPageContent />;
 }
 
 function BestStartPlayPageContent() {
   const status = usePuzzleStore(selectStatus);
-
-  return (
-    <div className="best-start-play-page p-10">
-      <h3>Best Start Puzzle</h3>
-      <p className="text-gray-600 mb-4">Expand as much as possible in 25 turns!</p>
-
-      {status === 'idle' && <IdleUI />}
-      {status === 'playing' && <PlayingUI />}
-      {status === 'ended' && <EndedUI />}
-    </div>
-  );
-}
-
-function IdleUI() {
-  return (
-    <div>
-      <Button onClick={startPuzzle}>Start</Button>
-    </div>
-  );
-}
-
-function PlayingUI() {
   const board = usePuzzleStore(selectBoard);
   const tick = usePuzzleStore(selectTick);
+  const result = usePuzzleStore(selectResult);
   const selectedTile = usePuzzleStore(selectSelectedTile);
+
+  const isPlaying = status === 'playing';
+  const isEnded = status === 'ended';
+  const hasBoard = Boolean(board);
 
   useKeyboardControls({
     onMoveRequest: (dir: Direction) => {
@@ -78,10 +58,8 @@ function PlayingUI() {
     },
     onUndoMove: undoMove,
     onCancelMoves: clearMoves,
-    disabled: false,
+    disabled: !isPlaying,
   });
-
-  if (!board) return null;
 
   // TODO: review tick-to-turn conversion logic (floor vs ceil), and move to @core
   // TODO: maxTurns should come from puzzle config, not be hardcoded
@@ -91,79 +69,51 @@ function PlayingUI() {
   // Calculate player stats (player 0 is the puzzle player)
   let landCount = 0;
   let armyCount = 0;
-  for (const row of board.grid) {
-    for (const square of row) {
-      if ('playerIndex' in square && square.playerIndex === 0) {
-        landCount++;
-        armyCount += square.units;
+  if (board) {
+    for (const row of board.grid) {
+      for (const square of row) {
+        if ('playerIndex' in square && square.playerIndex === 0) {
+          landCount++;
+          armyCount += square.units;
+        }
       }
     }
   }
+  if (isEnded && result) {
+    landCount = result.landCount;
+    armyCount = result.armyCount;
+  }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <div className="mb-4 flex gap-6">
-        <span>
-          Turn: {turn}/{maxTurns}
-        </span>
-        <span>Land: {landCount}</span>
-        <span>Army: {armyCount}</span>
-      </div>
+    <div className="puzzle-page">
+      <aside className="puzzle-sidebar">
+        {isEnded && <div className="sidebar-section">Complete!</div>}
 
-      <div className="flex-1 min-h-0">
-        <PuzzleBoard boardState={board} />
-      </div>
-    </div>
-  );
-}
+        {hasBoard && (
+          <div className="sidebar-section">
+            <div>
+              Turn: {turn}/{maxTurns}
+            </div>
+            <div>Land: {landCount}</div>
+            <div>Army: {armyCount}</div>
+          </div>
+        )}
 
-function EndedUI() {
-  const board = usePuzzleStore(selectBoard);
-  const result = usePuzzleStore(selectResult);
-
-  if (!result) return null;
-
-  return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <div className="mb-4">
-        <h4 className="text-lg font-semibold mb-2">Puzzle Complete!</h4>
-        <div className="flex gap-6">
-          <span>Final Land: {result.landCount}</span>
-          <span>Final Army: {result.armyCount}</span>
+        <div className="sidebar-section">
+          <button className="puzzle-btn" onClick={startPuzzle}>
+            {hasBoard ? 'Restart' : 'Start'}
+          </button>
         </div>
-      </div>
+      </aside>
 
-      <div className="mb-4">
-        <Button onClick={startPuzzle}>Play Again</Button>
-      </div>
-
-      {board && (
-        <div className="flex-1 min-h-0">
+      <main className="puzzle-main">
+        {board ? (
           <PuzzleBoard boardState={board} />
-        </div>
-      )}
+        ) : (
+          <div className="puzzle-empty-state">Click Start to begin</div>
+        )}
+      </main>
     </div>
-  );
-}
-
-function Button({
-  children,
-  onClick,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      className={clsx(
-        'bg-transparent text-blue-700 font-semibold',
-        'py-2 px-4 border border-blue-500 rounded',
-        'hover:bg-blue-500 hover:text-white hover:border-transparent',
-      )}
-      onClick={onClick}
-    >
-      {children}
-    </button>
   );
 }
 

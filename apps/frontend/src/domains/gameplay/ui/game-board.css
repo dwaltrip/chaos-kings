@@ -11,6 +11,8 @@
 .game-grid {
   position: absolute;
   display: grid;
+  border-right: 1px solid #333;
+  border-bottom: 1px solid #333;
 }
 
 .app {
