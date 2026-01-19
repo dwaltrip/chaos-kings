@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { Coord, Direction } from '@core/types';
+import type { Coord } from '@core/types';
 import { areCoordsEqual } from '@core/utils/coordinate-utils';
 import { isMountainSquare } from '@core/square';
 
@@ -18,19 +18,12 @@ import {
   selectNeighborVisibility,
   puzzleActions,
 } from '@/domains/puzzles/stores/puzzle-store';
-import { queueMove } from '@/domains/puzzles/actions/puzzle-actions';
-
-function getDirection(from: Coord, to: Coord): Direction | null {
-  if (to.x === from.x + 1 && to.y === from.y) return 'RIGHT';
-  if (to.x === from.x - 1 && to.y === from.y) return 'LEFT';
-  if (to.y === from.y + 1 && to.x === from.x) return 'DOWN';
-  if (to.y === from.y - 1 && to.x === from.x) return 'UP';
-  return null;
-}
 
 interface PuzzleTileProps {
   coord: Coord;
 }
+
+const { setSelectedTile } = puzzleActions();
 
 const PuzzleTile = React.memo(
   ({ coord }: PuzzleTileProps) => {
@@ -52,31 +45,7 @@ const PuzzleTile = React.memo(
     const hasTopBorder = isVisible || neighborVisibility.top;
     const hasLeftBorder = isVisible || neighborVisibility.left;
 
-    const handleClick = () => {
-      if (isPuzzleEnded) return;
-
-      const { setSelectedTile } = puzzleActions();
-
-      // If clicking a valid move target, queue the move
-      if (isAdjacentToSelected && isValidMove) {
-        // Need selectedTile to compute direction - get it from store
-        const selectedTile = usePuzzleStore.getState().selectedTile;
-        if (selectedTile) {
-          const direction = getDirection(selectedTile, coord);
-          if (direction) {
-            queueMove(selectedTile, direction);
-            return;
-          }
-        }
-      }
-
-      // Otherwise, select/deselect this tile
-      if (isSelectable) {
-        setSelectedTile(coord);
-      } else if (isSelected) {
-        setSelectedTile(null);
-      }
-    };
+    const selectTile = () => setSelectedTile(coord);
 
     return (
       <TileRenderer
@@ -89,7 +58,7 @@ const PuzzleTile = React.memo(
         isSelectable={isSelectable}
         isValidMove={isValidMove}
         queuedDirections={queuedDirections}
-        onClick={!isPuzzleEnded ? handleClick : undefined}
+        onClick={isSelectable ? selectTile : undefined}
       />
     );
   },
