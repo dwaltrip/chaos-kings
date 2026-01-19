@@ -3,9 +3,11 @@ import { useShallow } from 'zustand/shallow';
 import type { Coord } from '@core/types';
 import { serializeCoord } from '@core/utils/coordinate-utils';
 
+import { isTileVisible } from '@/domains/games/utils/tile-selection-helpers';
 import { getNeighborCoords } from '@/domains/gameplay/utils/tile-utils';
 import { type GameplayStateV2 } from '@/domains/gameplay/stores/gameplay-store-v2';
 
+// Gameplay needs all 4 directions for full neighbor visibility
 interface NeighborVisibility {
   top: boolean;
   bottom: boolean;
@@ -16,21 +18,15 @@ interface NeighborVisibility {
 const useNeighborVisibility = (coord: Coord) =>
   useShallow((state: GameplayStateV2): NeighborVisibility => {
     return state.isGameEnded()
-      ? {
-          top: true,
-          bottom: true,
-          left: true,
-          right: true,
-        }
+      ? { top: true, bottom: true, left: true, right: true }
       : computeNeighborVisibility(coord, state.visibleSquares);
   });
 
 const useIsVisible = (coord: Coord) =>
   useShallow((state: GameplayStateV2) => {
-    return (
-      state.isGameEnded() ||
-      isSquareVisible(coord, state.visibleSquares, state.currentPlayerIndex)
-    );
+    // Spectators (no player index) see everything
+    if (state.currentPlayerIndex === null) return true;
+    return state.isGameEnded() || isTileVisible(state.visibleSquares, coord);
   });
 
 // --- helpers ---
@@ -47,15 +43,6 @@ function computeNeighborVisibility(
     left: visibleSquares.has(serializeCoord(neighbors.left)),
     right: visibleSquares.has(serializeCoord(neighbors.right)),
   };
-}
-
-function isSquareVisible(
-  coord: Coord,
-  visibleSquares: Set<string>,
-  currentPlayerIndex: number | null,
-): boolean {
-  if (currentPlayerIndex === null) return true;
-  return visibleSquares.has(serializeCoord(coord));
 }
 
 export { useNeighborVisibility, useIsVisible, type NeighborVisibility };

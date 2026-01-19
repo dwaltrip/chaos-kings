@@ -2,6 +2,7 @@ import type { BoardState, Coord, Direction, Movement } from '@core/types';
 import { Board } from '@core/board';
 import type { BestStartResult } from '@protocol/domains/puzzles/server-messages';
 
+import { getTileStore } from '@/domains/games/stores/tile-store-registry';
 import { usePuzzleStore } from '@/domains/puzzles/stores/puzzle-store';
 import { puzzlesWsEffects } from '@/domains/puzzles/ws-effects';
 
@@ -23,6 +24,10 @@ function queueMove(source: Coord, direction: Direction): void {
 
   // Immediately add to local queue for instant arrow feedback
   actions.addQueuedMove({ sourceCoord: source, direction });
+
+  // Update tile store for per-tile subscriptions (optimistic)
+  const tileStore = getTileStore(source);
+  tileStore.getState().addQueuedDirection(direction);
 
   // Move selected tile in the direction of the move
   const newSelected = Board.applyDirection(source, direction);

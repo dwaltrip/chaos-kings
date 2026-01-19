@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 
 import type { BoardState, Coord, Movement, PlayerIndex } from '@core/types';
-import { areCoordsEqual } from '@core/utils/coordinate-utils';
 import { hasCompletedGameState, isEnded } from '@core/game';
 
 import type { GameWithPlayers, Player } from '@platform/domains/games/types';
@@ -9,13 +8,15 @@ import type { PlayerStats } from '@platform/domains/gameplay/types';
 
 import type { User } from '@/domains/users/types';
 import { userStore } from '@/domains/users/user-store';
-
-import { isAdjacentTo } from '@/domains/gameplay/utils/tile-utils';
+import {
+  isTileSelected,
+  isTileAdjacentToSelected,
+} from '@/domains/games/utils/tile-selection-helpers';
 import {
   gameplayPageStore,
   selectGame,
 } from '@/domains/gameplay/stores/gameplay-page-store';
-import { tileOrchestrator } from '@/domains/gameplay/stores/tile-orchestrator';
+import { tileOrchestrator } from '@/domains/games/stores/tile-orchestrator';
 
 interface GameplayStateV2 {
   user: User | null;
@@ -146,13 +147,13 @@ const useSelectedTile = (state: GameplayStateV2) => state.selectedTile;
 
 const useIsTileSelected =
   (coord: Coord) =>
-  ({ selectedTile }: GameplayStateV2): boolean =>
-    areCoordsEqual(selectedTile, coord);
+  (state: GameplayStateV2): boolean =>
+    isTileSelected(state.selectedTile, coord);
 
 const useIsAdjacentToSelected =
   (coord: Coord) =>
-  ({ selectedTile }: GameplayStateV2): boolean =>
-    selectedTile ? isAdjacentTo(selectedTile, coord) : false;
+  (state: GameplayStateV2): boolean =>
+    isTileAdjacentToSelected(state.selectedTile, coord);
 
 function useGameplayGame(state: GameplayStateV2) {
   return state.game;

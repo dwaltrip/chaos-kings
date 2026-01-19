@@ -8,7 +8,7 @@ import {
   useTileQueuedDirections,
   useTileSquare,
   useTileSquareTypes,
-} from '@/domains/gameplay/hooks/use-tile-store-state';
+} from '@/domains/games/hooks/use-tile-store-state';
 import {
   useGameplayStoreV2,
   useIsAdjacentToSelected,

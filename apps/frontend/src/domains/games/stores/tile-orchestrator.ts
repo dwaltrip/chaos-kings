@@ -3,7 +3,7 @@ import type { BoardState } from '@core/types';
 import { deserializeCoord } from '@core/utils/coordinate-utils';
 import { Board } from '@core/board';
 
-import { getTileStore } from '@/domains/gameplay/stores/tile-store-registry';
+import { getTileStore } from '@/domains/games/stores/tile-store-registry';
 
 class TileOrchestrator {
   updateQueuedDirections(queuedDirectionsByCoord: Map<string, Set<Direction>>) {

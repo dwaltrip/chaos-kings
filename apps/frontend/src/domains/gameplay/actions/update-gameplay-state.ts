@@ -6,8 +6,8 @@ import {
   gameplayActions,
   useGameplayStoreV2,
 } from '@/domains/gameplay/stores/gameplay-store-v2';
-import { getTileStore } from '@/domains/gameplay/stores/tile-store-registry';
-import { tileOrchestrator } from '@/domains/gameplay/stores/tile-orchestrator';
+import { getTileStore } from '@/domains/games/stores/tile-store-registry';
+import { tileOrchestrator } from '@/domains/games/stores/tile-orchestrator';
 
 function updateGameplayState(
   tick: number,
