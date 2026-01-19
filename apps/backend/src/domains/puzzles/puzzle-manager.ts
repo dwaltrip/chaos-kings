@@ -66,26 +66,25 @@ class PuzzleManager {
   private tick(): void {
     if (this.ended) return;
 
-    const step = this.gameState.tick + 1;
+    const nextStep = this.gameState.tick + 1;
 
     // Build move event from queue (take first move if any)
     const eventsForStep: MoveEvent[] = [];
     if (this.moveQueue.length > 0) {
       const move = this.moveQueue.shift()!;
       eventsForStep.push({
-        step,
+        step: nextStep,
         playerIndex: 0, // Always player 0 for puzzles
         sourceCoord: move.sourceCoord,
         direction: move.direction,
       });
     }
 
-    // Process step
-    coreProcessStep(this.gameState.board, step, eventsForStep, this.config.timing);
-    this.gameState.tick = step;
+    // Process step (updates gameState.tick internally)
+    coreProcessStep(this.gameState, eventsForStep, this.config.timing);
 
     // Check if puzzle is complete
-    if (isBestStartComplete(step, this.config)) {
+    if (isBestStartComplete(this.gameState.tick, this.config)) {
       this.handlePuzzleEnd();
       return;
     }

@@ -1,5 +1,6 @@
 import { makeBlankMap } from '@core/map/make-blank-map';
 import { makeGeneralSquare } from '@core/map/make-squares';
+import { createGameState } from '@core/step-processor';
 import type { GameState } from '@core/types';
 import type { BestStartConfig } from './types';
 
@@ -12,13 +13,8 @@ function createBestStartPuzzle(config: BestStartConfig): GameState {
   const centerY = Math.floor(height / 2);
   grid[centerY][centerX] = makeGeneralSquare({ x: centerX, y: centerY }, 0);
 
-  return {
-    tick: 0,
-    board: {
-      grid,
-      size: { width, height },
-    },
-  };
+  const board = { grid, size: { width, height } };
+  return createGameState(board, 1); // Single player puzzle
 }
 
 export { createBestStartPuzzle };

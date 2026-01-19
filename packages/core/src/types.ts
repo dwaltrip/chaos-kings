@@ -1,10 +1,29 @@
+type PlayerIndex = number;
+
+const CorePlayerStatus = {
+  ACTIVE: 'active',
+  DEFEATED: 'defeated',
+} as const;
+type CorePlayerStatus = (typeof CorePlayerStatus)[keyof typeof CorePlayerStatus];
+
+interface CorePlayerState {
+  status: CorePlayerStatus;
+  armyCount: number;
+  landCount: number;
+}
+
+type GameEvent = {
+  type: 'player_defeated';
+  tick: number;
+  defeated: PlayerIndex;
+  capturedBy: PlayerIndex;
+};
+
 interface GameState {
   board: BoardState;
   tick: number;
-  // TODO: define / implement game config
+  players: CorePlayerState[];
 }
-
-type PlayerIndex = number;
 type PlayerMapping = { playerId: string; playerIndex: PlayerIndex }[];
 
 interface CompletedGameState {
@@ -73,12 +92,14 @@ interface Movement {
   direction: Direction;
 }
 
-export { Direction, PlayerSquareType, NeutralSquareType, SquareType };
+export { Direction, PlayerSquareType, NeutralSquareType, SquareType, CorePlayerStatus };
 
 export type {
   GameState,
   PlayerIndex,
   PlayerMapping,
+  CorePlayerState,
+  GameEvent,
   CompletedGameState,
   BoardState,
   Coord,

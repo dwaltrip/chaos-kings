@@ -1,6 +1,7 @@
 import { GameId, RoomId, UserId } from '@kernel/ids';
 
-import { GameState, BoardState, Direction, Coord, PlayerIndex } from '@core/types';
+import { Direction, Coord, PlayerIndex, CorePlayerStatus } from '@core/types';
+import type { GameState } from '@core/types';
 import { GameStatus } from '@core/game/types';
 import { Board } from '@core/board';
 import type { GameConfig } from '@core/game-config';
@@ -9,7 +10,7 @@ import {
   ONE_SECOND_MS,
   PRE_GAME_COUNTDOWN_SECONDS,
 } from '@core/ui-timing-config';
-import { processStep as coreProcessStep } from '@core/step-processor';
+import { processStep as coreProcessStep, createGameState } from '@core/step-processor';
 import type { MoveEvent } from '@core/replay/types';
 
 import { buildGameRoomId } from '@platform/domains/gameplay/helpers';
@@ -50,7 +51,6 @@ export class GameServer {
   private fallbackTimer: NodeJS.Timeout | null = null;
   private moveFlushTimer: NodeJS.Timeout | null = null;
   private moveHistory = new MoveHistoryBuffer();
-  private activePlayers: Set<PlayerIndex> = new Set();
   private log = createScopedLogger(() => `GameServer id=${this.game.id}`);
 
   constructor(game: GameWithPlayers) {
@@ -58,11 +58,10 @@ export class GameServer {
     this.roomName = buildGameRoomId(GameId(this.game.id));
     this.log.debug('New GameServer');
 
-    // setup player mappings, move queues, and active players
+    // setup player mappings and move queues
     for (const player of game.players) {
       this.playerMapping.set(UserId(player.user_id), player.player_index);
       this.playerQueues.set(player.player_index, []);
-      this.activePlayers.add(player.player_index);
     }
 
     this.initialized = true;
@@ -70,14 +69,11 @@ export class GameServer {
     // Start fallback timer to ensure countdown starts even if not all players join
     this.startFallbackTimer();
 
-    const boardState: BoardState = {
+    const board = {
       grid: game.config.startingGrid,
       size: game.config.map.size,
     };
-    this.gameState = {
-      board: boardState,
-      tick: 0,
-    };
+    this.gameState = createGameState(board, game.players.length);
     this.log.debug(`GameServer initialized with ${game.players.length} players`);
   }
 
@@ -107,13 +103,13 @@ export class GameServer {
 
     try {
       // Build at most 1 event per player for the upcoming step (1-based)
-      const step = this.gameState.tick + 1;
+      const nextStep = this.gameState.tick + 1;
       const eventsForStep: MoveEvent[] = [];
       for (const [playerIndex, moveQueue] of this.playerQueues) {
         if (moveQueue.length === 0) continue;
         const queuedMove = moveQueue.shift()!;
         eventsForStep.push({
-          step,
+          step: nextStep,
           playerIndex,
           sourceCoord: queuedMove.sourceCoord,
           direction: queuedMove.movement,
@@ -122,22 +118,25 @@ export class GameServer {
 
       const { timing } = this.game.config as GameConfig;
 
-      const { appliedEvents, gameEnded, winnerPlayerIndex, newlyDefeatedPlayers } =
-        coreProcessStep(this.gameState.board, step, eventsForStep, timing);
+      const { appliedEvents, gameEvents, gameEnded, winnerPlayerIndex } = coreProcessStep(
+        this.gameState,
+        eventsForStep,
+        timing,
+      );
+
       if (appliedEvents.length) {
         this.moveHistory.append(appliedEvents);
       }
-      this.gameState.tick = step;
 
-      if (newlyDefeatedPlayers.length) {
-        for (const playerIndex of newlyDefeatedPlayers) {
-          this.activePlayers.delete(playerIndex);
-          const queue = this.playerQueues.get(playerIndex);
+      // Clear queues for defeated players
+      for (const event of gameEvents) {
+        if (event.type === 'player_defeated') {
+          const queue = this.playerQueues.get(event.defeated);
           if (queue) queue.length = 0;
+          this.log.info(
+            `Player ${event.defeated} defeated by player ${event.capturedBy} at tick ${event.tick}`,
+          );
         }
-        this.log.info(
-          `Defeated players this step ${step}: ${newlyDefeatedPlayers.join(', ')}`,
-        );
       }
 
       if (gameEnded) {
@@ -189,7 +188,7 @@ export class GameServer {
 
   private broadcastGameState(): void {
     try {
-      const playerStats = this.getPlayerStatsForBroadcast(this.gameState.board);
+      const playerStats = this.getPlayerStatsForBroadcast();
       gameplayWsEffects.broadcastGameState(
         this.roomName,
         this.gameState.tick,
@@ -214,16 +213,12 @@ export class GameServer {
     }
   }
 
-  private getPlayerStatsForBroadcast(board: BoardState): PlayerStats[] {
-    const coreStats = Board.getPlayerStats(board);
-    return this.game.players.map((p) => {
-      const stats = coreStats.get(p.player_index);
-      return {
-        playerIndex: p.player_index,
-        armyCount: stats?.armyCount ?? 0,
-        landCount: stats?.landCount ?? 0,
-      };
-    });
+  private getPlayerStatsForBroadcast(): PlayerStats[] {
+    return this.gameState.players.map((player, index) => ({
+      playerIndex: index,
+      armyCount: player.armyCount,
+      landCount: player.landCount,
+    }));
   }
 
   queueMove(userId: UserId, source: Coord, movement: Direction): void {
@@ -232,7 +227,8 @@ export class GameServer {
       this.log.info(`Move request from unknown user ${userId}`);
       return;
     }
-    if (!this.activePlayers.has(playerIndex)) {
+    const playerState = this.gameState.players[playerIndex];
+    if (playerState.status !== CorePlayerStatus.ACTIVE) {
       this.log.debug(
         `Ignoring move from inactive player ${playerIndex} (user ${userId})`,
       );

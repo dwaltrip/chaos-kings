@@ -1,33 +1,26 @@
 import { applyMovement } from '@core/engine';
-import type { BoardState } from '@core/types';
+import { Board } from '@core/board';
+import { CorePlayerStatus } from '@core/types';
+import type { GameState, GameEvent } from '@core/types';
 import type { MoveEvent } from '@core/replay/types';
 import type { TimingConfig } from '@core/timing/types';
 import { validateMove } from '@core/moves/validate-move';
 
-function getPlayersWithGenerals(board: BoardState): Set<number> {
-  const players = new Set<number>();
-  for (const row of board.grid) {
-    for (const square of row) {
-      if (square.type === 'GENERAL') {
-        players.add(square.playerIndex);
-      }
-    }
-  }
-  return players;
+interface ProcessStepResult {
+  appliedEvents: MoveEvent[];
+  gameEvents: GameEvent[];
+  gameEnded: boolean;
+  winnerPlayerIndex?: number;
 }
 
 function processStep(
-  board: BoardState,
-  step: number, // 1-based
+  gameState: GameState,
   events: MoveEvent[],
   timing: TimingConfig,
-): {
-  appliedEvents: MoveEvent[];
-  gameEnded: boolean;
-  winnerPlayerIndex?: number;
-  newlyDefeatedPlayers: number[];
-} {
-  const generalsBefore = getPlayersWithGenerals(board);
+): ProcessStepResult {
+  const step = gameState.tick + 1;
+  const board = gameState.board;
+  const gameEvents: GameEvent[] = [];
 
   // Sort deterministically by playerIndex
   const sorted = [...events].sort((a, b) => a.playerIndex - b.playerIndex);
@@ -36,67 +29,100 @@ function processStep(
   for (const e of sorted) {
     const v = validateMove(board, e.playerIndex, e.sourceCoord, e.direction);
     if (v.ok) {
-      applyMovement(board, e.sourceCoord, e.direction);
+      const result = applyMovement(board, e.sourceCoord, e.direction);
       applied.push(e);
+
+      if (result.capture) {
+        gameState.players[result.capture.defeated].status = CorePlayerStatus.DEFEATED;
+        gameEvents.push({
+          type: 'player_defeated',
+          tick: step,
+          defeated: result.capture.defeated,
+          capturedBy: result.capture.capturedBy,
+        });
+      }
     }
   }
 
-  const generalsAfter = getPlayersWithGenerals(board);
-  const newlyDefeatedPlayers: number[] = [];
-  for (const player of generalsBefore) {
-    if (!generalsAfter.has(player)) {
-      newlyDefeatedPlayers.push(player);
-    }
+  // Apply production
+  applyProduction(board, step, timing);
+
+  // Update tick
+  gameState.tick = step;
+
+  // Update player stats
+  updatePlayerStats(gameState);
+
+  // Check for game end (only 1 active player remaining)
+  const activePlayers = gameState.players
+    .map((p, i) => ({ index: i, status: p.status }))
+    .filter((p) => p.status === CorePlayerStatus.ACTIVE);
+
+  if (activePlayers.length === 1) {
+    return {
+      appliedEvents: applied,
+      gameEvents,
+      gameEnded: true,
+      winnerPlayerIndex: activePlayers[0].index,
+    };
   }
 
-  const tickResult = stepWithTiming(board, step, timing, generalsAfter);
   return {
     appliedEvents: applied,
-    gameEnded: tickResult.gameEnded,
-    winnerPlayerIndex: tickResult.winnerPlayerIndex,
-    newlyDefeatedPlayers,
+    gameEvents,
+    gameEnded: false,
   };
 }
 
-function stepWithTiming(
-  board: BoardState,
+function applyProduction(
+  board: GameState['board'],
   tickNumber: number,
   timing: TimingConfig,
-  playersWithGenerals: Set<number>,
-): { gameEnded: boolean; winnerPlayerIndex?: number } {
+): void {
   if (tickNumber % timing.generalProductionTicks === 0) {
-    applyCityProduction(board);
+    for (const row of board.grid) {
+      for (const square of row) {
+        if (square.type === 'PLAYER_CITY' || square.type === 'GENERAL') {
+          square.units += 1;
+        }
+      }
+    }
   }
 
   if (tickNumber % timing.armyProductionTicks === 0) {
-    applyTroopProduction(board);
-  }
-
-  if (playersWithGenerals.size === 1) {
-    const winnerPlayerIndex = Array.from(playersWithGenerals)[0];
-    return { gameEnded: true, winnerPlayerIndex };
-  }
-  return { gameEnded: false };
-}
-
-function applyCityProduction(board: BoardState): void {
-  for (let row of board.grid) {
-    for (let square of row) {
-      if (square.type === 'PLAYER_CITY' || square.type === 'GENERAL') {
-        square.units += 1;
+    for (const row of board.grid) {
+      for (const square of row) {
+        if (square.type === 'ARMY') {
+          square.units += 1;
+        }
       }
     }
   }
 }
 
-function applyTroopProduction(board: BoardState): void {
-  for (let row of board.grid) {
-    for (let square of row) {
-      if (square.type === 'ARMY') {
-        square.units += 1;
-      }
-    }
+function updatePlayerStats(gameState: GameState): void {
+  const boardStats = Board.getPlayerStats(gameState.board);
+
+  for (let i = 0; i < gameState.players.length; i++) {
+    const stats = boardStats.get(i);
+    gameState.players[i].armyCount = stats?.armyCount ?? 0;
+    gameState.players[i].landCount = stats?.landCount ?? 0;
   }
 }
 
-export { processStep };
+function createGameState(board: GameState['board'], playerCount: number): GameState {
+  const players = Array.from(
+    { length: playerCount },
+    (): GameState['players'][number] => ({
+      status: CorePlayerStatus.ACTIVE,
+      armyCount: 0,
+      landCount: 0,
+    }),
+  );
+
+  const gameState: GameState = { board, tick: 0, players };
+  updatePlayerStats(gameState);
+  return gameState;
+}
+
+export { processStep, createGameState };
