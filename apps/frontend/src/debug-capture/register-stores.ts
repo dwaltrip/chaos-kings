@@ -1,39 +1,23 @@
+// Static imports - dynamic imports don't help here since these stores are
+// already statically imported elsewhere in the app (actions, pages, etc.)
+import { chatStore } from '@/domains/chat/chat-store';
+import { useGameplayStoreV2 } from '@/domains/gameplay/stores/gameplay-store-v2';
+import { gameMatchmakingStore } from '@/domains/matchmaking/matchmaking-store';
+import { usePuzzleStore } from '@/domains/puzzles/stores/puzzle-store';
+import { userStore } from '@/domains/users/user-store';
+
 import { registerDebugStore } from './index';
 
-// Lazy import stores to avoid circular dependencies and bundle bloat
-// Only runs in dev mode since initializeDebug guards everything
-
-async function registerDebugStores(): Promise<void> {
+function registerDebugStores(): void {
   if (!import.meta.env.DEV) return;
 
-  try {
-    // Core stores
-    const { usePuzzleStore } = await import('@/domains/puzzles/stores/puzzle-store');
-    registerDebugStore('puzzle', usePuzzleStore);
+  registerDebugStore('puzzle', usePuzzleStore);
+  registerDebugStore('gameplay', useGameplayStoreV2);
+  registerDebugStore('matchmaking', gameMatchmakingStore);
+  registerDebugStore('user', userStore);
+  registerDebugStore('chat', chatStore);
 
-    const { useGameplayStoreV2 } = await import(
-      '@/domains/gameplay/stores/gameplay-store-v2'
-    );
-    registerDebugStore('gameplay', useGameplayStoreV2);
-
-    const { gameMatchmakingStore } = await import(
-      '@/domains/matchmaking/matchmaking-store'
-    );
-    registerDebugStore('matchmaking', gameMatchmakingStore);
-
-    const { userStore } = await import('@/domains/users/user-store');
-    registerDebugStore('user', userStore);
-
-    const { chatStore } = await import('@/domains/chat/chat-store');
-    registerDebugStore('chat', chatStore);
-
-    console.log(
-      '[debug] Registered stores:',
-      'puzzle, gameplay, matchmaking, user, chat',
-    );
-  } catch (err) {
-    console.warn('[debug] Failed to register some stores:', err);
-  }
+  console.log('[debug] Registered stores:', 'puzzle, gameplay, matchmaking, user, chat');
 }
 
 export { registerDebugStores };

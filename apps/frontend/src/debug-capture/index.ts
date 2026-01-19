@@ -26,6 +26,7 @@ interface DebugAPI {
   save: (name?: string) => Promise<string>;
   dump: () => void;
   clear: () => void;
+  help: () => void;
 
   // Convenience: register a store for easy watching
   registerStore: (name: string, store: StoreApi<unknown>) => void;
@@ -90,20 +91,24 @@ function initializeDebug(config: Partial<DebugConfig> = {}): void {
         debugInstance!.watchStore(name, store);
       });
     },
+
+    help: () => {
+      console.log('[debug] Debug capture tool. Available commands:');
+      console.log('  debug.snapshot(label, data?) - Capture a snapshot');
+      console.log('  debug.startTrace(name)       - Start a named trace');
+      console.log('  debug.endTrace()             - End trace and auto-save');
+      console.log('  debug.watch(storeName)       - Watch a registered store');
+      console.log('  debug.watchAll()             - Watch all registered stores');
+      console.log('  debug.startConsoleCapture()  - Start capturing console logs');
+      console.log(
+        '  debug.save(name?)            - Save to .debug/{sessionId}[-name].json',
+      );
+      console.log('  debug.dump()                 - Pretty-print to console');
+      console.log('  debug.clear()                - Clear all captured data');
+    },
   };
 
   window.debug = api;
-
-  console.log('[debug] Debug capture initialized. Available commands:');
-  console.log('  debug.snapshot(label, data?) - Capture a snapshot');
-  console.log('  debug.startTrace(name)       - Start a named trace');
-  console.log('  debug.endTrace()             - End trace and auto-save');
-  console.log('  debug.watch(storeName)       - Watch a registered store');
-  console.log('  debug.watchAll()             - Watch all registered stores');
-  console.log('  debug.startConsoleCapture()  - Start capturing console logs');
-  console.log('  debug.save(name?)            - Save to .debug/{sessionId}[-name].json');
-  console.log('  debug.dump()                 - Pretty-print to console');
-  console.log('  debug.clear()                - Clear all captured data');
 }
 
 function registerDebugStore(name: string, store: StoreApi<unknown>): void {
