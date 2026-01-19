@@ -1,4 +1,7 @@
 
+# Debug output
+.debug/
+
 # Logs
 logs
 *.log
