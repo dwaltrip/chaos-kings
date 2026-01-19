@@ -6,8 +6,8 @@ import { BrowserRouter } from 'react-router';
 
 import './index.css';
 import { App } from '@/App.tsx';
-import { initializeDebug } from '@/debug';
-import { registerDebugStores } from '@/debug/register-stores';
+import { initializeDebug } from '@/debug-capture';
+import { registerDebugStores } from '@/debug-capture/register-stores';
 
 // Initialize debug capture system (dev only, no-op in production)
 initializeDebug();

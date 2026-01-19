@@ -54,5 +54,5 @@ The challenge: `--chrome` is a session-level flag, so sub-agents in a normal ses
 | `docs/dev-notes/2026-01-19-ui-debug-tools-exploration.md` | Full session notes |
 | `.claude/agents/ui-debugger.md` | Agent to rename |
 | `.claude/skills/debug-ui-guide.md` | Skill to update |
-| `apps/frontend/src/debug/` | JSON capture module |
+| `apps/frontend/src/debug-capture/` | JSON capture module |
 | `tools/debug-capture.sh` | Capture automation script |

@@ -41,7 +41,7 @@ Instead of always-on MCP, use skills to load capabilities on-demand:
 - Claude can read and analyze the captured data
 
 **Components built:**
-- `apps/frontend/src/debug/` - Core module (snapshots, store watching, console capture)
+- `apps/frontend/src/debug-capture/` - Core module (snapshots, store watching, console capture)
 - `apps/frontend/vite-plugins/debug-save-plugin.ts` - Saves output via dev server
 - `tools/debug-capture.sh` - Automation script (checks/starts servers, opens browser)
 - `.claude/agents/ui-debugger.md` - Agent definition
@@ -94,12 +94,12 @@ Combining `--chrome` with these modes would enable precise debugging - step thro
 
 | File | Purpose |
 |------|---------|
-| `apps/frontend/src/debug/types.ts` | TypeScript types for debug output |
-| `apps/frontend/src/debug/capture.ts` | Core capture API |
-| `apps/frontend/src/debug/console-interceptor.ts` | Console log capture |
-| `apps/frontend/src/debug/store-watcher.ts` | Zustand store subscription |
-| `apps/frontend/src/debug/index.ts` | Public API + window attachment |
-| `apps/frontend/src/debug/register-stores.ts` | Auto-registers common stores |
+| `apps/frontend/src/debug-capture/types.ts` | TypeScript types for debug output |
+| `apps/frontend/src/debug-capture/capture.ts` | Core capture API |
+| `apps/frontend/src/debug-capture/console-interceptor.ts` | Console log capture |
+| `apps/frontend/src/debug-capture/store-watcher.ts` | Zustand store subscription |
+| `apps/frontend/src/debug-capture/index.ts` | Public API + window attachment |
+| `apps/frontend/src/debug-capture/register-stores.ts` | Auto-registers common stores |
 | `apps/frontend/vite-plugins/debug-save-plugin.ts` | Vite middleware for saving |
 | `tools/debug-capture.sh` | Automation script (executable) |
 | `.claude/agents/ui-debugger.md` | Agent definition |

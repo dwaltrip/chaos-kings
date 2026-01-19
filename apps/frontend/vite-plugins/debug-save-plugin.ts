@@ -31,12 +31,19 @@ function debugSavePlugin(): Plugin {
               fs.mkdirSync(debugDir, { recursive: true });
             }
 
-            // Build filename: sessionId or sessionId-saveName
+            // Get current date in YYYY-MM-DD format
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const datePrefix = `${year}-${month}-${day}`;
+
+            // Build filename: YYYY-MM-DD-sessionId or YYYY-MM-DD-sessionId-saveName
             const sessionId = data.sessionId || `debug-${Date.now()}`;
             const saveName = data.saveName;
             const filename = saveName
-              ? `${sessionId}-${saveName}.json`
-              : `${sessionId}.json`;
+              ? `${datePrefix}-${sessionId}-${saveName}.json`
+              : `${datePrefix}-${sessionId}.json`;
 
             // Remove saveName from output (not needed in the file)
             delete data.saveName;
