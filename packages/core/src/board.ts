@@ -82,6 +82,32 @@ function* iterPlayerSquares(
   }
 }
 
+interface BoardPlayerStats {
+  armyCount: number;
+  landCount: number;
+}
+
+function getPlayerStats(board: BoardState): Map<number, BoardPlayerStats> {
+  const stats = new Map<number, BoardPlayerStats>();
+
+  for (const row of board.grid) {
+    for (const square of row) {
+      if (!isPlayerSquare(square)) continue;
+
+      let playerStats = stats.get(square.playerIndex);
+      if (!playerStats) {
+        playerStats = { armyCount: 0, landCount: 0 };
+        stats.set(square.playerIndex, playerStats);
+      }
+
+      playerStats.armyCount += square.units;
+      playerStats.landCount += 1;
+    }
+  }
+
+  return stats;
+}
+
 function getVisibleSquares(board: BoardState, playerIndex: number): Set<string> {
   const visibleCoords = new Set<string>();
 
@@ -129,7 +155,9 @@ const Board = {
   iterCoords,
   forEachCoord,
   iterPlayerSquares,
+  getPlayerStats,
   getVisibleSquares,
 };
 
+export type { BoardPlayerStats };
 export { Board };

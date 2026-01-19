@@ -11,7 +11,6 @@ import {
 } from '@core/ui-timing-config';
 import { processStep as coreProcessStep } from '@core/step-processor';
 import type { MoveEvent } from '@core/replay/types';
-import { isPlayerSquare } from '@core/square';
 
 import { buildGameRoomId } from '@platform/domains/gameplay/helpers';
 import type { PlayerStats } from '@platform/domains/gameplay/types';
@@ -51,7 +50,7 @@ export class GameServer {
   private fallbackTimer: NodeJS.Timeout | null = null;
   private moveFlushTimer: NodeJS.Timeout | null = null;
   private moveHistory = new MoveHistoryBuffer();
-  private defeatedPlayers: Set<number> = new Set();
+  private activePlayers: Set<PlayerIndex> = new Set();
   private log = createScopedLogger(() => `GameServer id=${this.game.id}`);
 
   constructor(game: GameWithPlayers) {
@@ -59,10 +58,11 @@ export class GameServer {
     this.roomName = buildGameRoomId(GameId(this.game.id));
     this.log.debug('New GameServer');
 
-    // setup player mappings and move queues
+    // setup player mappings, move queues, and active players
     for (const player of game.players) {
       this.playerMapping.set(UserId(player.user_id), player.player_index);
       this.playerQueues.set(player.player_index, []);
+      this.activePlayers.add(player.player_index);
     }
 
     this.initialized = true;
@@ -122,32 +122,22 @@ export class GameServer {
 
       const { timing } = this.game.config as GameConfig;
 
-      // Capture generals pre-step to detect newly defeated players
-      const generalsBefore = this.getPlayersWithGenerals(this.gameState.board);
-      const { appliedEvents, gameEnded, winnerPlayerIndex } = coreProcessStep(
-        this.gameState.board,
-        step,
-        eventsForStep,
-        timing,
-      );
+      const { appliedEvents, gameEnded, winnerPlayerIndex, newlyDefeatedPlayers } =
+        coreProcessStep(this.gameState.board, step, eventsForStep, timing);
       if (appliedEvents.length) {
         this.moveHistory.append(appliedEvents);
       }
       this.gameState.tick = step;
 
-      // Detect players who lost their general this step
-      const generalsAfter = this.getPlayersWithGenerals(this.gameState.board);
-      const newlyDefeated: number[] = [];
-      for (const p of generalsBefore) {
-        if (!generalsAfter.has(p)) newlyDefeated.push(p);
-      }
-      if (newlyDefeated.length) {
-        for (const p of newlyDefeated) {
-          this.defeatedPlayers.add(p);
-          const q = this.playerQueues.get(p);
-          if (q) q.length = 0; // clear their queue
+      if (newlyDefeatedPlayers.length) {
+        for (const playerIndex of newlyDefeatedPlayers) {
+          this.activePlayers.delete(playerIndex);
+          const queue = this.playerQueues.get(playerIndex);
+          if (queue) queue.length = 0;
         }
-        this.log.info(`Defeated players this step ${step}: ${newlyDefeated.join(', ')}`);
+        this.log.info(
+          `Defeated players this step ${step}: ${newlyDefeatedPlayers.join(', ')}`,
+        );
       }
 
       if (gameEnded) {
@@ -162,18 +152,6 @@ export class GameServer {
       this.gameEnded = true;
       return true;
     }
-  }
-
-  // Movement now processed in core step-processor
-
-  private getPlayersWithGenerals(board: BoardState): Set<number> {
-    const s = new Set<number>();
-    for (const row of board.grid) {
-      for (const sq of row) {
-        if (sq.type === 'GENERAL') s.add(sq.playerIndex);
-      }
-    }
-    return s;
   }
 
   private async handleGameEnd(winnerPlayerIndex: number): Promise<void> {
@@ -211,7 +189,7 @@ export class GameServer {
 
   private broadcastGameState(): void {
     try {
-      const playerStats = this.calculatePlayerStats(this.gameState.board);
+      const playerStats = this.getPlayerStatsForBroadcast(this.gameState.board);
       gameplayWsEffects.broadcastGameState(
         this.roomName,
         this.gameState.tick,
@@ -236,28 +214,16 @@ export class GameServer {
     }
   }
 
-  // TODO: We need to move stuff like this out of the game server.
-  // It should be agnostic as possible to game rules / logic.
-  // Mostly should be handling move queues, timing, and broadcasting state.
-  private calculatePlayerStats(board: BoardState): PlayerStats[] {
-    const stats: PlayerStats[] = this.game.players.map((p) => ({
-      playerIndex: p.player_index,
-      armyCount: 0,
-      landCount: 0,
-    }));
-
-    for (const row of board.grid) {
-      for (const square of row) {
-        if (!isPlayerSquare(square)) continue;
-        const playerStat = stats[square.playerIndex];
-        if (playerStat) {
-          playerStat.armyCount += square.units;
-          playerStat.landCount += 1;
-        }
-      }
-    }
-
-    return stats;
+  private getPlayerStatsForBroadcast(board: BoardState): PlayerStats[] {
+    const coreStats = Board.getPlayerStats(board);
+    return this.game.players.map((p) => {
+      const stats = coreStats.get(p.player_index);
+      return {
+        playerIndex: p.player_index,
+        armyCount: stats?.armyCount ?? 0,
+        landCount: stats?.landCount ?? 0,
+      };
+    });
   }
 
   queueMove(userId: UserId, source: Coord, movement: Direction): void {
@@ -266,9 +232,9 @@ export class GameServer {
       this.log.info(`Move request from unknown user ${userId}`);
       return;
     }
-    if (this.defeatedPlayers.has(playerIndex)) {
+    if (!this.activePlayers.has(playerIndex)) {
       this.log.debug(
-        `Ignoring move from defeated player ${playerIndex} (user ${userId})`,
+        `Ignoring move from inactive player ${playerIndex} (user ${userId})`,
       );
       return;
     }
