@@ -11,6 +11,7 @@ import {
   gameplayPageStore,
   selectGame,
 } from '@/domains/gameplay/stores/gameplay-page-store';
+import { useGameplayStoreV2 } from '@/domains/gameplay/stores/gameplay-store-v2';
 import { joinGameplay, leaveGameplay } from '@/domains/gameplay/actions';
 import {
   loadGameplayPage,
@@ -66,7 +67,7 @@ function GamePageContent({ gameId }: { gameId: GameId }) {
   const game = gameplayPageStore(selectGame);
   const countdownActive = gameplayPageStore((state) => state.countdownActive);
   const countdownSeconds = gameplayPageStore((state) => state.countdownSeconds);
-  const winner = gameplayPageStore((state) => state.winner);
+  const winner = useGameplayStoreV2((state) => state.winner);
   const loading = gameplayPageStore((state) => state.isLoading());
   const error = gameplayPageStore((state) => state.error);
   const isConnected = useWsConnectionStore((state) => state.isConnected);

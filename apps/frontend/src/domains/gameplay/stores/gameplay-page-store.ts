@@ -7,15 +7,12 @@ import { createAsyncStore } from '@/utils/create-async-store';
 type GameplayPageExtensions = {
   countdownActive: boolean;
   countdownSeconds: number;
-  // TODO: should derive `winner` from game object instead of separate state
-  winner: number | null;
   isGameEnded: () => boolean;
   actions: {
     setGame: (game: GameWithPlayers) => void;
     updateGame: (updates: Partial<GameWithPlayers>) => void;
     setCountdownActive: (active: boolean) => void;
     setCountdownSeconds: (seconds: number) => void;
-    setWinner: (winner: number) => void;
     resetAll: () => void;
   };
 };
@@ -23,7 +20,6 @@ type GameplayPageExtensions = {
 const extensionInitialState = {
   countdownActive: false,
   countdownSeconds: PRE_GAME_COUNTDOWN_SECONDS,
-  winner: null as number | null,
 };
 
 const gameplayPageStore = createAsyncStore<GameWithPlayers, GameplayPageExtensions>(
@@ -50,9 +46,6 @@ const gameplayPageStore = createAsyncStore<GameWithPlayers, GameplayPageExtensio
       },
       setCountdownSeconds: (seconds: number) => {
         set({ countdownSeconds: seconds });
-      },
-      setWinner: (winner: number) => {
-        set({ winner });
       },
       resetAll: () => {
         get().reset(); // Reset base async store (data, loading, error)

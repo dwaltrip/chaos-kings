@@ -6,8 +6,6 @@ import { hasCompletedGameState, isEnded } from '@core/game';
 import type { GameWithPlayers, Player } from '@platform/domains/games/types';
 import type { PlayerStats } from '@platform/domains/gameplay/types';
 
-import type { User } from '@/domains/users/types';
-import { userStore } from '@/domains/users/user-store';
 import {
   isTileSelected,
   isTileAdjacentToSelected,
@@ -22,7 +20,6 @@ import {
 import { tileOrchestrator } from '@/domains/games/stores/tile-orchestrator';
 
 interface GameplayStateV2 {
-  user: User | null;
   game: GameWithPlayers | null;
   tick: number;
   winner: PlayerIndex | null;
@@ -62,27 +59,17 @@ interface GameplayStateV2 {
 
 // TODO: make this the source of truth and only place that "stores" currentPlayerIndex
 const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
-  const syncUser = () => {
-    const newUser = userStore.getState().data;
-    if (newUser?.id !== get().user?.id) {
-      set({ user: newUser || null });
-    }
-  };
   const syncGame = () => {
     const newGame = selectGame(gameplayPageStore.getState());
     if (newGame !== get().game) {
       set({ game: newGame || null });
-      console.log('[gameplay-store-v2] Updated game object:', get().game);
     }
   };
 
   gameplayPageStore.subscribe(syncGame);
-  userStore.subscribe(syncUser);
 
-  const user = userStore.getState().data || null;
   const game = selectGame(gameplayPageStore.getState()) || null;
   return {
-    user,
     game,
     tick: 0,
     winner: null,
