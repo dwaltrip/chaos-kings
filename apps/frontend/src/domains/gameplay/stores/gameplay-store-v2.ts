@@ -11,6 +11,9 @@ import { userStore } from '@/domains/users/user-store';
 import {
   isTileSelected,
   isTileAdjacentToSelected,
+  isTileVisible,
+  getNeighborVisibility,
+  type NeighborVisibility,
 } from '@/domains/games/utils/tile-selection-helpers';
 import {
   gameplayPageStore,
@@ -195,6 +198,24 @@ function useCurrentPlayerIndex(state: GameplayStateV2) {
   return state.currentPlayerIndex;
 }
 
+// Visibility selectors (matching puzzle store pattern)
+const useIsVisible =
+  (coord: Coord) =>
+  (state: GameplayStateV2): boolean => {
+    // Spectators (no player index) see everything
+    if (state.currentPlayerIndex === null) return true;
+    return state.isGameEnded() || isTileVisible(state.visibleSquares, coord);
+  };
+
+const useNeighborVisibility =
+  (coord: Coord) =>
+  (state: GameplayStateV2): NeighborVisibility => {
+    if (state.isGameEnded()) {
+      return { top: true, left: true };
+    }
+    return getNeighborVisibility(state.visibleSquares, coord);
+  };
+
 // ---------------------------------
 
 // Trying out a new pattern for accessing zustand actions
@@ -216,4 +237,6 @@ export {
   useCurrentPlayerIndex,
   useIsTileSelected,
   useIsAdjacentToSelected,
+  useIsVisible,
+  useNeighborVisibility,
 };

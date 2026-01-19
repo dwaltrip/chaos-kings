@@ -2,23 +2,21 @@ import React from 'react';
 
 import type { Coord } from '@core/types';
 import { areCoordsEqual } from '@core/utils/coordinate-utils';
+import { isMountainSquare } from '@core/square';
 
 import { useRenderCounter } from '@/lib/use-render-counter';
 import {
   useTileQueuedDirections,
   useTileSquare,
-  useTileSquareTypes,
 } from '@/domains/games/hooks/use-tile-store-state';
 import {
   useGameplayStoreV2,
   useIsAdjacentToSelected,
   useIsGameEnded,
   useIsTileSelected,
-} from '@/domains/gameplay/stores/gameplay-store-v2';
-import {
   useIsVisible,
   useNeighborVisibility,
-} from '@/domains/gameplay/hooks/use-visibility';
+} from '@/domains/gameplay/stores/gameplay-store-v2';
 import { TileRenderer } from '@/domains/gameplay/ui/tile-renderer';
 
 interface GameTileProps {
@@ -41,7 +39,7 @@ const GameTile = React.memo(
     const isVisible = useGameplayStoreV2(useIsVisible(coord));
     const neighborVisibility = useGameplayStoreV2(useNeighborVisibility(coord));
 
-    const { isMountain } = useTileSquareTypes(coord);
+    const isMountain = isMountainSquare(square);
 
     const isSelectable = !isGameEnded && !(isMountain || isSelected);
     const isValidMove = isNeighborOfSelected && !isMountain;

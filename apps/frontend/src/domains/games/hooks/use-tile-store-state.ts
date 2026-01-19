@@ -25,14 +25,4 @@ function useTileQueuedDirections(coord: Coord): Set<Direction> {
   return store(useShallow((state) => state.queuedDirections));
 }
 
-function useTileSquareTypes(coord: Coord) {
-  const store = getTileStore(coord);
-  return store(
-    useShallow((state) => ({
-      isMountain: state.getIsMountain(),
-      isGeneral: state.getIsGeneral(),
-    })),
-  );
-}
-
-export { useTileSquare, useTileQueuedDirections, useTileSquareTypes };
+export { useTileSquare, useTileQueuedDirections };

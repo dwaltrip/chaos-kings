@@ -1,6 +1,7 @@
 import type { BoardState, Coord, Direction } from '@core/types';
 import { Board } from '@core/board';
 
+import { getTileStore } from '@/domains/games/stores/tile-store-registry';
 import { gameplayWsEffects } from '@/domains/gameplay/ws-effects';
 import { gameplayActions } from '@/domains/gameplay/stores/gameplay-store-v2';
 
@@ -21,6 +22,11 @@ function queueMove(direction: Direction, selectedTile: Coord | null, board: Boar
 
   // Immediately add to local queue for instant arrow feedback
   addQueuedMove({ sourceCoord: selectedTile, direction });
+
+  // Update tile store for per-tile subscriptions (optimistic)
+  const tileStore = getTileStore(selectedTile);
+  tileStore.getState().addQueuedDirection(direction);
+
   // Move selected tile to the new target tile
   setSelectedTileV2(Board.applyDirection(selectedTile, direction));
 
