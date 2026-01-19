@@ -1,6 +1,6 @@
 ---
 name: build-fixer-guide
-description: Guide for using the build-fixer agent to fix TypeScript build errors efficiently.
+description: Use when build fails with TypeScript errors. Teaches how to invoke the build-fixer agent iteratively for token-efficient automated fixing.
 ---
 
 # Using the build-fixer Agent

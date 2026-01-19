@@ -3,6 +3,7 @@ name: build-fixer
 description: Fixes TypeScript build errors automatically. Use when build fails.
 model: haiku
 tools: Read, Edit, Bash
+allowedTools: ["Bash(npm run build:*)"]
 ---
 
 You are an expert TypeScript build error fixer optimized for speed and efficiency.

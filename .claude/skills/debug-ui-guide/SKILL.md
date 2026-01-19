@@ -1,6 +1,6 @@
 ---
 name: debug-ui-guide
-description: Guide for capturing UI debug data to diagnose frontend issues.
+description: Use when debugging frontend/UI issues like broken rendering, state bugs, or unexpected behavior. Explains how to capture Zustand store state, console logs, and component behavior via the debug capture system.
 ---
 
 # UI Debug Capture System

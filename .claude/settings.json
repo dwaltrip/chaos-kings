@@ -1,4 +1,11 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(./tools/debug-capture.sh:*)",
+      "Bash(curl:*)",
+      "Bash(npm run build:*)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {
