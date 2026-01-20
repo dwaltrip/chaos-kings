@@ -1,11 +1,18 @@
-import { UserId, GameId } from '@kernel/ids';
+import { UserId } from '@kernel/ids';
 
+import { createScopedLogger } from '@/utils/scoped-logger';
 import { getGameCoordinator } from '@/domains/gameplay/game-coordinator';
 
-async function undoLastQueuedMove(userId: UserId, gameId: GameId): Promise<void> {
-  const gameCoordinator = getGameCoordinator();
-  const gameServer = gameCoordinator.requireGame(gameId);
-  gameServer.undoMove(userId);
+const log = createScopedLogger('gameplay:undo-move');
+
+function undoLastQueuedMove(userId: UserId): void {
+  const ctx = getGameCoordinator().getGameContextForUser(userId);
+  if (!ctx) {
+    log.debug(`User ${userId} not in any active game`);
+    return;
+  }
+
+  ctx.gameServer.undoMove(ctx.playerIndex);
 }
 
 export { undoLastQueuedMove };

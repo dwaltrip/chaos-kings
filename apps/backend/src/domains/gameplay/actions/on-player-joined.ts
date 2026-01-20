@@ -15,19 +15,25 @@ function onPlayerJoined(
   userId: UserId,
   connectionId: ConnectionId,
 ): void {
-  // Handle transport (system domain)
-  const roomId = buildGameRoomId(gameId);
-  systemActions.joinRoom({ roomId, userId, connectionId });
-
-  // Handle game logic (gameplay domain)
   const gameCoordinator = getGameCoordinator();
-  const gameServer = gameCoordinator.getGame(gameId);
 
+  // Validate user is actually a player in this specific game
+  if (!gameCoordinator.isUserInGame(userId, gameId)) {
+    log.warn(`User ${userId} tried to join game ${gameId} but isn't a player`);
+    return;
+  }
+
+  const gameServer = gameCoordinator.getGame(gameId);
   if (!gameServer) {
     log.warn(`Game ${gameId} not found when player ${userId} joined`);
     return;
   }
 
+  // Handle transport (system domain)
+  const roomId = buildGameRoomId(gameId);
+  systemActions.joinRoom({ roomId, userId, connectionId });
+
+  // Handle game logic - validation already done above
   gameServer.onPlayerJoinedRoom(userId);
   log.debug(`Player ${userId} joined game ${gameId}`);
 }

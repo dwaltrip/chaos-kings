@@ -1,5 +1,3 @@
-import { GameId } from '@kernel/ids';
-
 import { Board } from '@core/board';
 import { areCoordsEqual } from '@core/utils/coordinate-utils';
 
@@ -12,12 +10,12 @@ import {
 import { getTileStore } from '@/domains/games/stores/tile-store-registry';
 
 function undoLastQueuedMove() {
-  const { queuedMoves, game } = useGameplayStoreV2.getState();
-  if (!game?.id || queuedMoves.length === 0) {
+  const { queuedMoves } = useGameplayStoreV2.getState();
+  if (queuedMoves.length === 0) {
     return;
   }
   applyOptimisticUpdates();
-  gameplayWsEffects.sendUndoMove(GameId(game.id));
+  gameplayWsEffects.sendUndoMove();
 }
 
 function applyOptimisticUpdates() {

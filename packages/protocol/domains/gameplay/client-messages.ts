@@ -19,9 +19,7 @@ type GameplayClientPayloadMap = {
 
   'gameplay:cancel-moves': EmptyPayload;
 
-  'gameplay:undo-move': {
-    gameId: number;
-  };
+  'gameplay:undo-move': EmptyPayload;
 };
 
 type GameplayClientMessage = MessageUnion<GameplayClientPayloadMap>;
@@ -55,9 +53,9 @@ const MsgCreators = {
     payload: {},
   }),
 
-  createUndoMoveMessage: (gameId: number): UndoMoveMessage => ({
+  createUndoMoveMessage: (): UndoMoveMessage => ({
     type: 'gameplay:undo-move',
-    payload: { gameId },
+    payload: {},
   }),
 } as const;
 

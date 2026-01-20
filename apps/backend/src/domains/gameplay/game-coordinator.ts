@@ -1,6 +1,7 @@
-import { GameId } from '@kernel/ids';
+import { GameId, UserId } from '@kernel/ids';
 
 import { TICK_RATE_MS } from '@core/game-timing-config';
+import type { PlayerIndex } from '@core/types';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
 import { createScopedLogger } from '@/utils/scoped-logger';
@@ -9,8 +10,14 @@ import { GameServer } from '@/domains/gameplay/game-server';
 
 const moduleLogger = createScopedLogger('GameCoordinator');
 
+interface UserGameSession {
+  gameId: GameId;
+  playerIndex: PlayerIndex;
+}
+
 class GameCoordinator {
   private games: Map<GameId, GameServer> = new Map();
+  private userSessions: Map<UserId, UserGameSession> = new Map();
   private tickInterval: NodeJS.Timeout | null = null;
   private log = moduleLogger;
 
@@ -59,6 +66,15 @@ class GameCoordinator {
     this.log.info(`Adding game ${gameId} to registry`);
     const gameServer = new GameServer(game);
     this.games.set(gameId, gameServer);
+
+    // Auto-register players
+    for (const player of game.players) {
+      const userId = UserId(player.user_id);
+      this.userSessions.set(userId, {
+        gameId,
+        playerIndex: player.player_index,
+      });
+    }
   }
 
   removeGame(gameId: GameId): void {
@@ -69,6 +85,14 @@ class GameCoordinator {
     }
 
     this.log.info(`Removing game ${gameId} from registry`);
+
+    // Auto-cleanup user sessions for this game
+    for (const [userId, session] of this.userSessions) {
+      if (session.gameId === gameId) {
+        this.userSessions.delete(userId);
+      }
+    }
+
     gameServer.cleanup();
     this.games.delete(gameId);
   }
@@ -89,6 +113,23 @@ class GameCoordinator {
     return this.games.size;
   }
 
+  // Returns gameServer and playerIndex for a user, or undefined if not in a game
+  getGameContextForUser(
+    userId: UserId,
+  ): { gameServer: GameServer; playerIndex: PlayerIndex } | undefined {
+    const session = this.userSessions.get(userId);
+    if (!session) return undefined;
+    const gameServer = this.games.get(session.gameId);
+    if (!gameServer) return undefined;
+    return { gameServer, playerIndex: session.playerIndex };
+  }
+
+  // Check if a user is in a specific game (for join-game validation)
+  isUserInGame(userId: UserId, gameId: GameId): boolean {
+    const session = this.userSessions.get(userId);
+    return session?.gameId === gameId;
+  }
+
   shutdown(): void {
     this.log.info('Shutting down game coordinator');
 
@@ -103,6 +144,7 @@ class GameCoordinator {
     }
 
     this.games.clear();
+    this.userSessions.clear();
   }
 }
 

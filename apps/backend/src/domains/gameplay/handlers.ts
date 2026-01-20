@@ -28,8 +28,8 @@ const gameplayHandlers = {
     cancelQueuedMoves(UserId(ctx.userId));
   },
 
-  'gameplay:undo-move': ({ gameId }, ctx) => {
-    undoLastQueuedMove(UserId(ctx.userId), GameId(gameId));
+  'gameplay:undo-move': (payload, ctx) => {
+    undoLastQueuedMove(UserId(ctx.userId));
   },
 } satisfies HandlerMapWithCtx<GameplayClientMessage, ConnectionContext>;
 

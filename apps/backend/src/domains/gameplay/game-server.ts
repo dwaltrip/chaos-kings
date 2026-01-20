@@ -25,7 +25,6 @@ import { gameRepository } from '@/domains/games/game-repository';
 import { getGame, endGame } from '@/domains/games/actions';
 import { gameplayWsEffects } from '@/domains/gameplay/ws-effects';
 import { MoveHistoryBuffer } from '@/domains/gameplay/move-history-buffer';
-import { removeUserFromGame } from '@/domains/gameplay/actions';
 
 const MAX_QUEUED_MOVES_PER_PLAYER = 200;
 
@@ -40,7 +39,7 @@ export class GameServer {
   private gameState: GameState;
   private playerQueues: Map<PlayerIndex, QueuedMove[]> = new Map();
   private roomName: RoomId;
-  private playerMapping: Map<UserId, PlayerIndex> = new Map(); // userId -> playerIndex
+  private expectedPlayers: Set<UserId>; // players expected to join this game
   private connectedPlayers: Set<UserId> = new Set(); // userIds who joined gameplay room
   private gameStarted: boolean = false;
   private gameEnded: boolean = false;
@@ -57,9 +56,9 @@ export class GameServer {
     this.roomName = buildGameRoomId(this.game.id);
     this.log.debug('New GameServer');
 
-    // setup player mappings and move queues
+    // Setup expected players and move queues
+    this.expectedPlayers = new Set(game.players.map((p) => UserId(p.user_id)));
     for (const player of game.players) {
-      this.playerMapping.set(UserId(player.user_id), player.player_index);
       this.playerQueues.set(player.player_index, []);
     }
 
@@ -217,17 +216,10 @@ export class GameServer {
     }));
   }
 
-  queueMove(userId: UserId, source: Coord, movement: Direction): void {
-    const playerIndex = this.playerMapping.get(userId);
-    if (playerIndex === undefined) {
-      this.log.info(`Move request from unknown user ${userId}`);
-      return;
-    }
+  queueMove(playerIndex: PlayerIndex, source: Coord, movement: Direction): void {
     const playerState = this.gameState.players[playerIndex];
     if (playerState.status !== CorePlayerStatus.ACTIVE) {
-      this.log.debug(
-        `Ignoring move from inactive player ${playerIndex} (user ${userId})`,
-      );
+      this.log.debug(`Ignoring move from inactive player ${playerIndex}`);
       return;
     }
     const queue = this.getPlayerQueue(playerIndex);
@@ -235,14 +227,14 @@ export class GameServer {
     // Basic validation at queue time - only check bounds, not ownership
     if (!Board.isCoordValid(this.gameState.board, source)) {
       this.log.error(
-        `Invalid coords ${source.x},${source.y} for move request from user id=${userId}`,
+        `Invalid coords ${source.x},${source.y} for move request from player ${playerIndex}`,
       );
       return;
     }
 
     if (queue.length >= MAX_QUEUED_MOVES_PER_PLAYER) {
       this.log.info(
-        `Move Queue full for user ${userId} (${queue.length} moves), skipping.`,
+        `Move queue full for player ${playerIndex} (${queue.length} moves), skipping.`,
       );
       return;
     }
@@ -251,48 +243,27 @@ export class GameServer {
     queue.push(queuedMove);
   }
 
-  clearMoves(userId: UserId): void {
-    const playerIndex = this.playerMapping.get(userId);
-    if (playerIndex === undefined) {
-      this.log.error(`Clear moves request from unknown user id=${userId}`);
-      return;
-    }
-
+  clearMoves(playerIndex: PlayerIndex): void {
     const queue = this.getPlayerQueue(playerIndex);
-    if (queue) {
-      queue.length = 0;
-      this.log.debug(`Cleared move queue for player ${playerIndex}`);
-    }
+    queue.length = 0;
+    this.log.debug(`Cleared move queue for player ${playerIndex}`);
   }
 
-  undoMove(userId: UserId): void {
-    const playerIndex = this.playerMapping.get(userId);
-    if (playerIndex === undefined) {
-      this.log.error(`Undo move request from unknown user id=${userId}`);
-      return;
-    }
+  undoMove(playerIndex: PlayerIndex): void {
     const queue = this.getPlayerQueue(playerIndex);
-    if (!queue || queue.length === 0) {
-      return;
-    }
+    if (queue.length === 0) return;
     queue.pop();
   }
 
   onPlayerJoinedRoom(userId: UserId): void {
-    if (!this.playerMapping.has(userId)) {
-      this.log.error(
-        `User ${userId} not part of game, ignoring join. Expected players: ${[...this.playerMapping.keys()].join(', ')}`,
-      );
-      return;
-    }
-
+    // Validation that user is in this game is done by the action via GameCoordinator
     this.connectedPlayers.add(userId);
-    const playerCountStr = `${this.connectedPlayers.size}/${this.game.players.length}`;
+    const playerCountStr = `${this.connectedPlayers.size}/${this.expectedPlayers.size}`;
     this.log.debug(`Player ${userId} joined game room (${playerCountStr})`);
 
     // Start countdown when we have enough players
     if (
-      this.connectedPlayers.size >= Math.min(2, this.game.players.length) &&
+      this.connectedPlayers.size >= Math.min(2, this.expectedPlayers.size) &&
       !this.countdownInterval.isActive() &&
       !this.gameStarted
     ) {
@@ -416,9 +387,7 @@ export class GameServer {
     this.countdownInterval.cancel();
     this.moveFlushInterval.cancel();
 
-    for (const userId of this.playerMapping.keys()) {
-      removeUserFromGame(userId);
-    }
+    // User session cleanup is handled by GameCoordinator.removeGame
 
     void this.flushMoveHistory(true);
     this.playerQueues.clear();

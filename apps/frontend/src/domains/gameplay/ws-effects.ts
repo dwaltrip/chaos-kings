@@ -22,8 +22,8 @@ const gameplayWsEffects = {
     wsBridge.send(MsgCreators.createCancelMovesMessage());
   },
 
-  sendUndoMove(gameId: GameId) {
-    wsBridge.send(MsgCreators.createUndoMoveMessage(idToNumber(gameId)));
+  sendUndoMove() {
+    wsBridge.send(MsgCreators.createUndoMoveMessage());
   },
 };
 
