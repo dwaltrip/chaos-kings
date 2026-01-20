@@ -1,10 +1,7 @@
 import type { PuzzlesServerMessage } from '@protocol/domains/puzzles/server-messages';
 
 import type { HandlerMap } from '@/ws-lib';
-import {
-  handleStateUpdate,
-  handlePuzzleEnd,
-} from '@/domains/puzzles/actions/puzzle-actions';
+import { handleStateUpdate, handlePuzzleEnd } from '@/domains/puzzles/actions';
 
 const puzzlesHandlers = {
   'puzzles:state-update': (payload) => {

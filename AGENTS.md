@@ -8,7 +8,6 @@ This project is a revamp + extension of the web-based real time strategy game, *
 
 **📚 Key Documentation:**
 - **docs/architecture.md** - Complete architecture guide (start here for understanding the system)
-- **docs/frontend-component-organization.md** - Frontend component patterns (experimental, Dec 2025)
 - **docs/open-questions.md** - Known loose ends, future work, architectural decisions needed
 - **AGENTS.md** (this file) - Coding conventions and patterns
 
@@ -145,13 +144,14 @@ Each backend domain typically has:
 ### Frontend Domain Files
 
 Each frontend domain typically has:
-- `handlers.ts` - Updates stores/state from incoming messages
-- `actions.ts` - Domain operations (user interactions, UI logic)
-- `stores/` - Zustand stores for domain state
+- `handlers.ts` - Routes incoming WS messages to domain actions
+- `actions/` - Domain operations, each in its own file
+- `stores/` - Zustand stores (thin/dumb - NO business logic)
+- `ws-effects.ts` - Outbound WS messages
 - `pages/` - Route entry points and page-specific UI
-- `ui/` - Reusable UI components (shared across pages/domains)
+- `ui/` - Reusable UI components
 
-**See docs/frontend-component-organization.md for detailed component placement rules.**
+**See `apps/frontend/AGENTS.md` for detailed frontend patterns (store/action pattern, examples).**
 
 ---
 
@@ -219,12 +219,6 @@ type GameId = string & { readonly __brand: 'GameId' };
 - All JavaScript and TypeScript uses **2-space indentation**
 - Pre-commit hooks automatically format staged files using Prettier
 
-### Frontend Pages
-- Each page gets own directory: `frontend/src/domains/$domain/pages/`
-- Page-specific components are siblings to the page file
-- Reusable components in `domains/$domain/ui/` or `src/ui/` for generic UI
-- See **docs/frontend-component-organization.md** for full details
-
 ### Comments
 - Use **very sparingly** - NEVER explain what code does, only WHY or crucial context
 - NO verbose/JSDoc style comments - prefer short, single-line comments
@@ -284,8 +278,8 @@ type GameId = string & { readonly __brand: 'GameId' };
 
 ## Related Documentation
 
+- **apps/frontend/AGENTS.md** - Frontend-specific patterns (store/action pattern, examples)
 - **docs/architecture.md** - Complete architecture guide
-- **docs/frontend-component-organization.md** - Frontend component patterns (experimental)
 - **docs/open-questions.md** - Known loose ends and future work
 - **docs/open-questions-history.md** - Resolved questions and historical context
 - **docs/DEBUGGING-GUIDE.md** - Debugging patterns and gotchas

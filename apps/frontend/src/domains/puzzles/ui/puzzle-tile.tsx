@@ -16,14 +16,13 @@ import {
   selectIsPuzzleEnded,
   selectIsVisible,
   selectNeighborVisibility,
-  puzzleActions,
 } from '@/domains/puzzles/stores/puzzle-store';
 
 interface PuzzleTileProps {
   coord: Coord;
 }
 
-const { setSelectedTile } = puzzleActions();
+const { setSelectedTile } = usePuzzleStore.getState().actions;
 
 const PuzzleTile = React.memo(
   ({ coord }: PuzzleTileProps) => {

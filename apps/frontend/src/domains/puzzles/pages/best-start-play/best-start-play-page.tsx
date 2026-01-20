@@ -8,12 +8,7 @@ import {
 } from '@/domains/users/user-store';
 import { useKeyboardControls } from '@/domains/gameplay/hooks/use-keyboard-controls';
 
-import {
-  startPuzzle,
-  queueMove,
-  undoMove,
-  clearMoves,
-} from '@/domains/puzzles/actions/puzzle-actions';
+import { startPuzzle, queueMove, undoMove, clearMoves } from '@/domains/puzzles/actions';
 import {
   usePuzzleStore,
   selectStatus,
