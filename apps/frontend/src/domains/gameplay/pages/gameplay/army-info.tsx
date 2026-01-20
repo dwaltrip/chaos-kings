@@ -1,3 +1,5 @@
+import { CorePlayerStatus } from '@core/types';
+
 import { getPlayerColor } from '@/utils/player-colors';
 import { useGameplayStoreV2 } from '@/domains/gameplay/stores/gameplay-store-v2';
 
@@ -8,22 +10,30 @@ interface ArmyInfoRowProps {
   color: string;
   armyCount?: number;
   landCount?: number;
+  isDefeated?: boolean;
 }
 
-function ArmyInfoRow({ name, color, armyCount, landCount }: ArmyInfoRowProps) {
+function ArmyInfoRow({
+  name,
+  color,
+  armyCount,
+  landCount,
+  isDefeated,
+}: ArmyInfoRowProps) {
+  const textClass = isDefeated ? 'text-gray-400' : '';
   return (
     <>
-      <div className="flex items-center gap-2 text-sm">
+      <div className={`flex items-center gap-2 text-sm ${textClass}`}>
         <span
-          className="player-color-bubble h-3 w-3 rounded-full border border-gray-300 "
-          style={{ backgroundColor: color }}
+          className="player-color-bubble h-3 w-3 rounded-full border border-gray-300"
+          style={{ backgroundColor: isDefeated ? '#9ca3af' : color }}
         />
         <span className="truncate">{name}</span>
       </div>
-      <span className="text-right font-mono tabular-nums text-sm">
+      <span className={`text-right font-mono tabular-nums text-sm ${textClass}`}>
         {armyCount !== undefined ? armyCount : '-'}
       </span>
-      <span className="text-right font-mono tabular-nums text-sm">
+      <span className={`text-right font-mono tabular-nums text-sm ${textClass}`}>
         {landCount !== undefined ? landCount : '-'}
       </span>
     </>
@@ -52,9 +62,10 @@ function GameplayArmyInfo() {
         <span className="text-right text-xs font-semibold uppercase tracking-wide text-gray-600">
           Land
         </span>
-        {playerStats.map((stat) => {
-          const player = playersByIndex.get(stat.playerIndex)!;
+        {playerStats.map((stat, index) => {
+          const player = playersByIndex.get(index)!;
           const isCurrentPlayer = player.player_index === currentPlayerIndex;
+          const isDefeated = stat.status === CorePlayerStatus.DEFEATED;
           return (
             <ArmyInfoRow
               key={player.id}
@@ -62,6 +73,7 @@ function GameplayArmyInfo() {
               color={getPlayerColor(player.player_index)}
               armyCount={stat.armyCount}
               landCount={stat.landCount}
+              isDefeated={isDefeated}
             />
           );
         })}

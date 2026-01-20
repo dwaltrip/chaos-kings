@@ -16,7 +16,6 @@ interface PlayerDisplayInfo {
   playerIndex: number;
   username?: string;
   color: string;
-  status: string;
 }
 
 function getPlayerDisplayInfo(player: Player & { username?: string }): PlayerDisplayInfo {
@@ -26,7 +25,6 @@ function getPlayerDisplayInfo(player: Player & { username?: string }): PlayerDis
     playerIndex: player.player_index,
     username: player.username,
     color: getPlayerColor(player.player_index),
-    status: player.status,
   };
 }
 

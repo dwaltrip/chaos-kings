@@ -3,8 +3,8 @@ import { GameId, RoomId } from '@kernel/ids';
 import { MsgCreators } from '@protocol/domains/gameplay/server-messages';
 import { serializeGameWithPlayers } from '@platform/domains/games/serializers';
 
-import type { BoardState, PlayerIndex } from '@core/types';
-import type { PlayerQueuesMap, PlayerStats } from '@platform/domains/gameplay/types';
+import type { BoardState, CorePlayerState, PlayerIndex } from '@core/types';
+import type { PlayerQueuesMap } from '@platform/domains/gameplay/types';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
 import { wsBridge } from '@/ws/server-bridge-bootstrap';
@@ -19,7 +19,7 @@ const gameplayWsEffects = {
     tick: number,
     boardState: BoardState,
     playerQueues?: PlayerQueuesMap,
-    playerStats: PlayerStats[] = [],
+    playerStats: CorePlayerState[] = [],
   ) {
     wsBridge.broadcastToRoom(
       idToString(roomId),

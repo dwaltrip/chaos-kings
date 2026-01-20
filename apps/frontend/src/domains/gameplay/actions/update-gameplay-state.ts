@@ -1,6 +1,6 @@
-import type { BoardState, Movement, PlayerIndex } from '@core/types';
+import type { BoardState, CorePlayerState, Movement, PlayerIndex } from '@core/types';
 import { Board } from '@core/board';
-import type { PlayerQueuesMap, PlayerStats } from '@platform/domains/gameplay/types';
+import type { PlayerQueuesMap } from '@platform/domains/gameplay/types';
 
 import {
   gameplayActions,
@@ -13,7 +13,7 @@ function updateGameplayState(
   tick: number,
   board: BoardState,
   playerQueues: PlayerQueuesMap = {},
-  playerStats: PlayerStats[] = [],
+  playerStats: CorePlayerState[] = [],
 ) {
   const state = useGameplayStoreV2.getState();
 
@@ -38,7 +38,7 @@ function applyGameplayStateUpdate(
   tick: number,
   board: BoardState,
   playerQueues: PlayerQueuesMap = {},
-  playerStats: PlayerStats[],
+  playerStats: CorePlayerState[],
   playerIndex: PlayerIndex,
 ) {
   const { setVisibleSquares, updateBoard, setTick, setPlayerStats } = gameplayActions();

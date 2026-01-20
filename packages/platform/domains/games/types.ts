@@ -2,14 +2,11 @@ import { GameId } from '@kernel/ids';
 import { type CoreGameAttrs } from '@core/game/types';
 import type { PlayerIndex } from '@core/types';
 
-type GamePlayerStatus = 'active' | 'captured' | 'inactive';
-
 interface Player {
   id: number;
   game_id: number;
   user_id: number;
   joined_at: Date | string | undefined;
-  status: GamePlayerStatus;
   player_index: PlayerIndex;
   data: object | null;
   username: string;
@@ -39,11 +36,4 @@ interface GameWithPlayersDTO extends GameDTO {
   players: Player[];
 }
 
-export type {
-  Game,
-  GameWithPlayers,
-  GameDTO,
-  GameWithPlayersDTO,
-  Player,
-  GamePlayerStatus,
-};
+export type { Game, GameWithPlayers, GameDTO, GameWithPlayersDTO, Player };

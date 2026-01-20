@@ -1,10 +1,15 @@
 import { create } from 'zustand';
 
-import type { BoardState, Coord, Movement, PlayerIndex } from '@core/types';
+import type {
+  BoardState,
+  Coord,
+  CorePlayerState,
+  Movement,
+  PlayerIndex,
+} from '@core/types';
 import { hasCompletedGameState, isEnded } from '@core/game';
 
 import type { GameWithPlayers, Player } from '@platform/domains/games/types';
-import type { PlayerStats } from '@platform/domains/gameplay/types';
 
 import {
   isTileSelected,
@@ -29,7 +34,7 @@ interface GameplayStateV2 {
   selectedTile: Coord | null;
   visibleSquares: Set<string>;
   queuedMoves: Movement[];
-  playerStats: PlayerStats[];
+  playerStats: CorePlayerState[];
 
   // Player identity (set once at game load)
   players: Player[];
@@ -50,7 +55,7 @@ interface GameplayStateV2 {
     updateBoard: (boardState: BoardState) => void;
     setVisibleSquares: (visibleSquares: Set<string>) => void;
     setQueuedMoves: (moves: Movement[]) => void;
-    setPlayerStats: (playerStats: PlayerStats[]) => void;
+    setPlayerStats: (playerStats: CorePlayerState[]) => void;
     addQueuedMove: (move: Movement) => void;
     setWinner: (winner: PlayerIndex) => void;
     setPlayerData: (players: Player[], currentUserId: number | null) => void;

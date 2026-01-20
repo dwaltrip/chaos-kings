@@ -1,5 +1,6 @@
 import { ColumnType, Generated } from 'kysely';
 
+// TODO: status column is not used - always 'active'. Consider removing from DB schema.
 type GamePlayerStatus = 'active' | 'captured' | 'inactive';
 
 interface GamePlayersTable {

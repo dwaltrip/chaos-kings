@@ -14,7 +14,6 @@ import { processStep as coreProcessStep, createGameState } from '@core/step-proc
 import type { MoveEvent } from '@core/replay/types';
 
 import { buildGameRoomId } from '@platform/domains/gameplay/helpers';
-import type { PlayerStats } from '@platform/domains/gameplay/types';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
 import { createScopedLogger } from '@/utils/scoped-logger';
@@ -183,13 +182,12 @@ export class GameServer {
 
   private broadcastGameState(): void {
     try {
-      const playerStats = this.getPlayerStatsForBroadcast();
       gameplayWsEffects.broadcastGameState(
         this.roomName,
         this.gameState.tick,
         this.gameState.board,
         this.getPlayerQueuesForBroadcast(),
-        playerStats,
+        this.gameState.players,
       );
     } catch (error) {
       this.log.error('Failed to broadcast game state. Error:', error);
@@ -206,14 +204,6 @@ export class GameServer {
     } catch (error) {
       this.log.error(`Failed to broadcast game end. Error:`, error);
     }
-  }
-
-  private getPlayerStatsForBroadcast(): PlayerStats[] {
-    return this.gameState.players.map((player, index) => ({
-      playerIndex: index,
-      armyCount: player.armyCount,
-      landCount: player.landCount,
-    }));
   }
 
   queueMove(playerIndex: PlayerIndex, source: Coord, movement: Direction): void {

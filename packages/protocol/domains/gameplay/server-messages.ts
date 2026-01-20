@@ -1,16 +1,16 @@
 import type { MessageUnion } from '@protocol/utils/message-helpers';
 import type { ExtractMsg } from '@protocol/utils/type-helpers';
 
-import type { BoardState, PlayerIndex } from '@core/types';
+import type { BoardState, CorePlayerState, PlayerIndex } from '@core/types';
 import type { GameWithPlayersDTO } from '@platform/domains/games/types';
-import type { PlayerQueuesMap, PlayerStats } from '@platform/domains/gameplay/types';
+import type { PlayerQueuesMap } from '@platform/domains/gameplay/types';
 
 type GameplayServerPayloadMap = {
   'gameplay:state-update': {
     tick: number;
     boardState: BoardState;
     playerQueues?: PlayerQueuesMap;
-    playerStats: PlayerStats[];
+    playerStats: CorePlayerState[];
   };
 
   'gameplay:game-starting': {
@@ -41,7 +41,7 @@ const MsgCreators = {
     tick: number,
     boardState: BoardState,
     playerQueues?: PlayerQueuesMap,
-    playerStats: PlayerStats[] = [],
+    playerStats: CorePlayerState[] = [],
   ): StateUpdateMessage => ({
     type: 'gameplay:state-update',
     payload: { tick, boardState, playerQueues, playerStats },
