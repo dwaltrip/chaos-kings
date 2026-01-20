@@ -1,4 +1,4 @@
-import { GameId, RoomId, UserId } from '@kernel/ids';
+import { RoomId, UserId } from '@kernel/ids';
 
 import { Direction, Coord, PlayerIndex, CorePlayerStatus } from '@core/types';
 import type { GameState } from '@core/types';
@@ -34,8 +34,7 @@ interface QueuedMove {
 }
 
 export class GameServer {
-  // TODO: GameWithPlayers doesn't have proper app types, e.g. GameId, UserId, etc
-  // it's more of a plain data object from the DB layer
+  // TODO: Player type uses plain numbers for user_id/game_id instead of branded types
   private game: GameWithPlayers;
   private gameState: GameState;
   private playerQueues: Map<PlayerIndex, QueuedMove[]> = new Map();
@@ -55,7 +54,7 @@ export class GameServer {
 
   constructor(game: GameWithPlayers) {
     this.game = game;
-    this.roomName = buildGameRoomId(GameId(this.game.id));
+    this.roomName = buildGameRoomId(this.game.id);
     this.log.debug('New GameServer');
 
     // setup player mappings and move queues
@@ -85,9 +84,6 @@ export class GameServer {
     return queue;
   }
 
-  // TODO: When game ends, we broadcast twice
-  // - broadcastGameState
-  // - broadcastGameEnd
   async tick(): Promise<boolean> {
     // --------------------------------------------------------------------
     // TODO: Improve the flow of the entire game startup process...
@@ -374,10 +370,9 @@ export class GameServer {
 
   private broadcastGameStarting(): void {
     try {
-      // TODO: these IDs should already be of type GameId / RoomId
       gameplayWsEffects.broadcastGameStarting(
         this.roomName,
-        GameId(this.game.id),
+        this.game.id,
         this.countdownSeconds,
       );
     } catch (error) {
@@ -395,10 +390,10 @@ export class GameServer {
 
     // Update game status to IN_PROGRESS in database
     try {
-      await gameRepository.updateStatus(GameId(this.game.id), GameStatus.IN_PROGRESS);
+      await gameRepository.updateStatus(this.game.id, GameStatus.IN_PROGRESS);
 
       // Get the updated game object with new status
-      const updatedGame = await getGame(GameId(this.game.id));
+      const updatedGame = await getGame(this.game.id);
       if (!updatedGame) {
         throw new Error(`Game ${this.game.id} not found after starting`);
       }
@@ -413,7 +408,7 @@ export class GameServer {
     try {
       gameplayWsEffects.broadcastGameStarted(
         this.roomName,
-        GameId(this.game.id),
+        this.game.id,
         this.gameState.board,
         game,
       );
@@ -474,7 +469,7 @@ export class GameServer {
   private async flushMoveHistory(force: boolean = false): Promise<void> {
     try {
       await this.moveHistory.flush(
-        (history) => gameRepository.updateMoveHistory(GameId(this.game.id), history),
+        (history) => gameRepository.updateMoveHistory(this.game.id, history),
         force,
       );
     } catch (error) {

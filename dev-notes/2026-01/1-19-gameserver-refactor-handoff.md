@@ -1,7 +1,7 @@
 # GameServer Refactor Handoff
 
 **Date:** 2026-01-19
-**Status:** In progress - build broken, needs replay fix
+**Status:** ✅ Complete
 **Branch:** `puzzles-pt-2`
 
 ---
@@ -13,6 +13,8 @@ This session implemented a significant refactor to move player state tracking in
 **Key commits:**
 1. `75ee8fd` - Initial refactor: `activePlayers` set, `Board.getPlayerStats()`, `processStep` returns `newlyDefeatedPlayers`
 2. `ad098b0` - Full player state in core: `CorePlayerState`, `GameEvent`, capture info from `applyMovement`
+3. `4ef29f5` - Update replay to use GameState from core (ReplayFrame embeds GameState)
+4. `7281182` - Clean up GameServer: remove stale TODOs and redundant type conversions
 
 ---
 
@@ -103,49 +105,34 @@ Creates a properly initialized GameState with all players set to ACTIVE and stat
 
 ---
 
-## What's Broken
+## Completed Fixes
 
-### Frontend Replay Feature
+### Frontend Replay Feature ✅
 
-**File:** `apps/frontend/src/domains/replay/actions/jump-to-step.ts`
+`ReplayFrame` now embeds `GameState` instead of separate `board`/`step` fields:
+- `replay-store.ts` - Updated type
+- `load-replay.ts` - Uses `createGameState` for initial frame
+- `jump-to-step.ts` - Uses new `processStep` signature, `deepCloneGameState`
+- `replay-page.tsx` - Accesses `currentFrame.gameState.board`
 
-**Error:**
-```
-src/domains/replay/actions/jump-to-step.ts(66,60): error TS2554: Expected 3 arguments, but got 4.
-```
+This enables future player stats display in replays.
 
-**Problem:** The replay feature simulates game steps forward from checkpoints. It uses the old `processStep` signature:
+### GameServer Cleanup ✅
 
-```typescript
-// Line 66 - OLD (broken)
-const result = processStep(board, currentStep, events, state.config.timing);
-```
-
-**Fix needed:** The replay feature needs to:
-1. Maintain a full `GameState` instead of just `BoardState`
-2. Use `createGameState` when loading a replay
-3. Update `ReplayFrame` type to include player state (or derive it)
-
-**Context:** The replay feature caches board states at checkpoints and simulates forward. It doesn't currently care about player state, just board visualization. Options:
-- Create a minimal GameState for replay purposes
-- Add a separate `processStepForReplay` that works with just the board
-- Update replay to track full GameState
+- Removed stale TODO about "double broadcast" (code was already correct)
+- Removed redundant `GameId()` wrappers (game.id is already GameId type)
+- Updated remaining TODO to accurately describe the Player type issue
+- Removed unused `GameId` import
 
 ---
 
-## Remaining Cleanup
+## Remaining TODOs (Lower Priority)
 
-After fixing the replay feature, there's still a cleanup pass needed for `game-server.ts`:
+1. **Game startup state machine** (lines 89-92): Multiple boolean flags (`countdownActive`, `gameStarted`, `initialized`, `gameEnded`) could be consolidated into a single `GamePhase` enum
 
-1. **TODOs to review:**
-   - Line 36-37: `GameWithPlayers` doesn't have proper app types
-   - Line 92-94: Double broadcast when game ends
-   - Lines 97-99: Improve game startup flow, single source of truth
-   - Lines 312-317: Revisit startup flow (2 players requirement)
-   - Line 381: IDs should already be GameId/RoomId type
+2. **Fallback timer gives up** (lines 305-330): Currently loops forever if < 2 players. Should have a max wait time and mark game as "failed_to_start"
 
-2. **Dead code removal:**
-   - `Board` import may no longer be needed (check if `isCoordValid` is still used)
+3. **Player type branded IDs**: `Player.user_id` and `Player.game_id` use plain `number` instead of `UserId`/`GameId`. Cross-cutting refactor needed.
 
 ---
 
@@ -165,28 +152,22 @@ After fixing the replay feature, there's still a cleanup pass needed for `game-s
 
 ---
 
-## Files to Review
+## Files Changed
 
 | File | Status | Notes |
 |------|--------|-------|
-| `packages/core/src/types.ts` | Done | New types added |
-| `packages/core/src/engine.ts` | Done | `MoveResult` return type |
-| `packages/core/src/step-processor.ts` | Done | New signature, `createGameState` |
-| `packages/core/src/board.ts` | Done | `getPlayerStats` added (earlier commit) |
-| `apps/backend/src/domains/gameplay/game-server.ts` | Done | Uses new APIs |
-| `apps/backend/src/domains/puzzles/puzzle-manager.ts` | Done | Uses new APIs |
-| `packages/core/src/puzzles/best-start/create.ts` | Done | Uses `createGameState` |
-| `apps/frontend/src/domains/replay/actions/jump-to-step.ts` | **BROKEN** | Needs fix |
-
----
-
-## How to Continue
-
-1. **Fix replay feature** - decide on approach (minimal GameState vs full tracking)
-2. **Run build** - `bash tools/build-all.sh`
-3. **Run tests** - `bash tools/test-all.sh` (step-processor tests may need updates)
-4. **Cleanup pass** - review TODOs, remove dead code
-5. **Commit** - small incremental commits preferred
+| `packages/core/src/types.ts` | ✅ | New types added |
+| `packages/core/src/engine.ts` | ✅ | `MoveResult` return type |
+| `packages/core/src/step-processor.ts` | ✅ | New signature, `createGameState` |
+| `packages/core/src/board.ts` | ✅ | `getPlayerStats` added |
+| `packages/core/src/step-processor-ordering.test.ts` | ✅ | Updated to new signature |
+| `apps/backend/src/domains/gameplay/game-server.ts` | ✅ | Uses new APIs, cleanup done |
+| `apps/backend/src/domains/puzzles/puzzle-manager.ts` | ✅ | Uses new APIs |
+| `packages/core/src/puzzles/best-start/create.ts` | ✅ | Uses `createGameState` |
+| `apps/frontend/src/domains/replay/actions/jump-to-step.ts` | ✅ | Uses new signature, embeds GameState |
+| `apps/frontend/src/domains/replay/actions/load-replay.ts` | ✅ | Uses `createGameState` |
+| `apps/frontend/src/domains/replay/stores/replay-store.ts` | ✅ | ReplayFrame embeds GameState |
+| `apps/frontend/src/domains/replay/pages/replay-page.tsx` | ✅ | Updated access pattern |
 
 ---
 

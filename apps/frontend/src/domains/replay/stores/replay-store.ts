@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 import type { GameId } from '@kernel/ids';
-import type { BoardState } from '@core/types';
+import type { GameState } from '@core/types';
 import type { GameConfig } from '@core/game-config';
 import type { MoveEvent, MoveHistoryV1 } from '@core/replay/types';
 
@@ -9,8 +9,7 @@ const CHECKPOINT_INTERVAL = 25;
 const FRAME_CACHE_MAX_SIZE = 100;
 
 interface ReplayFrame {
-  step: number;
-  board: BoardState;
+  gameState: GameState;
   gameEnded: boolean;
   winner?: number;
 }
@@ -90,7 +89,7 @@ function replayActions() {
 
     setCurrentFrame: (frame: ReplayFrame) => {
       useReplayStore.setState({
-        currentStep: frame.step,
+        currentStep: frame.gameState.tick,
         currentFrame: frame,
       });
     },

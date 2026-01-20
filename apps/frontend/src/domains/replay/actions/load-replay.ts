@@ -1,7 +1,7 @@
 import { GameId } from '@kernel/ids';
 
-import type { BoardState } from '@core/types';
 import type { MoveEvent, MoveHistoryV1 } from '@core/replay/types';
+import { createGameState } from '@core/step-processor';
 
 import { loadGame, GameNotFoundError } from '@/domains/games/games-api';
 import { replayActions, type ReplayFrame } from '@/domains/replay/stores/replay-store';
@@ -63,8 +63,8 @@ async function loadReplay(gameId: GameId): Promise<void> {
       playerIndex: p.player_index,
     }));
 
-    // Create initial board state (step 0 - before any moves)
-    const initialBoard: BoardState = {
+    // Create initial game state (tick 0 - before any moves)
+    const initialBoard = {
       size: config.map.size,
       grid: config.startingGrid.map((row) =>
         row.map((sq) => ({
@@ -73,10 +73,10 @@ async function loadReplay(gameId: GameId): Promise<void> {
         })),
       ),
     };
+    const initialGameState = createGameState(initialBoard, players.length);
 
     const initialFrame: ReplayFrame = {
-      step: 0,
-      board: initialBoard,
+      gameState: initialGameState,
       gameEnded: false,
     };
 

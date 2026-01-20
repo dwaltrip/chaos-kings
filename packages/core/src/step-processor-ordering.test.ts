@@ -1,4 +1,4 @@
-import { processStep } from '@core/step-processor';
+import { processStep, createGameState } from '@core/step-processor';
 import { PlayerSquareType, NeutralSquareType, Direction } from '@core/types';
 import type { BoardState, Coord, Square } from '@core/types';
 import type { MoveEvent } from '@core/replay/types';
@@ -59,13 +59,14 @@ describe('processStep ordering by playerIndex', () => {
       },
     ];
 
-    const { appliedEvents } = processStep(board, 1, events, timing);
+    const gameState = createGameState(board, 2);
+    const { appliedEvents } = processStep(gameState, events, timing);
 
     // Both moves are valid; both should be applied in playerIndex order (0 then 1)
     expect(appliedEvents.map((e) => e.playerIndex)).toEqual([0, 1]);
 
     // Destination (1,0) should end owned by player 0 after both moves resolve
-    const dest = board.grid[0][1] as any;
+    const dest = gameState.board.grid[0][1] as any;
     expect(dest.playerIndex).toBe(0);
   });
 });

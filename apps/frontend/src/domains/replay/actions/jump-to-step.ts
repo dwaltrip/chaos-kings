@@ -1,4 +1,4 @@
-import type { BoardState } from '@core/types';
+import type { GameState } from '@core/types';
 import { processStep } from '@core/step-processor';
 
 import {
@@ -9,15 +9,19 @@ import {
   type ReplayFrame,
 } from '@/domains/replay/stores/replay-store';
 
-function deepCloneBoard(board: BoardState): BoardState {
+function deepCloneGameState(gameState: GameState): GameState {
   return {
-    size: { ...board.size },
-    grid: board.grid.map((row) =>
-      row.map((sq) => ({
-        ...sq,
-        coord: { ...sq.coord },
-      })),
-    ),
+    tick: gameState.tick,
+    players: gameState.players.map((p) => ({ ...p })),
+    board: {
+      size: { ...gameState.board.size },
+      grid: gameState.board.grid.map((row) =>
+        row.map((sq) => ({
+          ...sq,
+          coord: { ...sq.coord },
+        })),
+      ),
+    },
   };
 }
 
@@ -49,8 +53,7 @@ function jumpToStep(targetStep: number): void {
   }
 
   const checkpoint = state.checkpoints.get(checkpointStep)!;
-  let board = deepCloneBoard(checkpoint.board);
-  let currentStep = checkpointStep;
+  const gameState = deepCloneGameState(checkpoint.gameState);
   let gameEnded = checkpoint.gameEnded;
   let winner = checkpoint.winner;
 
@@ -60,25 +63,26 @@ function jumpToStep(targetStep: number): void {
   let newTotalSteps = state.totalSteps;
 
   // Simulate forward from checkpoint to target
-  while (currentStep < targetStep && !gameEnded) {
-    currentStep++;
-    const events = state.eventsByStep.get(currentStep) ?? [];
-    const result = processStep(board, currentStep, events, state.config.timing);
+  while (gameState.tick < targetStep && !gameEnded) {
+    const nextTick = gameState.tick + 1;
+    const events = state.eventsByStep.get(nextTick) ?? [];
+    const result = processStep(gameState, events, state.config.timing);
 
     gameEnded = result.gameEnded;
     winner = result.winnerPlayerIndex;
 
     const frame: ReplayFrame = {
-      step: currentStep,
-      board: deepCloneBoard(board),
+      gameState: deepCloneGameState(gameState),
       gameEnded,
       winner,
     };
 
+    const currentTick = gameState.tick;
+
     // Add to frame cache with LRU eviction
-    newFrameCache.set(currentStep, frame);
-    newFrameCacheOrder = newFrameCacheOrder.filter((s) => s !== currentStep);
-    newFrameCacheOrder.push(currentStep);
+    newFrameCache.set(currentTick, frame);
+    newFrameCacheOrder = newFrameCacheOrder.filter((s) => s !== currentTick);
+    newFrameCacheOrder.push(currentTick);
 
     // Evict old frames if cache is full (keep checkpoints)
     while (newFrameCacheOrder.length > FRAME_CACHE_MAX_SIZE) {
@@ -90,17 +94,17 @@ function jumpToStep(targetStep: number): void {
     }
 
     // Save checkpoint every N steps
-    if (currentStep % CHECKPOINT_INTERVAL === 0) {
-      newCheckpoints.set(currentStep, frame);
+    if (currentTick % CHECKPOINT_INTERVAL === 0) {
+      newCheckpoints.set(currentTick, frame);
     }
 
     // Update total steps if game ended
     if (gameEnded) {
-      newTotalSteps = currentStep;
+      newTotalSteps = currentTick;
     }
   }
 
-  const finalFrame = newFrameCache.get(currentStep)!;
+  const finalFrame = newFrameCache.get(gameState.tick)!;
 
   actions.setCurrentFrame(finalFrame);
   actions.updateCache({

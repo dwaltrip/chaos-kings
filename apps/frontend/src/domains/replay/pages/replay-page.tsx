@@ -105,7 +105,7 @@ function ReplayPageContent({ gameId }: { gameId: GameId }) {
       </header>
 
       <main className="flex-1 flex items-center justify-center p-4 overflow-hidden">
-        <ReplayBoard boardState={currentFrame.board} />
+        <ReplayBoard boardState={currentFrame.gameState.board} />
       </main>
 
       <footer className="p-4 border-t border-gray-700">
