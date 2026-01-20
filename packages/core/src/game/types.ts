@@ -5,6 +5,7 @@ const GameStatus = {
   NOT_STARTED: 'not_started',
   IN_PROGRESS: 'in_progress',
   COMPLETE: 'complete',
+  FAILED_TO_START: 'failed_to_start',
 } as const;
 type GameStatusType = (typeof GameStatus)[keyof typeof GameStatus];
 

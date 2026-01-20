@@ -6,7 +6,7 @@ import { GameStatus } from '@core/game/types';
 import { Board } from '@core/board';
 import type { GameConfig } from '@core/game-config';
 import {
-  FALLBACK_TIMER_MS,
+  GAME_START_TIMEOUT_MS,
   ONE_SECOND_MS,
   PRE_GAME_COUNTDOWN_SECONDS,
 } from '@core/ui-timing-config';
@@ -18,6 +18,7 @@ import type { PlayerStats } from '@platform/domains/gameplay/types';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
 import { createScopedLogger } from '@/utils/scoped-logger';
+import { Timeout, Interval } from '@/utils/timers';
 import { runInContextWithTransaction } from '@/context/app-context';
 
 import { gameRepository } from '@/domains/games/game-repository';
@@ -44,11 +45,10 @@ export class GameServer {
   private gameStarted: boolean = false;
   private gameEnded: boolean = false;
   private initialized: boolean = false;
-  private countdownActive: boolean = false;
   private countdownSeconds: number = PRE_GAME_COUNTDOWN_SECONDS;
-  private countdownInterval: NodeJS.Timeout | null = null;
-  private fallbackTimer: NodeJS.Timeout | null = null;
-  private moveFlushTimer: NodeJS.Timeout | null = null;
+  private startTimeout = new Timeout();
+  private countdownInterval = new Interval();
+  private moveFlushInterval = new Interval();
   private moveHistory = new MoveHistoryBuffer();
   private log = createScopedLogger(() => `GameServer id=${this.game.id}`);
 
@@ -65,8 +65,8 @@ export class GameServer {
 
     this.initialized = true;
 
-    // Start fallback timer to ensure countdown starts even if not all players join
-    this.startFallbackTimer();
+    // Cancel game if not enough players join within timeout
+    this.startTimeout.start(() => this.handleStartTimeout(), GAME_START_TIMEOUT_MS);
 
     const board = {
       grid: game.config.startingGrid,
@@ -90,7 +90,7 @@ export class GameServer {
     // TODO: shouldn't check both of these, should have 1 source of truth
     // --------------------------------------------------------------------
     // Don't tick if game not started / countdown is still active
-    if (this.countdownActive || !this.gameStarted) {
+    if (this.countdownInterval.isActive() || !this.gameStarted) {
       return false;
     }
     if (!this.initialized || this.gameEnded) {
@@ -290,82 +290,66 @@ export class GameServer {
     const playerCountStr = `${this.connectedPlayers.size}/${this.game.players.length}`;
     this.log.debug(`Player ${userId} joined game room (${playerCountStr})`);
 
-    // Start countdown when we have enough players (or at least 1)
+    // Start countdown when we have enough players
     if (
       this.connectedPlayers.size >= Math.min(2, this.game.players.length) &&
-      !this.countdownActive &&
+      !this.countdownInterval.isActive() &&
       !this.gameStarted
     ) {
-      this.clearFallbackTimer();
+      this.startTimeout.cancel();
       this.startCountdown();
     }
   }
 
-  // ---------------------------------------------------------------------------------
-  // TODO: Revisit this entire part of the game startup flow
-  // I think we want something like:
-  //   - Game should only start if at least 2 players are connected
-  //   - Otherwise, mark game as "failed to start" after X seconds (e.g. 15 secondds)
-  // ---------------------------------------------------------------------------------
-  private startFallbackTimer(): void {
-    // Start countdown after fallback delay even if not all players joined
-    this.fallbackTimer = setTimeout(() => {
-      void runInContextWithTransaction(async () => {
-        if (!this.countdownActive && !this.gameStarted) {
-          if (this.connectedPlayers.size >= 2) {
-            this.log.error(
-              `Fallback countdown with ${this.connectedPlayers.size} players`,
-            );
-            this.startCountdown();
-          } else {
-            // Not enough players, keep waiting (alpha behavior)
-            this.log.info(
-              `Fallback skipped; waiting for at least 2 players (currently ${this.connectedPlayers.size})`,
-            );
-            this.startFallbackTimer();
-          }
-        }
-      });
-    }, FALLBACK_TIMER_MS);
+  private handleStartTimeout(): void {
+    void runInContextWithTransaction(async () => {
+      if (this.countdownInterval.isActive() || this.gameStarted || this.gameEnded) {
+        return;
+      }
+
+      if (this.connectedPlayers.size >= 2) {
+        // Enough players connected, start the game
+        this.startCountdown();
+      } else {
+        // Not enough players, cancel the game
+        await this.handleFailedToStart();
+      }
+    });
   }
 
-  private clearFallbackTimer(): void {
-    if (this.fallbackTimer) {
-      clearTimeout(this.fallbackTimer);
-      this.fallbackTimer = null;
-    }
+  private async handleFailedToStart(): Promise<void> {
+    this.log.info(
+      `Game failed to start: only ${this.connectedPlayers.size} player(s) connected`,
+    );
+    this.gameEnded = true;
+
+    await gameRepository.updateStatus(this.game.id, GameStatus.FAILED_TO_START);
+
+    // TODO: broadcast failure to connected players
+
+    this.cleanup();
   }
 
   startCountdown(): void {
-    if (this.countdownActive || this.gameStarted || !this.initialized) {
+    if (this.countdownInterval.isActive() || this.gameStarted || !this.initialized) {
       return;
     }
 
-    this.countdownActive = true;
     this.log.debug('Starting countdown for game');
-
     this.broadcastGameStarting();
 
-    this.countdownInterval = setInterval(() => {
+    this.countdownInterval.start(() => {
       void runInContextWithTransaction(async () => {
         this.countdownSeconds--;
 
         if (this.countdownSeconds <= 0) {
-          await this.finishCountdown();
+          this.countdownInterval.cancel();
+          await this.startGame();
         } else {
           this.broadcastGameStarting();
         }
       });
     }, ONE_SECOND_MS);
-  }
-
-  private async finishCountdown(): Promise<void> {
-    if (this.countdownInterval) {
-      clearInterval(this.countdownInterval);
-      this.countdownInterval = null;
-    }
-    this.countdownActive = false;
-    await this.startGame();
   }
 
   private broadcastGameStarting(): void {
@@ -398,7 +382,7 @@ export class GameServer {
         throw new Error(`Game ${this.game.id} not found after starting`);
       }
       await this.broadcastGameStart(updatedGame);
-      this.startMoveFlushTimer();
+      this.startMoveFlushInterval();
     } catch (error) {
       this.log.error(`Failed to update game status for game. Error:`, error);
     }
@@ -428,42 +412,27 @@ export class GameServer {
   cleanup(): void {
     this.log.info('Cleaning up...');
 
-    // Clean up countdown interval
-    if (this.countdownInterval) {
-      clearInterval(this.countdownInterval);
-      this.countdownInterval = null;
-    }
+    this.startTimeout.cancel();
+    this.countdownInterval.cancel();
+    this.moveFlushInterval.cancel();
 
-    // Clean up fallback timer
-    this.clearFallbackTimer();
-
-    // Clean up user-game mappings
     for (const userId of this.playerMapping.keys()) {
       removeUserFromGame(userId);
     }
 
-    // Final move-history flush on cleanup
     void this.flushMoveHistory(true);
     this.playerQueues.clear();
     this.gameEnded = true;
-    this.stopMoveFlushTimer();
   }
 
   // ------------------- Move history flush helpers -------------------
-  private startMoveFlushTimer(): void {
-    if (this.moveFlushTimer) return;
-    this.moveFlushTimer = setInterval(() => {
+  private startMoveFlushInterval(): void {
+    if (this.moveFlushInterval.isActive()) return;
+    this.moveFlushInterval.start(() => {
       void runInContextWithTransaction(async () => {
         await this.flushMoveHistory();
       });
     }, 1000);
-  }
-
-  private stopMoveFlushTimer(): void {
-    if (this.moveFlushTimer) {
-      clearInterval(this.moveFlushTimer);
-      this.moveFlushTimer = null;
-    }
   }
 
   private async flushMoveHistory(force: boolean = false): Promise<void> {
