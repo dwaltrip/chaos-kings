@@ -1,4 +1,4 @@
-import { GameId } from '@kernel/ids';
+import { GameId, UserId } from '@kernel/ids';
 import { idToNumber } from '@kernel/branded-type';
 import type { Player } from '@platform/domains/games/types';
 
@@ -6,6 +6,7 @@ import { BaseRepository } from '@/utils/base-repository';
 import { DBGame, Game, NewGame } from '@/domains/games/types';
 import { GamePlayer } from '@/domains/games/game-players-repository';
 import { validateGameStatus } from '@core/game/types';
+import type { PlayerIndex } from '@core/types';
 
 class GameRepository extends BaseRepository {
   async findAll(): Promise<(Game & { players: Player[] })[]> {
@@ -20,7 +21,7 @@ class GameRepository extends BaseRepository {
         const players = await this.playersForGameIdQuery(GameId(game.id));
         return {
           ...deserializeGame(game),
-          players: players as Player[],
+          players,
         };
       }),
     );
@@ -61,7 +62,7 @@ class GameRepository extends BaseRepository {
     const players = await this.playersForGameIdQuery(id);
     return {
       ...deserializeGame(game),
-      players: players as Player[],
+      players,
     };
   }
 
@@ -94,8 +95,8 @@ class GameRepository extends BaseRepository {
       .execute();
   }
 
-  private async playersForGameIdQuery(id: GameId) {
-    return await this.db
+  private async playersForGameIdQuery(id: GameId): Promise<Player[]> {
+    const rows = await this.db
       .selectFrom('game_players')
       .innerJoin('users', 'users.id', 'game_players.user_id')
       .select([
@@ -103,7 +104,6 @@ class GameRepository extends BaseRepository {
         'game_players.game_id',
         'game_players.user_id',
         'game_players.joined_at',
-        'game_players.status',
         'game_players.player_index',
         'game_players.data',
         'users.username',
@@ -111,6 +111,16 @@ class GameRepository extends BaseRepository {
       .where('game_players.game_id', '=', id)
       .orderBy('game_players.player_index', 'asc')
       .execute();
+
+    return rows.map((row) => ({
+      id: row.id,
+      game_id: GameId(row.game_id),
+      user_id: UserId(row.user_id),
+      joined_at: row.joined_at,
+      player_index: row.player_index as PlayerIndex,
+      data: row.data,
+      username: row.username,
+    }));
   }
 }
 

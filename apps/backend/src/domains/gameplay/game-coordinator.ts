@@ -69,8 +69,7 @@ class GameCoordinator {
 
     // Auto-register players
     for (const player of game.players) {
-      const userId = UserId(player.user_id);
-      this.userSessions.set(userId, {
+      this.userSessions.set(player.user_id, {
         gameId,
         playerIndex: player.player_index,
       });

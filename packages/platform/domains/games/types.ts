@@ -1,12 +1,22 @@
-import { GameId } from '@kernel/ids';
+import { GameId, UserId } from '@kernel/ids';
 import { type CoreGameAttrs } from '@core/game/types';
 import type { PlayerIndex } from '@core/types';
 
 interface Player {
   id: number;
+  game_id: GameId;
+  user_id: UserId;
+  joined_at: Date | string | undefined;
+  player_index: PlayerIndex;
+  data: object | null;
+  username: string;
+}
+
+interface PlayerDTO {
+  id: number;
   game_id: number;
   user_id: number;
-  joined_at: Date | string | undefined;
+  joined_at: string | undefined;
   player_index: PlayerIndex;
   data: object | null;
   username: string;
@@ -33,7 +43,7 @@ interface GameDTO extends CoreGameAttrs {
 }
 
 interface GameWithPlayersDTO extends GameDTO {
-  players: Player[];
+  players: PlayerDTO[];
 }
 
-export type { Game, GameWithPlayers, GameDTO, GameWithPlayersDTO, Player };
+export type { Game, GameWithPlayers, GameDTO, GameWithPlayersDTO, Player, PlayerDTO };

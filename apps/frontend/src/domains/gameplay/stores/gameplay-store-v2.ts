@@ -10,6 +10,7 @@ import type {
 import { hasCompletedGameState, isEnded } from '@core/game';
 
 import type { GameWithPlayers, Player } from '@platform/domains/games/types';
+import { UserId } from '@kernel/ids';
 
 import {
   isTileSelected,
@@ -39,7 +40,7 @@ interface GameplayStateV2 {
   // Player identity (set once at game load)
   players: Player[];
   playersByIndex: Map<PlayerIndex, Player>;
-  playersByUserId: Map<number, Player>;
+  playersByUserId: Map<UserId, Player>;
   currentPlayerIndex: PlayerIndex | null;
   currentPlayer: Player | null;
 
@@ -58,7 +59,7 @@ interface GameplayStateV2 {
     setPlayerStats: (playerStats: CorePlayerState[]) => void;
     addQueuedMove: (move: Movement) => void;
     setWinner: (winner: PlayerIndex) => void;
-    setPlayerData: (players: Player[], currentUserId: number | null) => void;
+    setPlayerData: (players: Player[], currentUserId: UserId | null) => void;
   };
 }
 
@@ -89,7 +90,7 @@ const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
     // Player identity
     players: [],
     playersByIndex: new Map<PlayerIndex, Player>(),
-    playersByUserId: new Map<number, Player>(),
+    playersByUserId: new Map<UserId, Player>(),
     currentPlayerIndex: null,
     currentPlayer: null,
 
@@ -117,7 +118,7 @@ const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
         set({ queuedMoves: [...queuedMoves, move] });
       },
       setWinner: (winner) => set({ winner }),
-      setPlayerData: (players: Player[], currentUserId: number | null) => {
+      setPlayerData: (players: Player[], currentUserId: UserId | null) => {
         const playersByIndex = new Map(players.map((p) => [p.player_index, p]));
         const playersByUserId = new Map(players.map((p) => [p.user_id, p]));
         const currentPlayer = currentUserId

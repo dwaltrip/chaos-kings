@@ -33,7 +33,6 @@ interface QueuedMove {
 }
 
 export class GameServer {
-  // TODO: Player type uses plain numbers for user_id/game_id instead of branded types
   private game: GameWithPlayers;
   private gameState: GameState;
   private playerQueues: Map<PlayerIndex, QueuedMove[]> = new Map();
@@ -56,7 +55,7 @@ export class GameServer {
     this.log.debug('New GameServer');
 
     // Setup expected players and move queues
-    this.expectedPlayers = new Set(game.players.map((p) => UserId(p.user_id)));
+    this.expectedPlayers = new Set(game.players.map((p) => p.user_id));
     for (const player of game.players) {
       this.playerQueues.set(player.player_index, []);
     }
