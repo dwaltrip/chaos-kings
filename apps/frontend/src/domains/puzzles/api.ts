@@ -1,13 +1,10 @@
 import type { UserPuzzleStats } from '@protocol/domains/puzzles/api-types';
 
-import { apiService } from '@/services/api-service';
+import { trpc } from '@/services/trpc-client';
 
+// TODO: Add error handling utilities (defer for now - tRPC errors have different shape)
 async function fetchUserStats(): Promise<UserPuzzleStats> {
-  const response = await apiService.get('/api/puzzles/stats');
-  if (!response.ok) {
-    throw new Error('Failed to fetch puzzle stats');
-  }
-  return response.json();
+  return trpc.puzzle.getStats.query();
 }
 
 export { fetchUserStats };

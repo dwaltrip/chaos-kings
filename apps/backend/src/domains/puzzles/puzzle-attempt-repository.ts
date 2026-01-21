@@ -6,14 +6,10 @@ import { PuzzleAttemptsTable } from '@/domains/puzzles/puzzle-attempt.db';
 type PuzzleAttempt = Selectable<PuzzleAttemptsTable>;
 type NewPuzzleAttempt = Insertable<PuzzleAttemptsTable>;
 
-interface UserPuzzleStats {
+interface BasicStats {
   averageScore: number;
   totalAttempts: number;
-  currentStreak: number;
-  bestStreak: number;
 }
-
-const PERFECT_START_THRESHOLD = 25;
 
 class PuzzleAttemptRepository extends BaseRepository {
   async create(attempt: NewPuzzleAttempt): Promise<PuzzleAttempt> {
@@ -36,9 +32,8 @@ class PuzzleAttemptRepository extends BaseRepository {
       .execute();
   }
 
-  async getUserStats(userId: number): Promise<UserPuzzleStats> {
-    // Get basic stats (average and total)
-    const basicStats = await this.db
+  async getBasicStats(userId: number): Promise<BasicStats> {
+    const result = await this.db
       .selectFrom('puzzle_attempts')
       .select([
         sql<number>`avg(land_count)`.as('average_score'),
@@ -47,51 +42,14 @@ class PuzzleAttemptRepository extends BaseRepository {
       .where('user_id', '=', userId)
       .executeTakeFirst();
 
-    // Get all attempts ordered by created_at to compute streaks
-    const attempts = await this.db
-      .selectFrom('puzzle_attempts')
-      .select(['land_count', 'created_at'])
-      .where('user_id', '=', userId)
-      .orderBy('created_at', 'desc')
-      .execute();
-
-    // Compute streaks
-    let currentStreak = 0;
-    let bestStreak = 0;
-    let tempStreak = 0;
-
-    for (const attempt of attempts) {
-      const isPerfect = attempt.land_count >= PERFECT_START_THRESHOLD;
-
-      if (isPerfect) {
-        tempStreak++;
-        if (tempStreak > bestStreak) {
-          bestStreak = tempStreak;
-        }
-      } else {
-        tempStreak = 0;
-      }
-    }
-
-    // Current streak is from most recent attempts
-    for (const attempt of attempts) {
-      if (attempt.land_count >= PERFECT_START_THRESHOLD) {
-        currentStreak++;
-      } else {
-        break;
-      }
-    }
-
     return {
-      averageScore: basicStats?.average_score ? Number(basicStats.average_score) : 0,
-      totalAttempts: basicStats?.total_attempts ? Number(basicStats.total_attempts) : 0,
-      currentStreak,
-      bestStreak,
+      averageScore: result?.average_score ? Number(result.average_score) : 0,
+      totalAttempts: result?.total_attempts ? Number(result.total_attempts) : 0,
     };
   }
 }
 
 const puzzleAttemptRepository = new PuzzleAttemptRepository();
 
-export type { PuzzleAttempt, NewPuzzleAttempt, UserPuzzleStats };
+export type { PuzzleAttempt, NewPuzzleAttempt, BasicStats };
 export { puzzleAttemptRepository };

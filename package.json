@@ -16,9 +16,11 @@
     "tool:example": "npx tsx scripts/example-tool.ts"
   },
   "dependencies": {
+    "@trpc/server": "^11.8.1",
     "chalk": "^5.6.2",
     "commander": "^14.0.1",
     "tsx": "^4.20.5",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "zod": "^4.3.5"
   }
 }

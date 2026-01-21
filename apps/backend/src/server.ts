@@ -5,6 +5,7 @@ import websocket from '@fastify/websocket';
 
 import { databasePlugin } from '@/plugins/database';
 import authPlugin from '@/plugins/auth';
+import trpcPlugin from '@/plugins/trpc';
 import { setupWebSocketV2 } from '@/ws/server-bootstrap';
 import { logger, fastifyLoggerConfig } from '@/utils/logger';
 
@@ -12,7 +13,6 @@ import { systemRoutes } from '@/domains/system/system-routes';
 import { userRoutes } from '@/domains/users/user-routes';
 import { gameRoutes } from '@/domains/games/game-routes';
 import { chatRoutes } from '@/domains/chat/chat-routes';
-import { puzzleRoutes } from '@/domains/puzzles/puzzle-routes';
 
 const fastify = Fastify({
   logger: fastifyLoggerConfig,
@@ -31,13 +31,13 @@ fastify.register(fastifyCookie);
 fastify.register(websocket);
 fastify.register(databasePlugin);
 fastify.register(authPlugin);
+fastify.register(trpcPlugin);
 
 // Register HTTP routes
 fastify.register(systemRoutes, { prefix: '/api' });
 fastify.register(userRoutes, { prefix: '/api' });
 fastify.register(gameRoutes, { prefix: '/api' });
 fastify.register(chatRoutes, { prefix: '/api' });
-fastify.register(puzzleRoutes, { prefix: '/api' });
 
 // Initialize v2 WebSocket server
 const wsServer = setupWebSocketV2();

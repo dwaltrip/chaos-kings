@@ -163,30 +163,6 @@ class PuzzleManager {
   undoMove(): void {
     this.moveQueue.pop();
   }
-
-  isEnded(): boolean {
-    return this.ended;
-  }
-
-  getRoomId(): RoomId {
-    return this.roomId;
-  }
-
-  getSeed(): number {
-    return this.seed;
-  }
-
-  getConfig(): BestStartConfig {
-    return this.config;
-  }
-
-  getExecutedMoves(): Movement[] {
-    return [...this.executedMoves];
-  }
-
-  getUserId(): UserId {
-    return this.userId;
-  }
 }
 
 export { PuzzleManager };

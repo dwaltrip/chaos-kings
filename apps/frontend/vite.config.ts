@@ -21,6 +21,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': 'http://localhost:3131',
+      '/trpc': 'http://localhost:3131',
       '/ws': {
         target: 'http://localhost:3131',
         ws: true,
