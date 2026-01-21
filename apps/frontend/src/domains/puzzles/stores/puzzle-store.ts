@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/shallow';
 import type { BoardState, Coord, Movement } from '@core/types';
 
 import type { BestStartResult } from '@protocol/domains/puzzles/server-messages';
+import type { UserPuzzleStats } from '@protocol/domains/puzzles/api-types';
 
 import {
   isTileSelected,
@@ -28,6 +29,9 @@ interface PuzzleState {
   // Results (populated when ended)
   result: BestStartResult | null;
 
+  // User stats (from REST API)
+  userStats: UserPuzzleStats | null;
+
   // UI state (local)
   selectedTile: Coord | null;
 
@@ -39,6 +43,7 @@ interface PuzzleState {
     setMoveQueue: (moveQueue: Movement[]) => void;
     setVisibleSquares: (visibleSquares: Set<string>) => void;
     setResult: (result: BestStartResult | null) => void;
+    setUserStats: (userStats: UserPuzzleStats | null) => void;
     setSelectedTile: (coord: Coord | null) => void;
     addQueuedMove: (move: Movement) => void;
     reset: () => void;
@@ -52,6 +57,7 @@ const usePuzzleStore = create<PuzzleState>((set) => ({
   moveQueue: [],
   visibleSquares: new Set<string>(),
   result: null,
+  userStats: null,
   selectedTile: null,
 
   actions: {
@@ -61,6 +67,7 @@ const usePuzzleStore = create<PuzzleState>((set) => ({
     setMoveQueue: (moveQueue) => set({ moveQueue }),
     setVisibleSquares: (visibleSquares) => set({ visibleSquares }),
     setResult: (result) => set({ result }),
+    setUserStats: (userStats) => set({ userStats }),
     setSelectedTile: (coord) => set({ selectedTile: coord }),
     addQueuedMove: (move) => set((state) => ({ moveQueue: [...state.moveQueue, move] })),
     reset: () =>
@@ -82,6 +89,7 @@ const selectBoard = (state: PuzzleState) => state.board;
 const selectTick = (state: PuzzleState) => state.tick;
 const selectMoveQueue = (state: PuzzleState) => state.moveQueue;
 const selectResult = (state: PuzzleState) => state.result;
+const selectUserStats = (state: PuzzleState) => state.userStats;
 const selectSelectedTile = (state: PuzzleState) => state.selectedTile;
 const selectActions = (state: PuzzleState) => state.actions;
 const selectVisibleSquares = (state: PuzzleState) => state.visibleSquares;
@@ -121,6 +129,7 @@ export {
   selectTick,
   selectMoveQueue,
   selectResult,
+  selectUserStats,
   selectSelectedTile,
   selectActions,
   selectVisibleSquares,

@@ -1,3 +1,4 @@
+import { idToNumber } from '@kernel/branded-type';
 import { RoomId, UserId } from '@kernel/ids';
 
 import type { GameState, BoardState, Coord, Direction, Movement } from '@core/types';
@@ -11,7 +12,9 @@ import {
   type BestStartConfig,
 } from '@core/puzzles/best-start';
 
+import { runInContextWithTransaction } from '@/context/app-context';
 import { createScopedLogger } from '@/utils/scoped-logger';
+import { puzzleAttemptRepository } from '@/domains/puzzles/puzzle-attempt-repository';
 import { buildPuzzleRoomId } from '@/domains/puzzles/utils';
 import { puzzlesWsEffects } from '@/domains/puzzles/ws-effects';
 
@@ -20,7 +23,9 @@ const MAX_QUEUED_MOVES = 200;
 class PuzzleManager {
   private gameState: GameState;
   private config: BestStartConfig;
+  private seed: number;
   private moveQueue: Movement[] = [];
+  private executedMoves: Movement[] = [];
   private tickTimer: NodeJS.Timeout | null = null;
   private started: boolean = false;
   private ended: boolean = false;
@@ -32,7 +37,9 @@ class PuzzleManager {
     this.userId = userId;
     this.config = config;
     this.roomId = buildPuzzleRoomId(userId);
-    this.gameState = createBestStartPuzzle(config);
+    const result = createBestStartPuzzle(config);
+    this.gameState = result.gameState;
+    this.seed = result.seed;
     this.log.debug('Created puzzle');
   }
 
@@ -72,6 +79,7 @@ class PuzzleManager {
     const eventsForStep: MoveEvent[] = [];
     if (this.moveQueue.length > 0) {
       const move = this.moveQueue.shift()!;
+      this.executedMoves.push(move);
       eventsForStep.push({
         step: nextStep,
         playerIndex: 0, // Always player 0 for puzzles
@@ -104,6 +112,21 @@ class PuzzleManager {
 
     const result = scoreBestStart(this.gameState.board);
     puzzlesWsEffects.broadcastPuzzleEnd(this.roomId, this.gameState.board, result);
+
+    // Save attempt to database
+    void runInContextWithTransaction(async () => {
+      await puzzleAttemptRepository.create({
+        user_id: idToNumber(this.userId),
+        puzzle_type: 'best_start',
+        land_count: result.landCount,
+        army_count: result.armyCount,
+        config: this.config,
+        map_seed: this.seed,
+        final_board_state: this.gameState.board,
+        move_history: { version: 1, moves: this.executedMoves },
+      });
+      this.log.debug('Saved puzzle attempt');
+    });
   }
 
   private broadcastState(): void {
@@ -147,6 +170,22 @@ class PuzzleManager {
 
   getRoomId(): RoomId {
     return this.roomId;
+  }
+
+  getSeed(): number {
+    return this.seed;
+  }
+
+  getConfig(): BestStartConfig {
+    return this.config;
+  }
+
+  getExecutedMoves(): Movement[] {
+    return [...this.executedMoves];
+  }
+
+  getUserId(): UserId {
+    return this.userId;
   }
 }
 

@@ -12,6 +12,7 @@ import { systemRoutes } from '@/domains/system/system-routes';
 import { userRoutes } from '@/domains/users/user-routes';
 import { gameRoutes } from '@/domains/games/game-routes';
 import { chatRoutes } from '@/domains/chat/chat-routes';
+import { puzzleRoutes } from '@/domains/puzzles/puzzle-routes';
 
 const fastify = Fastify({
   logger: fastifyLoggerConfig,
@@ -36,6 +37,7 @@ fastify.register(systemRoutes, { prefix: '/api' });
 fastify.register(userRoutes, { prefix: '/api' });
 fastify.register(gameRoutes, { prefix: '/api' });
 fastify.register(chatRoutes, { prefix: '/api' });
+fastify.register(puzzleRoutes, { prefix: '/api' });
 
 // Initialize v2 WebSocket server
 const wsServer = setupWebSocketV2();

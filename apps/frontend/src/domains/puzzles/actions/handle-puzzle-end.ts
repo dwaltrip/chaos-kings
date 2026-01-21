@@ -6,6 +6,7 @@ import type { BestStartResult } from '@protocol/domains/puzzles/server-messages'
 
 import { tileOrchestrator } from '@/domains/games/stores/tile-orchestrator';
 import { usePuzzleStore } from '@/domains/puzzles/stores/puzzle-store';
+import { loadUserStats } from '@/domains/puzzles/actions/load-user-stats';
 
 function handlePuzzleEnd(result: BestStartResult, finalBoard: BoardState): void {
   const { setStatus, setResult, setBoard, setVisibleSquares } =
@@ -22,6 +23,9 @@ function handlePuzzleEnd(result: BestStartResult, finalBoard: BoardState): void 
   setResult(result);
   setBoard(finalBoard);
   setVisibleSquares(allVisible);
+
+  // Reload user stats after puzzle ends (async, fire-and-forget)
+  void loadUserStats();
 }
 
 export { handlePuzzleEnd };
