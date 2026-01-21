@@ -23,7 +23,7 @@ const DEFAULT_BEST_START_CONFIG: BestStartConfig = {
     generalProductionTicks: GENERAL_PRODUCTION_TICKS,
     armyProductionTicks: ARMY_PRODUCTION_TICKS,
   },
-  mapSize: { width: 21, height: 21 },
+  mapSize: { width: 15, height: 15 },
 };
 
 function startPuzzle(userId: UserId, connectionId: ConnectionId): void {
