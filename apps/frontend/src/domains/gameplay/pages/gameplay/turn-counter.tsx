@@ -1,4 +1,3 @@
-import { TURN_INTERVAL_MS } from '@core/game-timing-config';
 import type { TimingConfig } from '@core/timing/types';
 import { invariant } from '@utils/assertions/invariant';
 
@@ -12,7 +11,7 @@ interface TurnCounterProps {
 const MAX_TICKS_PER_TURN = 8;
 
 function TurnCounter({ tick, timingConfig }: TurnCounterProps) {
-  const ticksPerTurn = TURN_INTERVAL_MS / timingConfig.tickRateMs;
+  const ticksPerTurn = timingConfig.generalProductionTicks;
   invariant(
     ticksPerTurn <= MAX_TICKS_PER_TURN,
     `ticksPerTurn (${ticksPerTurn}) exceeds maximum of ${MAX_TICKS_PER_TURN}`,

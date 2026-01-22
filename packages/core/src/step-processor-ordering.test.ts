@@ -24,7 +24,7 @@ function makeBoard(
 const timing: TimingConfig = {
   tickRateMs: 500,
   generalProductionTicks: 2, // won't trigger at step 1
-  armyProductionTicks: 50, // won't trigger at step 1
+  landProductionTicks: 50, // won't trigger at step 1
 };
 
 describe('processStep ordering by playerIndex', () => {

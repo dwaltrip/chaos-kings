@@ -1,6 +1,6 @@
 import { GameId, UserId } from '@kernel/ids';
 
-import { TICK_RATE_MS } from '@core/game-timing-config';
+import { DEFAULT_TIMING } from '@core/game-timing-config';
 import type { PlayerIndex } from '@core/types';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
@@ -31,12 +31,14 @@ class GameCoordinator {
       return;
     }
 
-    this.log.info(`Starting global tick system at ${TICK_RATE_MS}ms intervals`);
+    this.log.info(
+      `Starting global tick system at ${DEFAULT_TIMING.tickRateMs}ms intervals`,
+    );
     this.tickInterval = setInterval(() => {
       void runInContextWithTransaction(async () => {
         await this.tick();
       });
-    }, TICK_RATE_MS);
+    }, DEFAULT_TIMING.tickRateMs);
   }
 
   private async tick(): Promise<void> {

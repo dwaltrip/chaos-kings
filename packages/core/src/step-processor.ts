@@ -90,7 +90,7 @@ function applyProduction(
   }
 
   // All-land production: +1 to ALL player squares
-  if (tickNumber % timing.armyProductionTicks === 0) {
+  if (tickNumber % timing.landProductionTicks === 0) {
     for (const row of board.grid) {
       for (const square of row) {
         if (

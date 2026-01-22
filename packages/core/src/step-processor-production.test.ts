@@ -7,7 +7,7 @@ import type { TimingConfig } from '@core/timing/types';
 const DEFAULT_TIMING: TimingConfig = {
   tickRateMs: 500,
   generalProductionTicks: 2,
-  armyProductionTicks: 50,
+  landProductionTicks: 50,
 };
 
 // --- Helpers ---
@@ -128,19 +128,19 @@ describe('step-processor production', () => {
     });
   });
 
-  describe('all-land production (armyProductionTicks)', () => {
+  describe('all-land production (landProductionTicks)', () => {
     test('general gets +2 on all-land tick (regular + all-land bonus)', () => {
       const board = makeBoard(3, 3);
       placeGeneral(board, { x: 0, y: 0 }, 0);
       placeGeneral(board, { x: 2, y: 2 }, 1);
       const state = createGameState(board, 2);
 
-      runUntilTick(state, DEFAULT_TIMING.armyProductionTicks, DEFAULT_TIMING);
+      runUntilTick(state, DEFAULT_TIMING.landProductionTicks, DEFAULT_TIMING);
 
       // 50 ticks = 25 turns of general production (25 units) + 1 all-land bonus + starting 1
       // Actually: started with 1, +25 from turns, +1 from all-land = 27
       const expectedTurns =
-        DEFAULT_TIMING.armyProductionTicks / DEFAULT_TIMING.generalProductionTicks;
+        DEFAULT_TIMING.landProductionTicks / DEFAULT_TIMING.generalProductionTicks;
       expect(getUnits(state, { x: 0, y: 0 })).toBe(1 + expectedTurns + 1);
     });
 
@@ -152,7 +152,7 @@ describe('step-processor production', () => {
       const state = createGameState(board, 2);
 
       // Run to just before all-land tick
-      runUntilTick(state, DEFAULT_TIMING.armyProductionTicks - 1, DEFAULT_TIMING);
+      runUntilTick(state, DEFAULT_TIMING.landProductionTicks - 1, DEFAULT_TIMING);
       expect(getUnits(state, { x: 1, y: 1 })).toBe(5); // unchanged
 
       // Run one more step to hit all-land tick
@@ -181,10 +181,10 @@ describe('step-processor production', () => {
       placeCity(board, { x: 1, y: 1 }, 0, 1);
       const state = createGameState(board, 2);
 
-      runUntilTick(state, DEFAULT_TIMING.armyProductionTicks, DEFAULT_TIMING);
+      runUntilTick(state, DEFAULT_TIMING.landProductionTicks, DEFAULT_TIMING);
 
       const expectedTurns =
-        DEFAULT_TIMING.armyProductionTicks / DEFAULT_TIMING.generalProductionTicks;
+        DEFAULT_TIMING.landProductionTicks / DEFAULT_TIMING.generalProductionTicks;
       expect(getUnits(state, { x: 1, y: 1 })).toBe(1 + expectedTurns + 1);
     });
   });
@@ -194,7 +194,7 @@ describe('step-processor production', () => {
       const timing: TimingConfig = {
         tickRateMs: 500,
         generalProductionTicks: 4,
-        armyProductionTicks: 100,
+        landProductionTicks: 100,
       };
 
       const board = makeBoard(3, 3);
@@ -212,11 +212,11 @@ describe('step-processor production', () => {
       expect(getUnits(state, { x: 0, y: 0 })).toBe(2);
     });
 
-    test('works with different armyProductionTicks', () => {
+    test('works with different landProductionTicks', () => {
       const timing: TimingConfig = {
         tickRateMs: 500,
         generalProductionTicks: 2,
-        armyProductionTicks: 10,
+        landProductionTicks: 10,
       };
 
       const board = makeBoard(3, 3);

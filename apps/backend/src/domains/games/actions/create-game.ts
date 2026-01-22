@@ -1,10 +1,6 @@
 import { type MapGenerationParams, generateGameMapV2 } from '@core/terrain-generation';
 import { DEFAULT_GAME_GENERATION_CONFIG } from '@core/default-game-config';
-import {
-  TICK_RATE_MS,
-  GENERAL_PRODUCTION_TICKS,
-  ARMY_PRODUCTION_TICKS,
-} from '@core/game-timing-config';
+import { DEFAULT_TIMING } from '@core/game-timing-config';
 import { GameStatus } from '@core/game/types';
 import { isValidForCreateGame } from '@core/game/validation';
 import { calcMapSizeForPlayers } from '@core/map/calc-map-size';
@@ -49,11 +45,7 @@ async function createGame(playerIds: number[]): Promise<Game> {
       startingGrid: grid,
       playerColors: colorsForPlayerCount(playerCount),
       map: mapParams,
-      timing: {
-        tickRateMs: TICK_RATE_MS,
-        generalProductionTicks: GENERAL_PRODUCTION_TICKS,
-        armyProductionTicks: ARMY_PRODUCTION_TICKS,
-      },
+      timing: DEFAULT_TIMING,
     },
     status: GameStatus.NOT_STARTED,
   };
