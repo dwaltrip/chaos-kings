@@ -8,8 +8,12 @@ import { tileOrchestrator } from '@/domains/games/stores/tile-orchestrator';
 import { usePuzzleStore } from '@/domains/puzzles/stores/puzzle-store';
 import { loadUserStats } from '@/domains/puzzles/actions/load-user-stats';
 
-function handlePuzzleEnd(result: BestStartResult, finalBoard: BoardState): void {
-  const { setStatus, setResult, setBoard, setVisibleSquares } =
+function handlePuzzleEnd(
+  tick: number,
+  result: BestStartResult,
+  finalBoard: BoardState,
+): void {
+  const { setStatus, setTick, setResult, setBoard, setVisibleSquares, setSelectedTile } =
     usePuzzleStore.getState().actions;
 
   tileOrchestrator.updateTileSquares(finalBoard);
@@ -19,10 +23,12 @@ function handlePuzzleEnd(result: BestStartResult, finalBoard: BoardState): void 
   const allVisible = new Set<string>();
   Board.forEachCoord(finalBoard, (c) => allVisible.add(serializeCoord(c)));
 
+  setTick(tick);
   setStatus('ended');
   setResult(result);
   setBoard(finalBoard);
   setVisibleSquares(allVisible);
+  setSelectedTile(null);
 
   // Reload user stats after puzzle ends (async, fire-and-forget)
   void loadUserStats();

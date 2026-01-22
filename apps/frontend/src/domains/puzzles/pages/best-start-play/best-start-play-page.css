@@ -1,6 +1,6 @@
 .puzzle-page {
   display: grid;
-  grid-template-columns: 1fr 140px;
+  grid-template-columns: 1fr 240px;
   grid-template-areas: 'main sidebar';
   height: 100vh;
   background-color: #777;

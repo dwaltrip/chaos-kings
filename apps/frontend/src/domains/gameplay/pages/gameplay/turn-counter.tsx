@@ -34,7 +34,8 @@ function TurnCounter({ tick, timingConfig }: TurnCounterProps) {
           style={{ minWidth: `${reservedWidth}px` }}
           aria-label={`${numDots} ticks into turn`}
         >
-          {'•'.repeat(numDots)}
+          {/* {'•'.repeat(numDots)} */}
+          {'.'.repeat(numDots)}
         </span>
       </div>
     </div>

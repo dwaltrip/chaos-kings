@@ -40,16 +40,7 @@ function ArmyInfoRow({
   );
 }
 
-function GameplayArmyInfo() {
-  const players = useGameplayStoreV2((state) => state.players);
-  const playersByIndex = useGameplayStoreV2((state) => state.playersByIndex);
-  const playerStats = useGameplayStoreV2((state) => state.playerStats);
-  const currentPlayerIndex = useGameplayStoreV2((state) => state.currentPlayerIndex);
-
-  if (!players.length || !playerStats.length) {
-    return null;
-  }
-
+function ArmyInfoTable({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-4 rounded border border-gray-200 bg-white/80 p-3 shadow-sm">
       <div className="army-info-grid items-center gap-y-2">
@@ -62,24 +53,41 @@ function GameplayArmyInfo() {
         <span className="text-right text-xs font-semibold uppercase tracking-wide text-gray-600">
           Land
         </span>
-        {playerStats.map((stat, index) => {
-          const player = playersByIndex.get(index)!;
-          const isCurrentPlayer = player.player_index === currentPlayerIndex;
-          const isDefeated = stat.status === CorePlayerStatus.DEFEATED;
-          return (
-            <ArmyInfoRow
-              key={player.id}
-              name={isCurrentPlayer ? 'You' : player.username}
-              color={getPlayerColor(player.player_index)}
-              armyCount={stat.armyCount}
-              landCount={stat.landCount}
-              isDefeated={isDefeated}
-            />
-          );
-        })}
+        {children}
       </div>
     </div>
   );
 }
 
-export { GameplayArmyInfo };
+function GameplayArmyInfo() {
+  const players = useGameplayStoreV2((state) => state.players);
+  const playersByIndex = useGameplayStoreV2((state) => state.playersByIndex);
+  const playerStats = useGameplayStoreV2((state) => state.playerStats);
+  const currentPlayerIndex = useGameplayStoreV2((state) => state.currentPlayerIndex);
+
+  if (!players.length || !playerStats.length) {
+    return null;
+  }
+
+  return (
+    <ArmyInfoTable>
+      {playerStats.map((stat, index) => {
+        const player = playersByIndex.get(index)!;
+        const isCurrentPlayer = player.player_index === currentPlayerIndex;
+        const isDefeated = stat.status === CorePlayerStatus.DEFEATED;
+        return (
+          <ArmyInfoRow
+            key={player.id}
+            name={isCurrentPlayer ? 'You' : player.username}
+            color={getPlayerColor(player.player_index)}
+            armyCount={stat.armyCount}
+            landCount={stat.landCount}
+            isDefeated={isDefeated}
+          />
+        );
+      })}
+    </ArmyInfoTable>
+  );
+}
+
+export { ArmyInfoRow, ArmyInfoTable, GameplayArmyInfo };

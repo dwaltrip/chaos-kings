@@ -111,7 +111,12 @@ class PuzzleManager {
     }
 
     const result = scoreBestStart(this.gameState.board);
-    puzzlesWsEffects.broadcastPuzzleEnd(this.roomId, this.gameState.board, result);
+    puzzlesWsEffects.broadcastPuzzleEnd(
+      this.roomId,
+      this.gameState.tick,
+      this.gameState.board,
+      result,
+    );
 
     // Save attempt to database
     void runInContextWithTransaction(async () => {

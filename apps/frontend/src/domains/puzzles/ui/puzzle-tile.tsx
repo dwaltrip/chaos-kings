@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { Coord } from '@core/types';
 import { areCoordsEqual } from '@core/utils/coordinate-utils';
-import { isMountainSquare } from '@core/square';
+import { isMountainSquare, isPlayerSquare } from '@core/square';
 
 import {
   useTileQueuedDirections,
@@ -38,7 +38,9 @@ const PuzzleTile = React.memo(
     const neighborVisibility = usePuzzleStore(selectNeighborVisibility(coord));
 
     const isMountain = isMountainSquare(square);
-    const isSelectable = !isPuzzleEnded && !isMountain && !isSelected;
+    // TODO: need do this same logic in gameplay. will need to look at playerIndex.
+    // TODO: Also selecting tiles in queued move list
+    const isSelectable = !isSelected && !isPuzzleEnded && isPlayerSquare(square);
     const isValidMove = isAdjacentToSelected && !isMountain;
 
     const hasTopBorder = isVisible || neighborVisibility.top;

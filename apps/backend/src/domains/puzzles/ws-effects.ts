@@ -22,10 +22,15 @@ const puzzlesWsEffects = {
     );
   },
 
-  broadcastPuzzleEnd(roomId: RoomId, finalBoard: BoardState, result: BestStartResult) {
+  broadcastPuzzleEnd(
+    roomId: RoomId,
+    tick: number,
+    finalBoard: BoardState,
+    result: BestStartResult,
+  ) {
     wsBridge.broadcastToRoom(
       idToString(roomId),
-      MsgCreators.createEndPuzzleMessage(finalBoard, result),
+      MsgCreators.createEndPuzzleMessage(tick, finalBoard, result),
     );
   },
 };

@@ -16,6 +16,7 @@ type PuzzlesServerPayloadMap = {
     moveQueue: Movement[];
   };
   'puzzles:end-puzzle': {
+    tick: number;
     finalBoard: BoardState;
     result: BestStartResult;
   };
@@ -36,11 +37,12 @@ const MsgCreators = {
   }),
 
   createEndPuzzleMessage: (
+    tick: number,
     finalBoard: BoardState,
     result: BestStartResult,
   ): EndPuzzleMessage => ({
     type: 'puzzles:end-puzzle',
-    payload: { finalBoard, result },
+    payload: { tick, finalBoard, result },
   }),
 };
 

@@ -9,7 +9,7 @@ const puzzlesHandlers = {
   },
 
   'puzzles:end-puzzle': (payload) => {
-    handlePuzzleEnd(payload.result, payload.finalBoard);
+    handlePuzzleEnd(payload.tick, payload.result, payload.finalBoard);
   },
 } satisfies HandlerMap<PuzzlesServerMessage>;
 

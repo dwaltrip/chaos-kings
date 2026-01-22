@@ -1,4 +1,4 @@
-import type { Direction } from '@core/types';
+import type { BoardState, Direction } from '@core/types';
 import { DEFAULT_BEST_START_CONFIG } from '@core/puzzles/best-start';
 
 import {
@@ -6,6 +6,7 @@ import {
   selectUser,
   selectIsLoading,
   selectError,
+  User,
 } from '@/domains/users/user-store';
 import { useKeyboardControls } from '@/domains/gameplay/hooks/use-keyboard-controls';
 
@@ -22,6 +23,7 @@ import { PuzzleBoard } from '@/domains/puzzles/ui/puzzle-board';
 
 import './best-start-play-page.css';
 import { TurnCounter } from '@/domains/gameplay/pages/gameplay/turn-counter';
+import { ArmyInfoRow, ArmyInfoTable } from '@/domains/gameplay/pages/gameplay/army-info';
 
 function BestStartPlayPage() {
   const currentUser = userStore(selectUser);
@@ -33,10 +35,14 @@ function BestStartPlayPage() {
     return <div className="text-red-500">{error?.message || 'Unexpected error'}</div>;
   }
 
-  return <BestStartPlayPageContent />;
+  return <BestStartPlayPageContent user={currentUser} />;
 }
 
-function BestStartPlayPageContent() {
+interface PageContentPropTypes {
+  user: User;
+}
+
+function BestStartPlayPageContent({ user }: PageContentPropTypes) {
   const status = usePuzzleStore(selectStatus);
   const board = usePuzzleStore(selectBoard);
   const tick = usePuzzleStore(selectTick);
@@ -59,19 +65,9 @@ function BestStartPlayPageContent() {
     disabled: !isPlaying,
   });
 
-  // Calculate player stats (player 0 is the puzzle player)
-  let landCount = 0;
-  let armyCount = 0;
-  if (board) {
-    for (const row of board.grid) {
-      for (const square of row) {
-        if ('playerIndex' in square && square.playerIndex === 0) {
-          landCount++;
-          armyCount += square.units;
-        }
-      }
-    }
-  }
+  let { army: armyCount, land: landCount } = board
+    ? getArmyStats(board)
+    : { army: 0, land: 0 };
   if (isEnded && result) {
     landCount = result.landCount;
     armyCount = result.armyCount;
@@ -85,13 +81,15 @@ function BestStartPlayPageContent() {
         {hasBoard && (
           <div className="sidebar-section">
             <TurnCounter tick={tick} timingConfig={timingConfig} />
-            {/*
-            <div>
-              Turn: {turn}/{maxTurns}
-            </div>
-            <div>Land: {landCount}</div>
-            <div>Army: {armyCount}</div>
-            */}
+
+            <ArmyInfoTable>
+              <ArmyInfoRow
+                name={user.username}
+                color="lightblue"
+                armyCount={armyCount}
+                landCount={landCount}
+              />
+            </ArmyInfoTable>
           </div>
         )}
 
@@ -111,6 +109,24 @@ function BestStartPlayPageContent() {
       </main>
     </div>
   );
+}
+
+// TODO: backend should send this up
+function getArmyStats(board: BoardState): { army: number; land: number } {
+  // Calculate player stats (player 0 is the puzzle player)
+  let land = 0;
+  let army = 0;
+  if (board) {
+    for (const row of board.grid) {
+      for (const square of row) {
+        if ('playerIndex' in square && square.playerIndex === 0) {
+          land++;
+          army += square.units;
+        }
+      }
+    }
+  }
+  return { army, land };
 }
 
 export { BestStartPlayPage };
