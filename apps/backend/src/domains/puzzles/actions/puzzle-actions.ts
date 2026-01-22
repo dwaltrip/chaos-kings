@@ -1,11 +1,6 @@
 import { UserId } from '@kernel/ids';
-import {
-  TICK_RATE_MS,
-  GENERAL_PRODUCTION_TICKS,
-  ARMY_PRODUCTION_TICKS,
-} from '@core/game-timing-config';
 import type { Coord, Direction } from '@core/types';
-import type { BestStartConfig } from '@core/puzzles/best-start';
+import { DEFAULT_BEST_START_CONFIG } from '@core/puzzles/best-start';
 
 import type { ConnectionId } from '@/ws-lib';
 import { systemActions } from '@/domains/system/actions';
@@ -16,15 +11,6 @@ import { PuzzleManager } from '@/domains/puzzles/puzzle-manager';
 // TODO: re-evaluate for multi-tab - currently one puzzle per user
 // TODO: wire cleanupPuzzle to disconnect handler (currently puzzles run until natural completion)
 const activePuzzles = new Map<UserId, PuzzleManager>();
-
-const DEFAULT_BEST_START_CONFIG: BestStartConfig = {
-  timing: {
-    tickRateMs: TICK_RATE_MS,
-    generalProductionTicks: GENERAL_PRODUCTION_TICKS,
-    armyProductionTicks: ARMY_PRODUCTION_TICKS,
-  },
-  mapSize: { width: 15, height: 15 },
-};
 
 function startPuzzle(userId: UserId, connectionId: ConnectionId): void {
   // Clean up any existing puzzle for this user

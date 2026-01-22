@@ -68,6 +68,7 @@ function GamePageContent({ gameId }: { gameId: GameId }) {
   const countdownActive = gameplayPageStore((state) => state.countdownActive);
   const countdownSeconds = gameplayPageStore((state) => state.countdownSeconds);
   const winner = useGameplayStoreV2((state) => state.winner);
+  const tick = useGameplayStoreV2((state) => state.tick);
   const loading = gameplayPageStore((state) => state.isLoading());
   const error = gameplayPageStore((state) => state.error);
   const isConnected = useWsConnectionStore((state) => state.isConnected);
@@ -120,7 +121,7 @@ function GamePageContent({ gameId }: { gameId: GameId }) {
       <GameHeader game={game} user={user} winner={winner} />
 
       <aside className="game-sidebar">
-        <TurnCounter />
+        <TurnCounter tick={tick} timingConfig={game.config.timing} />
         <GameplayArmyInfo />
         <GameChat game={game} />
       </aside>

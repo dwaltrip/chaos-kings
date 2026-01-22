@@ -3,3 +3,4 @@ export type { CreateBestStartResult } from './create';
 export { createBestStartPuzzle } from './create';
 export { isBestStartComplete } from './is-complete';
 export { scoreBestStart } from './score';
+export { DEFAULT_BEST_START_CONFIG } from './config';

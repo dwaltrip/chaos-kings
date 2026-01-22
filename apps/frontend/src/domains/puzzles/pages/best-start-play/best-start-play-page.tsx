@@ -1,4 +1,5 @@
 import type { Direction } from '@core/types';
+import { DEFAULT_BEST_START_CONFIG } from '@core/puzzles/best-start';
 
 import {
   userStore,
@@ -20,6 +21,7 @@ import {
 import { PuzzleBoard } from '@/domains/puzzles/ui/puzzle-board';
 
 import './best-start-play-page.css';
+import { TurnCounter } from '@/domains/gameplay/pages/gameplay/turn-counter';
 
 function BestStartPlayPage() {
   const currentUser = userStore(selectUser);
@@ -40,6 +42,7 @@ function BestStartPlayPageContent() {
   const tick = usePuzzleStore(selectTick);
   const result = usePuzzleStore(selectResult);
   const selectedTile = usePuzzleStore(selectSelectedTile);
+  const timingConfig = DEFAULT_BEST_START_CONFIG.timing;
 
   const isPlaying = status === 'playing';
   const isEnded = status === 'ended';
@@ -55,11 +58,6 @@ function BestStartPlayPageContent() {
     onCancelMoves: clearMoves,
     disabled: !isPlaying,
   });
-
-  // TODO: review tick-to-turn conversion logic (floor vs ceil), and move to @core
-  // TODO: maxTurns should come from puzzle config, not be hardcoded
-  const turn = Math.floor(tick / 2);
-  const maxTurns = 25;
 
   // Calculate player stats (player 0 is the puzzle player)
   let landCount = 0;
@@ -86,11 +84,14 @@ function BestStartPlayPageContent() {
 
         {hasBoard && (
           <div className="sidebar-section">
+            <TurnCounter tick={tick} timingConfig={timingConfig} />
+            {/*
             <div>
               Turn: {turn}/{maxTurns}
             </div>
             <div>Land: {landCount}</div>
             <div>Army: {armyCount}</div>
+            */}
           </div>
         )}
 

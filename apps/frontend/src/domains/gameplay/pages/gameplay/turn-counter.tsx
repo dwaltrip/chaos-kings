@@ -1,25 +1,18 @@
-import { getTicksPerTurn } from '@core/timing/helpers';
+import { TURN_INTERVAL_MS } from '@core/game-timing-config';
+import type { TimingConfig } from '@core/timing/types';
 import { invariant } from '@utils/assertions/invariant';
-
-import { useGameplayStoreV2 } from '@/domains/gameplay/stores/gameplay-store-v2';
-import {
-  gameplayPageStore,
-  selectGame,
-} from '@/domains/gameplay/stores/gameplay-page-store';
 
 import './turn-counter.css';
 
+interface TurnCounterProps {
+  tick: number;
+  timingConfig: TimingConfig;
+}
+
 const MAX_TICKS_PER_TURN = 8;
 
-function TurnCounter() {
-  const tick = useGameplayStoreV2((state) => state.tick);
-  const game = gameplayPageStore(selectGame);
-
-  if (!game) {
-    return null;
-  }
-
-  const ticksPerTurn = getTicksPerTurn(game.config);
+function TurnCounter({ tick, timingConfig }: TurnCounterProps) {
+  const ticksPerTurn = TURN_INTERVAL_MS / timingConfig.tickRateMs;
   invariant(
     ticksPerTurn <= MAX_TICKS_PER_TURN,
     `ticksPerTurn (${ticksPerTurn}) exceeds maximum of ${MAX_TICKS_PER_TURN}`,
