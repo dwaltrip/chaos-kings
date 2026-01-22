@@ -1,71 +1,13 @@
 import type { BoardState, Coord, PlayerIndex } from '@core/types';
 import { Direction, PlayerSquareType, SquareType } from '@core/types';
+import { Board } from '@core/board';
+import { isPlayerSquare } from '@core/square';
 
 interface MoveResult {
   capture?: {
     defeated: PlayerIndex;
     capturedBy: PlayerIndex;
   };
-}
-import { Board } from '@core/board';
-import { isPlayerSquare } from '@core/square';
-import {
-  GENERAL_PRODUCTION_TICKS,
-  ARMY_PRODUCTION_TICKS,
-} from '@core/game-timing-config';
-
-function tick(
-  board: BoardState,
-  tickNumber: number,
-): { gameEnded: boolean; winnerPlayerIndex?: number } {
-  // General production: +1 unit every GENERAL_PRODUCTION_TICKS
-  if (tickNumber % GENERAL_PRODUCTION_TICKS === 0) {
-    applyCityProduction(board);
-  }
-
-  // Army production: +1 unit every ARMY_PRODUCTION_TICKS
-  if (tickNumber % ARMY_PRODUCTION_TICKS === 0) {
-    applyTroopProduction(board);
-  }
-
-  // Check for victory condition (no generals remaining for a player)
-  const playersWithGenerals = new Set<number>();
-  for (let row of board.grid) {
-    for (let square of row) {
-      if (square.type === 'GENERAL') {
-        playersWithGenerals.add(square.playerIndex);
-      }
-    }
-  }
-
-  if (playersWithGenerals.size === 1) {
-    const winnerPlayerIndex = Array.from(playersWithGenerals)[0];
-    return { gameEnded: true, winnerPlayerIndex };
-  }
-
-  return { gameEnded: false };
-}
-
-// ----------------------------------------------------------------------------
-
-function applyCityProduction(board: BoardState): void {
-  for (let row of board.grid) {
-    for (let square of row) {
-      if (square.type === 'PLAYER_CITY' || square.type === 'GENERAL') {
-        square.units += 1;
-      }
-    }
-  }
-}
-
-function applyTroopProduction(board: BoardState): void {
-  for (let row of board.grid) {
-    for (let square of row) {
-      if (square.type === 'ARMY') {
-        square.units += 1;
-      }
-    }
-  }
 }
 
 function applyMovement(
@@ -157,4 +99,4 @@ function applyMovement(
 }
 
 export type { MoveResult };
-export { tick, applyMovement };
+export { applyMovement };

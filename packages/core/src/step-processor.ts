@@ -89,10 +89,15 @@ function applyProduction(
     }
   }
 
+  // All-land production: +1 to ALL player squares
   if (tickNumber % timing.armyProductionTicks === 0) {
     for (const row of board.grid) {
       for (const square of row) {
-        if (square.type === 'ARMY') {
+        if (
+          square.type === 'ARMY' ||
+          square.type === 'GENERAL' ||
+          square.type === 'PLAYER_CITY'
+        ) {
           square.units += 1;
         }
       }
