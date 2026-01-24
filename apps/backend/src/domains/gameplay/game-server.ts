@@ -95,6 +95,12 @@ export class GameServer {
     }
 
     try {
+      // -------------------------------------------------------------------------
+      // TODO: Consider adding "grace" - if a queued move is invalid, keep trying
+      // subsequent moves in the queue until a valid one is found (or queue empty).
+      // Currently, an invalid move "wastes" the tick with no movement applied.
+      // -------------------------------------------------------------------------
+
       // Build at most 1 event per player for the upcoming step (1-based)
       const nextStep = this.gameState.tick + 1;
       const eventsForStep: MoveEvent[] = [];

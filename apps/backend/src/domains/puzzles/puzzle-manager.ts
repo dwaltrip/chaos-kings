@@ -75,21 +75,36 @@ class PuzzleManager {
 
     const nextStep = this.gameState.tick + 1;
 
+    // -------------------------------------------------------------------------
+    // TODO: Consider adding "grace" - if a queued move is invalid, keep trying
+    // subsequent moves in the queue until a valid one is found (or queue empty).
+    // Currently, an invalid move "wastes" the tick with no movement applied.
+    // -------------------------------------------------------------------------
+
     // Build move event from queue (take first move if any)
     const eventsForStep: MoveEvent[] = [];
+    let pendingMove: Movement | null = null;
     if (this.moveQueue.length > 0) {
-      const move = this.moveQueue.shift()!;
-      this.executedMoves.push(move);
+      pendingMove = this.moveQueue.shift()!;
       eventsForStep.push({
         step: nextStep,
         playerIndex: 0, // Always player 0 for puzzles
-        sourceCoord: move.sourceCoord,
-        direction: move.direction,
+        sourceCoord: pendingMove.sourceCoord,
+        direction: pendingMove.direction,
       });
     }
 
     // Process step (updates gameState.tick internally)
-    coreProcessStep(this.gameState, eventsForStep, this.config.timing);
+    const { appliedEvents } = coreProcessStep(
+      this.gameState,
+      eventsForStep,
+      this.config.timing,
+    );
+
+    // Only track moves that were actually applied
+    if (pendingMove && appliedEvents.length > 0) {
+      this.executedMoves.push(pendingMove);
+    }
 
     // Check if puzzle is complete
     if (isBestStartComplete(this.gameState.tick, this.config)) {
