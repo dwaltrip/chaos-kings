@@ -1,77 +1,32 @@
 import { db } from '@/services/db';
 import { getClient, destroyClient } from '@/services/redis';
-import { Database } from '@/types';
-import { Kysely } from 'kysely';
-
-// Extend the database interface to include PostgreSQL system tables
-interface ExtendedDatabase extends Database {
-  'information_schema.tables': {
-    table_name: string;
-    table_schema: string;
-    table_type: string;
-  };
-}
-
-const extendedDb = db as unknown as Kysely<ExtendedDatabase>;
+import { sql } from 'kysely';
 
 async function clearDatabase() {
   console.log('🗑️  Clearing database...');
 
-  // Get all table names from the database
-  const result = await extendedDb
-    .selectFrom('information_schema.tables')
-    .select('table_name')
-    .where('table_schema', '=', 'public')
-    .where('table_type', '=', 'BASE TABLE')
-    .execute();
+  // Get all table names from the public schema (excluding migration tables)
+  const result = await sql<{ table_name: string }>`
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_type = 'BASE TABLE'
+      AND table_name NOT LIKE '%migration%'
+      AND table_name NOT LIKE '%schema_version%'
+  `.execute(db);
 
-  const tableNames = result.map((row) => row.table_name);
+  const tableNames = result.rows.map((row) => row.table_name);
 
-  // Filter out migration tracking tables
-  // E.g. kysely_migration, kysely_migration_lock
-  const migrationTables = tableNames.filter(
-    (name) => name.includes('migration') || name.includes('schema_version'),
-  );
-
-  // Clear each table in order (reverse dependency order)
-  // TODO: Dynamically construct this list somehow,
-  // shouldn't have to be manually maintained.
-  const tableOrder = ['game_chat_messages', 'game_players', 'games', 'users'];
-  const tablesToClear = tableOrder.filter(
-    (table) => tableNames.includes(table) && !migrationTables.includes(table),
-  );
-
-  let totalRowsDeleted = 0;
-
-  for (const tableName of tablesToClear) {
-    try {
-      const deleteResult = await db.deleteFrom(tableName as any).execute();
-      const rowsDeleted =
-        deleteResult.length > 0 ? deleteResult[0].numDeletedRows || 0 : 0;
-      totalRowsDeleted += Number(rowsDeleted);
-      console.log(`  ✅ Cleared table: ${tableName} (${rowsDeleted} rows)`);
-    } catch (error) {
-      console.log(`  ⚠️  Error clearing table ${tableName}:`, error);
-    }
+  if (tableNames.length === 0) {
+    console.log('  ℹ️  No tables to clear');
+    return;
   }
 
-  // Clear any remaining tables not in the ordered list (excluding migration tables)
-  const remainingTables = tableNames.filter(
-    (name) => !tablesToClear.includes(name) && !migrationTables.includes(name),
-  );
-  for (const tableName of remainingTables) {
-    try {
-      const deleteResult = await db.deleteFrom(tableName as any).execute();
-      const rowsDeleted =
-        deleteResult.length > 0 ? deleteResult[0].numDeletedRows || 0 : 0;
-      totalRowsDeleted += Number(rowsDeleted);
-      console.log(`  ✅ Cleared table: ${tableName} (${rowsDeleted} rows)`);
-    } catch (error) {
-      console.log(`  ⚠️  Error clearing table ${tableName}:`, error);
-    }
-  }
+  // Use TRUNCATE with CASCADE to handle foreign key dependencies automatically
+  const tableList = tableNames.map((t) => `"${t}"`).join(', ');
+  await sql.raw(`TRUNCATE ${tableList} CASCADE`).execute(db);
 
-  console.log(`  📊 Total rows deleted: ${totalRowsDeleted}`);
+  console.log(`  ✅ Truncated ${tableNames.length} tables: ${tableNames.join(', ')}`);
 }
 
 async function clearRedis() {
