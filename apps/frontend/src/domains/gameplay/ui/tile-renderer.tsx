@@ -90,7 +90,7 @@ const TileRenderer = React.memo(
             </>
           )}
 
-          {isValidMove && <TileOverlay className="possible-move" />}
+          {(isValidMove || !isVisible) && <TileOverlay className="possible-move" />}
           {!isVisible && <TileOverlay className="fog-of-war" />}
 
           {queuedDirections &&
