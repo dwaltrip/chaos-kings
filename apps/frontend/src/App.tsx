@@ -10,6 +10,7 @@ import { JoinGamePage } from '@/pages/join-game/join-game-page';
 import { ReplayPage } from '@/domains/replay/pages/replay-page';
 
 import { BestStartMainPage, BestStartPlayPage } from '@/domains/puzzles/pages';
+import { SandboxPage } from '@/domains/sandbox/pages';
 
 import { useUserSessionAndWsInit } from '@/hooks/use-user-session-and-ws-init';
 
@@ -32,6 +33,8 @@ function App() {
 
         <Route path="puzzles" element={<BestStartMainPage />} />
         <Route path="puzzles/play" element={<BestStartPlayPage />} />
+
+        <Route path="sandbox" element={<SandboxPage />} />
       </Routes>
     </div>
   );

@@ -10,6 +10,7 @@ import { chatHandlers } from '@/domains/chat/handlers';
 import { gameplayHandlers } from '@/domains/gameplay/handlers';
 import { matchmakingHandlers } from '@/domains/matchmaking/handlers';
 import { puzzlesHandlers } from '@/domains/puzzles/handlers';
+import { sandboxHandlers } from '@/domains/sandbox/handlers';
 import { systemHandlers } from '@/domains/system/handlers';
 
 const mergedHandlers = {
@@ -17,6 +18,7 @@ const mergedHandlers = {
   ...matchmakingHandlers,
   ...gameplayHandlers,
   ...puzzlesHandlers,
+  ...sandboxHandlers,
   ...systemHandlers,
 } satisfies HandlerMap<ServerMessage>;
 

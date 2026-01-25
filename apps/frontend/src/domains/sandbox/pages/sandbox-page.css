@@ -1,0 +1,43 @@
+.sandbox-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.sandbox-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.sandbox-header h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #fff;
+}
+
+.sandbox-status {
+  padding: 4px 8px;
+  background-color: #333;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #888;
+}
+
+.sandbox-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sandbox-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: #888;
+  font-size: 16px;
+}

@@ -7,6 +7,9 @@ import type { GameplayServerMessage } from '@protocol/domains/gameplay/server-me
 import type { PuzzlesClientMessage } from '@protocol/domains/puzzles/client-messages';
 import type { PuzzlesServerMessage } from '@protocol/domains/puzzles/server-messages';
 
+import type { SandboxClientMessage } from '@protocol/domains/sandbox/client-messages';
+import type { SandboxServerMessage } from '@protocol/domains/sandbox/server-messages';
+
 import type { MatchmakingClientMessage } from '@protocol/domains/matchmaking/client-messages';
 import type { MatchmakingServerMessage } from '@protocol/domains/matchmaking/server-messages';
 
@@ -18,6 +21,7 @@ type ClientMessage =
   | MatchmakingClientMessage
   | GameplayClientMessage
   | PuzzlesClientMessage
+  | SandboxClientMessage
   | SystemClientMessage;
 
 type ServerMessage =
@@ -25,6 +29,7 @@ type ServerMessage =
   | MatchmakingServerMessage
   | GameplayServerMessage
   | PuzzlesServerMessage
+  | SandboxServerMessage
   | SystemServerMessage;
 
 export type { ClientMessage, ServerMessage };

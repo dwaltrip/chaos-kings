@@ -13,12 +13,16 @@ import type { SystemServerMessage } from '@protocol/domains/system/server-messag
 import type { PuzzlesClientMessage } from '@protocol/domains/puzzles/client-messages';
 import type { PuzzlesServerMessage } from '@protocol/domains/puzzles/server-messages';
 
+import type { SandboxClientMessage } from '@protocol/domains/sandbox/client-messages';
+import type { SandboxServerMessage } from '@protocol/domains/sandbox/server-messages';
+
 // Union of all client messages (client → server)
 type ClientMessage =
   | ChatClientMessage
   | MatchmakingClientMessage
   | GameplayClientMessage
   | PuzzlesClientMessage
+  | SandboxClientMessage
   | SystemClientMessage;
 
 // Union of all server messages (server → client)
@@ -27,6 +31,7 @@ type ServerMessage =
   | MatchmakingServerMessage
   | GameplayServerMessage
   | PuzzlesServerMessage
+  | SandboxServerMessage
   | SystemServerMessage;
 
 export type { ClientMessage, ServerMessage };
