@@ -195,6 +195,7 @@ class SandboxManager {
 
   private tick(): void {
     this.tickInternal(true);
+    this.broadcastState();
   }
 
   private tickInternal(saveCheckpoint: boolean): void {
