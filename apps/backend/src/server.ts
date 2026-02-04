@@ -9,6 +9,8 @@ import trpcPlugin from '@/plugins/trpc';
 import { setupWebSocketV2 } from '@/ws/server-bootstrap';
 import { logger, fastifyLoggerConfig } from '@/utils/logger';
 
+import { init as initSandbox } from '@/domains/sandbox/init';
+
 import { systemRoutes } from '@/domains/system/system-routes';
 import { userRoutes } from '@/domains/users/user-routes';
 import { gameRoutes } from '@/domains/games/game-routes';
@@ -41,6 +43,9 @@ fastify.register(chatRoutes, { prefix: '/api' });
 
 // Initialize v2 WebSocket server
 const wsServer = setupWebSocketV2();
+
+// Initialize domain hooks
+initSandbox();
 
 // WebSocket route
 fastify.register(async function (fastify) {

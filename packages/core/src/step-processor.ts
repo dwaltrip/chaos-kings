@@ -42,6 +42,9 @@ function processStep(
         });
       }
     }
+    // TODO(sandbox/gameplay): When a queued movement chain loses forward momentum
+    // (e.g. collision leaves <=1 unit), drop only subsequent moves in that chain while
+    // preserving independent queued moves from other sources.
   }
 
   // Apply production

@@ -5,6 +5,7 @@ import type { Direction } from '@core/types';
 import { useKeyboardControls } from '@/domains/gameplay/hooks/use-keyboard-controls';
 import {
   useBoardSessionStore,
+  boardSessionActions,
   selectBoard,
   selectSelectedTile,
 } from '@/domains/games/stores/board-session-store';
@@ -13,7 +14,13 @@ import {
   selectStatus,
   selectIsPaused,
 } from '@/domains/sandbox/stores/sandbox-meta-store';
-import { startSandbox, queueMove, undoMove, clearMoves } from '@/domains/sandbox/actions';
+import {
+  startSandbox,
+  endSandbox,
+  queueMove,
+  undoMove,
+  clearMoves,
+} from '@/domains/sandbox/actions';
 import { SandboxBoard } from '@/domains/sandbox/ui/sandbox-board';
 import { SandboxControlBar } from '@/domains/sandbox/ui/sandbox-control-bar';
 import { useSandboxPlaybackControls } from '@/domains/sandbox/hooks/use-sandbox-playback-controls';
@@ -30,6 +37,10 @@ function SandboxPage() {
 
   useEffect(() => {
     startSandbox();
+
+    return () => {
+      endSandbox();
+    };
   }, []);
 
   useKeyboardControls({
@@ -45,8 +56,12 @@ function SandboxPage() {
 
   useSandboxPlaybackControls({ disabled: !isActive });
 
+  const handlePageClick = () => {
+    boardSessionActions().clearSelectedTile();
+  };
+
   return (
-    <div className="sandbox-page">
+    <div className="sandbox-page" onClick={handlePageClick}>
       <div className="sandbox-header">
         <h1>Sandbox Mode</h1>
         <span className="sandbox-status">{isPaused ? 'Paused' : 'Playing'}</span>

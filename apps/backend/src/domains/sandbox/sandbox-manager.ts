@@ -68,6 +68,7 @@ class SandboxManager {
   }
 
   start(): void {
+    // TODO: Move sandbox broadcasts out of manager and trigger from parent domain actions.
     this.log.debug('Starting sandbox (paused)');
     this.broadcastSessionStarted();
     this.broadcastState();
@@ -86,6 +87,7 @@ class SandboxManager {
 
     this.tickTimer = setInterval(() => {
       this.tick();
+      this.broadcastState();
     }, this.config.timing.tickRateMs);
 
     this.broadcastState();
@@ -124,6 +126,7 @@ class SandboxManager {
     if (targetTick > this.gameState.tick) return;
 
     this.log.debug(`Rewinding to tick ${targetTick}`);
+    this.moveQueue.clearMoves();
 
     let checkpointTick = 0;
     for (const tick of this.checkpoints.keys()) {
@@ -144,7 +147,6 @@ class SandboxManager {
       this.tickInternal(false);
     }
 
-    this.moveQueue.clearMoves();
     this.broadcastState();
   }
 
@@ -195,7 +197,6 @@ class SandboxManager {
 
   private tick(): void {
     this.tickInternal(true);
-    this.broadcastState();
   }
 
   private tickInternal(saveCheckpoint: boolean): void {

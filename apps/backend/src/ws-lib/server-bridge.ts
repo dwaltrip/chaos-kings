@@ -1,14 +1,29 @@
 import type { WsBridge, BroadcastOptions, ConnectionId } from './types';
 import type { WSServerInstance } from './server';
 
-class ServerBridge<TMessage, TConnectionContext> implements WsBridge<TMessage> {
+type DisconnectHandler<TContext> = (context: TContext) => void;
+
+class ServerBridge<TMessage, TConnectionContext, TContext = unknown>
+  implements WsBridge<TMessage>
+{
   private transport: WSServerInstance<TMessage, TConnectionContext> | null = null;
+  private disconnectHandlers: DisconnectHandler<TContext>[] = [];
 
   init(transport: WSServerInstance<TMessage, TConnectionContext>) {
     if (this.transport) {
       throw new Error('ServerBridge already initialized');
     }
     this.transport = transport;
+  }
+
+  onDisconnect(handler: DisconnectHandler<TContext>): void {
+    this.disconnectHandlers.push(handler);
+  }
+
+  runDisconnectHandlers(context: TContext): void {
+    for (const handler of this.disconnectHandlers) {
+      handler(context);
+    }
   }
 
   private getTransport() {

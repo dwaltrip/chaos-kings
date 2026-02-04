@@ -46,6 +46,8 @@ function setupWebSocketV2() {
         const memberIds = roomMembershipTracker.getUserIds(roomId);
         systemWsEffects.broadcastRoomStatus({ roomId, memberIds });
       });
+
+      wsBridge.runDisconnectHandlers(context);
     },
     // Wrap each message in AppContext scope
     setupHandlerContext: async (execute) => {

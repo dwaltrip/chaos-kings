@@ -40,4 +40,4 @@ class SandboxService {
 
 const sandboxService = new SandboxService();
 
-export { sandboxService, SandboxService };
+export { sandboxService, SandboxService, type SandboxManager };

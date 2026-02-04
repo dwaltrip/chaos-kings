@@ -15,9 +15,13 @@ function SandboxBoard({ boardState }: SandboxBoardProps) {
   const cols = boardState.grid[0]?.length || 0;
   const { containerRef, gridStyle } = useGridLayout(rows, cols);
 
+  const handleGridClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <div ref={containerRef} className="game-grid-container">
-      <div className="game-grid" style={gridStyle}>
+      <div className="game-grid" style={gridStyle} onClick={handleGridClick}>
         {boardState.grid.flatMap((row) =>
           row.map(({ coord }) => (
             <SandboxTile coord={coord} key={serializeCoord(coord)} />
