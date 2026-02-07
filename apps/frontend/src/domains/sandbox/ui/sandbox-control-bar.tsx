@@ -1,6 +1,7 @@
 import {
   useSandboxMetaStore,
   selectIsPaused,
+  selectMaxTickReached,
 } from '@/domains/sandbox/stores/sandbox-meta-store';
 import {
   useBoardSessionStore,
@@ -13,6 +14,7 @@ import './sandbox-control-bar.css';
 function SandboxControlBar() {
   const tick = useBoardSessionStore(selectTick);
   const isPaused = useSandboxMetaStore(selectIsPaused);
+  const maxTickReached = useSandboxMetaStore(selectMaxTickReached);
 
   const handlePlayPause = () => {
     if (isPaused) {
@@ -60,7 +62,9 @@ function SandboxControlBar() {
 
       <div className="sandbox-separator" />
 
-      <div className="sandbox-tick-display">Tick: {tick}</div>
+      <div className="sandbox-tick-display">
+        Tick: {tick} / {maxTickReached}
+      </div>
     </div>
   );
 }

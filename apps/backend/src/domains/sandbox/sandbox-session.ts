@@ -1,48 +1,26 @@
 import { RoomId, UserId } from '@kernel/ids';
 
-import type { GameState, BoardState, Coord, Direction, Movement } from '@core/types';
-import { processStep as coreProcessStep, createGameState } from '@core/step-processor';
+import type { GameState, Coord, Direction, Movement } from '@core/types';
+import { createGameState } from '@core/step-processor';
 import { generateGameMapV2 } from '@core/terrain-generation';
-import type { MoveEvent } from '@core/replay/types';
 import { MoveQueueEngine } from '@core/move-queue';
+import { TimelineEngine } from '@core/timeline';
+import type { MoveInput } from '@core/timeline';
 
 import { createScopedLogger } from '@/utils/scoped-logger';
 import { sandboxWsEffects } from '@/domains/sandbox/ws-effects';
 import type { SandboxConfig } from '@/domains/sandbox/types';
 
-interface GameStateSnapshot {
-  gameState: GameState;
-  tick: number;
-}
-
-function deepCloneGameState(gameState: GameState): GameState {
-  return {
-    tick: gameState.tick,
-    players: gameState.players.map((p) => ({ ...p })),
-    board: {
-      size: { ...gameState.board.size },
-      grid: gameState.board.grid.map((row) =>
-        row.map((sq) => ({
-          ...sq,
-          coord: { ...sq.coord },
-        })),
-      ),
-    },
-  };
-}
-
-class SandboxManager {
-  private gameState: GameState;
-  private initialGameState: GameState;
+class SandboxSession {
+  private timeline: TimelineEngine;
   private moveQueue: MoveQueueEngine;
-  private checkpoints: Map<number, GameStateSnapshot> = new Map();
   private tickTimer: NodeJS.Timeout | null = null;
   private isPaused: boolean = true;
   private userId: UserId;
   private roomId: RoomId;
   private config: SandboxConfig;
   private seed: number;
-  private log = createScopedLogger(() => `SandboxManager user=${this.userId}`);
+  private log = createScopedLogger(() => `SandboxSession user=${this.userId}`);
 
   constructor(userId: UserId, roomId: RoomId, config: SandboxConfig) {
     this.userId = userId;
@@ -59,16 +37,17 @@ class SandboxManager {
     });
 
     const board = { grid, size: { width, height } };
-    this.gameState = createGameState(board, 1);
-    this.initialGameState = deepCloneGameState(this.gameState);
+    const initialState = createGameState(board, 1);
+
+    this.timeline = new TimelineEngine(initialState, config.timing, {
+      checkpointInterval: config.checkpointInterval,
+    });
     this.moveQueue = new MoveQueueEngine();
 
-    this.saveCheckpoint();
     this.log.debug('Created sandbox');
   }
 
   start(): void {
-    // TODO: Move sandbox broadcasts out of manager and trigger from parent domain actions.
     this.log.debug('Starting sandbox (paused)');
     this.broadcastSessionStarted();
     this.broadcastState();
@@ -86,7 +65,7 @@ class SandboxManager {
     this.log.debug('Playing');
 
     this.tickTimer = setInterval(() => {
-      this.tick();
+      this.doTick();
       this.broadcastState();
     }, this.config.timing.tickRateMs);
 
@@ -110,43 +89,21 @@ class SandboxManager {
   stepForward(): void {
     if (!this.isPaused) return;
 
-    this.tick();
+    this.doTick();
     this.broadcastState();
   }
 
   stepBack(): void {
     if (!this.isPaused) return;
 
-    const targetTick = Math.max(0, this.gameState.tick - 1);
-    this.rewindToTick(targetTick);
+    const targetTick = Math.max(0, this.timeline.getCurrentTick() - 1);
+    this.jumpToTick(targetTick);
   }
 
-  rewindToTick(targetTick: number): void {
-    if (targetTick < 0) return;
-    if (targetTick > this.gameState.tick) return;
-
-    this.log.debug(`Rewinding to tick ${targetTick}`);
+  jumpToTick(targetTick: number): void {
+    this.log.debug(`Jumping to tick ${targetTick}`);
     this.moveQueue.clearMoves();
-
-    let checkpointTick = 0;
-    for (const tick of this.checkpoints.keys()) {
-      if (tick <= targetTick && tick > checkpointTick) {
-        checkpointTick = tick;
-      }
-    }
-
-    const checkpoint = this.checkpoints.get(checkpointTick);
-    if (!checkpoint) {
-      this.log.warn(`No checkpoint found for tick ${checkpointTick}`);
-      return;
-    }
-
-    this.gameState = deepCloneGameState(checkpoint.gameState);
-
-    while (this.gameState.tick < targetTick) {
-      this.tickInternal(false);
-    }
-
+    this.timeline.jumpToTick(targetTick);
     this.broadcastState();
   }
 
@@ -157,16 +114,14 @@ class SandboxManager {
       this.pause();
     }
 
-    this.gameState = deepCloneGameState(this.initialGameState);
+    this.timeline.reset();
     this.moveQueue.clearMoves();
-    this.checkpoints.clear();
-    this.saveCheckpoint();
-
     this.broadcastState();
   }
 
   queueMove(source: Coord, direction: Direction): void {
-    const success = this.moveQueue.queueMove(source, direction, this.gameState.board);
+    const state = this.timeline.getState();
+    const success = this.moveQueue.queueMove(source, direction, state.board);
     if (success) {
       this.broadcastState();
     }
@@ -183,11 +138,13 @@ class SandboxManager {
   }
 
   getState() {
+    const state = this.timeline.getState();
     return {
-      tick: this.gameState.tick,
-      board: this.gameState.board,
+      tick: state.tick,
+      board: state.board,
       queue: this.moveQueue.getQueue(),
       isPaused: this.isPaused,
+      maxTickReached: this.timeline.getMaxTick(),
     };
   }
 
@@ -195,47 +152,23 @@ class SandboxManager {
     return this.config;
   }
 
-  private tick(): void {
-    this.tickInternal(true);
-  }
-
-  private tickInternal(saveCheckpoint: boolean): void {
-    const nextStep = this.gameState.tick + 1;
-
-    const eventsForStep: MoveEvent[] = [];
+  private doTick(): void {
+    const moves: MoveInput[] = [];
     if (!this.moveQueue.isEmpty()) {
       const pendingMove = this.moveQueue.shiftMove()!;
-      eventsForStep.push({
-        step: nextStep,
+      moves.push({
         playerIndex: 0,
         sourceCoord: pendingMove.sourceCoord,
         direction: pendingMove.direction,
       });
     }
 
-    coreProcessStep(this.gameState, eventsForStep, this.config.timing);
-
-    if (saveCheckpoint) {
-      this.maybeSaveCheckpoint();
-    }
-  }
-
-  private maybeSaveCheckpoint(): void {
-    if (this.gameState.tick % this.config.checkpointInterval === 0) {
-      this.saveCheckpoint();
-    }
-  }
-
-  private saveCheckpoint(): void {
-    const snapshot: GameStateSnapshot = {
-      gameState: deepCloneGameState(this.gameState),
-      tick: this.gameState.tick,
-    };
-    this.checkpoints.set(this.gameState.tick, snapshot);
+    this.timeline.tick(moves);
   }
 
   private broadcastSessionStarted(): void {
-    sandboxWsEffects.broadcastSessionStarted(this.roomId, this.gameState.board, {
+    const state = this.timeline.getState();
+    sandboxWsEffects.broadcastSessionStarted(this.roomId, state.board, {
       mapSize: this.config.mapSize,
       timing: this.config.timing,
       checkpointInterval: this.config.checkpointInterval,
@@ -243,14 +176,16 @@ class SandboxManager {
   }
 
   private broadcastState(): void {
+    const state = this.timeline.getState();
     sandboxWsEffects.broadcastStateUpdate(
       this.roomId,
-      this.gameState.tick,
-      this.gameState.board,
+      state.tick,
+      state.board,
       this.moveQueue.getQueue(),
       this.isPaused,
+      this.timeline.getMaxTick(),
     );
   }
 }
 
-export { SandboxManager };
+export { SandboxSession };

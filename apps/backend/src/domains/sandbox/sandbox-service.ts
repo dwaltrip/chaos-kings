@@ -1,14 +1,14 @@
 import { UserId } from '@kernel/ids';
 
-import { SandboxManager } from '@/domains/sandbox/sandbox-manager';
+import { SandboxSession } from '@/domains/sandbox/sandbox-session';
 import { buildSandboxRoomId } from '@/domains/sandbox/utils';
 import type { SandboxConfig } from '@/domains/sandbox/types';
 import { DEFAULT_SANDBOX_CONFIG } from '@/domains/sandbox/types';
 
 class SandboxService {
-  private sessions: Map<UserId, SandboxManager> = new Map();
+  private sessions: Map<UserId, SandboxSession> = new Map();
 
-  createSession(userId: UserId, config?: Partial<SandboxConfig>): SandboxManager {
+  createSession(userId: UserId, config?: Partial<SandboxConfig>): SandboxSession {
     const existingSession = this.sessions.get(userId);
     if (existingSession) {
       existingSession.stop();
@@ -17,12 +17,12 @@ class SandboxService {
 
     const roomId = buildSandboxRoomId(userId);
     const fullConfig: SandboxConfig = { ...DEFAULT_SANDBOX_CONFIG, ...config };
-    const manager = new SandboxManager(userId, roomId, fullConfig);
-    this.sessions.set(userId, manager);
-    return manager;
+    const session = new SandboxSession(userId, roomId, fullConfig);
+    this.sessions.set(userId, session);
+    return session;
   }
 
-  getSession(userId: UserId): SandboxManager | undefined {
+  getSession(userId: UserId): SandboxSession | undefined {
     return this.sessions.get(userId);
   }
 
@@ -40,4 +40,4 @@ class SandboxService {
 
 const sandboxService = new SandboxService();
 
-export { sandboxService, SandboxService, type SandboxManager };
+export { sandboxService, SandboxService, type SandboxSession };

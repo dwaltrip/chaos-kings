@@ -13,7 +13,13 @@ const sandboxHandlers = {
   },
 
   'sandbox:state-update': (payload) => {
-    handleStateUpdate(payload.tick, payload.board, payload.moveQueue, payload.isPaused);
+    handleStateUpdate(
+      payload.tick,
+      payload.board,
+      payload.moveQueue,
+      payload.isPaused,
+      payload.maxTickReached,
+    );
   },
 
   'sandbox:error': (payload) => {

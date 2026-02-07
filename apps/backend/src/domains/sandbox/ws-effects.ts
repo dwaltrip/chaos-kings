@@ -24,10 +24,17 @@ const sandboxWsEffects = {
     board: BoardState,
     moveQueue: Movement[],
     isPaused: boolean,
+    maxTickReached: number,
   ) {
     wsBridge.broadcastToRoom(
       idToString(roomId),
-      MsgCreators.createStateUpdateMessage(tick, board, moveQueue, isPaused),
+      MsgCreators.createStateUpdateMessage(
+        tick,
+        board,
+        moveQueue,
+        isPaused,
+        maxTickReached,
+      ),
     );
   },
 

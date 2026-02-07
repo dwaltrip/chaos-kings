@@ -18,6 +18,7 @@ type SandboxServerPayloadMap = {
 
   'sandbox:state-update': {
     tick: number;
+    maxTickReached: number;
     board: BoardState;
     moveQueue: Movement[];
     isPaused: boolean;
@@ -49,9 +50,10 @@ const MsgCreators = {
     board: BoardState,
     moveQueue: Movement[],
     isPaused: boolean,
+    maxTickReached: number,
   ): StateUpdateMessage => ({
     type: 'sandbox:state-update',
-    payload: { tick, board, moveQueue, isPaused },
+    payload: { tick, maxTickReached, board, moveQueue, isPaused },
   }),
 
   createErrorMessage: (message: string, code?: string): ErrorMessage => ({

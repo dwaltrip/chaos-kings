@@ -11,10 +11,11 @@ function handleStateUpdate(
   board: BoardState,
   moveQueue: Movement[],
   isPaused: boolean,
+  maxTickReached: number,
 ): void {
   const { setBoard, setTick, setVisibleSquares, setQueuedMoves } =
     useBoardSessionStore.getState().actions;
-  const { setIsPaused } = useSandboxMetaStore.getState().actions;
+  const { setIsPaused, updateMaxTick } = useSandboxMetaStore.getState().actions;
 
   tileOrchestrator.updateTileSquares(board);
 
@@ -31,6 +32,7 @@ function handleStateUpdate(
   setQueuedMoves(moveQueue);
   setVisibleSquares(visibleSquares);
   setIsPaused(isPaused);
+  updateMaxTick(maxTickReached);
 }
 
 export { handleStateUpdate };
