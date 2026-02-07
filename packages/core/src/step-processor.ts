@@ -133,4 +133,5 @@ function createGameState(board: GameState['board'], playerCount: number): GameSt
   return gameState;
 }
 
+export type { ProcessStepResult };
 export { processStep, createGameState };
