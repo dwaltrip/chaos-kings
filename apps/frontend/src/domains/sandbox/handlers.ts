@@ -19,6 +19,7 @@ const sandboxHandlers = {
       payload.moveQueue,
       payload.isPaused,
       payload.maxTickReached,
+      payload.lastExecutedMove,
     );
   },
 

@@ -12,8 +12,9 @@ function handleStateUpdate(
   moveQueue: Movement[],
   isPaused: boolean,
   maxTickReached: number,
+  lastExecutedMove: Movement | null,
 ): void {
-  const { setBoard, setTick, setVisibleSquares, setQueuedMoves } =
+  const { setBoard, setTick, setVisibleSquares, setQueuedMoves, setLastExecutedMove } =
     useBoardSessionStore.getState().actions;
   const { setIsPaused, updateMaxTick } = useSandboxMetaStore.getState().actions;
 
@@ -31,6 +32,7 @@ function handleStateUpdate(
   setBoard(board);
   setQueuedMoves(moveQueue);
   setVisibleSquares(visibleSquares);
+  setLastExecutedMove(lastExecutedMove);
   setIsPaused(isPaused);
   updateMaxTick(maxTickReached);
 }

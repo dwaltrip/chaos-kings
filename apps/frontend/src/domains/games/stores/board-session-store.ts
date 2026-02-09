@@ -17,6 +17,7 @@ interface BoardSessionState {
   selectedTile: Coord | null;
   visibleSquares: Set<string>;
   queuedMoves: Movement[];
+  lastExecutedMove: Movement | null;
   isEnded: boolean;
 
   actions: {
@@ -27,6 +28,7 @@ interface BoardSessionState {
     setVisibleSquares: (squares: Set<string>) => void;
     setQueuedMoves: (moves: Movement[]) => void;
     addQueuedMove: (move: Movement) => void;
+    setLastExecutedMove: (move: Movement | null) => void;
     setIsEnded: (ended: boolean) => void;
     reset: () => void;
   };
@@ -38,6 +40,7 @@ const useBoardSessionStore = create<BoardSessionState>((set) => ({
   selectedTile: null,
   visibleSquares: new Set<string>(),
   queuedMoves: [],
+  lastExecutedMove: null,
   isEnded: false,
 
   actions: {
@@ -49,6 +52,7 @@ const useBoardSessionStore = create<BoardSessionState>((set) => ({
     setQueuedMoves: (queuedMoves) => set({ queuedMoves }),
     addQueuedMove: (move) =>
       set((state) => ({ queuedMoves: [...state.queuedMoves, move] })),
+    setLastExecutedMove: (lastExecutedMove) => set({ lastExecutedMove }),
     setIsEnded: (isEnded) => set({ isEnded }),
     reset: () =>
       set({
@@ -57,6 +61,7 @@ const useBoardSessionStore = create<BoardSessionState>((set) => ({
         selectedTile: null,
         visibleSquares: new Set<string>(),
         queuedMoves: [],
+        lastExecutedMove: null,
         isEnded: false,
       }),
   },

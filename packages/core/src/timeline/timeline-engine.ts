@@ -1,6 +1,6 @@
 import { processStep } from '@core/step-processor';
 import type { ProcessStepResult } from '@core/step-processor';
-import type { GameState, Coord, Direction } from '@core/types';
+import type { GameState, Coord, Direction, Movement } from '@core/types';
 import type { MoveEvent } from '@core/replay/types';
 import type { TimingConfig } from '@core/timing/types';
 
@@ -39,6 +39,10 @@ class TimelineEngine {
 
   private currentTick: number = 0;
   private maxTick: number = 0;
+
+  // The move that was executed on the most recent tick (during normal play).
+  // Cleared on timeline manipulation (jumpToTick, reset).
+  private lastExecutedMove: Movement | null = null;
 
   // Indexed by tick. null = no moves applied at that tick.
   private moveHistory: (MoveEvent[] | null)[] = [];
@@ -83,6 +87,13 @@ class TimelineEngine {
 
     const result = processStep(this.currentState, moveEvents, this.timing);
 
+    if (moves.length > 0) {
+      const m = moves[0];
+      this.lastExecutedMove = { sourceCoord: m.sourceCoord, direction: m.direction };
+    } else {
+      this.lastExecutedMove = null;
+    }
+
     // Record only applied events
     if (result.appliedEvents.length > 0) {
       this.moveHistory.push(result.appliedEvents);
@@ -112,6 +123,8 @@ class TimelineEngine {
       return;
     }
 
+    this.lastExecutedMove = null;
+
     // Find nearest checkpoint at or before target
     let checkpointTick = 0;
     for (const [tick] of this.checkpoints) {
@@ -137,6 +150,7 @@ class TimelineEngine {
     this.currentState = deepCloneGameState(this.initialState);
     this.currentTick = 0;
     this.maxTick = 0;
+    this.lastExecutedMove = null;
     this.moveHistory = [];
     this.checkpoints.clear();
     this.checkpoints.set(0, deepCloneGameState(this.currentState));
@@ -157,6 +171,10 @@ class TimelineEngine {
 
   getMaxTick(): number {
     return this.maxTick;
+  }
+
+  getLastExecutedMove(): Movement | null {
+    return this.lastExecutedMove;
   }
 
   // loadHistory(events: MoveEvent[]): void {

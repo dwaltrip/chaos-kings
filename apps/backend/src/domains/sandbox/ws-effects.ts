@@ -25,6 +25,7 @@ const sandboxWsEffects = {
     moveQueue: Movement[],
     isPaused: boolean,
     maxTickReached: number,
+    lastExecutedMove: Movement | null,
   ) {
     wsBridge.broadcastToRoom(
       idToString(roomId),
@@ -34,6 +35,7 @@ const sandboxWsEffects = {
         moveQueue,
         isPaused,
         maxTickReached,
+        lastExecutedMove,
       ),
     );
   },

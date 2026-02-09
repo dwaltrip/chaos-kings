@@ -89,6 +89,7 @@ class SandboxSession {
   stepForward(): void {
     if (!this.isPaused) return;
 
+    // TODO: consider updating lastExecutedMove for step-forward too
     this.doTick();
     this.broadcastState();
   }
@@ -145,6 +146,7 @@ class SandboxSession {
       queue: this.moveQueue.getQueue(),
       isPaused: this.isPaused,
       maxTickReached: this.timeline.getMaxTick(),
+      lastExecutedMove: this.timeline.getLastExecutedMove(),
     };
   }
 
@@ -184,6 +186,7 @@ class SandboxSession {
       this.moveQueue.getQueue(),
       this.isPaused,
       this.timeline.getMaxTick(),
+      this.timeline.getLastExecutedMove(),
     );
   }
 }
