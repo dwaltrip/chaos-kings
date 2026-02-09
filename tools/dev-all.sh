@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # Development script for Generals v2 - starts both frontend and backend
-set -e
 
 # Source fnm to ensure we're using the correct Node version
 if command -v fnm &> /dev/null; then
@@ -23,8 +22,8 @@ cleanup() {
     exit
 }
 
-# Set up trap to cleanup on script termination
-trap cleanup SIGINT SIGTERM EXIT
+# Cleanup on interactive stop (not EXIT — so background execution doesn't kill children)
+trap cleanup SIGINT SIGTERM
 
 # Start backend development server
 echo "📦 Starting backend server..."
