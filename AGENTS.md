@@ -247,23 +247,22 @@ type GameId = string & { readonly __brand: 'GameId' };
 
 ## Development Commands
 
+### All
+- `./tools/build-all.sh` - Build backend + frontend
+- `./tools/test-all.sh` - Run all tests
+- `./tools/dev-all.sh` - Start dev server (use this!)
+
 ### Backend (`apps/backend`)
-- `npm run start` - Start development server with hot reload
 - `npm run build` - Build TypeScript to JS (check for TS errors)
 - `npm test` - Run Jest tests
 - `npm run migrate:latest` - Run database migrations
 
 ### Frontend (`apps/frontend`)
-- `npm run dev` - Start Vite dev server
 - `npm run build` - Build for production (check for TS errors)
 - `npm test` - Run tests (using vitest)
 
 ### Core (`packages/core`)
-- `npm test` / `npm run test:watch` - Run Jest tests for game logic
-
-### All
-- `bash tools/build-all.sh` - Build backend + frontend
-- `bash tools/test-all.sh` - Run all tests
+- `npm test` - Run Jest tests for game logic
 
 ---
 
