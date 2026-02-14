@@ -86,11 +86,12 @@ class SandboxSession {
     this.broadcastState();
   }
 
+  // TODO: support stepping forward at maxTick (new tick with queued moves)
   stepForward(): void {
     if (!this.isPaused) return;
+    if (this.timeline.getCurrentTick() >= this.timeline.getMaxTick()) return;
 
-    // TODO: consider updating lastExecutedMove for step-forward too
-    this.doTick();
+    this.timeline.jumpToTick(this.timeline.getCurrentTick() + 1);
     this.broadcastState();
   }
 

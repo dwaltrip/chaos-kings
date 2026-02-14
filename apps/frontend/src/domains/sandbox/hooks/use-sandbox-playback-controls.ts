@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 import { useSandboxMetaStore } from '@/domains/sandbox/stores/sandbox-meta-store';
 import { useBoardSessionStore } from '@/domains/games/stores/board-session-store';
-import { play, pause, stepForward, stepBack, reset } from '@/domains/sandbox/actions';
+import { play, pause, stepForward, stepBack } from '@/domains/sandbox/actions';
 
 interface UseSandboxPlaybackControlsParams {
   disabled: boolean;
@@ -39,11 +39,6 @@ function useSandboxPlaybackControls({ disabled }: UseSandboxPlaybackControlsPara
           if (isPaused && tick > 0) {
             stepBack();
           }
-          break;
-
-        case 'r':
-          event.preventDefault();
-          reset();
           break;
 
         default:

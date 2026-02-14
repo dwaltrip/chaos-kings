@@ -125,6 +125,16 @@ class TimelineEngine {
 
     this.lastExecutedMove = null;
 
+    // Small forward jump: replay from current state (avoids checkpoint clone)
+    if (target > this.currentTick && target - this.currentTick <= 10) {
+      for (let tick = this.currentTick + 1; tick <= target; tick++) {
+        const events = this.moveHistory[tick - 1] ?? [];
+        processStep(this.currentState, events, this.timing);
+        this.currentTick = tick;
+      }
+      return;
+    }
+
     // Find nearest checkpoint at or before target
     let checkpointTick = 0;
     for (const [tick] of this.checkpoints) {
@@ -139,8 +149,7 @@ class TimelineEngine {
 
     // Replay from checkpoint to target
     for (let tick = checkpointTick + 1; tick <= target; tick++) {
-      const historyIndex = tick - 1;
-      const events = this.moveHistory[historyIndex] ?? [];
+      const events = this.moveHistory[tick - 1] ?? [];
       processStep(this.currentState, events, this.timing);
       this.currentTick = tick;
     }
