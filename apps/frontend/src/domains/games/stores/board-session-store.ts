@@ -100,11 +100,17 @@ const selectNeighborVisibility = (coord: Coord) =>
     return getNeighborVisibility(state.visibleSquares, coord);
   });
 
+// Move history cache: tick → move executed at that tick (null = no move).
+// Not in the Zustand store because it doesn't drive renders — it's consumed
+// by actions (e.g. optimistic step-forward) which write computed results
+// to the store. Used by sandbox and future replay-edit mode.
+const moveHistoryCache = new Map<number, Movement | null>();
+
 // Helper for accessing actions
 const boardSessionActions = () => useBoardSessionStore.getState().actions;
 
 export type { BoardSessionState };
-export { useBoardSessionStore, boardSessionActions };
+export { useBoardSessionStore, boardSessionActions, moveHistoryCache };
 export {
   selectBoard,
   selectTick,

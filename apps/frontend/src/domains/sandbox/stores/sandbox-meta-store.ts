@@ -2,6 +2,9 @@ import { create } from 'zustand';
 
 import type { SandboxConfig } from '@protocol/domains/sandbox/server-messages';
 
+// TODO: isPaused and maxTickReached are timeline concepts, not sandbox-specific.
+// When replay-edit mode is added, these should move to a shared timeline store
+// (or into boardSessionStore) so both sandbox and replay-edit can use them.
 type SandboxStatus = 'idle' | 'active';
 
 interface SandboxMetaState {

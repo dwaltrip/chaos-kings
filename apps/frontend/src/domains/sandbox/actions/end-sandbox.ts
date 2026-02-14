@@ -1,4 +1,7 @@
-import { useBoardSessionStore } from '@/domains/games/stores/board-session-store';
+import {
+  useBoardSessionStore,
+  moveHistoryCache,
+} from '@/domains/games/stores/board-session-store';
 import { useSandboxMetaStore } from '@/domains/sandbox/stores/sandbox-meta-store';
 import { sandboxWsEffects } from '@/domains/sandbox/ws-effects';
 
@@ -9,6 +12,7 @@ function endSandbox(): void {
   sandboxWsEffects.sendEndSession();
   resetSession();
   resetMeta();
+  moveHistoryCache.clear();
 }
 
 export { endSandbox };

@@ -3,6 +3,7 @@ import type { ProcessStepResult } from '@core/step-processor';
 import type { GameState, Coord, Direction, Movement } from '@core/types';
 import type { MoveEvent } from '@core/replay/types';
 import type { TimingConfig } from '@core/timing/types';
+import { deepCloneGameState } from '@core/utils/clone-utils';
 
 interface MoveInput {
   playerIndex: number;
@@ -17,19 +18,6 @@ interface TimelineEngineConfig {
 const DEFAULT_CONFIG: TimelineEngineConfig = {
   checkpointInterval: 25,
 };
-
-function deepCloneGameState(gameState: GameState): GameState {
-  return {
-    tick: gameState.tick,
-    board: {
-      size: { ...gameState.board.size },
-      grid: gameState.board.grid.map((row) =>
-        row.map((square) => ({ ...square, coord: { ...square.coord } })),
-      ),
-    },
-    players: gameState.players.map((p) => ({ ...p })),
-  };
-}
 
 class TimelineEngine {
   private initialState: GameState;
@@ -193,4 +181,4 @@ class TimelineEngine {
 }
 
 export type { MoveInput, TimelineEngineConfig, ProcessStepResult };
-export { TimelineEngine, deepCloneGameState };
+export { TimelineEngine };

@@ -3,7 +3,8 @@ import { Direction, PlayerSquareType, NeutralSquareType } from '@core/types';
 import type { BoardState, Coord, Square, GameState, PlayerSquare } from '@core/types';
 import type { TimingConfig } from '@core/timing/types';
 
-import { TimelineEngine, deepCloneGameState } from '../timeline-engine';
+import { deepCloneGameState } from '@core/utils/clone-utils';
+import { TimelineEngine } from '../timeline-engine';
 import type { MoveInput } from '../timeline-engine';
 
 // ---------------------------------------------------------------------------
