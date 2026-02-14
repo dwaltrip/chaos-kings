@@ -5,14 +5,20 @@ import {
 import { useSandboxMetaStore } from '@/domains/sandbox/stores/sandbox-meta-store';
 import { sandboxWsEffects } from '@/domains/sandbox/ws-effects';
 
-function endSandbox(): void {
+// Reset local stores only — backend cleanup happens via disconnect handler
+// and via startSession replacing any existing session.
+function endSandboxLocal(): void {
   const { reset: resetSession } = useBoardSessionStore.getState().actions;
   const { reset: resetMeta } = useSandboxMetaStore.getState().actions;
 
-  sandboxWsEffects.sendEndSession();
   resetSession();
   resetMeta();
   moveHistoryCache.clear();
 }
 
-export { endSandbox };
+function endSandbox(): void {
+  sandboxWsEffects.sendEndSession();
+  endSandboxLocal();
+}
+
+export { endSandbox, endSandboxLocal };

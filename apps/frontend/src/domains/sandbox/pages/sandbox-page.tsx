@@ -16,7 +16,7 @@ import {
 } from '@/domains/sandbox/stores/sandbox-meta-store';
 import {
   startSandbox,
-  endSandbox,
+  endSandboxLocal,
   queueMove,
   undoMove,
   clearMoves,
@@ -37,9 +37,10 @@ function SandboxPage() {
 
   useEffect(() => {
     startSandbox();
-
+    // No WS end-session on unmount — backend handles cleanup via disconnect
+    // handler and via startSession replacing any existing session.
     return () => {
-      endSandbox();
+      endSandboxLocal();
     };
   }, []);
 

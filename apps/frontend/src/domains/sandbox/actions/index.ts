@@ -1,5 +1,5 @@
 export { startSandbox } from './start-sandbox';
-export { endSandbox } from './end-sandbox';
+export { endSandbox, endSandboxLocal } from './end-sandbox';
 export { play } from './play';
 export { pause } from './pause';
 export { stepForward } from './step-forward';
