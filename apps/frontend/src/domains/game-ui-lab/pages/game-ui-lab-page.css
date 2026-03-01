@@ -46,6 +46,12 @@
   font-size: 11px;
 }
 
+.lab-selected-coord {
+  font-family: monospace;
+  font-size: 13px;
+  color: #adf;
+}
+
 .lab-main {
   flex: 1;
   overflow: hidden;
