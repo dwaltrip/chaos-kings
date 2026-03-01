@@ -1,0 +1,80 @@
+.lab-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #555;
+}
+
+.lab-header {
+  padding: 8px 16px;
+  background: #333;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.lab-header h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.lab-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 14px;
+}
+
+.lab-controls select {
+  margin-left: 4px;
+  padding: 2px 4px;
+}
+
+.lab-tick-info {
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.lab-queue-badge {
+  margin-left: 8px;
+  background: #e67e22;
+  color: white;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.lab-main {
+  flex: 1;
+  overflow: hidden;
+  padding: 8px;
+}
+
+.lab-footer {
+  padding: 8px 16px;
+  background: #333;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.lab-footer button {
+  padding: 6px 16px;
+  background: #666;
+  color: white;
+  border: 1px solid #888;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.lab-footer button:hover:not(:disabled) {
+  background: #777;
+}
+
+.lab-footer button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

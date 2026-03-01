@@ -11,6 +11,7 @@ import { ReplayPage } from '@/domains/replay/pages/replay-page';
 
 import { BestStartMainPage, BestStartPlayPage } from '@/domains/puzzles/pages';
 import { SandboxPage } from '@/domains/sandbox/pages';
+import { GameUiLabPage } from '@/domains/game-ui-lab/pages/game-ui-lab-page';
 
 import { useUserSessionAndWsInit } from '@/hooks/use-user-session-and-ws-init';
 
@@ -35,6 +36,7 @@ function App() {
         <Route path="puzzles/play" element={<BestStartPlayPage />} />
 
         <Route path="sandbox" element={<SandboxPage />} />
+        <Route path="game-ui-lab" element={<GameUiLabPage />} />
       </Routes>
     </div>
   );

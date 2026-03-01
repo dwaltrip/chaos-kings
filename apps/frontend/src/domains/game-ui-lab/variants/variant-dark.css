@@ -1,0 +1,23 @@
+.variant-dark .game-grid {
+  border-color: #555;
+}
+
+.variant-dark .cell {
+  background: #1a1a2e;
+}
+
+.variant-dark .cell.mountain.visible {
+  background-color: #2a2a3e;
+}
+
+.variant-dark .tile-overlay.fog-of-war {
+  background-color: #111;
+}
+
+.variant-dark .game-tile.border-top::after {
+  border-top-color: #555;
+}
+
+.variant-dark .game-tile.border-left::after {
+  border-left-color: #555;
+}
