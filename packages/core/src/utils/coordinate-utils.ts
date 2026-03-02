@@ -18,4 +18,10 @@ function areCoordsEqual(a: Coord | null, b: Coord | null): boolean {
   return a.x === b.x && a.y === b.y;
 }
 
-export { serializeCoord, deserializeCoord, areCoordsEqual };
+function isAdjacentTo(coord1: Coord, coord2: Coord): boolean {
+  const dx = Math.abs(coord1.x - coord2.x);
+  const dy = Math.abs(coord1.y - coord2.y);
+  return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
+}
+
+export { serializeCoord, deserializeCoord, areCoordsEqual, isAdjacentTo };

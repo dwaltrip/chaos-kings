@@ -1,5 +1,5 @@
-// TODO: move this to @core
 import type { Coord } from '@core/types';
+import { isAdjacentTo } from '@core/utils/coordinate-utils';
 
 interface NeighborCoords {
   top: Coord;
@@ -20,13 +20,6 @@ function getNeighborCoords(coord: Coord): NeighborCoords {
     left: { x: coord.x - 1, y: coord.y },
     right: { x: coord.x + 1, y: coord.y },
   };
-}
-
-// Check for horizontal and vertical adjacency (no diagonals)
-function isAdjacentTo(coord1: Coord, coord2: Coord): boolean {
-  const dx = Math.abs(coord1.x - coord2.x);
-  const dy = Math.abs(coord1.y - coord2.y);
-  return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
 }
 
 export type { NeighborCoords, BorderData };
