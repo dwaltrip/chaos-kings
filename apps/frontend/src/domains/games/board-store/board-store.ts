@@ -9,7 +9,6 @@ import { serializeCoord } from '@core/utils/coordinate-utils';
 import type { Player } from '@platform/domains/games/types';
 
 import { computeDerivedState, computeFrameAndDiff } from './frame-computation';
-import { EMPTY_DIRECTIONS } from './tile-data';
 import type {
   BoardSourceState,
   DerivedState,
@@ -53,7 +52,10 @@ function createDefaultTileData(coord: Coord): TileData {
     isValidMove: false,
     hasTopBorder: false,
     hasLeftBorder: false,
-    queuedDirections: EMPTY_DIRECTIONS,
+    queuedUp: false,
+    queuedDown: false,
+    queuedLeft: false,
+    queuedRight: false,
   };
 }
 

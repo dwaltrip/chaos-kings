@@ -86,8 +86,6 @@ function tileAt(store: BoardStore, x: number, y: number): TileData {
   return store.getTileData({ x, y });
 }
 
-const EMPTY_DIRECTIONS = new Set<Direction>();
-
 function makeTileData(overrides: Partial<TileData> = {}): TileData {
   return {
     coord: { x: 0, y: 0 },
@@ -102,7 +100,10 @@ function makeTileData(overrides: Partial<TileData> = {}): TileData {
     isValidMove: false,
     hasTopBorder: false,
     hasLeftBorder: false,
-    queuedDirections: EMPTY_DIRECTIONS,
+    queuedUp: false,
+    queuedDown: false,
+    queuedLeft: false,
+    queuedRight: false,
     ...overrides,
   };
 }
@@ -113,28 +114,19 @@ function makeTileData(overrides: Partial<TileData> = {}): TileData {
 
 describe('tilesEqual', () => {
   it('returns true for identical tile data', () => {
-    const dirs = new Set<Direction>();
-    const a = makeTileData({ queuedDirections: dirs });
-    const b = makeTileData({ queuedDirections: dirs });
+    const a = makeTileData();
+    const b = makeTileData();
     expect(tilesEqual(a, b)).toBe(true);
   });
 
-  it('returns false when any scalar field differs', () => {
-    const dirs = new Set<Direction>();
-    const a = makeTileData({ armyCount: 5, queuedDirections: dirs });
-    const b = makeTileData({ armyCount: 10, queuedDirections: dirs });
+  it('returns false when any field differs', () => {
+    const a = makeTileData({ armyCount: 5 });
+    const b = makeTileData({ armyCount: 10 });
     expect(tilesEqual(a, b)).toBe(false);
 
-    const c = makeTileData({ queuedDirections: new Set<Direction>() });
-    const d = makeTileData({ queuedDirections: new Set<Direction>() });
-    // Different Set references even if contents are equal → false
+    const c = makeTileData({ queuedUp: true });
+    const d = makeTileData({ queuedUp: false });
     expect(tilesEqual(c, d)).toBe(false);
-  });
-
-  it('returns false for different queuedDirections reference', () => {
-    const a = makeTileData({ queuedDirections: new Set<Direction>() });
-    const b = makeTileData({ queuedDirections: new Set<Direction>() });
-    expect(tilesEqual(a, b)).toBe(false);
   });
 });
 
@@ -152,7 +144,6 @@ describe('toTileRendererProps', () => {
       isValidMove: false,
       hasTopBorder: true,
       hasLeftBorder: false,
-      queuedDirections: EMPTY_DIRECTIONS,
     });
     const props = toTileRendererProps(tile);
     expect(props.coord).toBe(coord);
@@ -168,12 +159,7 @@ describe('toTileRendererProps', () => {
 
   it('converts neutral tile correctly', () => {
     const coord = { x: 0, y: 0 };
-    const tile = makeTileData({
-      coord,
-      type: SquareType.BLANK,
-      playerIndex: -1,
-      queuedDirections: EMPTY_DIRECTIONS,
-    });
+    const tile = makeTileData({ coord, type: SquareType.BLANK, playerIndex: -1 });
     const props = toTileRendererProps(tile);
     expect(props.square.type).toBe('BLANK');
     expect((props.square as any).playerIndex).toBeUndefined();
@@ -181,11 +167,13 @@ describe('toTileRendererProps', () => {
     expect(props.queuedDirections).toBeUndefined();
   });
 
-  it('passes queuedDirections when non-empty', () => {
-    const dirs = new Set<Direction>([Direction.RIGHT]);
-    const tile = makeTileData({ queuedDirections: dirs });
+  it('converts queued booleans to Direction set', () => {
+    const tile = makeTileData({ queuedRight: true, queuedDown: true });
     const props = toTileRendererProps(tile);
-    expect(props.queuedDirections).toBe(dirs);
+    expect(props.queuedDirections).toBeDefined();
+    expect(props.queuedDirections!.has(Direction.RIGHT)).toBe(true);
+    expect(props.queuedDirections!.has(Direction.DOWN)).toBe(true);
+    expect(props.queuedDirections!.has(Direction.UP)).toBe(false);
   });
 });
 
@@ -445,11 +433,11 @@ describe('State mutations and diffing', () => {
     expect(tileAt(store, 1, 1).isSelected).toBe(false);
   });
 
-  it('addQueuedMove adds direction to tile queuedDirections', () => {
+  it('addQueuedMove adds direction to tile', () => {
     const store = new BoardStore();
     initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
     store.addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.RIGHT));
-    expect(tileAt(store, 1, 1).queuedDirections.has(Direction.RIGHT)).toBe(true);
+    expect(tileAt(store, 1, 1).queuedRight).toBe(true);
   });
 
   it('multiple queued moves from same tile accumulate', () => {
@@ -457,9 +445,9 @@ describe('State mutations and diffing', () => {
     initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
     store.addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.RIGHT));
     store.addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.DOWN));
-    const dirs = tileAt(store, 1, 1).queuedDirections;
-    expect(dirs.has(Direction.RIGHT)).toBe(true);
-    expect(dirs.has(Direction.DOWN)).toBe(true);
+    const tile = tileAt(store, 1, 1);
+    expect(tile.queuedRight).toBe(true);
+    expect(tile.queuedDown).toBe(true);
   });
 
   it('undoLastQueuedMove removes last move', () => {
@@ -468,9 +456,9 @@ describe('State mutations and diffing', () => {
     store.addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.RIGHT));
     store.addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.DOWN));
     store.undoLastQueuedMove();
-    const dirs = tileAt(store, 1, 1).queuedDirections;
-    expect(dirs.has(Direction.RIGHT)).toBe(true);
-    expect(dirs.has(Direction.DOWN)).toBe(false);
+    const tile = tileAt(store, 1, 1);
+    expect(tile.queuedRight).toBe(true);
+    expect(tile.queuedDown).toBe(false);
   });
 
   it('setQueuedMoves replaces all queued moves', () => {
@@ -480,10 +468,10 @@ describe('State mutations and diffing', () => {
     store.addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.DOWN));
 
     store.setQueuedMoves([makeMove({ x: 1, y: 1 }, Direction.UP)]);
-    const dirs = tileAt(store, 1, 1).queuedDirections;
-    expect(dirs.has(Direction.UP)).toBe(true);
-    expect(dirs.has(Direction.RIGHT)).toBe(false);
-    expect(dirs.has(Direction.DOWN)).toBe(false);
+    const tile = tileAt(store, 1, 1);
+    expect(tile.queuedUp).toBe(true);
+    expect(tile.queuedRight).toBe(false);
+    expect(tile.queuedDown).toBe(false);
   });
 
   it('setStatus to ended makes all tiles visible and non-selectable', () => {

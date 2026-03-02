@@ -8,13 +8,19 @@ import type { TileRendererProps } from '@/domains/gameplay/ui/tile-renderer';
 
 import type { FrameInputs, TileData } from './types';
 
-// Stable empty set reused for tiles with no queued moves — preserves reference equality
-const EMPTY_DIRECTIONS = new Set<Direction>();
+interface QueuedDirs {
+  up: boolean;
+  down: boolean;
+  left: boolean;
+  right: boolean;
+}
+
+const NO_QUEUED: QueuedDirs = { up: false, down: false, left: false, right: false };
 
 function computeTileData(
   inputs: FrameInputs,
   coord: Coord,
-  queuedMovesMap: Map<string, Set<Direction>>,
+  queuedMovesMap: Map<string, QueuedDirs>,
 ): TileData {
   const board = inputs.source.board!;
   const square = Board.getSquare(board, coord);
@@ -49,7 +55,7 @@ function computeTileData(
   const hasTopBorder = isVisible || neighborVisTop;
   const hasLeftBorder = isVisible || neighborVisLeft;
 
-  const queuedDirections = queuedMovesMap.get(coordKey) ?? EMPTY_DIRECTIONS;
+  const queued = queuedMovesMap.get(coordKey) ?? NO_QUEUED;
 
   const playerIndex = isPlayerSquare(square) ? square.playerIndex : -1;
   const armyCount = isPlayerSquare(square) ? square.units : 0;
@@ -67,7 +73,10 @@ function computeTileData(
     isValidMove,
     hasTopBorder,
     hasLeftBorder,
-    queuedDirections,
+    queuedUp: queued.up,
+    queuedDown: queued.down,
+    queuedLeft: queued.left,
+    queuedRight: queued.right,
   };
 }
 
@@ -84,8 +93,23 @@ function tilesEqual(a: TileData, b: TileData): boolean {
     a.isValidMove === b.isValidMove &&
     a.hasTopBorder === b.hasTopBorder &&
     a.hasLeftBorder === b.hasLeftBorder &&
-    a.queuedDirections === b.queuedDirections
+    a.queuedUp === b.queuedUp &&
+    a.queuedDown === b.queuedDown &&
+    a.queuedLeft === b.queuedLeft &&
+    a.queuedRight === b.queuedRight
   );
+}
+
+function toQueuedDirectionsSet(tile: TileData): Set<Direction> | undefined {
+  if (!tile.queuedUp && !tile.queuedDown && !tile.queuedLeft && !tile.queuedRight) {
+    return undefined;
+  }
+  const dirs = new Set<Direction>();
+  if (tile.queuedUp) dirs.add(Direction.UP);
+  if (tile.queuedDown) dirs.add(Direction.DOWN);
+  if (tile.queuedLeft) dirs.add(Direction.LEFT);
+  if (tile.queuedRight) dirs.add(Direction.RIGHT);
+  return dirs;
 }
 
 function toTileRendererProps(tile: TileData): Omit<TileRendererProps, 'onClick'> {
@@ -111,8 +135,9 @@ function toTileRendererProps(tile: TileData): Omit<TileRendererProps, 'onClick'>
     isSelected: tile.isSelected,
     isSelectable: tile.isSelectable,
     isValidMove: tile.isValidMove,
-    queuedDirections: tile.queuedDirections.size > 0 ? tile.queuedDirections : undefined,
+    queuedDirections: toQueuedDirectionsSet(tile),
   };
 }
 
-export { EMPTY_DIRECTIONS, computeTileData, tilesEqual, toTileRendererProps };
+export type { QueuedDirs };
+export { computeTileData, tilesEqual, toTileRendererProps };

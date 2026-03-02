@@ -1,8 +1,9 @@
 import { Board } from '@core/board';
-import type { Direction } from '@core/types';
+import { Direction } from '@core/types';
 import { serializeCoord } from '@core/utils/coordinate-utils';
 
 import { computeTileData, tilesEqual } from './tile-data';
+import type { QueuedDirs } from './tile-data';
 import type {
   BoardSourceState,
   DerivedState,
@@ -30,16 +31,18 @@ function computeFrameAndDiff(
   const board = inputs.source.board!;
   const changes: FrameDiff = [];
 
-  // Pre-compute a map from serialized source coord → set of queued directions
-  const queuedMovesMap = new Map<string, Set<Direction>>();
+  const queuedMovesMap = new Map<string, QueuedDirs>();
   for (const move of inputs.source.queuedMoves) {
     const key = serializeCoord(move.sourceCoord);
     let dirs = queuedMovesMap.get(key);
     if (!dirs) {
-      dirs = new Set<Direction>();
+      dirs = { up: false, down: false, left: false, right: false };
       queuedMovesMap.set(key, dirs);
     }
-    dirs.add(move.direction);
+    if (move.direction === Direction.UP) dirs.up = true;
+    else if (move.direction === Direction.DOWN) dirs.down = true;
+    else if (move.direction === Direction.LEFT) dirs.left = true;
+    else if (move.direction === Direction.RIGHT) dirs.right = true;
   }
 
   Board.forEachCoord(board, (coord, _square) => {

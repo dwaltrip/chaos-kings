@@ -2,7 +2,6 @@ import type {
   BoardState,
   Coord,
   CorePlayerState,
-  Direction,
   Movement,
   PlayerIndex,
   SquareType,
@@ -49,7 +48,10 @@ interface TileData {
   isValidMove: boolean;
   hasTopBorder: boolean;
   hasLeftBorder: boolean;
-  queuedDirections: Set<Direction>;
+  queuedUp: boolean;
+  queuedDown: boolean;
+  queuedLeft: boolean;
+  queuedRight: boolean;
 }
 
 interface TileChange {
