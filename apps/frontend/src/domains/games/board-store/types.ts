@@ -35,6 +35,7 @@ interface FrameInputs {
   derived: DerivedState;
 }
 
+// Future: could be populated from flat number arrays at the network boundary
 interface TileData {
   coord: Coord;
   type: SquareType;

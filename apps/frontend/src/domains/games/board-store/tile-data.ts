@@ -1,13 +1,12 @@
 import { Board } from '@core/board';
 import { isPlayerSquare, isMountainSquare } from '@core/square';
 import { Direction, NeutralSquareType, PlayerSquareType } from '@core/types';
-import type { NeutralSquare, PlayerSquare } from '@core/types';
+import type { Coord, NeutralSquare, PlayerSquare } from '@core/types';
 import { serializeCoord, isAdjacentTo } from '@core/utils/coordinate-utils';
 
 import type { TileRendererProps } from '@/domains/gameplay/ui/tile-renderer';
 
 import type { FrameInputs, TileData } from './types';
-import type { Coord } from '@core/types';
 
 // Stable empty set reused for tiles with no queued moves — preserves reference equality
 const EMPTY_DIRECTIONS = new Set<Direction>();

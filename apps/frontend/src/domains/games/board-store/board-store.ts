@@ -106,7 +106,8 @@ class BoardStore {
     playerStats: CorePlayerState[],
     winner?: PlayerIndex,
   ): FrameDiff {
-    if (!this.source.board) return [];
+    // Dimensions must be set by init() before ticks can be processed
+    if (this.width === 0) return [];
     this.source.tick = tick;
     this.source.board = board;
     this.source.queuedMoves = queuedMoves;
@@ -175,6 +176,7 @@ class BoardStore {
     return this.tileDataCache.get(key) ?? createDefaultTileData(coord);
   }
 
+  // Future: if back-to-back ticks cause issues, queue them and apply on rAF boundary
   private applyUpdate(): FrameDiff {
     if (!this.source.board) return [];
 
