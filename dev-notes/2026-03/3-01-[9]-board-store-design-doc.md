@@ -25,8 +25,8 @@ stuff happens (tick arrives, user clicks, etc.)
 - **Plain JS / framework-agnostic.** All state management, derivation, and diffing is pure JS/TS. Zero React dependencies in the core.
 - **One path for everything.** Tick updates and UI changes (selection, etc.) go through the same compute → diff flow. No special fast paths for now.
 - **Per-tile diffing.** State layer diffs tile data and only notifies tiles that changed. Renderer doesn't decide what to re-render — the state layer does.
-- **Pure functions for computation.** The `BoardStore` class is a thin manager. The actual computation (derived state, frame building, diffing) is done by pure functions that are testable in isolation.
-- **Single tile data type.** One `TileData` interface with properly typed fields (booleans, enums) used for both diffing and rendering. Diffing typed fields with `===` is just as fast as diffing flat number arrays. No separate "internal" vs "render" format.
+- **Pure functions for computation.** `BoardStore` is a thin manager. The actual computation (derived state, frame building, diffing) lives in pure functions, testable in isolation.
+- **Single tile data type.** One `TileData` interface used for both diffing and rendering. No separate internal vs render format.
 - **Rendering is declarative.** Tile components receive tile data and draw it. No "should I re-render?" logic in the renderer.
 
 ---
@@ -57,11 +57,12 @@ DerivedState (computed from source + UI)
 
 ### Data Flow
 
+Each of the types and functions below is detailed in later sections.
+
 ```
 BoardSourceState + UIState
   → computeDerivedState() → DerivedState
-  → computeFrame() → TileData[] (new frame, computed in-place with diffing)
-  → FrameDiff (list of changed tiles, produced during frame computation)
+  → computeFrameAndDiff() → updates TileData[] in place, produces FrameDiff
   → notifyChangedTiles() → per-tile subscriber callbacks fire
   → (React bridge) getTileData() → cached TileData for changed tiles only
 ```
@@ -111,9 +112,9 @@ These concerns stay in separate page-level stores/context — they are not the b
 
 ## Tile Data
 
-### Single TileData Interface
+### TileData Interface
 
-One typed interface used for both diffing and rendering. Properly typed fields — booleans, enums, etc. Diffing happens field-by-field with `===`, which is just as fast as comparing flat number arrays.
+One typed interface used for both diffing and rendering. Field-by-field `===` comparison is just as fast as comparing flat number arrays, so there's no need for a separate internal format.
 
 ```ts
 interface TileData {
@@ -133,37 +134,21 @@ interface TileData {
 }
 ```
 
-12 fields (excluding coord). `isAdjacentToSelected` is intentionally omitted — `isValidMove` is computed directly in `computeTileData` (it's what the renderer actually uses; adjacency was only an intermediate value).
+### Design Decisions
 
-`isSelectable` logic is consistent across all modes: `!isSelected && status !== 'ended' && isPlayerSquare(square)`. (Gameplay currently has different logic — this is a bug to fix, puzzle/sandbox have the correct behavior.)
+- **No `isAdjacentToSelected` field.** `isValidMove` is computed directly in `computeTileData` — it's what the renderer actually uses. Adjacency was only ever an intermediate value.
+- **`isSelectable` is uniform across all modes:** `!isSelected && status !== 'ended' && isPlayerSquare(square)`. Gameplay currently has different logic — this is a bug to fix; puzzle/sandbox have the correct behavior.
+- **Future compact wire format.** `TileData` could be populated from flat number arrays at the network boundary. The rest of the system wouldn't need to change. Leave a code comment noting this opportunity.
 
 ### Conversion to TileRendererProps
 
-`TileData` is close to `TileRendererProps` but not identical — `TileRenderer` takes a `square: Square` object and `coord` as separate props. A thin conversion function bridges the gap:
-
-```ts
-function toTileRendererProps(tile: TileData): TileRendererProps {
-  return {
-    coord: tile.coord,
-    square: { type: tile.type, playerIndex: tile.playerIndex, armyCount: tile.armyCount },
-    isVisible: tile.isVisible,
-    hasTopBorder: tile.hasTopBorder,
-    hasLeftBorder: tile.hasLeftBorder,
-    isSelected: tile.isSelected,
-    isSelectable: tile.isSelectable,
-    isValidMove: tile.isValidMove,
-    queuedDirections: tile.queuedDirections,
-  };
-}
-```
-
-### Future: Compact Wire Format
-
-The `TileData` interface could be populated from a compact wire format (flat number arrays) in the future. The conversion from wire → `TileData` would happen at the network boundary. The rest of the system doesn't need to change. Leave a code comment noting this opportunity.
+`TileData` is close to `TileRendererProps` but not identical — `TileRenderer` takes a `square: Square` object. A thin `toTileRendererProps(tile: TileData): TileRendererProps` function bridges the gap by nesting `type`, `playerIndex`, and `armyCount` into a `square` object.
 
 ---
 
 ## Frame Computation and Diffing
+
+With the state buckets and tile data shape defined, here's how frames are computed and diffed.
 
 ### Pure Functions
 
@@ -209,7 +194,7 @@ function tilesEqual(a: TileData, b: TileData): boolean {
 
 ### In-Place Frame Computation with Diffing
 
-Instead of keeping two full frame arrays and swapping, we keep one frame and diff before overwriting each tile. During `computeFrame`, for each tile: compute new data, compare against the current frame entry, if different → add to diff and update in place.
+Instead of keeping two full frame arrays and swapping, we keep one frame and diff before overwriting each tile. For each tile: compute new data, compare against the current frame entry, if different → add to diff and update in place.
 
 ```ts
 function computeFrameAndDiff(
@@ -254,15 +239,25 @@ When `board` is null (before game setup), `applyUpdate` returns an empty `FrameD
 
 ## BoardStore Class
 
-The manager. Holds mutable state, orchestrates the update flow, manages subscriptions. Exposed as a **module-level singleton** (like current Zustand stores).
+The orchestrator. Holds mutable state, runs the update flow, manages subscriptions.
+
+### Instance Lifecycle
+
+Exposed as a **module-level singleton**, like current Zustand stores. Actions, handlers, and keyboard code import it directly.
 
 ```ts
 // NOTE: Module singleton for now. If we ever need multiple boards on screen
-// simultaneously (e.g. replay comparison view), this can be upgraded to a
-// factory/context pattern. The BoardStore class itself supports instantiation —
-// the singleton is just the default access pattern.
+// simultaneously (e.g. replay comparison view), upgrade to a factory/context
+// pattern. The class itself supports multiple instances — the singleton is
+// just the default access pattern.
 const boardStore = new BoardStore();
+```
 
+`reset()` clears all state, frames, and subscriber maps. Called on navigation away from a game page, or before `init()` for a new game. Ensures no stale subscribers or state leak between sessions.
+
+### Class Shape
+
+```ts
 class BoardStore {
   // State buckets
   source: BoardSourceState;
@@ -276,27 +271,22 @@ class BoardStore {
   // Frame state — single array, updated in place
   frame: TileData[];
 
-  // Cached TileData per coord for useSyncExternalStore snapshot stability.
+  // Cached TileData per coord for snapshot stability (see React Bridge section).
   // Only updated for tiles in the FrameDiff. getTileData() returns the cached
-  // object, ensuring referential stability when nothing changed.
-  // (Without this cache, useSyncExternalStore would infinite-loop because
-  // getSnapshot would return a new object every call.)
+  // object, ensuring referential stability when nothing has changed.
   private tileDataCache: Map<string, TileData>;
 
-  // Subscriptions
+  // Subscriptions — plain JS, framework-agnostic. Any consumer (React, canvas,
+  // debug tools, etc.) can subscribe. Currently React is the only consumer.
   private tileSubscribers: Map<string, Set<() => void>>;
   private boardSubscribers: Set<() => void>;
-  // NOTE: Subscription mechanism is plain JS — any consumer (React, canvas,
-  // debug tools, etc.) can subscribe via subscribeTile/subscribe. Currently
-  // React is the only consumer via useSyncExternalStore. A future canvas
-  // renderer would call the same subscribe methods.
 
   // --- Public API: Game lifecycle ---
 
   init(players, currentPlayerIndex, board?): FrameDiff
   applyTick(tick, board, queuedMoves, playerStats, winner?): FrameDiff
   setStatus(status): FrameDiff
-  reset(): void   // clears all state, clears all subscribers
+  reset(): void
 
   // --- Public API: User interaction ---
 
@@ -314,49 +304,12 @@ class BoardStore {
 
   getTileData(coord): TileData     // returns cached object (referentially stable)
   // source is directly accessible for HUD/chrome components
-
-  // --- Internal ---
-
-  private applyUpdate(): FrameDiff {
-    if (!this.source.board) return [];
-
-    this.derived = computeDerivedState(this.source, this.ui);
-    const diff = computeFrameAndDiff(
-      { source: this.source, ui: this.ui, derived: this.derived },
-      this.frame, this.width, this.height,
-    );
-    this.updateTileDataCache(diff);
-    this.notifyChangedTiles(diff);
-    this.notifyBoardSubscribers();
-    // NOTE: Subscriber callbacks fire synchronously here. React batches
-    // useSyncExternalStore notifications, so re-entrancy is not expected.
-    // If a non-React consumer calls back into BoardStore from a subscriber,
-    // that would be re-entrant — don't do that.
-    return diff;
-  }
-
-  private updateTileDataCache(diff: FrameDiff): void {
-    for (const change of diff) {
-      this.tileDataCache.set(serializeCoord(change.coord), change.data);
-    }
-  }
-
-  private notifyChangedTiles(diff: FrameDiff): void {
-    for (const change of diff) {
-      const subs = this.tileSubscribers.get(serializeCoord(change.coord));
-      subs?.forEach(cb => cb());
-    }
-  }
-
-  private notifyBoardSubscribers(): void {
-    this.boardSubscribers.forEach(cb => cb());
-  }
 }
 ```
 
-### Public Method Pattern
+### Internal Update Flow
 
-Each public method updates source/UI state, then calls the shared `applyUpdate()`:
+Every public method that changes state calls the shared `applyUpdate()`:
 
 ```ts
 applyTick(tick, board, queuedMoves, playerStats, winner?) {
@@ -372,19 +325,42 @@ setSelectedTile(coord) {
   this.ui.selectedTile = coord;
   return this.applyUpdate();
 }
+
+private applyUpdate(): FrameDiff {
+  if (!this.source.board) return [];
+
+  this.derived = computeDerivedState(this.source, this.ui);
+  const diff = computeFrameAndDiff(
+    { source: this.source, ui: this.ui, derived: this.derived },
+    this.frame, this.width, this.height,
+  );
+  this.updateTileDataCache(diff);
+  this.notifyChangedTiles(diff);
+  this.notifyBoardSubscribers();
+  // NOTE: Subscriber callbacks fire synchronously. React batches
+  // useSyncExternalStore notifications, so re-entrancy is not expected.
+  // Non-React consumers should not call back into BoardStore from a callback.
+  return diff;
+}
 ```
 
 ### Board-Level Subscriber Contract
 
-`subscribe(callback)` registers a board-level listener. The callback fires on every `applyUpdate()` call (every tick, every selection change, etc.). The callback takes no arguments — the consumer reads `store.source` to get current state. This matches the `useSyncExternalStore` contract.
+`subscribe(callback)` registers a board-level listener. The callback fires on every `applyUpdate()` call. It takes no arguments — the consumer reads `store.source` to get current state. This matches the `useSyncExternalStore` contract.
 
-For HUD components that only care about specific fields (e.g. tick, playerStats), accept that they re-render on every update — there are very few of them and the updates are cheap. Granular board-level selectors can be added later if needed.
+Per-tile precision matters for the grid (hundreds of tiles). Board-level subscribers are few (HUD, header, stats) and cheap to re-render, so coarse notification is fine here. Granular board-level selectors can be added later if needed.
 
 ---
 
 ## React Bridge
 
-Uses `useSyncExternalStore` — the standard React API for external stores. Per-tile subscriptions via the `BoardStore`'s subscriber map.
+Uses `useSyncExternalStore` — the standard React API for external stores. Per-tile subscriptions via `BoardStore`'s subscriber map.
+
+### Snapshot Stability (Critical)
+
+`useSyncExternalStore` calls `getSnapshot` during render and on every store notification. If `getSnapshot` returns a new object reference when nothing has changed, React detects a "change" and re-renders, which calls `getSnapshot` again — infinite loop.
+
+To prevent this, `BoardStore` maintains a `tileDataCache` (`Map<string, TileData>`) that is only updated for tiles in the `FrameDiff`. `getTileData(coord)` returns the cached object, which is referentially stable across renders when the tile hasn't changed.
 
 ### Per-tile hook
 
@@ -398,9 +374,9 @@ function useTileData(store: BoardStore, coord: Coord): TileData {
 ```
 
 - `subscribeTile` registers a callback for that coord
-- `getTileData` returns the **cached** `TileData` object (referentially stable — only updated when the tile was in a `FrameDiff`). This is critical: `useSyncExternalStore` calls `getSnapshot` on every render, and if it returns a new object, React loops infinitely.
-- React only re-renders this tile when its subscriber is notified (i.e. tile was in the FrameDiff)
-- No React.memo needed — only notified tiles call getSnapshot, only changed tiles get new objects
+- `getTileData` returns the **cached** `TileData` — referentially stable
+- React only re-renders this tile when its subscriber fires (tile was in the `FrameDiff`)
+- No React.memo needed — only notified tiles re-evaluate, only changed tiles get new objects
 
 ### Board-level hook (for HUD / chrome)
 
@@ -415,7 +391,7 @@ function useBoardSourceState(store: BoardStore): BoardSourceState {
 
 ### Click handler / interaction wiring
 
-`BoardStore` is framework-agnostic and does not own click handlers. The tile component that uses `useTileData` is responsible for wiring `onClick`:
+`BoardStore` is framework-agnostic and does not own click handlers. The tile wrapper component wires interactions:
 
 ```ts
 function BoardTile({ store, coord }: { store: BoardStore; coord: Coord }) {
@@ -456,10 +432,10 @@ Currently we recompute all tile data every update and diff the output. An optimi
 Some sessions just receive ticks (gameplay). Others need jumpToTick, stepping backward, checkpoints (sandbox, replay, puzzles). `TimelineEngine` in `@core` handles the latter. The `BoardStore.applyTick()` interface works for both — the caller can push live ticks or jump and push a restored state. May need a `jumpToTick` method eventually.
 
 ### Multiple Boards on Screen
-Current design uses a module singleton. If we ever need two boards simultaneously (replay comparison, tutorial overlay, etc.), upgrade to a factory pattern or React context. The `BoardStore` class itself supports multiple instances — the singleton is just the access pattern.
+If we ever need two boards simultaneously (replay comparison, tutorial overlay, etc.), upgrade the module singleton to a factory/context pattern. The `BoardStore` class already supports multiple instances.
 
 ### Anti-Cheat (Server-Side Filtering)
-Currently the server sends full board state. Eventually it should only send data the player is allowed to see. This is an upstream concern — `BoardStore` would work the same either way, it just receives whatever data arrives.
+Currently the server sends full board state. Eventually it should only send data the player is allowed to see. This is an upstream concern — `BoardStore` works the same either way.
 
 ### Compact Wire Format
-`TileData` could be populated from a compact wire format (flat number arrays) at the network boundary. The conversion would happen once on arrival, and the rest of the system works with typed `TileData` objects. Leave a code comment noting this opportunity.
+`TileData` could be populated from flat number arrays at the network boundary. The conversion would happen once on arrival, and the rest of the system works with typed `TileData` objects.
