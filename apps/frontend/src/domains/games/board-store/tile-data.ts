@@ -1,11 +1,19 @@
 import { Board } from '@core/board';
-import { isPlayerSquare, isMountainSquare } from '@core/square';
+import { isPlayerSquare } from '@core/square';
 import { Direction, NeutralSquareType, PlayerSquareType } from '@core/types';
 import type { Coord, NeutralSquare, PlayerSquare } from '@core/types';
-import { serializeCoord, isAdjacentTo } from '@core/utils/coordinate-utils';
+import { serializeCoord } from '@core/utils/coordinate-utils';
 
 import type { TileRendererProps } from '@/domains/gameplay/ui/tile-renderer';
 
+import {
+  getNeighborVis,
+  getIsVisible,
+  getIsSelected,
+  getIsSelectable,
+  getIsValidMove,
+  getBorders,
+} from './tile-derived-state';
 import type { FrameInputs, TileData } from './types';
 
 interface QueuedDirs {
@@ -26,37 +34,18 @@ function computeTileData(
   const square = Board.getSquare(board, coord);
   const coordKey = serializeCoord(coord);
 
-  const isVisible =
-    inputs.derived.allVisible || inputs.derived.visibleSquares.has(coordKey);
-
-  const neighborVisTop =
-    coord.y > 0 &&
-    (inputs.derived.allVisible ||
-      inputs.derived.visibleSquares.has(serializeCoord({ x: coord.x, y: coord.y - 1 })));
-
-  const neighborVisLeft =
-    coord.x > 0 &&
-    (inputs.derived.allVisible ||
-      inputs.derived.visibleSquares.has(serializeCoord({ x: coord.x - 1, y: coord.y })));
-
-  const isSelected =
-    inputs.ui.selectedTile !== null &&
-    inputs.ui.selectedTile.x === coord.x &&
-    inputs.ui.selectedTile.y === coord.y;
-
-  const isSelectable =
-    !isSelected && inputs.source.status !== 'ended' && isPlayerSquare(square);
-
-  const isValidMove =
-    inputs.ui.selectedTile !== null &&
-    isAdjacentTo(inputs.ui.selectedTile, coord) &&
-    !isMountainSquare(square);
-
-  const hasTopBorder = isVisible || neighborVisTop;
-  const hasLeftBorder = isVisible || neighborVisLeft;
+  const isVisible = getIsVisible(coordKey, inputs.derived);
+  const neighborVis = getNeighborVis(
+    coord,
+    inputs.derived.visibleSquares,
+    inputs.derived.allVisible,
+  );
+  const isSelected = getIsSelected(coord, inputs.ui.selectedTile);
+  const isSelectable = getIsSelectable(square, isSelected, inputs.source.status);
+  const isValidMove = getIsValidMove(coord, square, inputs.ui.selectedTile);
+  const borders = getBorders(isVisible, neighborVis);
 
   const queued = queuedMovesMap.get(coordKey) ?? NO_QUEUED;
-
   const playerIndex = isPlayerSquare(square) ? square.playerIndex : -1;
   const armyCount = isPlayerSquare(square) ? square.units : 0;
 
@@ -66,13 +55,13 @@ function computeTileData(
     playerIndex,
     armyCount,
     isVisible,
-    neighborVisTop,
-    neighborVisLeft,
+    neighborVisTop: neighborVis.top,
+    neighborVisLeft: neighborVis.left,
     isSelected,
     isSelectable,
     isValidMove,
-    hasTopBorder,
-    hasLeftBorder,
+    hasTopBorder: borders.hasTopBorder,
+    hasLeftBorder: borders.hasLeftBorder,
     queuedUp: queued.up,
     queuedDown: queued.down,
     queuedLeft: queued.left,
