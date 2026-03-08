@@ -1,8 +1,18 @@
 import { isPlayerSquare, isMountainSquare } from '@core/square';
-import type { Coord, Square } from '@core/types';
 import { serializeCoord, isAdjacentTo } from '@core/utils/coordinate-utils';
 
 import type { DerivedState } from './types';
+import { Board } from '@core/board';
+import type { Coord, Square } from '@core/types';
+
+import type { FrameInputs, TileData } from './types';
+
+interface QueuedDirs {
+  up: boolean;
+  down: boolean;
+  left: boolean;
+  right: boolean;
+}
 
 type NeighborVis = {
   top: boolean;
@@ -63,12 +73,51 @@ function getBorders(
   };
 }
 
-export type { NeighborVis };
-export {
-  getNeighborVis,
-  getIsVisible,
-  getIsSelected,
-  getIsSelectable,
-  getIsValidMove,
-  getBorders,
-};
+const NO_QUEUED: QueuedDirs = { up: false, down: false, left: false, right: false };
+
+function computeTileData(
+  inputs: FrameInputs,
+  coord: Coord,
+  queuedMovesMap: Map<string, QueuedDirs>,
+): TileData {
+  const board = inputs.source.board!;
+  const square = Board.getSquare(board, coord);
+  const coordKey = serializeCoord(coord);
+
+  const isVisible = getIsVisible(coordKey, inputs.derived);
+  const neighborVis = getNeighborVis(
+    coord,
+    inputs.derived.visibleSquares,
+    inputs.derived.allVisible,
+  );
+  const isSelected = getIsSelected(coord, inputs.ui.selectedTile);
+  const isSelectable = getIsSelectable(square, isSelected, inputs.source.status);
+  const isValidMove = getIsValidMove(coord, square, inputs.ui.selectedTile);
+  const borders = getBorders(isVisible, neighborVis);
+
+  const queued = queuedMovesMap.get(coordKey) ?? NO_QUEUED;
+  const playerIndex = isPlayerSquare(square) ? square.playerIndex : -1;
+  const armyCount = isPlayerSquare(square) ? square.units : 0;
+
+  return {
+    coord,
+    type: square.type,
+    playerIndex,
+    armyCount,
+    isVisible,
+    neighborVisTop: neighborVis.top,
+    neighborVisLeft: neighborVis.left,
+    isSelected,
+    isSelectable,
+    isValidMove,
+    hasTopBorder: borders.hasTopBorder,
+    hasLeftBorder: borders.hasLeftBorder,
+    queuedUp: queued.up,
+    queuedDown: queued.down,
+    queuedLeft: queued.left,
+    queuedRight: queued.right,
+  };
+}
+
+export type { NeighborVis, QueuedDirs };
+export { computeTileData };

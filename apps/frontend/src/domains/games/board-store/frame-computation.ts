@@ -2,8 +2,8 @@ import { Board } from '@core/board';
 import { Direction } from '@core/types';
 import { serializeCoord } from '@core/utils/coordinate-utils';
 
-import { computeTileData, tilesEqual } from './tile-data';
-import type { QueuedDirs } from './tile-data';
+import { tilesEqual } from './tile-data';
+import { computeTileData, type QueuedDirs } from './tile-derived-state';
 import type {
   BoardSourceState,
   DerivedState,
