@@ -1,12 +1,11 @@
-import { useCallback } from 'react';
-import { useSyncExternalStore } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 import type { Coord } from '@core/types';
 
-import type { BoardStore } from './board-store';
-import type { BoardSourceState, TileData } from './types';
+import type { BoardStoreInstance } from './board-store';
+import type { BoardStoreState, TileData } from './types';
 
-function useTileData(store: BoardStore, coord: Coord): TileData {
+function useTileData(store: BoardStoreInstance, coord: Coord): TileData {
   const subscribe = useCallback(
     (cb: () => void) => store.subscribeTile(coord, cb),
     [store, coord.x, coord.y],
@@ -18,10 +17,11 @@ function useTileData(store: BoardStore, coord: Coord): TileData {
   return useSyncExternalStore(subscribe, getSnapshot);
 }
 
-function useBoardSourceState(store: BoardStore): BoardSourceState {
+function useBoardState(store: BoardStoreInstance): BoardStoreState {
   const subscribe = useCallback((cb: () => void) => store.subscribe(cb), [store]);
-  const getSnapshot = useCallback(() => store.source, [store]);
-  return useSyncExternalStore(subscribe, getSnapshot);
+  const getSnapshot = useCallback(() => store.version, [store]);
+  useSyncExternalStore(subscribe, getSnapshot);
+  return store.state;
 }
 
-export { useTileData, useBoardSourceState };
+export { useTileData, useBoardState };

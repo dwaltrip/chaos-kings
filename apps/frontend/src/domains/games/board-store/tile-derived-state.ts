@@ -1,11 +1,10 @@
 import { isPlayerSquare, isMountainSquare } from '@core/square';
+import type { Coord, Square } from '@core/types';
 import { serializeCoord, isAdjacentTo } from '@core/utils/coordinate-utils';
 
-import type { DerivedState } from './types';
 import { Board } from '@core/board';
-import type { Coord, Square } from '@core/types';
 
-import type { FrameInputs, TileData } from './types';
+import type { BoardStoreState, DerivedState, TileData } from './types';
 
 interface QueuedDirs {
   up: boolean;
@@ -76,26 +75,22 @@ function getBorders(
 const NO_QUEUED: QueuedDirs = { up: false, down: false, left: false, right: false };
 
 function computeTileData(
-  inputs: FrameInputs,
+  state: BoardStoreState,
+  derived: DerivedState,
   coord: Coord,
-  queuedMovesMap: Map<string, QueuedDirs>,
 ): TileData {
-  const board = inputs.source.board!;
+  const board = state.source.board!;
   const square = Board.getSquare(board, coord);
   const coordKey = serializeCoord(coord);
 
-  const isVisible = getIsVisible(coordKey, inputs.derived);
-  const neighborVis = getNeighborVis(
-    coord,
-    inputs.derived.visibleSquares,
-    inputs.derived.allVisible,
-  );
-  const isSelected = getIsSelected(coord, inputs.ui.selectedTile);
-  const isSelectable = getIsSelectable(square, isSelected, inputs.source.status);
-  const isValidMove = getIsValidMove(coord, square, inputs.ui.selectedTile);
+  const isVisible = getIsVisible(coordKey, derived);
+  const neighborVis = getNeighborVis(coord, derived.visibleSquares, derived.allVisible);
+  const isSelected = getIsSelected(coord, state.ui.selectedTile);
+  const isSelectable = getIsSelectable(square, isSelected, state.source.status);
+  const isValidMove = getIsValidMove(coord, square, state.ui.selectedTile);
   const borders = getBorders(isVisible, neighborVis);
 
-  const queued = queuedMovesMap.get(coordKey) ?? NO_QUEUED;
+  const queued = derived.queuedMovesMap.get(coordKey) ?? NO_QUEUED;
   const playerIndex = isPlayerSquare(square) ? square.playerIndex : -1;
   const armyCount = isPlayerSquare(square) ? square.units : 0;
 

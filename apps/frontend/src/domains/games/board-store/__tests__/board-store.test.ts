@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Direction, SquareType } from '@core/types';
 import type { BoardState, Coord, Movement } from '@core/types';
-import { serializeCoord } from '@core/utils/coordinate-utils';
 
-import { BoardStore } from '../board-store';
+import { createBoardStore } from '../board-store';
+import * as rawActions from '../actions';
 import { tilesEqual, toTileRendererProps } from '../tile-data';
-import type { TileData, FrameDiff } from '../types';
+import type { TileData } from '../types';
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -60,29 +60,29 @@ function fogBoard(): BoardState {
   });
 }
 
-interface InitOverrides {
-  players?: any[];
-  currentPlayerIndex?: number | null;
-  board?: BoardState;
-}
-
-function initStore(store: BoardStore, overrides: InitOverrides = {}): FrameDiff {
-  const players = overrides.players ?? [];
-  const currentPlayerIndex =
-    overrides.currentPlayerIndex !== undefined ? overrides.currentPlayerIndex : 0;
-  const board = overrides.board !== undefined ? overrides.board : createTestBoard(3, 3);
-  return store.init(players, currentPlayerIndex, board);
+function setup() {
+  const store = createBoardStore();
+  return {
+    store,
+    initBoard: store.makeAction(rawActions.initBoard),
+    applyTick: store.makeAction(rawActions.applyTick),
+    setSelectedTile: store.makeAction(rawActions.setSelectedTile),
+    setStatus: store.makeAction(rawActions.setStatus),
+    addQueuedMove: store.makeAction(rawActions.addQueuedMove),
+    undoLastQueuedMove: store.makeAction(rawActions.undoLastQueuedMove),
+    setQueuedMoves: store.makeAction(rawActions.setQueuedMoves),
+  };
 }
 
 function makeMove(source: Coord, direction: Direction): Movement {
   return { sourceCoord: source, direction };
 }
 
-function coordsFromDiff(diff: FrameDiff): string[] {
-  return diff.map((c) => serializeCoord(c.coord));
-}
-
-function tileAt(store: BoardStore, x: number, y: number): TileData {
+function tileAt(
+  store: ReturnType<typeof createBoardStore>,
+  x: number,
+  y: number,
+): TileData {
   return store.getTileData({ x, y });
 }
 
@@ -182,67 +182,82 @@ describe('toTileRendererProps', () => {
 // ---------------------------------------------------------------------------
 
 describe('BoardStore init and lifecycle', () => {
-  it('init with board returns diff containing all tiles', () => {
-    const store = new BoardStore();
-    const diff = initStore(store, { board: standardBoard() });
-    expect(diff.length).toBe(9);
+  it('init with board populates tile cache', () => {
+    const { store, initBoard } = setup();
+    initBoard([], 0, standardBoard());
+    // Verify a computed tile differs from default
+    const tile = tileAt(store, 1, 1);
+    expect(tile.armyCount).toBe(5);
+    expect(tile.type).toBe(SquareType.ARMY);
   });
 
-  it('init without board returns empty diff', () => {
-    const store = new BoardStore();
-    const diff = store.init([], 0, undefined);
-    expect(diff).toEqual([]);
+  it('init without board does not error', () => {
+    const { store, initBoard } = setup();
+    initBoard([], 0);
+    expect(store.state.source.board).toBeNull();
   });
 
-  it('init sets board dimensions and source state', () => {
-    const store = new BoardStore();
+  it('init sets source state', () => {
+    const { store, initBoard } = setup();
     const players = [{ player_index: 0 }] as any[];
-    store.init(players, 1, standardBoard());
-    expect(store.width).toBe(3);
-    expect(store.height).toBe(3);
-    expect(store.source.currentPlayerIndex).toBe(1);
-    expect(store.source.players).toBe(players);
+    initBoard(players, 1, standardBoard());
+    expect(store.state.source.board!.size.width).toBe(3);
+    expect(store.state.source.board!.size.height).toBe(3);
+    expect(store.state.source.currentPlayerIndex).toBe(1);
+    expect(store.state.source.players).toBe(players);
   });
 
   it('init called twice without reset uses second board', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard() });
+    const { store, initBoard } = setup();
+    initBoard([], 0, standardBoard());
     const smallBoard = createTestBoard(2, 2);
-    const diff2 = initStore(store, { board: smallBoard });
-    expect(diff2.length).toBe(4);
-    expect(store.width).toBe(2);
-    expect(store.height).toBe(2);
+    initBoard([], 0, smallBoard);
+    expect(store.state.source.board!.size.width).toBe(2);
+    expect(store.state.source.board!.size.height).toBe(2);
   });
 
   it('reset clears all state to defaults', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard() });
-    store.setSelectedTile({ x: 1, y: 1 });
+    const { store, initBoard, setSelectedTile } = setup();
+    initBoard([], 0, standardBoard());
+    setSelectedTile({ x: 1, y: 1 });
     store.reset();
-    expect(store.source.board).toBeNull();
-    expect(store.ui.selectedTile).toBeNull();
-    expect(store.frame).toEqual([]);
+    expect(store.state.source.board).toBeNull();
+    expect(store.state.ui.selectedTile).toBeNull();
   });
 
-  it('reset clears all subscribers', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard() });
-    const cb = vi.fn();
-    store.subscribeTile({ x: 1, y: 1 }, cb);
+  it('reset clears tile subscribers but keeps board subscribers', () => {
+    const { store, initBoard, applyTick } = setup();
+    initBoard([], 0, standardBoard());
+
+    const tileCb = vi.fn();
+    const boardCb = vi.fn();
+    store.subscribeTile({ x: 1, y: 1 }, tileCb);
+    store.subscribe(boardCb);
+
     store.reset();
-    // After reset, init again and apply a tick that changes (1,1)
-    initStore(store, { board: standardBoard() });
+    // Board subscriber fires on reset
+    expect(boardCb).toHaveBeenCalledTimes(1);
+
+    // After reset, init again and change (1,1)
+    initBoard([], 0, standardBoard());
     const newBoard = createTestBoard(3, 3, {
       '1,1': { type: 'ARMY', playerIndex: 0, units: 99 },
+      '0,0': { type: 'GENERAL', playerIndex: 1, units: 1 },
+      '2,1': { type: 'MOUNTAIN' },
     });
-    store.applyTick(1, newBoard, [], []);
-    expect(cb).not.toHaveBeenCalled();
+    applyTick(1, newBoard, [], []);
+
+    // Tile subscriber was cleared by reset — not called
+    expect(tileCb).not.toHaveBeenCalled();
+    // Board subscriber still active: reset(1) + initBoard(2) + applyTick(3)
+    expect(boardCb).toHaveBeenCalledTimes(3);
   });
 
-  it('applyTick before init returns empty diff', () => {
-    const store = new BoardStore();
-    const diff = store.applyTick(1, standardBoard(), [], []);
-    expect(diff).toEqual([]);
+  it('applyTick before initBoard sets state without error', () => {
+    const { store, applyTick } = setup();
+    applyTick(1, standardBoard(), [], []);
+    expect(store.state.source.tick).toBe(1);
+    expect(store.state.source.board).not.toBeNull();
   });
 });
 
@@ -252,8 +267,8 @@ describe('BoardStore init and lifecycle', () => {
 
 describe('Tile computation', () => {
   it('blank tile in fog has correct defaults', () => {
-    const store = new BoardStore();
-    initStore(store, { board: fogBoard(), currentPlayerIndex: 0 });
+    const { store, initBoard } = setup();
+    initBoard([], 0, fogBoard());
     // (4,3) is far from player at (0,0) — in fog
     const tile = tileAt(store, 4, 3);
     expect(tile.isVisible).toBe(false);
@@ -265,8 +280,8 @@ describe('Tile computation', () => {
   });
 
   it('owned tile is visible and has correct army data', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
+    const { store, initBoard } = setup();
+    initBoard([], 0, standardBoard());
     const tile = tileAt(store, 1, 1);
     expect(tile.isVisible).toBe(true);
     expect(tile.playerIndex).toBe(0);
@@ -275,110 +290,98 @@ describe('Tile computation', () => {
   });
 
   it('isSelectable true for unselected player tile in active game', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
+    const { store, initBoard } = setup();
+    initBoard([], 0, standardBoard());
     const tile = tileAt(store, 1, 1);
     expect(tile.isSelectable).toBe(true);
   });
 
   it('isSelectable false for neutral tile', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
-    // (1,0) is BLANK
+    const { store, initBoard } = setup();
+    initBoard([], 0, standardBoard());
     const tile = tileAt(store, 1, 0);
     expect(tile.isSelectable).toBe(false);
   });
 
   it('isSelectable false after game ends', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
-    store.setStatus('ended');
+    const { store, initBoard, setStatus } = setup();
+    initBoard([], 0, standardBoard());
+    setStatus('ended');
     const tile = tileAt(store, 1, 1);
     expect(tile.isSelectable).toBe(false);
   });
 
   it('selected tile shows isSelected true and isSelectable false', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
-    store.setSelectedTile({ x: 1, y: 1 });
+    const { store, initBoard, setSelectedTile } = setup();
+    initBoard([], 0, standardBoard());
+    setSelectedTile({ x: 1, y: 1 });
     const tile = tileAt(store, 1, 1);
     expect(tile.isSelected).toBe(true);
     expect(tile.isSelectable).toBe(false);
   });
 
   it('tile adjacent to selected non-mountain is a valid move', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
-    store.setSelectedTile({ x: 1, y: 1 });
-    // (1,0) is BLANK, adjacent above
+    const { store, initBoard, setSelectedTile } = setup();
+    initBoard([], 0, standardBoard());
+    setSelectedTile({ x: 1, y: 1 });
     const tile = tileAt(store, 1, 0);
     expect(tile.isValidMove).toBe(true);
   });
 
   it('mountain adjacent to selected is not a valid move', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
-    store.setSelectedTile({ x: 1, y: 1 });
-    // (2,1) is MOUNTAIN, adjacent right
+    const { store, initBoard, setSelectedTile } = setup();
+    initBoard([], 0, standardBoard());
+    setSelectedTile({ x: 1, y: 1 });
     const tile = tileAt(store, 2, 1);
     expect(tile.isValidMove).toBe(false);
   });
 
   it('tile not adjacent to selected is not a valid move', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
-    store.setSelectedTile({ x: 1, y: 1 });
-    // (0,0) is diagonal — not cardinal adjacent
+    const { store, initBoard, setSelectedTile } = setup();
+    initBoard([], 0, standardBoard());
+    setSelectedTile({ x: 1, y: 1 });
     const tile = tileAt(store, 0, 0);
     expect(tile.isValidMove).toBe(false);
   });
 
   it('border flags: visible tile with visible neighbors', () => {
-    const store = new BoardStore();
-    // standardBoard with player 0 at (1,1) — center of 3x3, all tiles visible
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
+    const { store, initBoard } = setup();
+    initBoard([], 0, standardBoard());
     const tile = tileAt(store, 1, 1);
-    // (1,1) is visible, top neighbor (1,0) is visible → hasTopBorder true
     expect(tile.hasTopBorder).toBe(true);
-    // left neighbor (0,1) is visible → hasLeftBorder true
     expect(tile.hasLeftBorder).toBe(true);
   });
 
   it('border flags: fog tile with no visible neighbors has borders false', () => {
-    const store = new BoardStore();
-    initStore(store, { board: fogBoard(), currentPlayerIndex: 0 });
-    // (4,4) is player 1's tile but player 0 can't see it
-    // top neighbor (4,3) and left neighbor (3,4) also in fog
+    const { store, initBoard } = setup();
+    initBoard([], 0, fogBoard());
     const tile = tileAt(store, 4, 4);
     expect(tile.hasTopBorder).toBe(false);
     expect(tile.hasLeftBorder).toBe(false);
   });
 
   it('neighbor visibility flags from adjacent visible tiles', () => {
-    const store = new BoardStore();
-    // Player 0 at (0,0): visible squares are (0,0),(1,0),(0,1),(1,1)
-    initStore(store, { board: fogBoard(), currentPlayerIndex: 0 });
-    // (0,2) is NOT visible. Top neighbor (0,1) IS visible.
+    const { store, initBoard } = setup();
+    initBoard([], 0, fogBoard());
     const tile = tileAt(store, 0, 2);
     expect(tile.isVisible).toBe(false);
     expect(tile.neighborVisTop).toBe(true);
-    // left neighbor (-1,2) is out of bounds → false
     expect(tile.neighborVisLeft).toBe(false);
     expect(tile.hasTopBorder).toBe(true);
     expect(tile.hasLeftBorder).toBe(false);
   });
 
   it('all tiles visible when game ended', () => {
-    const store = new BoardStore();
-    initStore(store, { board: fogBoard(), currentPlayerIndex: 0 });
-    store.setStatus('ended');
+    const { store, initBoard, setStatus } = setup();
+    initBoard([], 0, fogBoard());
+    setStatus('ended');
     const tile = tileAt(store, 4, 4);
     expect(tile.isVisible).toBe(true);
   });
 
   it('all tiles visible when currentPlayerIndex is null', () => {
-    const store = new BoardStore();
-    initStore(store, { board: fogBoard(), currentPlayerIndex: null });
+    const { store, initBoard } = setup();
+    initBoard([], null, fogBoard());
     const tile = tileAt(store, 4, 4);
     expect(tile.isVisible).toBe(true);
   });
@@ -389,85 +392,90 @@ describe('Tile computation', () => {
 // ---------------------------------------------------------------------------
 
 describe('State mutations and diffing', () => {
-  it('applyTick with changed army count diffs only affected tile', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
+  it('applyTick with changed army count updates affected tile', () => {
+    const { store, initBoard, applyTick } = setup();
+    initBoard([], 0, standardBoard());
+    const refBefore = store.getTileData({ x: 0, y: 0 });
 
     const modifiedBoard = createTestBoard(3, 3, {
       '1,1': { type: 'ARMY', playerIndex: 0, units: 10 },
       '0,0': { type: 'GENERAL', playerIndex: 1, units: 1 },
       '2,1': { type: 'MOUNTAIN' },
     });
-    const diff = store.applyTick(1, modifiedBoard, [], []);
+    applyTick(1, modifiedBoard, [], []);
 
-    expect(diff.length).toBeLessThan(9);
-    expect(coordsFromDiff(diff)).toContain('1,1');
+    // Changed tile has new data
+    expect(store.getTileData({ x: 1, y: 1 }).armyCount).toBe(10);
+    // Unchanged tile — same reference
+    expect(store.getTileData({ x: 0, y: 0 })).toBe(refBefore);
   });
 
-  it('setSelectedTile diffs old and new selection plus adjacents', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
+  it('setSelectedTile updates old and new selected tiles', () => {
+    const { store, initBoard, setSelectedTile } = setup();
+    initBoard([], 0, standardBoard());
 
-    store.setSelectedTile({ x: 1, y: 1 });
-    const diff2 = store.setSelectedTile({ x: 0, y: 0 });
-    const coords = coordsFromDiff(diff2);
+    setSelectedTile({ x: 1, y: 1 });
+    expect(store.getTileData({ x: 1, y: 1 }).isSelected).toBe(true);
 
-    // Old selected (1,1) and new selected (0,0) must be in diff
-    expect(coords).toContain('1,1');
-    expect(coords).toContain('0,0');
+    setSelectedTile({ x: 0, y: 0 });
+    expect(store.getTileData({ x: 1, y: 1 }).isSelected).toBe(false);
+    expect(store.getTileData({ x: 0, y: 0 }).isSelected).toBe(true);
   });
 
-  it('setSelectedTile with already-selected coord returns empty diff', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
-    store.setSelectedTile({ x: 1, y: 1 });
-    const diff2 = store.setSelectedTile({ x: 1, y: 1 });
-    expect(diff2).toEqual([]);
+  it('setSelectedTile with same coord does not change tile data', () => {
+    const { store, initBoard, setSelectedTile } = setup();
+    initBoard([], 0, standardBoard());
+    setSelectedTile({ x: 1, y: 1 });
+
+    const refBefore = store.getTileData({ x: 1, y: 1 });
+    setSelectedTile({ x: 1, y: 1 });
+    const refAfter = store.getTileData({ x: 1, y: 1 });
+    expect(refBefore).toBe(refAfter);
   });
 
   it('setSelectedTile(null) clears selection', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
-    store.setSelectedTile({ x: 1, y: 1 });
-    store.setSelectedTile(null);
+    const { store, initBoard, setSelectedTile } = setup();
+    initBoard([], 0, standardBoard());
+    setSelectedTile({ x: 1, y: 1 });
+    setSelectedTile(null);
     expect(tileAt(store, 1, 1).isSelected).toBe(false);
   });
 
   it('addQueuedMove adds direction to tile', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
-    store.addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.RIGHT));
+    const { store, initBoard, addQueuedMove } = setup();
+    initBoard([], 0, standardBoard());
+    addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.RIGHT));
     expect(tileAt(store, 1, 1).queuedRight).toBe(true);
   });
 
   it('multiple queued moves from same tile accumulate', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
-    store.addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.RIGHT));
-    store.addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.DOWN));
+    const { store, initBoard, addQueuedMove } = setup();
+    initBoard([], 0, standardBoard());
+    addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.RIGHT));
+    addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.DOWN));
     const tile = tileAt(store, 1, 1);
     expect(tile.queuedRight).toBe(true);
     expect(tile.queuedDown).toBe(true);
   });
 
   it('undoLastQueuedMove removes last move', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
-    store.addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.RIGHT));
-    store.addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.DOWN));
-    store.undoLastQueuedMove();
+    const { store, initBoard, addQueuedMove, undoLastQueuedMove } = setup();
+    initBoard([], 0, standardBoard());
+    addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.RIGHT));
+    addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.DOWN));
+    undoLastQueuedMove();
     const tile = tileAt(store, 1, 1);
     expect(tile.queuedRight).toBe(true);
     expect(tile.queuedDown).toBe(false);
   });
 
   it('setQueuedMoves replaces all queued moves', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
-    store.addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.RIGHT));
-    store.addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.DOWN));
+    const { store, initBoard, addQueuedMove, setQueuedMoves } = setup();
+    initBoard([], 0, standardBoard());
+    addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.RIGHT));
+    addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.DOWN));
 
-    store.setQueuedMoves([makeMove({ x: 1, y: 1 }, Direction.UP)]);
+    setQueuedMoves([makeMove({ x: 1, y: 1 }, Direction.UP)]);
     const tile = tileAt(store, 1, 1);
     expect(tile.queuedUp).toBe(true);
     expect(tile.queuedRight).toBe(false);
@@ -475,17 +483,17 @@ describe('State mutations and diffing', () => {
   });
 
   it('setStatus to ended makes all tiles visible and non-selectable', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
-    store.setStatus('ended');
-    // (1,1) is a player tile — should be visible but not selectable after end
+    const { store, initBoard, setStatus } = setup();
+    initBoard([], 0, standardBoard());
+    setStatus('ended');
     expect(tileAt(store, 1, 1).isVisible).toBe(true);
     expect(tileAt(store, 1, 1).isSelectable).toBe(false);
-    // fog tile also becomes visible
-    const fog = new BoardStore();
-    initStore(fog, { board: fogBoard(), currentPlayerIndex: 0 });
-    fog.setStatus('ended');
-    expect(tileAt(fog, 4, 4).isVisible).toBe(true);
+
+    // Also verify with fog board
+    const { store: fogStore, initBoard: fogInit, setStatus: fogSetStatus } = setup();
+    fogInit([], 0, fogBoard());
+    fogSetStatus('ended');
+    expect(tileAt(fogStore, 4, 4).isVisible).toBe(true);
   });
 });
 
@@ -495,40 +503,70 @@ describe('State mutations and diffing', () => {
 
 describe('Subscriptions and snapshot stability', () => {
   it('tile subscriber fires only for changed tiles', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
+    const { store, initBoard, applyTick } = setup();
+    initBoard([], 0, standardBoard());
 
     const cb11 = vi.fn();
     const cb00 = vi.fn();
     store.subscribeTile({ x: 1, y: 1 }, cb11);
     store.subscribeTile({ x: 0, y: 0 }, cb00);
 
-    // Change only (1,1)
     const modifiedBoard = createTestBoard(3, 3, {
       '1,1': { type: 'ARMY', playerIndex: 0, units: 99 },
       '0,0': { type: 'GENERAL', playerIndex: 1, units: 1 },
       '2,1': { type: 'MOUNTAIN' },
     });
-    store.applyTick(1, modifiedBoard, [], []);
+    applyTick(1, modifiedBoard, [], []);
 
     expect(cb11).toHaveBeenCalled();
     expect(cb00).not.toHaveBeenCalled();
   });
 
-  it('board subscriber fires on every applyUpdate', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
+  it('tile subscriber does NOT fire when tile data unchanged', () => {
+    const { store, initBoard, setSelectedTile } = setup();
+    initBoard([], 0, standardBoard());
+
+    const cb = vi.fn();
+    // Subscribe to a tile far from any selection changes
+    store.subscribeTile({ x: 2, y: 2 }, cb);
+
+    // setSelectedTile only affects (1,1) and adjacent tiles
+    setSelectedTile({ x: 1, y: 1 });
+    // (2,2) is not adjacent to (1,1), so its tile data is unchanged
+    expect(cb).not.toHaveBeenCalled();
+  });
+
+  it('no-op action: tile subscribers silent, board subscriber still fires', () => {
+    const { store, initBoard, setSelectedTile } = setup();
+    initBoard([], 0, standardBoard());
+    setSelectedTile({ x: 1, y: 1 });
+
+    const tileCb = vi.fn();
+    const boardCb = vi.fn();
+    store.subscribeTile({ x: 1, y: 1 }, tileCb);
+    store.subscribe(boardCb);
+
+    // Same coord — no tile data changes
+    setSelectedTile({ x: 1, y: 1 });
+
+    expect(tileCb).not.toHaveBeenCalled();
+    expect(boardCb).toHaveBeenCalledTimes(1);
+  });
+
+  it('board subscriber fires on every action', () => {
+    const { store, initBoard, setSelectedTile } = setup();
+    initBoard([], 0, standardBoard());
 
     const cb = vi.fn();
     store.subscribe(cb);
 
-    store.setSelectedTile({ x: 1, y: 1 });
+    setSelectedTile({ x: 1, y: 1 });
     expect(cb).toHaveBeenCalledTimes(1);
   });
 
   it('unsubscribe prevents future callbacks', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
+    const { store, initBoard, applyTick } = setup();
+    initBoard([], 0, standardBoard());
 
     const cb = vi.fn();
     const unsub = store.subscribeTile({ x: 1, y: 1 }, cb);
@@ -539,31 +577,30 @@ describe('Subscriptions and snapshot stability', () => {
       '0,0': { type: 'GENERAL', playerIndex: 1, units: 1 },
       '2,1': { type: 'MOUNTAIN' },
     });
-    store.applyTick(1, modifiedBoard, [], []);
+    applyTick(1, modifiedBoard, [], []);
 
     expect(cb).not.toHaveBeenCalled();
   });
 
   it('getTileData returns same reference when tile unchanged', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
+    const { store, initBoard, applyTick } = setup();
+    initBoard([], 0, standardBoard());
 
     const ref1 = tileAt(store, 0, 0);
-    // Change a different tile
     const modifiedBoard = createTestBoard(3, 3, {
       '1,1': { type: 'ARMY', playerIndex: 0, units: 99 },
       '0,0': { type: 'GENERAL', playerIndex: 1, units: 1 },
       '2,1': { type: 'MOUNTAIN' },
     });
-    store.applyTick(1, modifiedBoard, [], []);
+    applyTick(1, modifiedBoard, [], []);
     const ref2 = tileAt(store, 0, 0);
 
     expect(ref1).toBe(ref2);
   });
 
   it('getTileData returns new reference when tile changed', () => {
-    const store = new BoardStore();
-    initStore(store, { board: standardBoard(), currentPlayerIndex: 0 });
+    const { store, initBoard, applyTick } = setup();
+    initBoard([], 0, standardBoard());
 
     const ref1 = tileAt(store, 1, 1);
     const modifiedBoard = createTestBoard(3, 3, {
@@ -571,9 +608,57 @@ describe('Subscriptions and snapshot stability', () => {
       '0,0': { type: 'GENERAL', playerIndex: 1, units: 1 },
       '2,1': { type: 'MOUNTAIN' },
     });
-    store.applyTick(1, modifiedBoard, [], []);
+    applyTick(1, modifiedBoard, [], []);
     const ref2 = tileAt(store, 1, 1);
 
     expect(ref1).not.toBe(ref2);
+  });
+
+  it('derived is accessible and correct', () => {
+    const { store, initBoard, setStatus } = setup();
+    initBoard([], 0, fogBoard());
+    expect(store.derived.allVisible).toBe(false);
+
+    setStatus('ended');
+    expect(store.derived.allVisible).toBe(true);
+  });
+
+  it('reset → re-init full cycle: fresh state and working subscriptions', () => {
+    const { store, initBoard, applyTick, setSelectedTile } = setup();
+    // Init and mutate
+    initBoard([], 0, standardBoard());
+    setSelectedTile({ x: 1, y: 1 });
+    expect(tileAt(store, 1, 1).isSelected).toBe(true);
+
+    // Reset
+    store.reset();
+    expect(store.state.source.board).toBeNull();
+    expect(store.version).toBe(0);
+
+    // Re-init
+    initBoard([], 0, standardBoard());
+    expect(tileAt(store, 1, 1).isSelected).toBe(false);
+    expect(tileAt(store, 1, 1).armyCount).toBe(5);
+
+    // Subscriptions work after re-init
+    const cb = vi.fn();
+    store.subscribeTile({ x: 1, y: 1 }, cb);
+    const modifiedBoard = createTestBoard(3, 3, {
+      '1,1': { type: 'ARMY', playerIndex: 0, units: 99 },
+      '0,0': { type: 'GENERAL', playerIndex: 1, units: 1 },
+      '2,1': { type: 'MOUNTAIN' },
+    });
+    applyTick(1, modifiedBoard, [], []);
+    expect(cb).toHaveBeenCalled();
+    expect(tileAt(store, 1, 1).armyCount).toBe(99);
+  });
+
+  it('version increments on each action', () => {
+    const { store, initBoard, setSelectedTile } = setup();
+    const v0 = store.version;
+    initBoard([], 0, standardBoard());
+    expect(store.version).toBe(v0 + 1);
+    setSelectedTile({ x: 1, y: 1 });
+    expect(store.version).toBe(v0 + 2);
   });
 });

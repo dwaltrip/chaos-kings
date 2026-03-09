@@ -3,12 +3,12 @@ import type { Coord } from '@core/types';
 import type { TileRendererProps } from '@/domains/gameplay/ui/tile-renderer';
 import { TileRenderer } from '@/domains/gameplay/ui/tile-renderer';
 
-import type { BoardStore } from './board-store';
+import type { BoardStoreInstance } from './board-store';
 import { toTileRendererProps } from './tile-data';
-import { useBoardSourceState, useTileData } from './hooks';
+import { useTileData } from './hooks';
 
 interface BoardTileProps {
-  store: BoardStore;
+  store: BoardStoreInstance;
   coord: Coord;
   onClick?: () => void;
 }
@@ -23,4 +23,4 @@ function BoardTile({ store, coord, onClick }: BoardTileProps) {
 }
 
 export type { BoardTileProps };
-export { useTileData, useBoardSourceState, BoardTile };
+export { BoardTile };

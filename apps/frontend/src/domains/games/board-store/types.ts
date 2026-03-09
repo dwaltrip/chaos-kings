@@ -1,21 +1,21 @@
 import type {
-  BoardState,
+  BoardState as CoreBoardState,
   Coord,
-  CorePlayerState,
-  Movement,
   PlayerIndex,
   SquareType,
 } from '@core/types';
 import type { Player } from '@platform/domains/games/types';
 
+import type { QueuedDirs } from './tile-derived-state';
+
 interface BoardSourceState {
-  board: BoardState | null;
+  board: CoreBoardState | null;
   tick: number;
   status: 'active' | 'ended';
   players: Player[];
   currentPlayerIndex: PlayerIndex | null;
-  queuedMoves: Movement[];
-  playerStats: CorePlayerState[];
+  queuedMoves: import('@core/types').Movement[];
+  playerStats: import('@core/types').CorePlayerState[];
   winner: PlayerIndex | null;
 }
 
@@ -23,15 +23,16 @@ interface UIState {
   selectedTile: Coord | null;
 }
 
+// TODO: Tighten up naming — `BoardStoreState` vs `BoardState` from @core/types
+interface BoardStoreState {
+  source: BoardSourceState;
+  ui: UIState;
+}
+
 interface DerivedState {
   visibleSquares: Set<string>;
   allVisible: boolean;
-}
-
-interface FrameInputs {
-  source: BoardSourceState;
-  ui: UIState;
-  derived: DerivedState;
+  queuedMovesMap: Map<string, QueuedDirs>;
 }
 
 // Future: could be populated from flat number arrays at the network boundary
@@ -54,20 +55,4 @@ interface TileData {
   queuedRight: boolean;
 }
 
-interface TileChange {
-  coord: Coord;
-  index: number;
-  data: TileData;
-}
-
-type FrameDiff = TileChange[];
-
-export type {
-  BoardSourceState,
-  UIState,
-  DerivedState,
-  FrameInputs,
-  TileData,
-  TileChange,
-  FrameDiff,
-};
+export type { BoardSourceState, UIState, BoardStoreState, DerivedState, TileData };
