@@ -194,17 +194,17 @@ describe('BoardStore init and lifecycle', () => {
   it('init without board does not error', () => {
     const { store, initBoard } = setup();
     initBoard([], 0);
-    expect(store.state.source.board).toBeNull();
+    expect(store.state.game.board).toBeNull();
   });
 
   it('init sets source state', () => {
     const { store, initBoard } = setup();
     const players = [{ player_index: 0 }] as any[];
     initBoard(players, 1, standardBoard());
-    expect(store.state.source.board!.size.width).toBe(3);
-    expect(store.state.source.board!.size.height).toBe(3);
-    expect(store.state.source.currentPlayerIndex).toBe(1);
-    expect(store.state.source.players).toBe(players);
+    expect(store.state.game.board!.size.width).toBe(3);
+    expect(store.state.game.board!.size.height).toBe(3);
+    expect(store.state.game.currentPlayerIndex).toBe(1);
+    expect(store.state.game.players).toBe(players);
   });
 
   it('init called twice without reset uses second board', () => {
@@ -212,8 +212,8 @@ describe('BoardStore init and lifecycle', () => {
     initBoard([], 0, standardBoard());
     const smallBoard = createTestBoard(2, 2);
     initBoard([], 0, smallBoard);
-    expect(store.state.source.board!.size.width).toBe(2);
-    expect(store.state.source.board!.size.height).toBe(2);
+    expect(store.state.game.board!.size.width).toBe(2);
+    expect(store.state.game.board!.size.height).toBe(2);
   });
 
   it('reset clears all state to defaults', () => {
@@ -221,7 +221,7 @@ describe('BoardStore init and lifecycle', () => {
     initBoard([], 0, standardBoard());
     setSelectedTile({ x: 1, y: 1 });
     store.reset();
-    expect(store.state.source.board).toBeNull();
+    expect(store.state.game.board).toBeNull();
     expect(store.state.ui.selectedTile).toBeNull();
   });
 
@@ -256,8 +256,8 @@ describe('BoardStore init and lifecycle', () => {
   it('applyTick before initBoard sets state without error', () => {
     const { store, applyTick } = setup();
     applyTick(1, standardBoard(), [], []);
-    expect(store.state.source.tick).toBe(1);
-    expect(store.state.source.board).not.toBeNull();
+    expect(store.state.game.tick).toBe(1);
+    expect(store.state.game.board).not.toBeNull();
   });
 });
 
@@ -632,7 +632,7 @@ describe('Subscriptions and snapshot stability', () => {
 
     // Reset
     store.reset();
-    expect(store.state.source.board).toBeNull();
+    expect(store.state.game.board).toBeNull();
     expect(store.version).toBe(0);
 
     // Re-init

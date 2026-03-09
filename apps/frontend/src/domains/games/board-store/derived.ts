@@ -3,8 +3,7 @@ import { Direction } from '@core/types';
 import type { Movement } from '@core/types';
 import { serializeCoord } from '@core/utils/coordinate-utils';
 
-import type { QueuedDirs } from './tile-derived-state';
-import type { BoardStoreState, DerivedState } from './types';
+import type { BoardSessionInputState, DerivedState, QueuedDirs } from './types';
 
 function buildQueuedMovesMap(moves: Movement[]): Map<string, QueuedDirs> {
   const map = new Map<string, QueuedDirs>();
@@ -23,14 +22,14 @@ function buildQueuedMovesMap(moves: Movement[]): Map<string, QueuedDirs> {
   return map;
 }
 
-function deriveBoardState(state: BoardStoreState): DerivedState {
-  const { source } = state;
-  const allVisible = source.status === 'ended' || source.currentPlayerIndex === null;
+function deriveBoardState(state: BoardSessionInputState): DerivedState {
+  const { game } = state;
+  const allVisible = game.status === 'ended' || game.currentPlayerIndex === null;
   const visibleSquares =
-    allVisible || !source.board
+    allVisible || !game.board
       ? new Set<string>()
-      : Board.getVisibleSquares(source.board, source.currentPlayerIndex!);
-  const queuedMovesMap = buildQueuedMovesMap(source.queuedMoves);
+      : Board.getVisibleSquares(game.board, game.currentPlayerIndex!);
+  const queuedMovesMap = buildQueuedMovesMap(game.queuedMoves);
   return { visibleSquares, allVisible, queuedMovesMap };
 }
 

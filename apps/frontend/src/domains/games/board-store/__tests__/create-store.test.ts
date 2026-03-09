@@ -212,24 +212,6 @@ describe('createStore', () => {
       expect(store.state.count).toBe(0);
     });
 
-    it('calls onReset before onChange', () => {
-      const order: string[] = [];
-      const store = createStore({
-        initialState: { count: 0 },
-        onChange() {
-          order.push('onChange');
-        },
-        onReset() {
-          order.push('onReset');
-        },
-      });
-      // Clear onChange from reset's own lifecycle
-      order.length = 0;
-
-      store.reset({ count: 0 });
-      expect(order).toEqual(['onReset', 'onChange']);
-    });
-
     it('calls onChange with new state', () => {
       let received: any = null;
       const store = createStore({

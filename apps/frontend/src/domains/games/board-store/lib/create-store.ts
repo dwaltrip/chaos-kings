@@ -1,22 +1,13 @@
-// NOTE: Action batching. Currently each makeAction call triggers the full
-// cycle (onChange → version++ → notify). If a user interaction needs
-// multiple mutations in one cycle, add a batch() function here that
-// suppresses onChange/notify during the batch and runs once at the end.
-
-// NOTE: `derive` as a lib concept. Currently thin — calls a function and
-// stores the result, guaranteeing it runs before onChange. May evolve or
-// move out if the needs for managing dependencies between data values change
-// (e.g. derived state that depends on other derived state, conditional
-// derivation, etc.). It's nice to have in the lib as it enforces the sequencing
-// of derived state updating before the rest of the update flow.
-
 interface StoreConfig<State, Derived = {}> {
   initialState: State;
+  // NOTE: `derive` lives in the lib to enforce sequencing — derived state is
+  // always fresh before onChange fires, without the caller having to manage it.
   derive?: (state: State) => Derived;
   onChange?: (merged: State & Derived) => void;
-  onReset?: () => void;
 }
 
+// NOTE: Calling multiple actions sequentially will run the full pipeline after each one.
+// If we find this is a performance bottleneck, we can implement a way to batch updates.
 function createStore<State, Derived = {}>(config: StoreConfig<State, Derived>) {
   let state = config.initialState;
   let derived = (config.derive ? config.derive(state) : {}) as Derived;
@@ -27,22 +18,27 @@ function createStore<State, Derived = {}>(config: StoreConfig<State, Derived>) {
     return { ...state, ...derived } as State & Derived;
   }
 
-  function runLifecycle(): void {
+  function runLifecycle(nextVersion: number): void {
     if (config.derive) {
       derived = config.derive(state);
       warnDerivedKeyCollisions(state, derived);
     }
     config.onChange?.(getMerged());
-    version++;
-    for (const cb of subscribers) cb();
+    version = nextVersion;
+    for (const cb of subscribers) {
+      cb();
+    }
   }
 
+  // TODO: Guard against re-entrancy — if a subscriber calls an action during
+  // runLifecycle, it would recurse. The wrapper could warn/error if a cycle
+  // is already in progress.
   function makeAction<Args extends unknown[]>(
     fn: (state: State, ...args: Args) => void,
   ): (...args: Args) => void {
     return (...args: Args) => {
       fn(state, ...args);
-      runLifecycle();
+      runLifecycle(version + 1);
     };
   }
 
@@ -53,13 +49,7 @@ function createStore<State, Derived = {}>(config: StoreConfig<State, Derived>) {
 
   function reset(newState: State): void {
     state = newState;
-    config.onReset?.();
-    if (config.derive) {
-      derived = config.derive(state);
-    }
-    config.onChange?.(getMerged());
-    version = 0;
-    for (const cb of subscribers) cb();
+    runLifecycle(0);
   }
 
   return {

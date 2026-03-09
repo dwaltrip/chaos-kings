@@ -1,8 +1,9 @@
 import * as rawActions from './actions';
 import { createBoardStore } from './board-store';
 import type {
+  BoardSessionInputState,
+  BoardSessionState,
   BoardSourceState,
-  BoardStoreState,
   DerivedState,
   TileData,
   UIState,
@@ -18,7 +19,14 @@ const addQueuedMove = boardStore.makeAction(rawActions.addQueuedMove);
 const undoLastQueuedMove = boardStore.makeAction(rawActions.undoLastQueuedMove);
 const setQueuedMoves = boardStore.makeAction(rawActions.setQueuedMoves);
 
-export type { BoardStoreState, BoardSourceState, UIState, DerivedState, TileData };
+export type {
+  BoardSessionState,
+  BoardSessionInputState,
+  BoardSourceState,
+  UIState,
+  DerivedState,
+  TileData,
+};
 export {
   boardStore,
   initBoard,

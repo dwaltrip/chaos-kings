@@ -1,4 +1,5 @@
 import type { Coord } from '@core/types';
+import { SquareType } from '@core/types';
 import { serializeCoord } from '@core/utils/coordinate-utils';
 
 import { Board } from '@core/board';
@@ -7,17 +8,23 @@ import { createStore } from './lib/create-store';
 import { deriveBoardState } from './derived';
 import { computeTileData } from './tile-derived-state';
 import { tilesEqual } from './tile-data';
-import type { BoardStoreState, DerivedState, TileData } from './types';
+import type {
+  BoardSessionInputState,
+  BoardSessionState,
+  BoardSourceState,
+  DerivedState,
+  TileData,
+} from './types';
 
-function createDefaultSourceState() {
+function createDefaultGameState(): BoardSourceState {
   return {
     board: null,
     tick: 0,
-    status: 'active' as const,
-    players: [] as any[],
+    status: 'active',
+    players: [],
     currentPlayerIndex: null,
-    queuedMoves: [] as any[],
-    playerStats: [] as any[],
+    queuedMoves: [],
+    playerStats: [],
     winner: null,
   };
 }
@@ -26,9 +33,9 @@ function createDefaultUIState() {
   return { selectedTile: null };
 }
 
-function createDefaultBoardStoreState(): BoardStoreState {
+function createDefaultInputState(): BoardSessionInputState {
   return {
-    source: createDefaultSourceState(),
+    game: createDefaultGameState(),
     ui: createDefaultUIState(),
   };
 }
@@ -36,7 +43,7 @@ function createDefaultBoardStoreState(): BoardStoreState {
 function createDefaultTileData(coord: Coord): TileData {
   return {
     coord,
-    type: 'BLANK',
+    type: SquareType.BLANK,
     playerIndex: -1,
     armyCount: 0,
     isVisible: false,
@@ -55,32 +62,26 @@ function createDefaultTileData(coord: Coord): TileData {
 }
 
 function createBoardStore() {
-  // NOTE: Tile cache + tile subscribers are managed directly here rather
-  // than extracted into a generic abstraction. If a second per-key
-  // subscription use case appears (per-player stats, per-territory
-  // aggregates), extract the pattern then with a real use case to
-  // guide the API.
+  // NOTE: Tile cache + tile subs managed directly — can consider extracting
+  // into a generic per-key abstraction if a second use case appears.
   const tileCache = new Map<string, TileData>();
   const tileSubs = new Map<string, Set<() => void>>();
 
-  // NOTE: Pipeline optimization. Currently iterates all tiles on every
-  // action. Future optimization paths (all additive, no rearchitecting):
-  // - Dirty regions: snapshot selectedTile before mutation, only recompute
-  //   affected tiles
-  // - Spatial culling: skip tiles outside viewport for large/scrollable maps
-  // - Direct buffer output: write to canvas/WebGL render buffer instead of
-  //   (or alongside) TileData objects
+  // NOTE: Centralized pipeline — one function iterates all tiles, diffs,
+  // caches, and notifies. Chosen over per-tile selectors because controlling
+  // the iteration enables optimizations you can't do when each subscriber
+  // runs in isolation:
+  // - Dirty regions: only recompute tiles affected by the mutation
+  // - Spatial culling: skip tiles outside the viewport
+  // - Direct buffer output: write to canvas/WebGL instead of TileData objects
+  // These are all additive changes to runPipeline — no rearchitecting needed.
 
-  // NOTE: Re-entrancy risk: if a subscriber triggers another action during
-  // notification, runPipeline would be called recursively. Not guarded yet —
-  // add a re-entrancy guard if this becomes an issue.
-  function runPipeline(_merged: BoardStoreState & DerivedState): void {
-    const { state, derived } = store;
-    if (!state.source.board) return;
+  function runPipeline(state: BoardSessionState): void {
+    if (!state.game.board) return;
 
-    Board.forEachCoord(state.source.board, (coord) => {
+    Board.forEachCoord(state.game.board, (coord) => {
       const key = serializeCoord(coord);
-      const next = computeTileData(state, derived, coord);
+      const next = computeTileData(state, coord);
       const prev = tileCache.get(key);
 
       if (!prev || !tilesEqual(prev, next)) {
@@ -91,24 +92,13 @@ function createBoardStore() {
     });
   }
 
-  // NOTE: Version counter as useSyncExternalStore snapshot.
-  // Using `version` as the snapshot works for triggering re-renders but
-  // doesn't fully match React's tearing protection contract. In practice
-  // this is fine — actions run on the main thread between React work units.
-  // Fallback if needed: shallow-copy the state container after each action
-  // so the reference itself serves as the snapshot.
-  const store = createStore<BoardStoreState, DerivedState>({
-    initialState: createDefaultBoardStoreState(),
+  // NOTE: Using `version` as the useSyncExternalStore snapshot. Technically
+  // the snapshot should be the data itself for tearing protection, but this
+  // should be fine — actions are synchronous and shouldn't be called mid-render.
+  const store = createStore<BoardSessionInputState, DerivedState>({
+    initialState: createDefaultInputState(),
     derive: deriveBoardState,
     onChange: runPipeline,
-    // NOTE: Reset clears tile subscribers. This assumes components have
-    // unmounted before reset (e.g. page navigation). For a future "play again"
-    // flow where the board stays mounted, use a React key on the board
-    // component (<GameBoard key={gameId} />) to force unmount/remount.
-    onReset() {
-      tileCache.clear();
-      tileSubs.clear();
-    },
   });
 
   return {
@@ -142,8 +132,13 @@ function createBoardStore() {
       return tileCache.get(serializeCoord(coord)) ?? createDefaultTileData(coord);
     },
 
+    // NOTE: Clears tile subscribers, assuming components have unmounted before
+    // reset (e.g. page navigation). If a future flow keeps the board mounted,
+    // a React key on the board component can force unmount/remount.
     reset() {
-      store.reset(createDefaultBoardStoreState());
+      tileCache.clear();
+      tileSubs.clear();
+      store.reset(createDefaultInputState());
     },
   };
 }

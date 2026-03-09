@@ -4,14 +4,7 @@ import { serializeCoord, isAdjacentTo } from '@core/utils/coordinate-utils';
 
 import { Board } from '@core/board';
 
-import type { BoardStoreState, DerivedState, TileData } from './types';
-
-interface QueuedDirs {
-  up: boolean;
-  down: boolean;
-  left: boolean;
-  right: boolean;
-}
+import type { BoardSessionState, QueuedDirs, TileData } from './types';
 
 type NeighborVis = {
   top: boolean;
@@ -32,8 +25,12 @@ function getNeighborVis(
   return { top, left };
 }
 
-function getIsVisible(coordKey: string, derived: DerivedState): boolean {
-  return derived.allVisible || derived.visibleSquares.has(coordKey);
+function getIsVisible(
+  coordKey: string,
+  visibleSquares: Set<string>,
+  allVisible: boolean,
+): boolean {
+  return allVisible || visibleSquares.has(coordKey);
 }
 
 function getIsSelected(coord: Coord, selectedTile: Coord | null): boolean {
@@ -74,23 +71,19 @@ function getBorders(
 
 const NO_QUEUED: QueuedDirs = { up: false, down: false, left: false, right: false };
 
-function computeTileData(
-  state: BoardStoreState,
-  derived: DerivedState,
-  coord: Coord,
-): TileData {
-  const board = state.source.board!;
+function computeTileData(state: BoardSessionState, coord: Coord): TileData {
+  const board = state.game.board!;
   const square = Board.getSquare(board, coord);
   const coordKey = serializeCoord(coord);
 
-  const isVisible = getIsVisible(coordKey, derived);
-  const neighborVis = getNeighborVis(coord, derived.visibleSquares, derived.allVisible);
+  const isVisible = getIsVisible(coordKey, state.visibleSquares, state.allVisible);
+  const neighborVis = getNeighborVis(coord, state.visibleSquares, state.allVisible);
   const isSelected = getIsSelected(coord, state.ui.selectedTile);
-  const isSelectable = getIsSelectable(square, isSelected, state.source.status);
+  const isSelectable = getIsSelectable(square, isSelected, state.game.status);
   const isValidMove = getIsValidMove(coord, square, state.ui.selectedTile);
   const borders = getBorders(isVisible, neighborVis);
 
-  const queued = derived.queuedMovesMap.get(coordKey) ?? NO_QUEUED;
+  const queued = state.queuedMovesMap.get(coordKey) ?? NO_QUEUED;
   const playerIndex = isPlayerSquare(square) ? square.playerIndex : -1;
   const armyCount = isPlayerSquare(square) ? square.units : 0;
 
@@ -114,5 +107,4 @@ function computeTileData(
   };
 }
 
-export type { NeighborVis, QueuedDirs };
 export { computeTileData };
