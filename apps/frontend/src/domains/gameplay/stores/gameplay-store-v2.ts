@@ -1,41 +1,19 @@
 import { create } from 'zustand';
 
-import type {
-  BoardState,
-  Coord,
-  CorePlayerState,
-  Movement,
-  PlayerIndex,
-} from '@core/types';
-import { hasCompletedGameState, isEnded } from '@core/game';
+import type { PlayerIndex } from '@core/types';
+import { isEnded } from '@core/game';
 
 import type { GameWithPlayers, Player } from '@platform/domains/games/types';
 import { UserId } from '@kernel/ids';
 
 import {
-  isTileSelected,
-  isTileAdjacentToSelected,
-  isTileVisible,
-  getNeighborVisibility,
-  type NeighborVisibility,
-} from '@/domains/games/utils/tile-selection-helpers';
-import {
   gameplayPageStore,
   selectGame,
 } from '@/domains/gameplay/stores/gameplay-page-store';
-import { tileOrchestrator } from '@/domains/games/stores/tile-orchestrator';
 
 interface GameplayStateV2 {
   game: GameWithPlayers | null;
-  tick: number;
-  winner: PlayerIndex | null;
   gameplayReady: boolean;
-
-  boardState: BoardState | null;
-  selectedTile: Coord | null;
-  visibleSquares: Set<string>;
-  queuedMoves: Movement[];
-  playerStats: CorePlayerState[];
 
   // Player identity (set once at game load)
   players: Player[];
@@ -44,26 +22,12 @@ interface GameplayStateV2 {
   currentPlayerIndex: PlayerIndex | null;
   currentPlayer: Player | null;
 
-  // derived state
-  isGameEnded: () => boolean;
-
-  // TODO / QUESTION: TS doesn't seem to complain if I don't define these here?
   actions: {
-    setTick: (tick: number) => void;
     setGameplayReady: (ready: boolean) => void;
-    setSelectedTileV2: (coord: Coord) => void;
-    clearSelectedTile: () => void;
-    updateBoard: (boardState: BoardState) => void;
-    setVisibleSquares: (visibleSquares: Set<string>) => void;
-    setQueuedMoves: (moves: Movement[]) => void;
-    setPlayerStats: (playerStats: CorePlayerState[]) => void;
-    addQueuedMove: (move: Movement) => void;
-    setWinner: (winner: PlayerIndex) => void;
     setPlayerData: (players: Player[], currentUserId: UserId | null) => void;
   };
 }
 
-// TODO: make this the source of truth and only place that "stores" currentPlayerIndex
 const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
   const syncGame = () => {
     const newGame = selectGame(gameplayPageStore.getState());
@@ -77,15 +41,7 @@ const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
   const game = selectGame(gameplayPageStore.getState()) || null;
   return {
     game,
-    tick: 0,
-    winner: null,
     gameplayReady: false,
-
-    boardState: null,
-    selectedTile: null,
-    visibleSquares: new Set<string>(),
-    queuedMoves: [],
-    playerStats: [],
 
     // Player identity
     players: [],
@@ -94,30 +50,8 @@ const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
     currentPlayerIndex: null,
     currentPlayer: null,
 
-    isGameEnded() {
-      const { game } = get();
-      return game ? isEnded(game) : false;
-    },
-
     actions: {
-      setTick: (tick) => set({ tick }),
       setGameplayReady: (ready) => set({ gameplayReady: ready }),
-
-      setSelectedTileV2: (coord: Coord) => set({ selectedTile: coord }),
-      clearSelectedTile: () => set({ selectedTile: null }),
-
-      updateBoard: (boardState: BoardState) => {
-        set({ boardState });
-        tileOrchestrator.updateTileSquares(boardState);
-      },
-      setVisibleSquares: (visibleSquares) => set({ visibleSquares }),
-      setQueuedMoves: (moves) => set({ queuedMoves: moves }),
-      setPlayerStats: (playerStats) => set({ playerStats }),
-      addQueuedMove: (move) => {
-        const { queuedMoves } = get();
-        set({ queuedMoves: [...queuedMoves, move] });
-      },
-      setWinner: (winner) => set({ winner }),
       setPlayerData: (players: Player[], currentUserId: UserId | null) => {
         const playersByIndex = new Map(players.map((p) => [p.player_index, p]));
         const playersByUserId = new Map(players.map((p) => [p.user_id, p]));
@@ -139,97 +73,20 @@ const useGameplayStoreV2 = create<GameplayStateV2>((set, get) => {
 
 // ----------- Selectors -----------
 
-const useSelectedTile = (state: GameplayStateV2) => state.selectedTile;
-
-const useIsTileSelected =
-  (coord: Coord) =>
-  (state: GameplayStateV2): boolean =>
-    isTileSelected(state.selectedTile, coord);
-
-const useIsAdjacentToSelected =
-  (coord: Coord) =>
-  (state: GameplayStateV2): boolean =>
-    isTileAdjacentToSelected(state.selectedTile, coord);
-
 function useGameplayGame(state: GameplayStateV2) {
   return state.game;
 }
 
 function useIsGameEnded(state: GameplayStateV2) {
-  return state.isGameEnded();
-}
-
-function useBoardState(state: GameplayStateV2) {
-  return getBoardState(state.game, state.boardState);
+  const { game } = state;
+  return game ? isEnded(game) : false;
 }
 
 // ---------------------------------
 
-// TODO: This is a temp hack while we aren't consistently storing board state in game
-// on the backend.
-function getBoardState(
-  game: GameWithPlayers | null,
-  boardState: BoardState | null,
-): BoardState | null {
-  if (game && hasCompletedGameState(game)) {
-    return game.game_state.board;
-  }
-  // When users are still on the game page, they haven't loaded the updated game,
-  // so we need to use boardState instead of game_state.board
-  if (boardState && !(game?.game_state as any)?.board) {
-    return boardState;
-  }
-
-  if (game && isEnded(game)) {
-    throw new Error('Game is completed but board state is not available or malformed');
-  }
-
-  return boardState;
-}
-
-function useCurrentPlayerIndex(state: GameplayStateV2) {
-  return state.currentPlayerIndex;
-}
-
-// Visibility selectors (matching puzzle store pattern)
-const useIsVisible =
-  (coord: Coord) =>
-  (state: GameplayStateV2): boolean => {
-    // Spectators (no player index) see everything
-    if (state.currentPlayerIndex === null) return true;
-    return state.isGameEnded() || isTileVisible(state.visibleSquares, coord);
-  };
-
-const useNeighborVisibility =
-  (coord: Coord) =>
-  (state: GameplayStateV2): NeighborVisibility => {
-    if (state.isGameEnded()) {
-      return { top: true, left: true };
-    }
-    return getNeighborVisibility(state.visibleSquares, coord);
-  };
-
-// ---------------------------------
-
-// Trying out a new pattern for accessing zustand actions
-// We were extracting actions at the module level before,
-// which would usually work in most situations but is not 100% safe.
-// This helper makes it more ergonomic to access actions locally in functions.
 const gameplayActions = () => useGameplayStoreV2.getState().actions;
 
 // ---------------------------------
 
-export {
-  type GameplayStateV2,
-  useGameplayStoreV2,
-  gameplayActions,
-  useGameplayGame,
-  useIsGameEnded,
-  useBoardState,
-  useSelectedTile,
-  useCurrentPlayerIndex,
-  useIsTileSelected,
-  useIsAdjacentToSelected,
-  useIsVisible,
-  useNeighborVisibility,
-};
+export type { GameplayStateV2 };
+export { useGameplayStoreV2, gameplayActions, useGameplayGame, useIsGameEnded };
