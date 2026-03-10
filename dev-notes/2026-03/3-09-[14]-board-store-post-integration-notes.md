@@ -1,6 +1,6 @@
 # Board Store — Post-Integration Notes
 
-Observations from the puzzles and sandbox integrations. Focus: what will matter for cross-domain synthesis after all three domains (puzzles, sandbox, gameplay) are on board-store.
+Observations from all three integrations (puzzles, sandbox, gameplay). All three domains are now on board-store. See also `3-10-[3]-gameplay-integration-findings.md` for gameplay-specific details.
 
 See also: `3-09-[8]-board-store-integration-questions.md` (pre-integration questions, some now answered).
 
@@ -87,52 +87,73 @@ The `processStep` + `applyTick` flow works naturally. The TODO about "use real p
 
 ---
 
-## Things to fix before or during gameplay integration
+## Fixes applied during gameplay integration
 
-### `isSelectable` needs `currentPlayerIndex` filtering
+### `isSelectable` now checks `currentPlayerIndex` — DONE
 
-`getIsSelectable()` in `tile-derived-state.ts` checks `isPlayerSquare(square)` but doesn't verify `square.playerIndex === currentPlayerIndex`. For puzzles this is harmless (single player). For gameplay, enemy tiles would appear selectable.
+Added `square.playerIndex === currentPlayerIndex` to `getIsSelectable()`. Spectator mode (`currentPlayerIndex === null`) makes nothing selectable naturally.
 
-Fix: add `currentPlayerIndex` to the check. Something like:
-```ts
-function getIsSelectable(square, isSelected, status, currentPlayerIndex) {
-  return !isSelected && status !== 'ended'
-    && isPlayerSquare(square)
-    && square.playerIndex === currentPlayerIndex;
-}
-```
+### `undoLastQueuedMove` includes selection revert — DONE
 
-Spectator mode (`currentPlayerIndex === null`) should make nothing selectable — this check handles that naturally.
+Moved selection-revert-to-source logic from gameplay's action into board-store's `undoLastQueuedMove`. All domains get consistent undo behavior. Single pipeline run.
 
 ---
 
-## Cross-domain cleanup opportunities (after all 3 integrate)
+## Old infrastructure — DELETED
 
-### Delete old infrastructure
-- `games/board-session/` — already deleted (sandbox was only consumer)
-- `games/stores/board-session-store.ts` — gameplay still uses (6 files)
-- `games/stores/tile-store-registry.ts` — gameplay still uses
-- `games/stores/tile-orchestrator.ts` — gameplay still uses
-- `games/hooks/use-tile-store-state.ts` — gameplay still uses
-- `games/utils/tile-selection-helpers.ts` — gameplay still uses
+All consumers gone after gameplay integration. Deleted 5 files (275 lines):
+- `games/stores/board-session-store.ts`
+- `games/stores/tile-store-registry.ts`
+- `games/stores/tile-orchestrator.ts`
+- `games/hooks/use-tile-store-state.ts`
+- `games/utils/tile-selection-helpers.ts`
+- `games/board-session/` — already deleted during sandbox integration
 
-### Shared tile component
-If all three tile components (PuzzleTile, SandboxTile, GameTile) end up as the same `useTileData` + `toTileRendererProps` + `TileRenderer` pattern with identical click handlers, collapse into one shared `BoardTile` with `React.memo`. Current `BoardTile` in board-store is not memoized — either add memo there or create a new shared version.
+---
+
+## Cross-domain cleanup opportunities (all 3 done — ready to execute)
+
+### Shared tile component — CONFIRMED ready
+All three tile components (PuzzleTile, SandboxTile, GameTile) are now the same `useTileData` + `toTileRendererProps` + `TileRenderer` pattern with identical click handler (`setSelectedTile(coord)` when selectable). Collapse into shared `BoardTile` with `React.memo`.
 
 ### Move rendering concerns out of board-store
-`toTileRendererProps`, `BoardTile`, and `TileRenderer` are rendering layer, not state management. They don't belong in `board-store/`. After integration reveals the right grouping:
+`toTileRendererProps`, `BoardTile`, and `TileRenderer` are rendering layer, not state management. They don't belong in `board-store/`. Options:
 - Option A: `games/board-ui/` — sibling to `board-store/`
 - Option B: `games/board/store/` + `games/board/ui/` — single `board/` domain
 - Option C: Move `TileRenderer` out of `gameplay/ui/` into shared location, keep adapters nearby
 
-### Shared `queueMove`
-If all three versions are identical except for the WS send, extract to `games/actions/queue-move.ts` with the WS send function passed as a parameter.
+### Shared `queueMove` — CONFIRMED ready
+All three versions are identical: `addQueuedMove()` + `setSelectedTile()` + `domainWsEffects.sendMoveRequest()`. Extract to `games/actions/queue-move.ts` with the WS send function as a parameter.
 
 ### WS effects deduplication
 `sendMoveRequest`, `sendUndoMove`, `sendCancelMoves` exist in all three domains' ws-effects. Check if the protocol messages are actually different or just prefixed differently. If same shape, could share.
 
 ### Shrunk domain stores
-After migration, puzzle store is just: status, result, userStats. Sandbox meta store would be: status, isPaused, config, maxTickReached. Gameplay store would be: game, gameplayReady, player lookups. All are small but each serves a distinct purpose — probably still worth keeping as separate stores.
+After migration: puzzle store = status, result, userStats. Sandbox meta store = status, isPaused, config, maxTickReached. Gameplay store = game, gameplayReady, player lookups. All small but each serves a distinct purpose — keep as separate stores.
+
+---
+
+## Concrete findings from gameplay
+
+### `gameplayStoreV2` shrank dramatically
+
+Went from 235 lines (board state + game metadata + player lookups + selectors + tile orchestrator) to ~90 lines (game metadata + player lookups). Removed 10 actions and 7 selectors.
+
+### `queueMove` confirmed identical to puzzles + sandbox (3/3)
+
+Gameplay's `queueMove` signature simplified — no longer needs `board` param (reads from `boardStore.state.game.board`). Same `addQueuedMove` + `setSelectedTile` + WS send pattern.
+
+### GameTile collapsed identically to PuzzleTile + SandboxTile (3/3)
+
+Same `useTileData` + `toTileRendererProps` + `TileRenderer` pattern. Eliminated the module-level `setSelectedTileV2` extraction anti-pattern from the old code.
+
+### `ArmyInfo` reads from two stores
+
+`playerStats` from board-store, player identity (`players`, `playersByIndex`, `currentPlayerIndex`) from gameplay store. Uses `useBoardState` which re-renders on every board-store action — potential perf concern during keyboard repeat. Added TODO to profile.
+
+### `boardStore.reset()` in page lifecycle
+
+Added to `loadGameplayPage` (before load) and `resetGameplayPage` (unmount). Same pattern as puzzles/sandbox.
 
 ---
 
@@ -148,3 +169,6 @@ The page component re-renders on every board-store action (including `addQueuedM
 - Dirty regions (only recompute affected tiles)
 
 None needed now — note for if performance becomes an issue.
+
+### `ArmyInfo` sidebar re-renders during keyboard repeat
+`GameplayArmyInfo` uses `useBoardState` to read `playerStats`, but `useBoardState` re-renders on every board-store action. During keyboard repeat (~20 queueMove calls/sec, each with 2 actions), the sidebar re-renders ~40x/sec. The render itself is cheap (small table), but worth profiling if gameplay feels sluggish. Fix: add a `playerStats`-specific selector or keep `playerStats` in gameplay store alongside player identity data.
