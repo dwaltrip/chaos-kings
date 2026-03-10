@@ -1,18 +1,17 @@
+import { boardStore } from '@/domains/games/board-store';
+import { useBoardState } from '@/domains/games/board-store/hooks';
 import {
   useSandboxMetaStore,
   selectIsPaused,
   selectMaxTickReached,
 } from '@/domains/sandbox/stores/sandbox-meta-store';
-import {
-  useBoardSessionStore,
-  selectTick,
-} from '@/domains/games/stores/board-session-store';
 import { play, pause, stepForward, stepBack, reset } from '@/domains/sandbox/actions';
 
 import './sandbox-control-bar.css';
 
 function SandboxControlBar() {
-  const tick = useBoardSessionStore(selectTick);
+  const boardState = useBoardState(boardStore);
+  const tick = boardState.game.tick;
   const isPaused = useSandboxMetaStore(selectIsPaused);
   const maxTickReached = useSandboxMetaStore(selectMaxTickReached);
 

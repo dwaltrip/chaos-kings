@@ -1,10 +1,12 @@
 import { Board } from '@core/board';
 
-import { useBoardSessionStore } from '@/domains/games/stores/board-session-store';
+import { boardStore, setSelectedTile } from '@/domains/games/board-store';
+import { getLastExecutedMove } from '@/domains/sandbox/move-history-cache';
 import { sandboxWsEffects } from '@/domains/sandbox/ws-effects';
 
 function clearMoves(): void {
-  const { queuedMoves, lastExecutedMove, actions } = useBoardSessionStore.getState();
+  const { queuedMoves } = boardStore.state.game;
+  const lastExecutedMove = getLastExecutedMove();
 
   if (queuedMoves.length > 0) {
     if (lastExecutedMove) {
@@ -12,9 +14,9 @@ function clearMoves(): void {
         lastExecutedMove.sourceCoord,
         lastExecutedMove.direction,
       );
-      actions.setSelectedTile(dest);
+      setSelectedTile(dest);
     } else {
-      actions.setSelectedTile(queuedMoves[0].sourceCoord);
+      setSelectedTile(queuedMoves[0].sourceCoord);
     }
   }
 

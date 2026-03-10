@@ -1,13 +1,11 @@
 import type { Coord, Direction } from '@core/types';
 import { Board } from '@core/board';
 
-import { getTileStore } from '@/domains/games/stores/tile-store-registry';
-import { useBoardSessionStore } from '@/domains/games/stores/board-session-store';
+import { boardStore, addQueuedMove, setSelectedTile } from '@/domains/games/board-store';
 import { sandboxWsEffects } from '@/domains/sandbox/ws-effects';
 
 function queueMove(selectedTile: Coord, direction: Direction): void {
-  const { board, actions } = useBoardSessionStore.getState();
-  const { addQueuedMove, setSelectedTile } = actions;
+  const board = boardStore.state.game.board;
 
   if (!board) {
     console.debug('Cannot move: no board');
@@ -19,10 +17,6 @@ function queueMove(selectedTile: Coord, direction: Direction): void {
   }
 
   addQueuedMove({ sourceCoord: selectedTile, direction });
-
-  const tileStore = getTileStore(selectedTile);
-  tileStore.getState().addQueuedDirection(direction);
-
   setSelectedTile(Board.applyDirection(selectedTile, direction));
 
   sandboxWsEffects.sendMoveRequest(selectedTile, direction);

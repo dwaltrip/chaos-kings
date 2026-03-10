@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
+import { boardStore } from '@/domains/games/board-store';
 import { useSandboxMetaStore } from '@/domains/sandbox/stores/sandbox-meta-store';
-import { useBoardSessionStore } from '@/domains/games/stores/board-session-store';
 import { play, pause, stepForward, stepBack } from '@/domains/sandbox/actions';
 
 interface UseSandboxPlaybackControlsParams {
@@ -15,7 +15,7 @@ function useSandboxPlaybackControls({ disabled }: UseSandboxPlaybackControlsPara
 
       const key = event.key.toLowerCase();
       const isPaused = useSandboxMetaStore.getState().isPaused;
-      const tick = useBoardSessionStore.getState().tick;
+      const tick = boardStore.state.game.tick;
 
       switch (key) {
         case ' ':

@@ -4,16 +4,13 @@ import type { GameState } from '@core/types';
 import type { MoveEvent } from '@core/replay/types';
 import { deepCloneBoard } from '@core/utils/clone-utils';
 
-import {
-  useBoardSessionStore,
-  moveHistoryCache,
-} from '@/domains/games/stores/board-session-store';
-import { applyBoardState } from '@/domains/games/board-session/actions/apply-state';
+import { boardStore, applyTick } from '@/domains/games/board-store';
 import { useSandboxMetaStore } from '@/domains/sandbox/stores/sandbox-meta-store';
+import { moveHistoryCache } from '@/domains/sandbox/move-history-cache';
 import { sandboxWsEffects } from '@/domains/sandbox/ws-effects';
 
 function stepForward(): void {
-  const { tick, board } = useBoardSessionStore.getState();
+  const { tick, board } = boardStore.state.game;
   const { maxTickReached, config } = useSandboxMetaStore.getState();
 
   if (!board || !config) return;
@@ -53,7 +50,7 @@ function stepForward(): void {
 
   processStep(gameState, moveEvents, config.timing);
 
-  applyBoardState(gameState.board, nextTick, []);
+  applyTick(nextTick, gameState.board, [], []);
 }
 
 export { stepForward };

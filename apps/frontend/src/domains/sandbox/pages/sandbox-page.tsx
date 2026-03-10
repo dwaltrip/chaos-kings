@@ -3,12 +3,8 @@ import { useEffect } from 'react';
 import type { Direction } from '@core/types';
 
 import { useKeyboardControls } from '@/domains/gameplay/hooks/use-keyboard-controls';
-import {
-  useBoardSessionStore,
-  boardSessionActions,
-  selectBoard,
-  selectSelectedTile,
-} from '@/domains/games/stores/board-session-store';
+import { boardStore, setSelectedTile } from '@/domains/games/board-store';
+import { useBoardState } from '@/domains/games/board-store/hooks';
 import {
   useSandboxMetaStore,
   selectStatus,
@@ -30,8 +26,9 @@ import './sandbox-page.css';
 function SandboxPage() {
   const status = useSandboxMetaStore(selectStatus);
   const isPaused = useSandboxMetaStore(selectIsPaused);
-  const board = useBoardSessionStore(selectBoard);
-  const selectedTile = useBoardSessionStore(selectSelectedTile);
+  const boardState = useBoardState(boardStore);
+  const board = boardState.game.board;
+  const selectedTile = boardState.ui.selectedTile;
 
   const isActive = status === 'active';
 
@@ -58,7 +55,7 @@ function SandboxPage() {
   useSandboxPlaybackControls({ disabled: !isActive });
 
   const handlePageClick = () => {
-    boardSessionActions().clearSelectedTile();
+    setSelectedTile(null);
   };
 
   return (

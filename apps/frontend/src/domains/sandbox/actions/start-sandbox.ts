@@ -1,13 +1,13 @@
-import { useBoardSessionStore } from '@/domains/games/stores/board-session-store';
+import { boardStore, initBoard } from '@/domains/games/board-store';
 import { useSandboxMetaStore } from '@/domains/sandbox/stores/sandbox-meta-store';
 import { sandboxWsEffects } from '@/domains/sandbox/ws-effects';
 
 function startSandbox(): void {
-  const { reset: resetSession } = useBoardSessionStore.getState().actions;
   const { reset: resetMeta } = useSandboxMetaStore.getState().actions;
 
-  resetSession();
+  boardStore.reset();
   resetMeta();
+  initBoard([], 0);
   sandboxWsEffects.sendStartSession();
 }
 
