@@ -7,7 +7,7 @@ import { getPlayerColor } from '@/utils/player-colors';
 
 import mountainIcon from '@/assets/mountain.svg';
 import generalIcon from '@/assets/crown.png';
-import { MoveArrow } from '@/domains/gameplay/ui/move-arrow';
+import { MoveArrow } from '@/domains/games/board/ui/move-arrow';
 
 function TileOverlay({ className, zIndex }: { className?: string; zIndex?: number }) {
   return <div className={clsx('tile-overlay', className)} style={{ zIndex }} />;

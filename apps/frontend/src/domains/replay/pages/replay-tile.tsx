@@ -1,6 +1,6 @@
 import type { Coord, Square } from '@core/types';
 
-import { TileRenderer } from '@/domains/gameplay/ui/tile-renderer';
+import { TileRenderer } from '@/domains/games/board/ui/tile-renderer';
 
 interface ReplayTileProps {
   coord: Coord;

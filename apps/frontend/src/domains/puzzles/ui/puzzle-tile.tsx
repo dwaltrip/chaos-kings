@@ -5,8 +5,8 @@ import { areCoordsEqual } from '@core/utils/coordinate-utils';
 
 import { boardStore, setSelectedTile } from '@/domains/games/board-store';
 import { useTileData } from '@/domains/games/board-store/hooks';
-import { toTileRendererProps } from '@/domains/games/board-store/tile-data';
-import { TileRenderer } from '@/domains/gameplay/ui/tile-renderer';
+import { toTileRendererProps } from '@/domains/games/board/ui/tile-data-transforms';
+import { TileRenderer } from '@/domains/games/board/ui/tile-renderer';
 
 interface PuzzleTileProps {
   coord: Coord;

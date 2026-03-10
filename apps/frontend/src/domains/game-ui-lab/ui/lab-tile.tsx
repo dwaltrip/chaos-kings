@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { Coord, Direction, Square } from '@core/types';
 
-import { TileRenderer } from '@/domains/gameplay/ui/tile-renderer';
+import { TileRenderer } from '@/domains/games/board/ui/tile-renderer';
 
 interface LabTileProps {
   coord: Coord;

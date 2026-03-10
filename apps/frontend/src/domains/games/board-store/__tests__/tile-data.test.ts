@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { Direction, SquareType } from '@core/types';
 
-import { tilesEqual, toTileRendererProps } from '../tile-data';
+import { tilesEqual } from '../tile-data';
+import { toTileRendererProps } from '../../board/ui/tile-data-transforms';
 import { makeTileData } from './helpers';
 
 describe('tilesEqual', () => {
