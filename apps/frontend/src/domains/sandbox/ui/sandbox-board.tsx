@@ -1,8 +1,9 @@
 import type { BoardState } from '@core/types';
 import { serializeCoord } from '@core/utils/coordinate-utils';
 
+import { boardStore, setSelectedTile } from '@/domains/games/board-store';
+import { BoardTile } from '@/domains/games/board/ui/board-tile';
 import { useGridLayout } from '@/domains/gameplay/hooks/use-grid-layout';
-import { SandboxTile } from '@/domains/sandbox/ui/sandbox-tile';
 
 import '@/domains/gameplay/ui/game-board.css';
 
@@ -24,7 +25,12 @@ function SandboxBoard({ boardState }: SandboxBoardProps) {
       <div className="game-grid" style={gridStyle} onClick={handleGridClick}>
         {boardState.grid.flatMap((row) =>
           row.map(({ coord }) => (
-            <SandboxTile coord={coord} key={serializeCoord(coord)} />
+            <BoardTile
+              store={boardStore}
+              coord={coord}
+              onClick={() => setSelectedTile(coord)}
+              key={serializeCoord(coord)}
+            />
           )),
         )}
       </div>

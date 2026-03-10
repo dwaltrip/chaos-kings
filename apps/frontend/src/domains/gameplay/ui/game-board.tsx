@@ -1,8 +1,9 @@
 import type { BoardState } from '@core/types';
 import { serializeCoord } from '@core/utils/coordinate-utils';
 
+import { boardStore, setSelectedTile } from '@/domains/games/board-store';
+import { BoardTile } from '@/domains/games/board/ui/board-tile';
 import { useGridLayout } from '@/domains/gameplay/hooks/use-grid-layout';
-import { GameTile } from '@/domains/gameplay/ui/game-tile';
 
 import '@/domains/gameplay/ui/game-board.css';
 
@@ -20,7 +21,14 @@ function GameBoard({ boardState }: GameBoardProps) {
     <div ref={containerRef} className="game-grid-container">
       <div className="game-grid" style={gridStyle}>
         {boardState.grid.flatMap((row) =>
-          row.map(({ coord }) => <GameTile coord={coord} key={serializeCoord(coord)} />),
+          row.map(({ coord }) => (
+            <BoardTile
+              store={boardStore}
+              coord={coord}
+              onClick={() => setSelectedTile(coord)}
+              key={serializeCoord(coord)}
+            />
+          )),
         )}
       </div>
     </div>
