@@ -10,14 +10,13 @@ import {
 } from '@/domains/users/user-store';
 import { useKeyboardControls } from '@/domains/gameplay/hooks/use-keyboard-controls';
 
+import { boardStore } from '@/domains/games/board-store';
+import { useBoardState } from '@/domains/games/board-store/hooks';
 import { startPuzzle, queueMove, undoMove, clearMoves } from '@/domains/puzzles/actions';
 import {
   usePuzzleStore,
   selectStatus,
-  selectBoard,
-  selectTick,
   selectResult,
-  selectSelectedTile,
 } from '@/domains/puzzles/stores/puzzle-store';
 import { PuzzleBoard } from '@/domains/puzzles/ui/puzzle-board';
 
@@ -44,10 +43,11 @@ interface PageContentPropTypes {
 
 function BestStartPlayPageContent({ user }: PageContentPropTypes) {
   const status = usePuzzleStore(selectStatus);
-  const board = usePuzzleStore(selectBoard);
-  const tick = usePuzzleStore(selectTick);
   const result = usePuzzleStore(selectResult);
-  const selectedTile = usePuzzleStore(selectSelectedTile);
+  const boardState = useBoardState(boardStore);
+  const board = boardState.game.board;
+  const tick = boardState.game.tick;
+  const selectedTile = boardState.ui.selectedTile;
   const timingConfig = DEFAULT_BEST_START_CONFIG.timing;
 
   const isPlaying = status === 'playing';
@@ -113,7 +113,6 @@ function BestStartPlayPageContent({ user }: PageContentPropTypes) {
 
 // TODO: backend should send this up
 function getArmyStats(board: BoardState): { army: number; land: number } {
-  // Calculate player stats (player 0 is the puzzle player)
   let land = 0;
   let army = 0;
   if (board) {
