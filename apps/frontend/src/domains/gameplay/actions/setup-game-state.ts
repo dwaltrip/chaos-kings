@@ -17,6 +17,7 @@ function setupGameState(game: GameWithPlayers): void {
   setGame(game);
 
   // TODO: Should pass userId as parameter instead of fetching from store
+  // Long-term: only call setupGameState in context of a user, pass userId directly
   const currentUser = userStore.getState().data;
   setPlayerData(game.players, currentUser?.id ?? null);
 
@@ -33,6 +34,9 @@ function setupGameState(game: GameWithPlayers): void {
   }
 
   // TODO: Think about if this logic should go here.
+  // Now that it's here inside this `setupGameState` action,
+  //   it's much better than before (it was in a zustand store action).
+  // But still feels a bit like a side-effect / confusing flow.
   if (game.status === GameStatus.NOT_STARTED) {
     setCountdownActive(true);
   }
