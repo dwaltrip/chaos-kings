@@ -1,6 +1,6 @@
 # Board Store — Post-Integration Notes
 
-Observations from the puzzles integration. Focus: what will matter for cross-domain synthesis after all three domains (puzzles, sandbox, gameplay) are on board-store.
+Observations from the puzzles and sandbox integrations. Focus: what will matter for cross-domain synthesis after all three domains (puzzles, sandbox, gameplay) are on board-store.
 
 See also: `3-09-[8]-board-store-integration-questions.md` (pre-integration questions, some now answered).
 
@@ -50,10 +50,40 @@ Had to call `initBoard([], 0)` in `startPuzzle()` after `boardStore.reset()` to 
 
 Each domain needs its own initialization point:
 - Puzzles: `initBoard([], 0)` in `startPuzzle`
-- Sandbox: `initBoard([], 0, board)` in `handleSessionStarted`
+- Sandbox: `initBoard([], 0)` in `startSandbox`, then `applyTick(0, board, [], [])` in `handleSessionStarted`
 - Gameplay: `initBoard(players, currentPlayerIndex, board)` in `setupGameState`
 
 This is natural — each domain knows its own setup flow. Not a problem, just a pattern to be aware of.
+
+---
+
+## Concrete findings from sandbox
+
+### Confirmed: `handleStateUpdate` is trivially thin
+
+Sandbox's `handleStateUpdate` is now `applyTick()` + 3 sandbox-specific setters (lastExecutedMove, isPaused, maxTickReached). Same pattern as puzzles. The handler → action boundary is still worth keeping for consistency.
+
+### `queueMove` confirmed identical to puzzles
+
+Sandbox `queueMove` is the same shape as puzzles — only the ws-effects call differs (`sandboxWsEffects.sendMoveRequest` vs `puzzlesWsEffects.sendMoveRequest`). Shared `queueMove` is now confirmed viable across 2/3 domains.
+
+### SandboxTile collapsed identically to PuzzleTile
+
+Same `useTileData` + `toTileRendererProps` + `TileRenderer` pattern, same click handler (`setSelectedTile(coord)` when selectable). Two out of three tile components are now identical — strong signal for a shared component.
+
+### `moveHistoryCache` + `lastExecutedMove` extracted cleanly
+
+Created `sandbox/move-history-cache.ts` with both the cache Map and the `lastExecutedMove` variable. Both are non-reactive state consumed by actions — they influence what gets written to reactive state but don't drive renders directly. Clean separation from both board-store and sandbox meta store.
+
+Three touchpoints: `handleStateUpdate` populates, `stepForward` + `clearMoves` read, `endSandbox` resets.
+
+### `stepForward` optimistic path unchanged
+
+The `processStep` + `applyTick` flow works naturally. The TODO about "use real players array" stays — sandbox could support multi-player in the future. The single-player stub is correct for now.
+
+### `applyBoardState` deleted
+
+`board-session/actions/apply-state.ts` had zero consumers after sandbox migrated. Deleted along with the containing `board-session/` directory (which only had this file and an obsolete TODO).
 
 ---
 
@@ -79,11 +109,12 @@ Spectator mode (`currentPlayerIndex === null`) should make nothing selectable �
 ## Cross-domain cleanup opportunities (after all 3 integrate)
 
 ### Delete old infrastructure
-- `games/stores/board-session-store.ts` (sandbox uses this)
-- `games/stores/tile-store-registry.ts`
-- `games/stores/tile-orchestrator.ts`
-- `games/hooks/use-tile-store-state.ts`
-- `games/utils/tile-selection-helpers.ts`
+- `games/board-session/` — already deleted (sandbox was only consumer)
+- `games/stores/board-session-store.ts` — gameplay still uses (6 files)
+- `games/stores/tile-store-registry.ts` — gameplay still uses
+- `games/stores/tile-orchestrator.ts` — gameplay still uses
+- `games/hooks/use-tile-store-state.ts` — gameplay still uses
+- `games/utils/tile-selection-helpers.ts` — gameplay still uses
 
 ### Shared tile component
 If all three tile components (PuzzleTile, SandboxTile, GameTile) end up as the same `useTileData` + `toTileRendererProps` + `TileRenderer` pattern with identical click handlers, collapse into one shared `BoardTile` with `React.memo`. Current `BoardTile` in board-store is not memoized — either add memo there or create a new shared version.
