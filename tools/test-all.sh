@@ -26,6 +26,14 @@ if ! $VERBOSE && ! command -v jq >/dev/null 2>&1; then
 fi
 
 vgap() { if $VERBOSE; then printf "\n"; fi; }
+# 4-space indent for detail lines
+indent() { printf "    $1\n" "${@:2}"; }
+
+if [[ -t 1 ]]; then
+	GREEN='\033[32m' RED='\033[31m' RESET='\033[0m'
+else
+	GREEN='' RED='' RESET=''
+fi
 
 FAILED=false
 FAILURE_OUTPUT=""
@@ -33,31 +41,38 @@ FAILURE_OUTPUT=""
 record_failure() {
 	local label=$1
 	local output=$2
-	printf "%-12s✗  FAILED\n" "$label"
+	indent "%-12s${RED}✗  FAILED${RESET}" "$label"
 	FAILURE_OUTPUT+=$'\n'"──── ${label} test failures ────"$'\n'"${output}"$'\n'
 	FAILED=true
 }
 
+format_test_result() {
+	local label=$1 tests_passed=$2 tests_total=$3 count_label=$4 start_ms=$5 end_ms=$6
+	local secs
+	secs=$(echo "scale=1; ($end_ms - $start_ms) / 1000" | bc)
+	[[ "$secs" == .* ]] && secs="0$secs"
+	indent "%-12s${GREEN}✓  %s passed (%s %s, %ss)${RESET}" \
+		"$label" "$tests_passed" "$tests_total" "$count_label" "$secs"
+}
+
 jest_summary() {
-	local json_file=$1
-	local label=$2
-	local summary
-	summary=$(jq -r '
-		(.testResults | map(.endTime) | max) as $end |
-		(($end - .startTime) / 1000 * 10 | floor / 10 | tostring) as $secs |
-		"\(.numPassedTests) passed (\(.numTotalTestSuites) suites, \($secs)s)"
-	' "$json_file")
-	printf "%-12s✓  %s\n" "$label" "$summary"
+	local json_file=$1 label=$2
+	local tests_passed tests_total start_ms end_ms
+	tests_passed=$(jq '.numPassedTests' "$json_file")
+	tests_total=$(jq '.numTotalTestSuites' "$json_file")
+	start_ms=$(jq '.startTime' "$json_file")
+	end_ms=$(jq '.testResults | map(.endTime) | max' "$json_file")
+	format_test_result "$label" "$tests_passed" "$tests_total" "suites" "$start_ms" "$end_ms"
 }
 
 vitest_summary() {
-	local json_file=$1
-	local label=$2
-	local summary
-	summary=$(jq -r '
-		"\(.numPassedTests) passed (\(.testResults | length) files)"
-	' "$json_file")
-	printf "%-12s✓  %s\n" "$label" "$summary"
+	local json_file=$1 label=$2
+	local tests_passed tests_total start_ms end_ms
+	tests_passed=$(jq '.numPassedTests' "$json_file")
+	tests_total=$(jq '.testResults | length' "$json_file")
+	start_ms=$(jq '.startTime' "$json_file")
+	end_ms=$(jq '.testResults | map(.endTime) | max' "$json_file")
+	format_test_result "$label" "$tests_passed" "$tests_total" "files" "$start_ms" "$end_ms"
 }
 
 jest_cmd() {
@@ -100,7 +115,7 @@ run_tests() {
 }
 
 TIMESTAMP=$(date +%H:%M:%S)
-printf "[%s] Running tests: apps/backend, packages/core, apps/frontend\n" "$TIMESTAMP"
+printf "[%s] Testing: apps/backend, packages/core, apps/frontend\n" "$TIMESTAMP"
 vgap
 
 run_tests "backend" "$PROJECT_ROOT/apps/backend" jest_cmd jest_summary
@@ -119,4 +134,4 @@ if $FAILED; then
 fi
 
 vgap
-printf "✅ All tests passed!\n"
+indent "All tests passed."

@@ -230,12 +230,12 @@ type GameId = string & { readonly __brand: 'GameId' };
 
 ### Build Verification
 - **ALWAYS** check builds in frontend and backend for TS errors after making changes
-- Use `bash tools/build-all.sh` to run both, or `npm run build` separately
+- Use `tools/build-all.sh` to run both, or `npm run build` separately
 - Fix any type errors before proceeding or committing changes
 
 ### Test Verification
 - **ALWAYS** run tests after finishing a set of changes
-- Use `bash tools/test-all.sh` to run tests in both backend and core
+- Use `tools/test-all.sh` to run tests in both backend, frontend, and core
 - Fix any test failures before committing changes
 
 ### Git Commit Strategy
@@ -247,10 +247,12 @@ type GameId = string & { readonly __brand: 'GameId' };
 
 ## Development Commands
 
+**Scripts have compact output by default.** Run them directly — no need for `2>&1` or output capturing. Pass `-v` for verbose output only when debugging a failure.
+
 ### All
-- `./tools/build-all.sh` - Build backend + frontend
-- `./tools/test-all.sh` - Run all tests
-- `./tools/dev-all.sh` - Start dev server (use this!)
+- `tools/build-all.sh` - Build backend + frontend
+- `tools/test-all.sh` - Run all tests
+- `tools/dev-all.sh` - Start dev server (use this!)
 
 ### Backend (`apps/backend`)
 - `npm run build` - Build TypeScript to JS (check for TS errors)

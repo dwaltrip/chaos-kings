@@ -6,6 +6,7 @@
     "start": "ts-node src/main.ts",
     "dev": "ts-node --watch src/main.ts",
     "build": "tsc -p tsconfig.build.json && tsc-alias",
+    "build:stats": "tsc -p tsconfig.build.json --listEmittedFiles && tsc-alias",
     "prod": "node dist/main.js",
     "start:prod": "ts-node -r tsconfig-paths/register src/main.ts",
     "test": "jest --silent --verbose=false --reporters=summary",
