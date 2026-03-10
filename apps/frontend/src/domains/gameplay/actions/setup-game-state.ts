@@ -1,8 +1,12 @@
 import { GameStatus } from '@core/game/types';
 import type { GameWithPlayers } from '@platform/domains/games/types';
 
+import { initBoard } from '@/domains/games/board-store';
 import { gameplayPageStore } from '@/domains/gameplay/stores/gameplay-page-store';
-import { gameplayActions } from '@/domains/gameplay/stores/gameplay-store-v2';
+import {
+  gameplayActions,
+  useGameplayStoreV2,
+} from '@/domains/gameplay/stores/gameplay-store-v2';
 import { userStore } from '@/domains/users/user-store';
 import { updateGameplayState } from './update-gameplay-state';
 
@@ -13,9 +17,13 @@ function setupGameState(game: GameWithPlayers): void {
   setGame(game);
 
   // TODO: Should pass userId as parameter instead of fetching from store
-  // Long-term: only call setupGameState in context of a user, pass userId directly
   const currentUser = userStore.getState().data;
   setPlayerData(game.players, currentUser?.id ?? null);
+
+  // Read currentPlayerIndex after setPlayerData populates it
+  const { currentPlayerIndex } = useGameplayStoreV2.getState();
+  initBoard(game.players, currentPlayerIndex);
+
   setGameplayReady(true);
 
   // TODO: better way to check this?
@@ -25,9 +33,6 @@ function setupGameState(game: GameWithPlayers): void {
   }
 
   // TODO: Think about if this logic should go here.
-  // Now that it's here inside this `setupGameState` action,
-  //   it's much better than before (it was in a zustand store action).
-  // But still feels a bit like a side-effect / confusing flow.
   if (game.status === GameStatus.NOT_STARTED) {
     setCountdownActive(true);
   }

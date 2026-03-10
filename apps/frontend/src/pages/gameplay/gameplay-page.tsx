@@ -6,12 +6,13 @@ import { GameIdFromURLParam } from '@kernel/domains/game';
 
 import { useWsConnectionStore } from '@/ws-lib';
 
+import { boardStore } from '@/domains/games/board-store';
+import { useBoardState } from '@/domains/games/board-store/hooks';
 import { userStore } from '@/domains/users/user-store';
 import {
   gameplayPageStore,
   selectGame,
 } from '@/domains/gameplay/stores/gameplay-page-store';
-import { useGameplayStoreV2 } from '@/domains/gameplay/stores/gameplay-store-v2';
 import { joinGameplay, leaveGameplay } from '@/domains/gameplay/actions';
 import {
   loadGameplayPage,
@@ -67,8 +68,7 @@ function GamePageContent({ gameId }: { gameId: GameId }) {
   const game = gameplayPageStore(selectGame);
   const countdownActive = gameplayPageStore((state) => state.countdownActive);
   const countdownSeconds = gameplayPageStore((state) => state.countdownSeconds);
-  const winner = useGameplayStoreV2((state) => state.winner);
-  const tick = useGameplayStoreV2((state) => state.tick);
+  const { winner, tick } = useBoardState(boardStore).game;
   const loading = gameplayPageStore((state) => state.isLoading());
   const error = gameplayPageStore((state) => state.error);
   const isConnected = useWsConnectionStore((state) => state.isConnected);

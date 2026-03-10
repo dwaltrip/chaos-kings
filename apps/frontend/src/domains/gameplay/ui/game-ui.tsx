@@ -1,13 +1,13 @@
 import type { Direction } from '@core/types';
 import { isEnded } from '@core/game';
 
+import { boardStore } from '@/domains/games/board-store';
+import { useBoardState } from '@/domains/games/board-store/hooks';
 import { useKeyboardControls } from '@/domains/gameplay/hooks/use-keyboard-controls';
 import { GameBoard } from '@/domains/gameplay/ui/game-board';
 import {
-  useBoardState,
   useGameplayGame,
   useGameplayStoreV2,
-  useSelectedTile,
 } from '@/domains/gameplay/stores/gameplay-store-v2';
 import {
   queueMove,
@@ -26,30 +26,23 @@ interface GameUIProps {
 // -----------------------------------
 function GameUI({ gameId: _gameId }: GameUIProps) {
   const game = useGameplayStoreV2(useGameplayGame);
-  const board = useGameplayStoreV2(useBoardState);
-  const selectedTile = useGameplayStoreV2(useSelectedTile);
+  const { game: boardState, ui } = useBoardState(boardStore);
 
   // UI is only enabled if game is in progress
   const isDisabled = game ? isEnded(game) : true;
 
   useKeyboardControls({
     onMoveRequest: (dir: Direction) => {
-      board && queueMove(dir, selectedTile, board);
+      queueMove(dir, ui.selectedTile);
     },
     onUndoMove: () => undoLastQueuedMove(),
     onCancelMoves: () => cancelQueuedMoves(),
     disabled: isDisabled,
   });
 
-  const shouldShowGameBoard = board && game;
-  if (!shouldShowGameBoard) {
-    console.log('[DEBUG GameUI] Not showing game board', {
-      board,
-      game,
-    });
-  }
-
-  if (!shouldShowGameBoard) {
+  const board = boardState.board;
+  if (!board || !game) {
+    console.log('[DEBUG GameUI] Not showing game board', { board, game });
     return <div>Loading game...</div>;
   }
 

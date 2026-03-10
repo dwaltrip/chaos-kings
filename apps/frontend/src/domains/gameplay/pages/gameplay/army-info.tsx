@@ -1,5 +1,7 @@
 import { CorePlayerStatus } from '@core/types';
 
+import { boardStore } from '@/domains/games/board-store';
+import { useBoardState } from '@/domains/games/board-store/hooks';
 import { getPlayerColor } from '@/utils/player-colors';
 import { useGameplayStoreV2 } from '@/domains/gameplay/stores/gameplay-store-v2';
 
@@ -59,10 +61,13 @@ function ArmyInfoTable({ children }: { children: React.ReactNode }) {
   );
 }
 
+// TODO: useBoardState re-renders on every board-store action (including queueMove at ~50ms
+// keyboard repeat). ArmyInfo only needs playerStats (changes once per tick). Profile if
+// sidebar feels sluggish — could add a playerStats-specific selector.
 function GameplayArmyInfo() {
   const players = useGameplayStoreV2((state) => state.players);
   const playersByIndex = useGameplayStoreV2((state) => state.playersByIndex);
-  const playerStats = useGameplayStoreV2((state) => state.playerStats);
+  const { playerStats } = useBoardState(boardStore).game;
   const currentPlayerIndex = useGameplayStoreV2((state) => state.currentPlayerIndex);
 
   if (!players.length || !playerStats.length) {

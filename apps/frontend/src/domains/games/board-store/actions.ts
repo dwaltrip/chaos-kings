@@ -5,6 +5,7 @@ import type {
   Movement,
   PlayerIndex,
 } from '@core/types';
+import { Board } from '@core/board';
 import type { Player } from '@platform/domains/games/types';
 
 import type { BoardSessionInputState } from './types';
@@ -22,7 +23,18 @@ function addQueuedMove(state: BoardSessionInputState, move: Movement): void {
 }
 
 function undoLastQueuedMove(state: BoardSessionInputState): void {
-  state.game.queuedMoves = state.game.queuedMoves.slice(0, -1);
+  const { queuedMoves } = state.game;
+  if (queuedMoves.length === 0) return;
+
+  const lastMove = queuedMoves[queuedMoves.length - 1];
+  state.game.queuedMoves = queuedMoves.slice(0, -1);
+
+  // Revert selection to source if currently on the undone move's destination
+  const dest = Board.applyDirection(lastMove.sourceCoord, lastMove.direction);
+  const selected = state.ui.selectedTile;
+  if (selected && selected.x === dest.x && selected.y === dest.y) {
+    state.ui.selectedTile = lastMove.sourceCoord;
+  }
 }
 
 function setQueuedMoves(state: BoardSessionInputState, moves: Movement[]): void {

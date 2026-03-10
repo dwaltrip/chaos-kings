@@ -43,8 +43,14 @@ function getIsSelectable(
   square: Square,
   isSelected: boolean,
   status: 'active' | 'ended',
+  currentPlayerIndex: number | null,
 ): boolean {
-  return !isSelected && status !== 'ended' && isPlayerSquare(square);
+  return (
+    !isSelected &&
+    status !== 'ended' &&
+    isPlayerSquare(square) &&
+    square.playerIndex === currentPlayerIndex
+  );
 }
 
 function getIsValidMove(
@@ -79,7 +85,12 @@ function computeTileData(state: BoardSessionState, coord: Coord): TileData {
   const isVisible = getIsVisible(coordKey, state.visibleSquares, state.allVisible);
   const neighborVis = getNeighborVis(coord, state.visibleSquares, state.allVisible);
   const isSelected = getIsSelected(coord, state.ui.selectedTile);
-  const isSelectable = getIsSelectable(square, isSelected, state.game.status);
+  const isSelectable = getIsSelectable(
+    square,
+    isSelected,
+    state.game.status,
+    state.game.currentPlayerIndex,
+  );
   const isValidMove = getIsValidMove(coord, square, state.ui.selectedTile);
   const borders = getBorders(isVisible, neighborVis);
 
