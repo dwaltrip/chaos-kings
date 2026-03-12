@@ -92,6 +92,7 @@
     content: '';
     border: 1px solid white;
     z-index: 2;
+    background-color: rgba(90, 90, 90, 0.3);
   }
 
   /*
@@ -120,15 +121,17 @@
     background-color: #888;
   }
 
-  &.possible-move {
-    background-color: rgba(80, 80, 80, 0.5);
+  /* TODO: not using this for now, but leaving it here
+     for possible future experimentation with move indicators */
+  /* &.possible-move { */
+    /* background-color: rgba(80, 80, 80, 0.5); */
     /* -------------------------------------------------------
       TODO: define the stacking hierarchy for all tile stuff
       in a better way. Put it in one easy to see and verify
       location in the code.
     ------------------------------------------------------- */
-    z-index: 2;
-  } 
+    /* z-index: 2; */
+  /* }  */
 }
 
 .move-arrow {

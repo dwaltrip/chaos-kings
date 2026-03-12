@@ -5,6 +5,7 @@
   padding: 20px;
   height: 100vh;
   box-sizing: border-box;
+  background-color: #222;
 }
 
 .sandbox-header {
