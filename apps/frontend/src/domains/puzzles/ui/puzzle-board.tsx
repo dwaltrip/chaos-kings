@@ -1,7 +1,7 @@
 import type { BoardState } from '@core/types';
 import { serializeCoord } from '@core/utils/coordinate-utils';
 
-import { boardStore, setSelectedTile } from '@/domains/games/board-store';
+import { boardStore, userSelectTile } from '@/domains/games/board-store';
 import { BoardTile } from '@/domains/games/board/ui/board-tile';
 import { useGridLayout } from '@/domains/gameplay/hooks/use-grid-layout';
 
@@ -24,7 +24,7 @@ function PuzzleBoard({ boardState }: PuzzleBoardProps) {
             <BoardTile
               store={boardStore}
               coord={coord}
-              onClick={() => setSelectedTile(coord)}
+              onClick={() => userSelectTile(coord)}
               key={serializeCoord(coord)}
             />
           )),

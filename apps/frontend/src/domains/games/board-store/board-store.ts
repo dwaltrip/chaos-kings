@@ -30,7 +30,7 @@ function createDefaultGameState(): BoardSourceState {
 }
 
 function createDefaultUIState() {
-  return { selectedTile: null };
+  return { selectedTile: null, hasUserSelectedSinceLastQueue: false };
 }
 
 function createDefaultInputState(): BoardSessionInputState {

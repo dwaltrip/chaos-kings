@@ -25,6 +25,7 @@ interface BoardSourceState {
 
 interface UIState {
   selectedTile: Coord | null;
+  hasUserSelectedSinceLastQueue: boolean;
 }
 
 interface BoardSessionInputState {

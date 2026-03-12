@@ -16,6 +16,12 @@ function setStatus(state: BoardSessionInputState, status: 'active' | 'ended'): v
 
 function setSelectedTile(state: BoardSessionInputState, coord: Coord | null): void {
   state.ui.selectedTile = coord;
+  state.ui.hasUserSelectedSinceLastQueue = false;
+}
+
+function userSelectTile(state: BoardSessionInputState, coord: Coord | null): void {
+  state.ui.selectedTile = coord;
+  state.ui.hasUserSelectedSinceLastQueue = true;
 }
 
 function addQueuedMove(state: BoardSessionInputState, move: Movement): void {
@@ -72,6 +78,7 @@ function initBoard(
 export {
   setStatus,
   setSelectedTile,
+  userSelectTile,
   addQueuedMove,
   undoLastQueuedMove,
   setQueuedMoves,
