@@ -16,9 +16,8 @@ const applyTick = boardStore.makeAction(rawActions.applyTick);
 const setStatus = boardStore.makeAction(rawActions.setStatus);
 const setSelectedTile = boardStore.makeAction(rawActions.setSelectedTile);
 const userSelectTile = boardStore.makeAction(rawActions.userSelectTile);
-const addQueuedMove = boardStore.makeAction(rawActions.addQueuedMove);
 const undoLastQueuedMove = boardStore.makeAction(rawActions.undoLastQueuedMove);
-const setQueuedMoves = boardStore.makeAction(rawActions.setQueuedMoves);
+const queueMoveOnBoard = boardStore.makeAction(rawActions.queueMoveOnBoard);
 const cancelQueuedMoves = boardStore.makeAction(rawActions.cancelQueuedMoves);
 
 export type {
@@ -36,8 +35,7 @@ export {
   setStatus,
   setSelectedTile,
   userSelectTile,
-  addQueuedMove,
   undoLastQueuedMove,
-  setQueuedMoves,
+  queueMoveOnBoard,
   cancelQueuedMoves,
 };

@@ -51,41 +51,29 @@ describe('State mutations and diffing', () => {
     expect(tileAt(store, 1, 1).isSelected).toBe(false);
   });
 
-  it('addQueuedMove adds direction to tile', () => {
-    const { store, addQueuedMove } = setupStandard();
-    addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.RIGHT));
-    expect(tileAt(store, 1, 1).queuedRight).toBe(true);
+  it('queued move shows direction on tile', () => {
+    const { store, queueMoveOnBoard } = setupStandard();
+    queueMoveOnBoard({ x: 1, y: 1 }, Direction.UP);
+    expect(tileAt(store, 1, 1).queuedUp).toBe(true);
   });
 
   it('multiple queued moves from same tile accumulate', () => {
-    const { store, addQueuedMove } = setupStandard();
-    addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.RIGHT));
-    addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.DOWN));
+    const { store, queueMoveOnBoard, setSelectedTile } = setupStandard();
+    queueMoveOnBoard({ x: 1, y: 1 }, Direction.UP);
+    setSelectedTile({ x: 1, y: 1 });
+    queueMoveOnBoard({ x: 1, y: 1 }, Direction.DOWN);
     const tile = tileAt(store, 1, 1);
-    expect(tile.queuedRight).toBe(true);
+    expect(tile.queuedUp).toBe(true);
     expect(tile.queuedDown).toBe(true);
   });
 
   it('undoLastQueuedMove removes last move', () => {
-    const { store, addQueuedMove, undoLastQueuedMove } = setupStandard();
-    addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.RIGHT));
-    addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.DOWN));
+    const { store, queueMoveOnBoard, undoLastQueuedMove } = setupStandard();
+    queueMoveOnBoard({ x: 1, y: 1 }, Direction.UP);
+    queueMoveOnBoard({ x: 1, y: 0 }, Direction.LEFT);
     undoLastQueuedMove();
-    const tile = tileAt(store, 1, 1);
-    expect(tile.queuedRight).toBe(true);
-    expect(tile.queuedDown).toBe(false);
-  });
-
-  it('setQueuedMoves replaces all queued moves', () => {
-    const { store, addQueuedMove, setQueuedMoves } = setupStandard();
-    addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.RIGHT));
-    addQueuedMove(makeMove({ x: 1, y: 1 }, Direction.DOWN));
-
-    setQueuedMoves([makeMove({ x: 1, y: 1 }, Direction.UP)]);
-    const tile = tileAt(store, 1, 1);
-    expect(tile.queuedUp).toBe(true);
-    expect(tile.queuedRight).toBe(false);
-    expect(tile.queuedDown).toBe(false);
+    expect(tileAt(store, 1, 0).queuedLeft).toBe(false);
+    expect(tileAt(store, 1, 1).queuedUp).toBe(true);
   });
 
   it('setStatus to ended makes all tiles visible and non-selectable', () => {

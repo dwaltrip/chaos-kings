@@ -1,6 +1,6 @@
 import type { Coord, Direction } from '@core/types';
 
-import { queueMoveOnBoard } from '@/domains/games/board/actions';
+import { queueMoveOnBoard } from '@/domains/games/board-store';
 import { gameplayWsEffects } from '@/domains/gameplay/ws-effects';
 
 function queueMove(direction: Direction, selectedTile: Coord | null): void {

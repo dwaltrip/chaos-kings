@@ -64,9 +64,9 @@ Exported from `index.ts`:
 - `applyTick(tick, board, queuedMoves, playerStats, winner?)` — apply server tick
 - `setStatus(status)` — set `'active'` or `'ended'`
 - `setSelectedTile(coord | null)` — UI selection
-- `addQueuedMove(move)` — add an optimistic move
 - `undoLastQueuedMove()` — remove last queued move
-- `setQueuedMoves(moves)` — replace entire queue
+- `queueMoveOnBoard(source, direction)` — validate and queue a move, advance selection
+- `cancelQueuedMoves()` — clear queue with snap-back logic
 
 **React hooks** (from `hooks.ts`):
 - `useTileData(store, coord)` — per-tile reactivity, only re-renders when that tile changes
@@ -80,7 +80,7 @@ Exported from `index.ts`:
 | Type | What it holds |
 |------|---------------|
 | `BoardSourceState` | Server data: board, tick, status, players, currentPlayerIndex, queuedMoves, playerStats, winner |
-| `UIState` | User interaction: selectedTile |
+| `UIState` | User interaction: selectedTile, hasUserSelectedSinceLastQueue |
 | `BoardSessionInputState` | `{ game: BoardSourceState, ui: UIState }` — the mutable input state |
 | `DerivedState` | Computed: visibleSquares, allVisible, queuedMovesMap |
 | `BoardSessionState` | `BoardSessionInputState & DerivedState` — merged, passed to onChange |
@@ -89,6 +89,4 @@ Exported from `index.ts`:
 
 ## Status
 
-Implementation complete and tested (41 tests across 5 test files). Not yet integrated into any page — old Zustand stores are still active.
-
-**Next:** Wire into gameplay, sandbox, and puzzle pages.
+Initial integration complete. Gameplay, sandbox, and puzzle domains use `queueMoveOnBoard` and `cancelQueuedMoves` from board-store.

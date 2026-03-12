@@ -1,6 +1,6 @@
 import type { Coord, Direction } from '@core/types';
 
-import { queueMoveOnBoard } from '@/domains/games/board/actions';
+import { queueMoveOnBoard } from '@/domains/games/board-store';
 import { puzzlesWsEffects } from '@/domains/puzzles/ws-effects';
 
 function queueMove(source: Coord, direction: Direction): void {

@@ -25,10 +25,6 @@ function userSelectTile(state: BoardSessionInputState, coord: Coord | null): voi
   state.ui.hasUserSelectedSinceLastQueue = true;
 }
 
-function addQueuedMove(state: BoardSessionInputState, move: Movement): void {
-  state.game.queuedMoves = [...state.game.queuedMoves, move];
-}
-
 function undoLastQueuedMove(state: BoardSessionInputState): void {
   const { queuedMoves } = state.game;
   if (queuedMoves.length === 0) return;
@@ -42,10 +38,6 @@ function undoLastQueuedMove(state: BoardSessionInputState): void {
   if (selected && selected.x === dest.x && selected.y === dest.y) {
     state.ui.selectedTile = lastMove.sourceCoord;
   }
-}
-
-function setQueuedMoves(state: BoardSessionInputState, moves: Movement[]): void {
-  state.game.queuedMoves = moves;
 }
 
 function applyTick(
@@ -119,9 +111,7 @@ export {
   setStatus,
   setSelectedTile,
   userSelectTile,
-  addQueuedMove,
   undoLastQueuedMove,
-  setQueuedMoves,
   applyTick,
   initBoard,
   queueMoveOnBoard,
