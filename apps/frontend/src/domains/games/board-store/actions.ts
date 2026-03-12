@@ -77,15 +77,40 @@ function initBoard(
 }
 
 function queueMoveOnBoard(
-  _state: BoardSessionInputState,
-  _source: Coord,
-  _direction: Direction,
+  state: BoardSessionInputState,
+  source: Coord,
+  direction: Direction,
 ): boolean {
-  return false;
+  const { board } = state.game;
+  if (!board) return false;
+  if (!Board.canMove(board, source, direction)) return false;
+
+  state.game.queuedMoves = [
+    ...state.game.queuedMoves,
+    { sourceCoord: source, direction },
+  ];
+  state.ui.selectedTile = Board.applyDirection(source, direction);
+  state.ui.hasUserSelectedSinceLastQueue = false;
+  return true;
 }
 
-function cancelQueuedMoves(_state: BoardSessionInputState): boolean {
-  return false;
+function cancelQueuedMoves(state: BoardSessionInputState): boolean {
+  const { queuedMoves } = state.game;
+  if (queuedMoves.length === 0) return false;
+
+  const snapTarget = queuedMoves[0].sourceCoord;
+  const shouldSnap = !state.ui.hasUserSelectedSinceLastQueue;
+
+  state.game.queuedMoves = [];
+  state.ui.hasUserSelectedSinceLastQueue = false;
+
+  // Snap selection back to where execution reached, unless the user
+  // manually selected a different tile (don't interrupt them).
+  if (shouldSnap) {
+    state.ui.selectedTile = snapTarget;
+  }
+
+  return true;
 }
 
 export {
