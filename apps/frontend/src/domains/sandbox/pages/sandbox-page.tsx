@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 
 import type { Direction } from '@core/types';
 
+import { useWsConnectionStore } from '@/ws-lib/connection-store';
 import { useKeyboardControls } from '@/domains/gameplay/hooks/use-keyboard-controls';
 import { boardStore, setSelectedTile } from '@/domains/games/board-store';
 import { useBoardState } from '@/domains/games/board-store/hooks';
@@ -29,6 +30,7 @@ function SandboxPage() {
   const boardState = useBoardState(boardStore);
   const board = boardState.game.board;
   const selectedTile = boardState.ui.selectedTile;
+  const isConnected = useWsConnectionStore((s) => s.isConnected);
 
   const isActive = status === 'active';
 
@@ -63,6 +65,11 @@ function SandboxPage() {
       <div className="sandbox-header">
         <h1>Sandbox Mode</h1>
         <span className="sandbox-status">{isPaused ? 'Paused' : 'Playing'}</span>
+        <span
+          className={`sandbox-connection ${isConnected ? 'connected' : 'disconnected'}`}
+        >
+          {isConnected ? 'Connected' : 'Disconnected'}
+        </span>
       </div>
 
       <main className="sandbox-main">

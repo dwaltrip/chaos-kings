@@ -20,11 +20,22 @@ class SandboxSession {
   private roomId: RoomId;
   private config: SandboxConfig;
   private seed: number;
+  private _connectionId: string;
   private log = createScopedLogger(() => `SandboxSession user=${this.userId}`);
 
-  constructor(userId: UserId, roomId: RoomId, config: SandboxConfig) {
+  get connectionId(): string {
+    return this._connectionId;
+  }
+
+  constructor(
+    userId: UserId,
+    roomId: RoomId,
+    connectionId: string,
+    config: SandboxConfig,
+  ) {
     this.userId = userId;
     this.roomId = roomId;
+    this._connectionId = connectionId;
     this.config = config;
     this.seed = config.seed ?? Date.now();
 

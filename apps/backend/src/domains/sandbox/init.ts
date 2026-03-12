@@ -5,7 +5,7 @@ import { sandboxActions } from '@/domains/sandbox/actions';
 
 function init() {
   wsBridge.onDisconnect((context) => {
-    sandboxActions.handleDisconnect(UserId(context.userId));
+    sandboxActions.handleDisconnect(UserId(context.userId), context.connectionId);
   });
 }
 

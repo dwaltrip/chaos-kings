@@ -29,6 +29,20 @@
   color: #888;
 }
 
+.sandbox-connection {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.sandbox-connection.connected {
+  color: #4caf50;
+}
+
+.sandbox-connection.disconnected {
+  color: #f44336;
+}
+
 .sandbox-main {
   display: flex;
   flex-direction: column;

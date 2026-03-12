@@ -8,7 +8,11 @@ import { DEFAULT_SANDBOX_CONFIG } from '@/domains/sandbox/types';
 class SandboxService {
   private sessions: Map<UserId, SandboxSession> = new Map();
 
-  createSession(userId: UserId, config?: Partial<SandboxConfig>): SandboxSession {
+  createSession(
+    userId: UserId,
+    connectionId: string,
+    config?: Partial<SandboxConfig>,
+  ): SandboxSession {
     const existingSession = this.sessions.get(userId);
     if (existingSession) {
       existingSession.stop();
@@ -17,7 +21,7 @@ class SandboxService {
 
     const roomId = buildSandboxRoomId(userId);
     const fullConfig: SandboxConfig = { ...DEFAULT_SANDBOX_CONFIG, ...config };
-    const session = new SandboxSession(userId, roomId, fullConfig);
+    const session = new SandboxSession(userId, roomId, connectionId, fullConfig);
     this.sessions.set(userId, session);
     return session;
   }
