@@ -193,4 +193,24 @@ describe('cancelQueuedMoves', () => {
     cancelQueuedMoves();
     expect(store.state.ui.hasUserSelectedSinceLastQueue).toBe(false);
   });
+
+  it('does not snap back if player no longer owns the snap target tile', () => {
+    const { store, cancelQueuedMoves } = setupStandard();
+    store.mutate((state) => {
+      state.game.queuedMoves = makeMoveChainUpAndLeftFrom1_1();
+      state.ui.selectedTile = { x: 0, y: 0 };
+      state.ui.hasUserSelectedSinceLastQueue = false;
+      // enemy took over (1,1)
+      state.game.board!.grid[1][1] = {
+        coord: { x: 1, y: 1 },
+        type: 'ARMY',
+        playerIndex: 1,
+        units: 3,
+      };
+    });
+
+    cancelQueuedMoves();
+    // should NOT snap to (1,1) since player 0 no longer owns it
+    expect(store.state.ui.selectedTile).toEqual({ x: 0, y: 0 });
+  });
 });

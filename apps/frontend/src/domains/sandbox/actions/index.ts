@@ -7,7 +7,7 @@ export { stepBack } from './step-back';
 export { reset } from './reset';
 export { queueMove } from './queue-move';
 export { undoMove } from './undo-move';
-export { clearMoves } from './clear-moves';
+export { cancelQueuedMoves } from './cancel-queued-moves';
 export { handleSessionStarted } from './handle-session-started';
 export { handleStateUpdate } from './handle-state-update';
 export { handleError } from './handle-error';

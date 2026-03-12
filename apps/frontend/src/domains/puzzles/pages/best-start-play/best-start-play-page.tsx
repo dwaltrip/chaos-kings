@@ -12,7 +12,12 @@ import { useKeyboardControls } from '@/domains/gameplay/hooks/use-keyboard-contr
 
 import { boardStore } from '@/domains/games/board-store';
 import { useBoardState } from '@/domains/games/board-store/hooks';
-import { startPuzzle, queueMove, undoMove, clearMoves } from '@/domains/puzzles/actions';
+import {
+  startPuzzle,
+  queueMove,
+  undoMove,
+  cancelQueuedMoves,
+} from '@/domains/puzzles/actions';
 import {
   usePuzzleStore,
   selectStatus,
@@ -61,7 +66,7 @@ function BestStartPlayPageContent({ user }: PageContentPropTypes) {
       }
     },
     onUndoMove: undoMove,
-    onCancelMoves: clearMoves,
+    onCancelMoves: cancelQueuedMoves,
     disabled: !isPlaying,
   });
 

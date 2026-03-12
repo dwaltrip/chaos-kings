@@ -15,7 +15,7 @@ import {
   endSandboxLocal,
   queueMove,
   undoMove,
-  clearMoves,
+  cancelQueuedMoves,
 } from '@/domains/sandbox/actions';
 import { SandboxBoard } from '@/domains/sandbox/ui/sandbox-board';
 import { SandboxControlBar } from '@/domains/sandbox/ui/sandbox-control-bar';
@@ -48,7 +48,7 @@ function SandboxPage() {
       }
     },
     onUndoMove: undoMove,
-    onCancelMoves: clearMoves,
+    onCancelMoves: cancelQueuedMoves,
     disabled: !isActive,
   });
 

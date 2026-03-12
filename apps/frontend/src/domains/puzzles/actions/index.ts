@@ -1,4 +1,4 @@
-export { clearMoves } from './clear-moves';
+export { cancelQueuedMoves } from './cancel-queued-moves';
 export { handlePuzzleEnd } from './handle-puzzle-end';
 export { handleStateUpdate } from './handle-state-update';
 export { loadUserStats } from './load-user-stats';

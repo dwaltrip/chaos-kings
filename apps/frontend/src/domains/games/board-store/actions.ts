@@ -95,7 +95,7 @@ function queueMoveOnBoard(
 }
 
 function cancelQueuedMoves(state: BoardSessionInputState): boolean {
-  const { queuedMoves } = state.game;
+  const { queuedMoves, board, currentPlayerIndex } = state.game;
   if (queuedMoves.length === 0) return false;
 
   const snapTarget = queuedMoves[0].sourceCoord;
@@ -105,9 +105,11 @@ function cancelQueuedMoves(state: BoardSessionInputState): boolean {
   state.ui.hasUserSelectedSinceLastQueue = false;
 
   // Snap selection back to where execution reached, unless the user
-  // manually selected a different tile (don't interrupt them).
-  if (shouldSnap) {
-    state.ui.selectedTile = snapTarget;
+  // manually selected a different tile or the tile is no longer ours.
+  if (shouldSnap && board && currentPlayerIndex != null) {
+    if (Board.doesPlayerOwnSquare(board, snapTarget, currentPlayerIndex)) {
+      state.ui.selectedTile = snapTarget;
+    }
   }
 
   return true;

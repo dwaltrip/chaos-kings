@@ -71,6 +71,15 @@ function forEachCoord(
   }
 }
 
+function doesPlayerOwnSquare(
+  board: BoardState,
+  coord: Coord,
+  playerIndex: number,
+): boolean {
+  const square = getSquare(board, coord);
+  return isPlayerSquare(square) && square.playerIndex === playerIndex;
+}
+
 function* iterPlayerSquares(
   board: BoardState,
   playerIndex: number,
@@ -152,6 +161,7 @@ const Board = {
   replaceSquare,
   applyDirection,
   isPlayerSquare,
+  doesPlayerOwnSquare,
   iterCoords,
   forEachCoord,
   iterPlayerSquares,

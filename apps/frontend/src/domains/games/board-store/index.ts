@@ -19,6 +19,7 @@ const userSelectTile = boardStore.makeAction(rawActions.userSelectTile);
 const addQueuedMove = boardStore.makeAction(rawActions.addQueuedMove);
 const undoLastQueuedMove = boardStore.makeAction(rawActions.undoLastQueuedMove);
 const setQueuedMoves = boardStore.makeAction(rawActions.setQueuedMoves);
+const cancelQueuedMoves = boardStore.makeAction(rawActions.cancelQueuedMoves);
 
 export type {
   BoardSessionState,
@@ -38,4 +39,5 @@ export {
   addQueuedMove,
   undoLastQueuedMove,
   setQueuedMoves,
+  cancelQueuedMoves,
 };
