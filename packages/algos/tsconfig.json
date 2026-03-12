@@ -1,0 +1,28 @@
+// copied from @core
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@utils/*": ["../../packages/utils/*"],
+      "@core/*": ["../../packages/core/src/*"]
+    },
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  },
+  // This include test files so IDE can type-check them
+  // Consumers won't pull in tests - they only import what they explicitly use
+  //   via @core/* path mappings.
+  // And we make sure not "exclude" test files here as well
+  "include": ["src/**/*.ts"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  }
+}
