@@ -2,6 +2,7 @@ import type {
   BoardState as CoreBoardState,
   Coord,
   CorePlayerState,
+  Direction,
   Movement,
   PlayerIndex,
 } from '@core/types';
@@ -75,6 +76,18 @@ function initBoard(
   }
 }
 
+function queueMoveOnBoard(
+  _state: BoardSessionInputState,
+  _source: Coord,
+  _direction: Direction,
+): boolean {
+  return false;
+}
+
+function cancelQueuedMoves(_state: BoardSessionInputState): boolean {
+  return false;
+}
+
 export {
   setStatus,
   setSelectedTile,
@@ -84,4 +97,6 @@ export {
   setQueuedMoves,
   applyTick,
   initBoard,
+  queueMoveOnBoard,
+  cancelQueuedMoves,
 };

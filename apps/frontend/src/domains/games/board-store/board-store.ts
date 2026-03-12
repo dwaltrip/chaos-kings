@@ -113,6 +113,7 @@ function createBoardStore() {
     },
 
     makeAction: store.makeAction,
+    mutate: store.mutate,
     subscribe: store.subscribe,
 
     subscribeTile(coord: Coord, cb: () => void): () => void {

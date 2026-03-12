@@ -33,13 +33,20 @@ function createStore<State, Derived = {}>(config: StoreConfig<State, Derived>) {
   // TODO: Guard against re-entrancy — if a subscriber calls an action during
   // runLifecycle, it would recurse. The wrapper could warn/error if a cycle
   // is already in progress.
-  function makeAction<Args extends unknown[]>(
-    fn: (state: State, ...args: Args) => void,
-  ): (...args: Args) => void {
+  function makeAction<Args extends unknown[], R>(
+    fn: (state: State, ...args: Args) => R,
+  ): (...args: Args) => R {
     return (...args: Args) => {
-      fn(state, ...args);
+      const result = fn(state, ...args);
       runLifecycle(version + 1);
+      return result;
     };
+  }
+
+  // TODO: Throw an error on state writes outside of mutate/makeAction.
+  function mutate(fn: (state: State) => void): void {
+    fn(state);
+    runLifecycle(version + 1);
   }
 
   function subscribe(cb: () => void): () => void {
@@ -63,6 +70,7 @@ function createStore<State, Derived = {}>(config: StoreConfig<State, Derived>) {
       return version;
     },
     makeAction,
+    mutate,
     subscribe,
     reset,
   };

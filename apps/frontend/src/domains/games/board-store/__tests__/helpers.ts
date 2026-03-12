@@ -72,10 +72,13 @@ function setup() {
     initBoard: store.makeAction(rawActions.initBoard),
     applyTick: store.makeAction(rawActions.applyTick),
     setSelectedTile: store.makeAction(rawActions.setSelectedTile),
+    userSelectTile: store.makeAction(rawActions.userSelectTile),
     setStatus: store.makeAction(rawActions.setStatus),
     addQueuedMove: store.makeAction(rawActions.addQueuedMove),
     undoLastQueuedMove: store.makeAction(rawActions.undoLastQueuedMove),
     setQueuedMoves: store.makeAction(rawActions.setQueuedMoves),
+    queueMoveOnBoard: store.makeAction(rawActions.queueMoveOnBoard),
+    cancelQueuedMoves: store.makeAction(rawActions.cancelQueuedMoves),
   };
 }
 
