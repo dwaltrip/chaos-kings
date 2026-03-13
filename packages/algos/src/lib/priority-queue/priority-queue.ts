@@ -3,16 +3,16 @@ import { IPriorityQueue } from './interface';
 /**
  * Min Priority Queue backed by a binary heap with lazy deletion.
  *
- * - insert(item, priority): O(log n)
+ * - insertOrDecrease(item, priority): O(log n) — O(1) when priority is not an improvement
  * - pop(): O(log n) amortized (skips stale entries)
  * - peek(): O(1) amortized
- * - decreasePriority(item, newPriority): O(1) — inserts duplicate; stale copy ignored on pop
  * - isEmpty(): O(1)
+ * - has(item): O(1)
  *
  * Items must be usable as Map keys (primitives or object references).
  */
 
-export class PriorityQueue<T> implements IPriorityQueue<T> {
+class PriorityQueue<T> implements IPriorityQueue<T> {
   private heap: { item: T; priority: number }[] = [];
   /** Tracks the *current* best priority for each item. */
   private bestPriority: Map<T, number> = new Map();
@@ -25,8 +25,9 @@ export class PriorityQueue<T> implements IPriorityQueue<T> {
     return this.bestPriority.size === 0;
   }
 
-  /** Insert an item. If it already exists with a higher priority, this acts as decreasePriority. */
-  insert(item: T, priority: number): void {
+  /** Insert an item, or decrease its priority if it already exists with a higher value.
+   *  No-op if the item already has an equal or lower priority. */
+  insertOrDecrease(item: T, priority: number): void {
     const existing = this.bestPriority.get(item);
     if (existing !== undefined && existing <= priority) return; // already have equal or better
 
@@ -35,16 +36,12 @@ export class PriorityQueue<T> implements IPriorityQueue<T> {
     this.bubbleUp(this.heap.length - 1);
   }
 
-  /** Alias for insert — pushes a new entry; stale copies are ignored on pop. */
-  decreasePriority(item: T, newPriority: number): void {
-    this.insert(item, newPriority);
-  }
-
   /** Return the min-priority item without removing it, or undefined if empty. */
   peek(): { item: T; priority: number } | undefined {
     this.skipStale();
     if (this.heap.length === 0) return undefined;
-    return this.heap[0];
+    const { item, priority } = this.heap[0];
+    return { item, priority };
   }
 
   /** Remove and return the min-priority item, or undefined if empty. */
@@ -128,3 +125,5 @@ export class PriorityQueue<T> implements IPriorityQueue<T> {
     [this.heap[a], this.heap[b]] = [this.heap[b], this.heap[a]];
   }
 }
+
+export { PriorityQueue };

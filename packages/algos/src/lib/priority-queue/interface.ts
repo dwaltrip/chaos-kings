@@ -10,14 +10,10 @@ export interface IPriorityQueue<T> {
   /** True if the queue contains no items. */
   isEmpty(): boolean;
 
-  /** Insert an item with a given priority. If the item already exists
-   *  with a higher (worse) priority, updates it to the new priority. */
-  insert(item: T, priority: number): void;
-
-  /** Lower the priority of an existing item.
-   *  - If the item doesn't exist, inserts it with the given priority.
-   *  - If the new priority isn't strictly lower, this is a no-op. */
-  decreasePriority(item: T, newPriority: number): void;
+  /** Insert an item with a given priority, or decrease its priority if
+   *  it already exists with a higher (worse) value. No-op if the item
+   *  already has an equal or lower priority. */
+  insertOrDecrease(item: T, priority: number): void;
 
   /** Return the item with the lowest priority without removing it,
    *  or undefined if the queue is empty. */
