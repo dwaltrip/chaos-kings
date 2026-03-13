@@ -91,6 +91,9 @@ function buildOutput(result: RunResult, config: RunConfig) {
     config.board.generalCoord,
   );
 
+  const { perf } = result;
+  const ms = (n: number) => Math.round(n);
+
   return {
     json: {
       board: result.boardName,
@@ -100,6 +103,14 @@ function buildOutput(result: RunResult, config: RunConfig) {
       finalLand: result.finalLand,
       durationMs: result.durationMs,
       landCurve: chunkLandCurve(sim.landCurve),
+      perf: {
+        totalMs: ms(perf.totalMs),
+        genMs: ms(perf.genMs),
+        cloneStepMs: ms(perf.cloneStepMs),
+        scoreSortMs: ms(perf.scoreSortMs),
+        totalCandidates: perf.totalCandidates,
+        totalScoreCalls: perf.totalScoreCalls,
+      },
     },
     tickLog: formatTickLog(
       result.moves,
@@ -142,8 +153,12 @@ console.log(`Results: ${relJson}`);
 console.log(`Logs:    ${relLog}\n`);
 
 for (const { json } of outputs) {
+  const p = json.perf;
   console.log(
-    `${json.scoring.padEnd(20)} beam=${String(json.beamWidth).padStart(3)}  ` +
-      `land=${String(json.finalLand).padStart(2)}  ${json.durationMs}ms`,
+    `${json.scoring.padEnd(20)} beam=${String(json.beamWidth).padStart(3)}` +
+      `  land=${String(json.finalLand).padStart(2)}` +
+      `  ${String(p.totalMs).padStart(5)}ms` +
+      `  [gen ${String(p.genMs).padStart(4)}  clone+step ${String(p.cloneStepMs).padStart(4)}  score+sort ${String(p.scoreSortMs).padStart(4)}]` +
+      `  ${p.totalCandidates} cands  ${p.totalScoreCalls} scores`,
   );
 }

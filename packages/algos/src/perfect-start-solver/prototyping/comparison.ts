@@ -1,6 +1,7 @@
 import type { BoardState, Coord } from '@core/types';
 
 import { solve } from './solver';
+import type { PerfStats } from './beam-search';
 import type { ScoringFn, Move } from './types';
 
 interface RunConfig {
@@ -19,21 +20,18 @@ interface RunResult {
   landCurve: number[];
   durationMs: number;
   moves: Move[];
+  perf: PerfStats;
 }
 
 function runComparison(configs: RunConfig[]): RunResult[] {
   const results: RunResult[] = [];
 
   for (const config of configs) {
-    const start = Date.now();
-
     const result = solve(config.board.board, config.board.generalCoord, {
       beamWidth: config.beamWidth,
       maxTicks: config.maxTicks,
       scoringFn: config.scoringFn.fn,
     });
-
-    const durationMs = Date.now() - start;
 
     results.push({
       boardName: config.board.name,
@@ -42,8 +40,9 @@ function runComparison(configs: RunConfig[]): RunResult[] {
       maxTicks: config.maxTicks,
       finalLand: result.finalLand,
       landCurve: result.landCurve,
-      durationMs,
+      durationMs: Math.round(result.perf.totalMs),
       moves: result.moves,
+      perf: result.perf,
     });
   }
 

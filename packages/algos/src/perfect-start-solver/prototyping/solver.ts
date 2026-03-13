@@ -8,6 +8,7 @@ import type { TimingConfig } from '@core/timing/types';
 import type { MoveEvent } from '@core/replay/types';
 
 import { beamSearch } from './beam-search';
+import type { PerfStats } from './beam-search';
 import type { Move, ScoringFn, SolverConfig, SolverResult } from './types';
 
 const ALL_DIRECTIONS: Direction[] = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
@@ -88,6 +89,7 @@ function solve(
     finalLand: bestState.gameState.players[0].landCount,
     landCurve: result.scorePerStep,
     moves: bestState.moves,
+    perf: result.perf,
   };
 }
 

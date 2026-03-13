@@ -17,6 +17,7 @@ interface SolverResult {
   finalLand: number;
   landCurve: number[];
   moves: Move[];
+  perf: import('./beam-search').PerfStats;
 }
 
 interface SimulationResult {
