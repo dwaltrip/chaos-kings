@@ -30,10 +30,10 @@ const allScoringFns = [
   { name: 'land-only', fn: landOnly },
   { name: 'capturable-tiles', fn: capturableTiles },
   { name: 'land-weighted-cap', fn: landWeightedCapturable },
-  { name: 'frontier(1.5)', fn: makeFrontierScorer(1.5) },
-  { name: 'frontier(2)', fn: makeFrontierScorer(2) },
-  { name: 'frontier(3)', fn: makeFrontierScorer(3) },
-  { name: 'frontier(5)', fn: makeFrontierScorer(5) },
+  { name: 'frontier-1.5', fn: makeFrontierScorer(1.5) },
+  { name: 'frontier-2', fn: makeFrontierScorer(2) },
+  { name: 'frontier-3', fn: makeFrontierScorer(3) },
+  { name: 'frontier-5', fn: makeFrontierScorer(5) },
 ];
 
 const scoreArg = process.argv.find((a) => a.startsWith('--score='));
