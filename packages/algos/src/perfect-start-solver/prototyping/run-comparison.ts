@@ -23,6 +23,9 @@ const boards = allBoards();
 
 // -- Scoring functions -------------------------------------------------------
 
+// NOTE: `fingerprintState` is a net-negative perf-wise for "land-only"
+// because it's scoring fn is so cheap to run. Could make it optional.
+// It's a clear win for all the rest.
 const allScoringFns = [
   { name: 'land-only', fn: landOnly },
   { name: 'capturable-tiles', fn: capturableTiles },
@@ -122,6 +125,7 @@ function buildOutput(result: RunResult, config: RunConfig) {
         totalMs: ms(perf.totalMs),
         genMs: ms(perf.genMs),
         cloneStepMs: ms(perf.cloneStepMs),
+        dedupMs: ms(perf.dedupMs),
         scoreSortMs: ms(perf.scoreSortMs),
         totalCandidates: perf.totalCandidates,
         totalScoreCalls: perf.totalScoreCalls,

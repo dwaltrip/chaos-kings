@@ -3,7 +3,7 @@ import { Direction } from '@core/types';
 import { DEFAULT_TIMING } from '@core/game-timing-config';
 import type { TimingConfig } from '@core/timing/types';
 
-import { TileType, Board, cloneBoard } from '@/core-next/flat-board';
+import { TileType, NO_OWNER, Board, cloneBoard } from '@/core-next/flat-board';
 import type { FlatBoard } from '@/core-next/flat-board';
 import { processStep } from '@/core-next/process-step';
 import type { FlatMove } from '@/core-next/process-step';
@@ -51,6 +51,23 @@ function stepState(state: SolverState, move: FlatMove, timing: TimingConfig): vo
   state.moves.push(move);
 }
 
+// Board state fingerprint for beam deduplication.
+// One byte per tile: 0 if unowned, army count (capped at 15) if owned by player 0.
+// Assumes all tile army counts are <= 15, which holds for the first 25 turns
+// (~50 ticks). The general accumulates at most ~3 units between sends, and
+// captured tiles sit at 1.
+function fingerprintState(state: SolverState): string {
+  const { board } = state;
+  const n = board.width * board.height;
+  const buf = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    if (board.owners[i] !== NO_OWNER) {
+      buf[i] = Math.min(board.units[i], 15);
+    }
+  }
+  return String.fromCharCode(...buf);
+}
+
 // Convert FlatMove → Move (coord-based) for output compatibility
 function flatMoveToMove(flatMove: FlatMove, board: FlatBoard): Move {
   if (!flatMove) return null;
@@ -77,6 +94,7 @@ function solve(
     clone: cloneState,
     step: (state, move) => stepState(state, move, timing),
     score: (state) => config.scoringFn(state.board),
+    fingerprint: fingerprintState,
     beamWidth: config.beamWidth,
     numSteps: config.maxTicks,
   });

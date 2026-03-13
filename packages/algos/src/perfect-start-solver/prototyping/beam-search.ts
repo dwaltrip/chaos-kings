@@ -5,14 +5,20 @@ interface BeamSearchConfig<S, M> {
   clone: (state: S) => S;
   step: (state: S, move: M) => void;
   score: (state: S) => number;
+  // If provided, deduplicates candidates pre-score: only the first state with
+  // each fingerprint is kept. This prevents the beam from filling with copies
+  // of identical board positions that happen to have different move histories.
+  fingerprint?: (state: S) => string;
   beamWidth: number;
   numSteps: number;
 }
 
 interface PerfTick {
   candidates: number;
+  dedupedCandidates: number;
   genMs: number;
   cloneStepMs: number;
+  dedupMs: number;
   scoreSortMs: number;
   scoreCalls: number;
 }
@@ -23,6 +29,7 @@ interface PerfStats {
   totalScoreCalls: number;
   genMs: number;
   cloneStepMs: number;
+  dedupMs: number;
   scoreSortMs: number;
   totalMs: number;
 }
@@ -37,7 +44,7 @@ function beamSearch<S, M>(
   initial: S,
   config: BeamSearchConfig<S, M>,
 ): BeamSearchResult<S> {
-  const { generateMoves, clone, step, score, beamWidth, numSteps } = config;
+  const { generateMoves, clone, step, score, fingerprint, beamWidth, numSteps } = config;
 
   let beam: S[] = [initial];
   const scorePerStep: number[] = [score(initial)];
@@ -68,21 +75,38 @@ function beamSearch<S, M>(
         return result;
       });
 
+      // -- Dedup (optional, pre-score to avoid wasted scoring work) --
+      const [dedupedCandidates, dedupMs] = runWithTiming(() => {
+        if (!fingerprint) return candidates;
+        const seen = new Set<string>();
+        const unique: S[] = [];
+        for (const c of candidates) {
+          const fp = fingerprint(c);
+          if (!seen.has(fp)) {
+            seen.add(fp);
+            unique.push(c);
+          }
+        }
+        return unique;
+      });
+
       // -- Score + sort (scores cached to avoid redundant calls in comparator) --
       const [scoreCalls, scoreSortMs] = runWithTiming(() => {
-        const scored = candidates.map((c) => ({ state: c, score: score(c) }));
+        const scored = dedupedCandidates.map((c) => ({ state: c, score: score(c) }));
         scored.sort((a, b) => b.score - a.score);
         beam = scored.slice(0, beamWidth).map((s) => s.state);
 
         const bestScore = scored.length > 0 ? scored[0].score : 0;
         scorePerStep.push(bestScore);
-        return candidates.length;
+        return dedupedCandidates.length;
       });
 
       perTick.push({
         candidates: candidates.length,
+        dedupedCandidates: dedupedCandidates.length,
         genMs,
         cloneStepMs,
+        dedupMs,
         scoreSortMs,
         scoreCalls,
       });
@@ -98,6 +122,7 @@ function beamSearch<S, M>(
     totalScoreCalls: sumField('scoreCalls'),
     genMs: sumField('genMs'),
     cloneStepMs: sumField('cloneStepMs'),
+    dedupMs: sumField('dedupMs'),
     scoreSortMs: sumField('scoreSortMs'),
     totalMs,
   };
