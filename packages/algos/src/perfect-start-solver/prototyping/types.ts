@@ -5,13 +5,7 @@ type Move = {
   direction: Direction;
 } | null; // null = wait
 
-interface SolverState {
-  gameState: GameState;
-  moves: Move[];
-  landCount: number;
-}
-
-type ScoringFn = (state: SolverState) => number;
+type ScoringFn = (gameState: GameState) => number;
 
 interface SolverConfig {
   beamWidth: number;
@@ -20,7 +14,6 @@ interface SolverConfig {
 }
 
 interface SolverResult {
-  bestState: SolverState;
   finalLand: number;
   landCurve: number[];
   moves: Move[];
@@ -32,11 +25,4 @@ interface SimulationResult {
   finalState: GameState;
 }
 
-export type {
-  Move,
-  SolverState,
-  ScoringFn,
-  SolverConfig,
-  SolverResult,
-  SimulationResult,
-};
+export type { Move, ScoringFn, SolverConfig, SolverResult, SimulationResult };
