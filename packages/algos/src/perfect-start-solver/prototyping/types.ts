@@ -22,11 +22,24 @@ interface SolverResult {
   perf: PerfStats;
 }
 
+interface ArmySnapshot {
+  coord: Coord;
+  units: number;
+}
+
 interface SimulationResult {
   finalLand: number;
   landCurve: number[];
   generalArmyCurve: number[];
+  armySnapshots: ArmySnapshot[][]; // top tiles per tick
   finalState: GameState;
 }
 
-export type { Move, ScoringFn, SolverConfig, SolverResult, SimulationResult };
+export type {
+  Move,
+  ScoringFn,
+  SolverConfig,
+  SolverResult,
+  ArmySnapshot,
+  SimulationResult,
+};

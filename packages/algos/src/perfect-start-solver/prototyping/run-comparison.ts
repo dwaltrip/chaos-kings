@@ -6,11 +6,16 @@ import type { Coord } from '@core/types';
 
 import { runComparison } from './comparison';
 import type { RunConfig, RunResult } from './comparison';
-import { alignColumns, formatMove, formatTable, num } from './format';
-import { landOnly, capturableTiles, landWeightedCapturable } from './scoring-functions';
+import { alignColumns, coordStr, formatMove, formatTable, num } from './format';
+import {
+  landOnly,
+  capturableTiles,
+  landWeightedCapturable,
+  makeFrontierScorer,
+} from './scoring-functions';
 import { simulate } from './simulation';
 import { allBoards } from './test-boards';
-import type { Move } from './types';
+import type { ArmySnapshot, Move } from './types';
 
 // -- Boards ------------------------------------------------------------------
 
@@ -18,15 +23,26 @@ const boards = allBoards();
 
 // -- Scoring functions -------------------------------------------------------
 
-const scoringFns = [
+const allScoringFns = [
   { name: 'land-only', fn: landOnly },
   { name: 'capturable-tiles', fn: capturableTiles },
   { name: 'land-weighted-cap', fn: landWeightedCapturable },
+  { name: 'frontier(1.5)', fn: makeFrontierScorer(1.5) },
+  { name: 'frontier(2)', fn: makeFrontierScorer(2) },
+  { name: 'frontier(3)', fn: makeFrontierScorer(3) },
+  { name: 'frontier(5)', fn: makeFrontierScorer(5) },
 ];
+
+const scoreArg = process.argv.find((a) => a.startsWith('--score='));
+const scoreFilter = scoreArg ? scoreArg.slice(8).split(',') : null;
+const scoringFns = scoreFilter
+  ? allScoringFns.filter((s) => scoreFilter.some((f) => s.name.includes(f)))
+  : allScoringFns;
 
 // -- Build config matrix -----------------------------------------------------
 
-const beamWidths = [50, 100, 200];
+const beamArg = process.argv.find((a) => a.startsWith('--beam='));
+const beamWidths = beamArg ? beamArg.slice(7).split(',').map(Number) : [50, 100, 200];
 const maxTicks = 50;
 
 const configs: RunConfig[] = [];
@@ -56,13 +72,19 @@ function chunkLandCurve(landCurve: number[]): Record<string, number[]> {
   return chunks;
 }
 
+function formatArmies(snapshot: ArmySnapshot[]): string {
+  if (snapshot.length === 0) return '';
+  return snapshot.map((a) => `${a.units}@${coordStr(a.coord)}`).join(' ');
+}
+
 function formatTickLog(
   moves: Move[],
   landCurve: number[],
   generalArmyCurve: number[],
+  armySnapshots: ArmySnapshot[][],
   generalCoord: Coord,
 ): string {
-  const header = `general: (${generalCoord.x},${generalCoord.y})\n`;
+  const header = `general: ${coordStr(generalCoord)}\n`;
   const rows = moves.map((move, i) => {
     const tick = i + 1;
     return [
@@ -70,6 +92,7 @@ function formatTickLog(
       `land=${num(landCurve[tick], 2)}`,
       `gen[${num(generalArmyCurve[tick], 2)}]`,
       `move=${formatMove(move)}`,
+      `top: ${formatArmies(armySnapshots[tick])}`,
     ];
   });
   return header + alignColumns(rows).join('\n') + '\n';
@@ -108,6 +131,7 @@ function buildOutput(result: RunResult, config: RunConfig) {
       result.moves,
       sim.landCurve,
       sim.generalArmyCurve,
+      sim.armySnapshots,
       config.board.generalCoord,
     ),
   };

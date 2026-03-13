@@ -89,4 +89,36 @@ const landWeightedCapturable: ScoringFn = (gameState: GameState): number => {
   return land * 5 + capturable;
 };
 
-export { landOnly, capturableTiles, landWeightedCapturable };
+// Count unique blank tiles adjacent to player territory.
+function countFrontier(gameState: GameState): number {
+  const { board } = gameState;
+  const seen = new Set<string>();
+  let frontier = 0;
+
+  for (const coord of Board.iterCoords(board)) {
+    const square = Board.getSquare(board, coord);
+    if (!isPlayerSquare(square) || square.playerIndex !== 0) continue;
+
+    for (const dir of ALL_DIRECTIONS) {
+      const neighbor = Board.applyDirection(coord, dir);
+      if (!Board.isCoordValid(board, neighbor)) continue;
+      const key = `${neighbor.x},${neighbor.y}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (isBlankSquare(Board.getSquare(board, neighbor))) {
+        frontier++;
+      }
+    }
+  }
+
+  return frontier;
+}
+
+function makeFrontierScorer(landWeight: number): ScoringFn {
+  return (gameState: GameState): number => {
+    const land = gameState.players[0].landCount;
+    return land * landWeight + countFrontier(gameState);
+  };
+}
+
+export { landOnly, capturableTiles, landWeightedCapturable, makeFrontierScorer };

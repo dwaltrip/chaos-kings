@@ -1,3 +1,5 @@
+import type { Coord } from '@core/types';
+
 import type { Move } from './types';
 
 // Auto-pad columns so they align vertically.
@@ -17,10 +19,13 @@ function alignColumns(rows: string[][], separator = '  '): string[] {
   );
 }
 
+function coordStr(c: Coord): string {
+  return `(${c.x},${c.y})`;
+}
+
 function formatMove(move: Move): string {
   if (move === null) return 'WAIT';
-  const { x, y } = move.sourceCoord;
-  return `(${x},${y})→${move.direction}`;
+  return `${coordStr(move.sourceCoord)}→${move.direction}`;
 }
 
 // Right-pad a number to a fixed width.
@@ -46,4 +51,4 @@ function formatTable(headers: string[], rows: string[][]): string {
   return [fmtRow(headers), divider, ...rows.map(fmtRow)].join('\n');
 }
 
-export { alignColumns, formatMove, formatTable, num };
+export { alignColumns, coordStr, formatMove, formatTable, num };
