@@ -1,4 +1,5 @@
 import type { Coord, Direction, GameState } from '@core/types';
+import type { FlatBoard } from '@/core-next/flat-board';
 
 import type { PerfStats } from './beam-search';
 
@@ -7,7 +8,7 @@ type Move = {
   direction: Direction;
 } | null; // null = wait
 
-type ScoringFn = (gameState: GameState) => number;
+type ScoringFn = (board: FlatBoard) => number;
 
 interface SolverConfig {
   beamWidth: number;

@@ -1,48 +1,44 @@
-import type { GameState } from '@core/types';
-import { Board } from '@core/board';
-import { isPlayerSquare, isBlankSquare, isMountainSquare } from '@core/square';
+import { Direction } from '@core/types';
+
+import { TileType, NO_OWNER, Board } from '@/core-next/flat-board';
+import type { FlatBoard } from '@/core-next/flat-board';
 
 import { ALL_DIRECTIONS } from './helpers';
 import type { ScoringFn } from './types';
 
-const landOnly: ScoringFn = (gameState: GameState): number => {
-  return gameState.players[0].landCount;
+const landOnly: ScoringFn = (board: FlatBoard): number => {
+  return board.stats.landCounts[0];
 };
 
 // Multi-source BFS from all blank tiles. Returns distance-to-nearest-blank
 // for every cell. Mountains get Infinity. Blank tiles get 0.
-function buildDistanceToBlankMap(gameState: GameState): number[][] {
-  const { board } = gameState;
-  const { width, height } = board.size;
-  const dist: number[][] = [];
-  const queue: { x: number; y: number }[] = [];
+function buildDistanceToBlankMap(board: FlatBoard): number[] {
+  const n = board.width * board.height;
+  const dist = new Array<number>(n);
+  const queue: number[] = [];
 
-  for (let y = 0; y < height; y++) {
-    dist[y] = [];
-    for (let x = 0; x < width; x++) {
-      const square = Board.getSquare(board, { x, y });
-      if (isBlankSquare(square)) {
-        dist[y][x] = 0;
-        queue.push({ x, y });
-      } else {
-        dist[y][x] = Infinity;
-      }
+  for (let i = 0; i < n; i++) {
+    if (board.types[i] === TileType.BLANK) {
+      dist[i] = 0;
+      queue.push(i);
+    } else {
+      dist[i] = Infinity;
     }
   }
 
   let head = 0;
   while (head < queue.length) {
-    const coord = queue[head++];
-    const d = dist[coord.y][coord.x];
+    const idx = queue[head++];
+    const d = dist[idx];
 
     for (const dir of ALL_DIRECTIONS) {
-      const neighbor = Board.applyDirection(coord, dir);
-      if (!Board.isCoordValid(board, neighbor)) continue;
-      if (dist[neighbor.y][neighbor.x] <= d + 1) continue;
-      if (isMountainSquare(Board.getSquare(board, neighbor))) continue;
+      const ni = Board.neighbor(board, idx, dir);
+      if (ni === -1) continue;
+      if (dist[ni] <= d + 1) continue;
+      if (board.types[ni] === TileType.MOUNTAIN) continue;
 
-      dist[neighbor.y][neighbor.x] = d + 1;
-      queue.push(neighbor);
+      dist[ni] = d + 1;
+      queue.push(ni);
     }
   }
 
@@ -51,19 +47,19 @@ function buildDistanceToBlankMap(gameState: GameState): number[][] {
 
 // Score = currentLand + sum(max(0, excess - dist)) for each player tile
 // Estimates how many tiles the current armies could capture via chain moves.
-const capturableTiles: ScoringFn = (gameState: GameState): number => {
-  const land = gameState.players[0].landCount;
-  const distMap = buildDistanceToBlankMap(gameState);
+const capturableTiles: ScoringFn = (board: FlatBoard): number => {
+  const land = board.stats.landCounts[0];
+  const distMap = buildDistanceToBlankMap(board);
+  const n = board.width * board.height;
 
   let capturable = 0;
-  for (const coord of Board.iterCoords(gameState.board)) {
-    const square = Board.getSquare(gameState.board, coord);
-    if (!isPlayerSquare(square) || square.playerIndex !== 0) continue;
-    const excess = square.units - 1;
+  for (let i = 0; i < n; i++) {
+    if (board.owners[i] !== 0) continue;
+    const excess = board.units[i] - 1;
     if (excess <= 0) continue;
-    const dist = distMap[coord.y][coord.x];
-    if (dist === Infinity) continue;
-    capturable += Math.max(0, excess - dist);
+    const d = distMap[i];
+    if (d === Infinity) continue;
+    capturable += Math.max(0, excess - d);
   }
 
   return land + capturable;
@@ -71,41 +67,39 @@ const capturableTiles: ScoringFn = (gameState: GameState): number => {
 
 // Same as capturableTiles but weights actual land 5x so capturing is
 // always preferred over hoarding armies near blanks.
-const landWeightedCapturable: ScoringFn = (gameState: GameState): number => {
-  const land = gameState.players[0].landCount;
-  const distMap = buildDistanceToBlankMap(gameState);
+const landWeightedCapturable: ScoringFn = (board: FlatBoard): number => {
+  const land = board.stats.landCounts[0];
+  const distMap = buildDistanceToBlankMap(board);
+  const n = board.width * board.height;
 
   let capturable = 0;
-  for (const coord of Board.iterCoords(gameState.board)) {
-    const square = Board.getSquare(gameState.board, coord);
-    if (!isPlayerSquare(square) || square.playerIndex !== 0) continue;
-    const excess = square.units - 1;
+  for (let i = 0; i < n; i++) {
+    if (board.owners[i] !== 0) continue;
+    const excess = board.units[i] - 1;
     if (excess <= 0) continue;
-    const dist = distMap[coord.y][coord.x];
-    if (dist === Infinity) continue;
-    capturable += Math.max(0, excess - dist);
+    const d = distMap[i];
+    if (d === Infinity) continue;
+    capturable += Math.max(0, excess - d);
   }
 
   return land * 5 + capturable;
 };
 
 // Count unique blank tiles adjacent to player territory.
-function countFrontier(gameState: GameState): number {
-  const { board } = gameState;
-  const seen = new Set<string>();
+function countFrontier(board: FlatBoard): number {
+  const n = board.width * board.height;
+  const seen = new Uint8Array(n); // 0 = unseen, 1 = seen
   let frontier = 0;
 
-  for (const coord of Board.iterCoords(board)) {
-    const square = Board.getSquare(board, coord);
-    if (!isPlayerSquare(square) || square.playerIndex !== 0) continue;
+  for (let i = 0; i < n; i++) {
+    if (board.owners[i] !== 0) continue;
 
     for (const dir of ALL_DIRECTIONS) {
-      const neighbor = Board.applyDirection(coord, dir);
-      if (!Board.isCoordValid(board, neighbor)) continue;
-      const key = `${neighbor.x},${neighbor.y}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      if (isBlankSquare(Board.getSquare(board, neighbor))) {
+      const ni = Board.neighbor(board, i, dir);
+      if (ni === -1) continue;
+      if (seen[ni]) continue;
+      seen[ni] = 1;
+      if (board.types[ni] === TileType.BLANK) {
         frontier++;
       }
     }
@@ -115,9 +109,9 @@ function countFrontier(gameState: GameState): number {
 }
 
 function makeFrontierScorer(landWeight: number): ScoringFn {
-  return (gameState: GameState): number => {
-    const land = gameState.players[0].landCount;
-    return land * landWeight + countFrontier(gameState);
+  return (board: FlatBoard): number => {
+    const land = board.stats.landCounts[0];
+    return land * landWeight + countFrontier(board);
   };
 }
 
