@@ -22,6 +22,7 @@ interface SolverResult {
 interface SimulationResult {
   finalLand: number;
   landCurve: number[];
+  generalArmyCurve: number[];
   finalState: GameState;
 }
 
