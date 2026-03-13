@@ -1,5 +1,7 @@
 import type { Coord, Direction, GameState } from '@core/types';
 
+import type { PerfStats } from './beam-search';
+
 type Move = {
   sourceCoord: Coord;
   direction: Direction;
@@ -17,7 +19,7 @@ interface SolverResult {
   finalLand: number;
   landCurve: number[];
   moves: Move[];
-  perf: import('./beam-search').PerfStats;
+  perf: PerfStats;
 }
 
 interface SimulationResult {

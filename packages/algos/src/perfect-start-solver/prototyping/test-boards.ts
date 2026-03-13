@@ -40,4 +40,5 @@ function makeOpenField(width: number, height: number, generalCoord: Coord): Test
   };
 }
 
+export type { TestBoard };
 export { makeBoard };

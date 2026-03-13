@@ -45,7 +45,7 @@ const results = runComparison(configs);
 function chunkLandCurve(landCurve: number[]): Record<string, number[]> {
   // Skip tick 0 (always 1), then bucket into groups of 10
   const ticks = landCurve.slice(1);
-  const chunks: Record<string, number[]> = {};
+  const chunks: Record<string, number[]> = { tick0: [landCurve[0]] };
   for (let i = 0; i < ticks.length; i += 10) {
     const end = Math.min(i + 10, ticks.length);
     const label = `tick${end}`;
@@ -125,7 +125,7 @@ const outputs = results.map((r, i) => buildOutput(r, configs[i]));
 
 // -- Write to files ----------------------------------------------------------
 
-const dataDir = path.join(path.dirname(new URL(import.meta.url).pathname), 'data');
+const dataDir = path.join(__dirname, 'data');
 fs.mkdirSync(dataDir, { recursive: true });
 
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);

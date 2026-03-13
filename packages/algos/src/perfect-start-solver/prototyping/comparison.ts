@@ -1,11 +1,10 @@
-import type { BoardState, Coord } from '@core/types';
-
 import { solve } from './solver';
 import type { PerfStats } from './beam-search';
+import type { TestBoard } from './test-boards';
 import type { ScoringFn, Move } from './types';
 
 interface RunConfig {
-  board: { name: string; board: BoardState; generalCoord: Coord };
+  board: TestBoard;
   scoringFn: { name: string; fn: ScoringFn };
   beamWidth: number;
   maxTicks: number;

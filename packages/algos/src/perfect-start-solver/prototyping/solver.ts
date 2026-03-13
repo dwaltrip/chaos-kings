@@ -1,17 +1,13 @@
-import type { BoardState, Coord, Direction, GameState } from '@core/types';
-import { SquareType } from '@core/types';
+import type { BoardState, Coord, GameState } from '@core/types';
 import { Board } from '@core/board';
 import { isPlayerSquare } from '@core/square';
 import { processStep, createGameState } from '@core/step-processor';
 import { DEFAULT_TIMING } from '@core/game-timing-config';
 import type { TimingConfig } from '@core/timing/types';
-import type { MoveEvent } from '@core/replay/types';
 
 import { beamSearch } from './beam-search';
-import type { PerfStats } from './beam-search';
-import type { Move, ScoringFn, SolverConfig, SolverResult } from './types';
-
-const ALL_DIRECTIONS: Direction[] = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
+import { ALL_DIRECTIONS, toMoveEvent } from './helpers';
+import type { Move, SolverConfig, SolverResult } from './types';
 
 interface SolverState {
   gameState: GameState;
@@ -45,17 +41,9 @@ function cloneState(state: SolverState): SolverState {
 }
 
 function stepState(state: SolverState, move: Move, timing: TimingConfig): void {
-  const step = state.gameState.tick + 1;
-  const events: MoveEvent[] = [];
-
-  if (move !== null) {
-    events.push({
-      step,
-      playerIndex: 0,
-      sourceCoord: move.sourceCoord,
-      direction: move.direction,
-    });
-  }
+  const tick = state.gameState.tick + 1;
+  const event = toMoveEvent(move, tick);
+  const events = event ? [event] : [];
 
   processStep(state.gameState, events, timing);
   state.moves.push(move);
