@@ -23,12 +23,21 @@ interface RunResult {
 }
 
 function runComparison(configs: RunConfig[]): RunResult[] {
-  return configs.map((config) => {
+  const total = configs.length;
+  return configs.map((config, i) => {
+    console.log(
+      `[${i + 1}/${total}] ${config.board.name} | ${config.scoringFn.name} | beam=${config.beamWidth} ...`,
+    );
+
     const result = solve(config.board.board, config.board.generalCoord, {
       beamWidth: config.beamWidth,
       maxTicks: config.maxTicks,
       scoringFn: config.scoringFn.fn,
     });
+
+    console.log(
+      `        -> land=${result.finalLand} in ${Math.round(result.perf.totalMs)}ms`,
+    );
 
     return {
       ...result,

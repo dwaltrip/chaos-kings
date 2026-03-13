@@ -6,21 +6,22 @@ import type { Coord } from '@core/types';
 
 import { runComparison } from './comparison';
 import type { RunConfig, RunResult } from './comparison';
-import { alignColumns, formatMove, num } from './format';
-import { landOnly, capturableTiles } from './scoring-functions';
+import { alignColumns, formatMove, formatTable, num } from './format';
+import { landOnly, capturableTiles, landWeightedCapturable } from './scoring-functions';
 import { simulate } from './simulation';
-import { makeBoard } from './test-boards';
+import { allBoards } from './test-boards';
 import type { Move } from './types';
 
 // -- Boards ------------------------------------------------------------------
 
-const boards = [makeBoard('open-7x7')];
+const boards = allBoards();
 
 // -- Scoring functions -------------------------------------------------------
 
 const scoringFns = [
   { name: 'land-only', fn: landOnly },
   { name: 'capturable-tiles', fn: capturableTiles },
+  { name: 'land-weighted-cap', fn: landWeightedCapturable },
 ];
 
 // -- Build config matrix -----------------------------------------------------
@@ -122,13 +123,13 @@ fs.mkdirSync(dataDir, { recursive: true });
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 
 // JSON results
-const jsonPath = path.join(dataDir, `comparison-${timestamp}.json`);
+const jsonPath = path.join(dataDir, `${timestamp}-results.json`);
 const jsonRows = outputs.map((o) => o.json);
 fs.writeFileSync(jsonPath, JSON.stringify(jsonRows, null, 2) + '\n');
 execSync(`fjson -i 2 "${jsonPath}" -o "${jsonPath}"`);
 
 // Tick logs (one section per run)
-const logPath = path.join(dataDir, `comparison-${timestamp}.log`);
+const logPath = path.join(dataDir, `${timestamp}-ticks.log`);
 const logSections = outputs.map((o) => {
   const { json } = o;
   const header = `=== ${json.scoring} | beam=${json.beamWidth} | ${json.board} | land=${json.finalLand} | ${json.durationMs}ms ===`;
@@ -140,21 +141,31 @@ fs.writeFileSync(logPath, logSections.join('\n') + '\n');
 
 const relJson = path.relative(process.cwd(), jsonPath);
 const relLog = path.relative(process.cwd(), logPath);
+const tablePath = path.join(dataDir, `${timestamp}-summary.md`);
+const relTable = path.relative(process.cwd(), tablePath);
 console.log(`Results: ${relJson}`);
-console.log(`Logs:    ${relLog}\n`);
+console.log(`Logs:    ${relLog}`);
+console.log(`Table:   ${relTable}\n`);
 
-const summaryRows = outputs.map(({ json }) => {
-  const p = json.perf;
-  return [
-    json.scoring,
-    `beam=${num(json.beamWidth, 3)}`,
-    `land=${num(json.finalLand, 2)}`,
-    `${num(p.totalMs, 5)}ms`,
-    `[gen ${num(p.genMs, 4)}`,
-    `clone+step ${num(p.cloneStepMs, 4)}`,
-    `score+sort ${num(p.scoreSortMs, 4)}]`,
-    `${p.totalCandidates} cands`,
-    `${p.totalScoreCalls} scores`,
-  ];
-});
-console.log(alignColumns(summaryRows).join('\n'));
+// Build a lookup: (board, scoring, beam) -> output
+const resultMap = new Map<string, (typeof outputs)[number]>();
+for (const o of outputs) {
+  resultMap.set(`${o.json.board}|${o.json.scoring}|${o.json.beamWidth}`, o);
+}
+
+const beamHeaders = beamWidths.map((b) => `beam=${b}`);
+const tableRows: string[][] = [];
+for (const board of boards) {
+  for (const scoringFn of scoringFns) {
+    const cells = beamWidths.map((bw) => {
+      const o = resultMap.get(`${board.name}|${scoringFn.name}|${bw}`);
+      if (!o) return '–';
+      return `${num(o.json.finalLand, 2)} land  ${num(o.json.perf.totalMs, 5)}ms`;
+    });
+    tableRows.push([board.name, scoringFn.name, ...cells]);
+  }
+}
+
+const table = formatTable(['Board', 'Scoring', ...beamHeaders], tableRows);
+fs.writeFileSync(tablePath, table + '\n');
+console.log(table);

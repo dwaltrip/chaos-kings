@@ -28,4 +28,22 @@ function num(n: number, width: number): string {
   return String(n).padStart(width);
 }
 
-export { alignColumns, formatMove, num };
+// Markdown table with whitespace-aligned columns. Looks good raw or rendered.
+function formatTable(headers: string[], rows: string[][]): string {
+  const cols = headers.length;
+  const widths: number[] = [];
+  for (let i = 0; i < cols; i++) {
+    widths[i] = headers[i].length;
+    for (const row of rows) {
+      widths[i] = Math.max(widths[i], (row[i] ?? '').length);
+    }
+  }
+
+  const fmtRow = (cells: string[]) =>
+    '| ' + cells.map((c, i) => c.padEnd(widths[i])).join(' | ') + ' |';
+  const divider = '| ' + widths.map((w) => '-'.repeat(w)).join(' | ') + ' |';
+
+  return [fmtRow(headers), divider, ...rows.map(fmtRow)].join('\n');
+}
+
+export { alignColumns, formatMove, formatTable, num };

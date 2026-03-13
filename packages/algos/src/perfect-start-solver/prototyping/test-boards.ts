@@ -7,38 +7,116 @@ interface TestBoard {
   generalCoord: Coord;
 }
 
-// TODO: replace with board factory (parseBoard from text) once we design boards
-function makeBoard(name: string): TestBoard {
-  if (name === 'open-7x7') {
-    return makeOpenField(7, 7, { x: 3, y: 3 });
-  }
-  throw new Error(`Unknown board: ${name}`);
-}
+// Parse a text grid into a TestBoard.
+// Legend: . = blank, M = mountain, G = general (player 0)
+// Rows separated by newlines; leading/trailing blank lines stripped.
+function parseBoard(name: string, text: string): TestBoard {
+  const lines = text.split('\n').filter((l) => l.trim().length > 0);
+  const height = lines.length;
+  const width = lines[0].length;
 
-function makeOpenField(width: number, height: number, generalCoord: Coord): TestBoard {
+  let generalCoord: Coord | null = null;
   const grid: Square[][] = [];
 
   for (let y = 0; y < height; y++) {
     const row: Square[] = [];
     for (let x = 0; x < width; x++) {
-      row.push({ type: SquareType.BLANK, coord: { x, y } });
+      const ch = lines[y][x];
+      const coord = { x, y };
+
+      if (ch === 'G') {
+        generalCoord = coord;
+        row.push({ type: SquareType.GENERAL, coord, playerIndex: 0, units: 1 });
+      } else if (ch === 'M') {
+        row.push({ type: SquareType.MOUNTAIN, coord });
+      } else {
+        row.push({ type: SquareType.BLANK, coord });
+      }
     }
     grid.push(row);
   }
 
-  grid[generalCoord.y][generalCoord.x] = {
-    type: SquareType.GENERAL,
-    coord: generalCoord,
-    playerIndex: 0,
-    units: 1,
-  };
+  if (!generalCoord) throw new Error(`Board "${name}" has no general (G)`);
 
   return {
-    name: `open-${width}x${height}`,
+    name,
     board: { grid, size: { width, height } },
     generalCoord,
   };
 }
 
+// -- Board definitions -------------------------------------------------------
+
+// Wide open — baseline. Optimal ~25 land in 50 ticks.
+const OPEN_7x7 = parseBoard(
+  'open-7x7',
+  `
+.......
+.......
+.......
+...G...
+.......
+.......
+.......
+`,
+);
+
+// Scattered mountains — mild routing decisions.
+// 6 mountains (~12% density) break up straight-line expansion.
+const SPARSE_MTNS_7x7 = parseBoard(
+  'sparse-mtns-7x7',
+  `
+..M....
+.......
+....M..
+...G..M
+.M.....
+.....M.
+..M....
+`,
+);
+
+// Horizontal wall with one gap — forces pathfinding through chokepoint.
+const CORRIDOR_7x7 = parseBoard(
+  'corridor-7x7',
+  `
+.......
+.......
+...G...
+MMMM.MM
+.......
+.......
+.......
+`,
+);
+
+// Dense mountains (~30% density) creating maze-like paths.
+const MAZE_7x7 = parseBoard(
+  'maze-7x7',
+  `
+.M..MM.
+...M...
+.M.G.M.
+.MM...M
+....M..
+.MM.MM.
+..M....
+`,
+);
+
+// -- Board registry ----------------------------------------------------------
+
+const ALL_BOARDS: TestBoard[] = [OPEN_7x7, SPARSE_MTNS_7x7, CORRIDOR_7x7, MAZE_7x7];
+
+function makeBoard(name: string): TestBoard {
+  const board = ALL_BOARDS.find((b) => b.name === name);
+  if (!board) throw new Error(`Unknown board: ${name}`);
+  return board;
+}
+
+function allBoards(): TestBoard[] {
+  return ALL_BOARDS;
+}
+
 export type { TestBoard };
-export { makeBoard };
+export { makeBoard, allBoards, parseBoard };

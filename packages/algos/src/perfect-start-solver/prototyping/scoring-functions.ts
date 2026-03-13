@@ -69,4 +69,24 @@ const capturableTiles: ScoringFn = (gameState: GameState): number => {
   return land + capturable;
 };
 
-export { landOnly, capturableTiles };
+// Same as capturableTiles but weights actual land 5x so capturing is
+// always preferred over hoarding armies near blanks.
+const landWeightedCapturable: ScoringFn = (gameState: GameState): number => {
+  const land = gameState.players[0].landCount;
+  const distMap = buildDistanceToBlankMap(gameState);
+
+  let capturable = 0;
+  for (const coord of Board.iterCoords(gameState.board)) {
+    const square = Board.getSquare(gameState.board, coord);
+    if (!isPlayerSquare(square) || square.playerIndex !== 0) continue;
+    const excess = square.units - 1;
+    if (excess <= 0) continue;
+    const dist = distMap[coord.y][coord.x];
+    if (dist === Infinity) continue;
+    capturable += Math.max(0, excess - dist);
+  }
+
+  return land * 5 + capturable;
+};
+
+export { landOnly, capturableTiles, landWeightedCapturable };
