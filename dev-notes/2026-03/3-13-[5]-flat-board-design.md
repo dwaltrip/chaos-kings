@@ -1,4 +1,4 @@
-# Flat Board Design — `core-v2`
+# Flat Board Design — `core-next`
 
 ## Motivation
 
@@ -10,7 +10,7 @@ Beyond solver perf, this representation unlocks:
 - **Efficient fog of war** (bitmask over flat array)
 - **Instant snapshots** for replay (`slice()` / `set()`)
 
-This design is intended to eventually port back to the main game code. We're building it in `packages/algos/src/core-v2/` first, proving it in the solver context, then migrating.
+This design is intended to eventually port back to the main game code. We're building it in `packages/algos/src/core-next/` first, proving it in the solver context, then migrating.
 
 ---
 
@@ -20,10 +20,10 @@ This design is intended to eventually port back to the main game code. We're bui
 interface FlatBoard {
   types:  Uint8Array;   // TileType enum per cell
   owners: Int8Array;    // playerIndex or NO_OWNER (-1)
-  units:  Int16Array;   // unit count (0 for non-player non-city tiles)
+  units:  Int32Array;   // unit count (0 for non-player tiles)
   width:  number;
   height: number;
-  // Maintained incrementally by mutation API
+  // Maintained incrementally by processStep and Board mutation API.
   // NOTE: re-evaluate whether stats belong on the board during port to main game.
   // For solver context this is convenient; for game code, a separate concern might be cleaner.
   stats: {
@@ -33,7 +33,7 @@ interface FlatBoard {
 }
 ```
 
-Array length is always `width * height`. Cell at `(x, y)` is at index `y * width + x`.
+Array length is always `width * height`. Cell at `(x, y)` is at index `y * width + x`. This is the single canonical index formula — all helpers derive from it.
 
 ### Type Constants
 
@@ -41,7 +41,11 @@ Array length is always `width * height`. Cell at `(x, y)` is at index `y * width
 const TileType = {
   BLANK: 0,
   MOUNTAIN: 1,
-  NEUTRAL_CITY: 2,
+  // NEUTRAL_CITY is not implemented yet. The current game engine doesn't handle
+  // neutral city capture (moving onto one throws). When we add it, neutral cities
+  // will store garrison strength in `units` with `owner = NO_OWNER`, and applyMove
+  // will need a dedicated capture case (attacker must overcome garrison).
+  // NEUTRAL_CITY: 2,
   ARMY: 3,
   GENERAL: 4,
   PLAYER_CITY: 5,
@@ -51,7 +55,7 @@ type TileType = (typeof TileType)[keyof typeof TileType];
 const NO_OWNER = -1;
 ```
 
-These numeric values are a protocol — they show up in the wire format, the accessor layer, and the mutation API. Keep them stable.
+These numeric values are a protocol — they show up in the wire format, the accessor layer, and the mutation API. Keep them stable. Value 2 is reserved for NEUTRAL_CITY.
 
 ### Tile View Object
 
@@ -97,6 +101,10 @@ Board.addUnits(board, idx, delta): void
 Board.applyMove(board, srcIdx, destIdx): MoveResult
 
 // --- Iteration ---
+// NOTE: forEachTile allocates a fresh Tile object per cell. For a 20x20 board
+// that's 400 allocations per call. Fine for game code, but avoid in hot paths.
+// If perf iteration is needed, use direct array access or consider a callback
+// with primitives: (idx, type, owner, units) => void.
 Board.forEachTile(board, fn: (tile: Tile) => void): void
 
 // --- Index helpers ---
@@ -106,61 +114,49 @@ Board.toXY(board, idx): { x: number; y: number }
 
 ### 2. Perf Path (solver, serialization, production loops)
 
-Direct array access. No objects created, no function call overhead for reads. For mutations, callers are responsible for stat fixup.
+Direct array access for reads. No objects created, no function call overhead. All mutations that affect stats go through `processStep` or `Board` mutation methods — callers never do manual stat fixup.
 
 ```ts
-// Clone: 3x typed array slice + copy primitives
+// Clone: 3x typed array slice + copy primitives + [...stats]
 function cloneBoard(board: FlatBoard): FlatBoard
 
-// Read
+// Read (direct array access — this is the perf win)
 const idx = y * board.width + x;
 board.types[idx]   // TileType
 board.owners[idx]  // playerIndex or -1
 board.units[idx]   // unit count
 
-// Mutate + manual stat fixup
-board.units[srcIdx] = 1;
-board.units[destIdx] = srcUnits - 1;
-board.types[destIdx] = TileType.ARMY;
-board.owners[destIdx] = playerIndex;
-board.stats.landCounts[playerIndex]++;
+// Mutate: always through processStep or Board API (maintains stats internally)
+// Never do raw writes + manual stat fixup — too error-prone.
 ```
 
 ---
 
 ## Direction & Navigation Helpers
 
-Moves use the existing `Direction` enum (UP, DOWN, LEFT, RIGHT), not raw offsets. Conversion to index happens at point of use via helpers.
-
-### Helper factories (closure over board)
+Moves use the existing `Direction` enum (UP, DOWN, LEFT, RIGHT), not raw offsets. Conversion to index happens at point of use via helpers. All helpers take `board` as first argument.
 
 ```ts
-// Index-based neighbors: given a flat index, return neighbor index or -1 if out of bounds
-function makeNeighborHelpers(board: FlatBoard) {
-  const { width, height } = board;
-  const n = width * height;
-  return {
-    U: (idx: number) => idx >= width ? idx - width : -1,
-    D: (idx: number) => idx + width < n ? idx + width : -1,
-    L: (idx: number) => idx % width > 0 ? idx - 1 : -1,
-    R: (idx: number) => idx % width < width - 1 ? idx + 1 : -1,
-  };
-}
+// Direction enum → neighbor index, or -1 if out of bounds
+Board.neighbor(board, idx, dir): number
 
-// Coord-based: given (x, y), return flat index or -1
-function makeMoveHelpers(board: FlatBoard) {
-  const { width, height } = board;
-  return {
-    U: (x: number, y: number) => y > 0 ? (y - 1) * width + x : -1,
-    D: (x: number, y: number) => y < height - 1 ? (y + 1) * width + x : -1,
-    L: (x: number, y: number) => x > 0 ? y * width + (x - 1) : -1,
-    R: (x: number, y: number) => x < width - 1 ? y * width + (x + 1) : -1,
-  };
-}
+// Individual direction helpers (convenience wrappers)
+Board.neighborUp(board, idx): number
+Board.neighborDown(board, idx): number
+Board.neighborLeft(board, idx): number
+Board.neighborRight(board, idx): number
 
-// Direction enum → neighbor index
-function applyDirection(board: FlatBoard, idx: number, dir: Direction): number
+// Coord → index
+Board.toIndex(board, x, y): number
+// Index → coord
+Board.toXY(board, idx): { x: number; y: number }
+
+// Check bounds
+Board.isValidIndex(board, idx): boolean
+Board.isValidCoord(board, x, y): boolean
 ```
+
+Factory shorthands (e.g., `nb = makeNeighborHelpers(board); nb.U(idx)`) are not part of the core API but can be created locally in call sites like the solver where many neighbor lookups happen in tight blocks.
 
 ---
 
@@ -187,14 +183,16 @@ function processStep(
 
 ### applyMove internals
 
-Handles the same cases as current `engine.ts`:
-1. **Dest is blank** — convert to ARMY, transfer units, `landCount++`
-2. **Dest is friendly** — merge units
-3. **Dest is enemy, defender wins** — reduce attacker, reduce defender
-4. **Dest is enemy, attacker wins** — capture tile, transfer ownership
-5. **Dest is enemy general** — capture, convert to PLAYER_CITY, transfer all defeated player's tiles
+Handles the same cases as current `engine.ts`. All mutations done as direct array writes. Stats are maintained internally by `applyMove` — callers never adjust stats.
 
-All mutations done as direct array writes + stat fixup.
+1. **Dest is mountain** — rejected by validation (invalid move)
+2. **Dest is blank** — convert to ARMY, transfer units, `landCount++`
+3. **Dest is friendly** — merge units (stats unchanged, just redistribution)
+4. **Dest is enemy, defender wins** — reduce attacker, reduce defender, adjust `armyCounts`
+5. **Dest is enemy, attacker wins** — capture tile, transfer ownership, adjust land/army stats
+6. **Dest is enemy general** — capture, convert to PLAYER_CITY, transfer all defeated player's tiles, adjust all stats
+
+Note: NEUTRAL_CITY is not handled in the initial implementation (see Type Constants section).
 
 ### applyProduction internals
 
@@ -260,14 +258,35 @@ Used by the solver to convert the initial board, and to convert results back for
 
 ---
 
+## Clone
+
+```ts
+function cloneBoard(board: FlatBoard): FlatBoard {
+  return {
+    types: board.types.slice(),
+    owners: board.owners.slice(),
+    units: board.units.slice(),
+    width: board.width,
+    height: board.height,
+    stats: {
+      landCounts: [...board.stats.landCounts],
+      armyCounts: [...board.stats.armyCounts],
+    },
+  };
+}
+```
+
+Three typed array `.slice()` calls (~250 bytes for 7x7) + two small `number[]` spreads. This is the core perf win — replaces `structuredClone` of the entire object graph.
+
+---
+
 ## File Structure
 
 ```
-packages/algos/src/core-v2/
-  flat-board.ts        — FlatBoard type, TileType, clone, Board namespace (ergonomic API)
-  process-step.ts      — processStep, validateAndApplyMove, applyProduction
-  convert.ts           — GameState <-> FlatBoard
-  helpers.ts           — makeNeighborHelpers, makeMoveHelpers, applyDirection
+packages/algos/src/core-next/
+  flat-board.ts        — FlatBoard type, TileType, clone, Board namespace (ergonomic + nav API)
+  process-step.ts      — processStep, applyMove, applyProduction
+  convert.ts           — GameState <-> FlatBoard conversion bridge
 ```
 
 ---
@@ -283,8 +302,16 @@ More thorough test coverage later, potentially re-using existing core test cases
 
 ---
 
+## Decisions Made (from design review)
+
+- **No manual stat fixup** — `processStep` and `Board` mutation methods own all stat maintenance. Callers never write stats directly. The perf path's advantage is direct array *reads*, not writes.
+- **Int32Array for units** — Avoids silent overflow on large boards / long games. Extra ~100 bytes per clone on 7x7, negligible.
+- **NEUTRAL_CITY deferred** — Not in initial impl. Value 2 reserved. Needs capture semantics (garrison mechanic) before adding.
+- **Stats are `number[]`** — Cloned with `[...arr]`. Tiny arrays (2-8 elements), typed array consistency not worth the ergonomic cost.
+- **No helper factories in core API** — `Board.neighbor(board, idx, dir)` takes board as arg. Solver can create local shorthands if needed.
+
 ## Open Questions
 
 - **Stats on board vs separate:** Convenient for solver (clone copies them). May want a different home in game code where stats serve multiple purposes (UI display, scoring, win condition checks). Revisit during port.
-- **Tile view object shape:** Current design returns `{ type, owner, units, x, y, idx }`. Might want type narrowing (player tile vs neutral tile) like the current discriminated union. Could add a `isPlayerTile()` type guard that narrows.
+- **Tile view object shape:** Current design returns `{ type, owner, units, x, y, idx }`. Might want type narrowing (player tile vs neutral tile) like the current discriminated union. Could add a `isPlayerTile()` type guard that narrows. Not needed yet.
 - **Naming:** `FlatBoard` is a working name. Would likely become `BoardState` if/when this replaces the current implementation in `@core`.
