@@ -67,16 +67,14 @@ function beamSearch<S, M>(
     }
     const cloneStepMs = performance.now() - cloneStepStart;
 
-    // -- Score + sort --
+    // -- Score + sort (scores cached to avoid redundant calls in comparator) --
     const scoreSortStart = performance.now();
-    candidates.sort((a, b) => {
-      scoreCalls += 2;
-      return score(b) - score(a);
-    });
-    beam = candidates.slice(0, beamWidth);
+    const scored = candidates.map((c) => ({ state: c, score: score(c) }));
+    scoreCalls += candidates.length;
+    scored.sort((a, b) => b.score - a.score);
+    beam = scored.slice(0, beamWidth).map((s) => s.state);
 
-    const bestScore = beam.length > 0 ? score(beam[0]) : 0;
-    scoreCalls += 1;
+    const bestScore = scored.length > 0 ? scored[0].score : 0;
     scorePerStep.push(bestScore);
     const scoreSortMs = performance.now() - scoreSortStart;
 
