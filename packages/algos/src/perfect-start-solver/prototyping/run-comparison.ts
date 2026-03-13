@@ -6,6 +6,7 @@ import type { Coord } from '@core/types';
 
 import { runComparison } from './comparison';
 import type { RunConfig, RunResult } from './comparison';
+import { alignColumns, formatMove, num } from './format';
 import { landOnly, capturableTiles } from './scoring-functions';
 import { simulate } from './simulation';
 import { makeBoard } from './test-boards';
@@ -43,7 +44,7 @@ const results = runComparison(configs);
 // -- Build output ------------------------------------------------------------
 
 function chunkLandCurve(landCurve: number[]): Record<string, number[]> {
-  // Skip tick 0 (always 1), then bucket into groups of 10
+  // buckets are 0, 1-10, 11-20, etc. (we could skip 0 but nice to show for consistency)
   const ticks = landCurve.slice(1);
   const chunks: Record<string, number[]> = { tick0: [landCurve[0]] };
   for (let i = 0; i < ticks.length; i += 10) {
@@ -54,33 +55,23 @@ function chunkLandCurve(landCurve: number[]): Record<string, number[]> {
   return chunks;
 }
 
-function formatMove(move: Move): string {
-  if (move === null) return 'WAIT';
-  const { x, y } = move.sourceCoord;
-  return `(${x},${y})→${move.direction}`;
-}
-
 function formatTickLog(
   moves: Move[],
   landCurve: number[],
   generalArmyCurve: number[],
   generalCoord: Coord,
 ): string {
-  const lines: string[] = [`general: (${generalCoord.x},${generalCoord.y})\n`];
-
-  for (let i = 0; i < moves.length; i++) {
+  const header = `general: (${generalCoord.x},${generalCoord.y})\n`;
+  const rows = moves.map((move, i) => {
     const tick = i + 1;
-    const land = landCurve[tick];
-    const genArmy = generalArmyCurve[tick];
-    const move = formatMove(moves[i]);
-    lines.push(
-      `Tick ${String(tick).padStart(2)}: land=${String(land).padStart(2)}` +
-        `  gen[${String(genArmy).padStart(2)}]` +
-        `  move=${move}`,
-    );
-  }
-
-  return lines.join('\n') + '\n';
+    return [
+      `Tick ${num(tick, 2)}:`,
+      `land=${num(landCurve[tick], 2)}`,
+      `gen[${num(generalArmyCurve[tick], 2)}]`,
+      `move=${formatMove(move)}`,
+    ];
+  });
+  return header + alignColumns(rows).join('\n') + '\n';
 }
 
 function buildOutput(result: RunResult, config: RunConfig) {
@@ -152,13 +143,18 @@ const relLog = path.relative(process.cwd(), logPath);
 console.log(`Results: ${relJson}`);
 console.log(`Logs:    ${relLog}\n`);
 
-for (const { json } of outputs) {
+const summaryRows = outputs.map(({ json }) => {
   const p = json.perf;
-  console.log(
-    `${json.scoring.padEnd(20)} beam=${String(json.beamWidth).padStart(3)}` +
-      `  land=${String(json.finalLand).padStart(2)}` +
-      `  ${String(p.totalMs).padStart(5)}ms` +
-      `  [gen ${String(p.genMs).padStart(4)}  clone+step ${String(p.cloneStepMs).padStart(4)}  score+sort ${String(p.scoreSortMs).padStart(4)}]` +
-      `  ${p.totalCandidates} cands  ${p.totalScoreCalls} scores`,
-  );
-}
+  return [
+    json.scoring,
+    `beam=${num(json.beamWidth, 3)}`,
+    `land=${num(json.finalLand, 2)}`,
+    `${num(p.totalMs, 5)}ms`,
+    `[gen ${num(p.genMs, 4)}`,
+    `clone+step ${num(p.cloneStepMs, 4)}`,
+    `score+sort ${num(p.scoreSortMs, 4)}]`,
+    `${p.totalCandidates} cands`,
+    `${p.totalScoreCalls} scores`,
+  ];
+});
+console.log(alignColumns(summaryRows).join('\n'));

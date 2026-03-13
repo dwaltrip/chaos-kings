@@ -23,29 +23,23 @@ interface RunResult {
 }
 
 function runComparison(configs: RunConfig[]): RunResult[] {
-  const results: RunResult[] = [];
-
-  for (const config of configs) {
+  return configs.map((config) => {
     const result = solve(config.board.board, config.board.generalCoord, {
       beamWidth: config.beamWidth,
       maxTicks: config.maxTicks,
       scoringFn: config.scoringFn.fn,
     });
 
-    results.push({
+    return {
+      ...result,
       boardName: config.board.name,
       scoringFnName: config.scoringFn.name,
       beamWidth: config.beamWidth,
       maxTicks: config.maxTicks,
-      finalLand: result.finalLand,
       landCurve: result.landCurve,
       durationMs: Math.round(result.perf.totalMs),
-      moves: result.moves,
-      perf: result.perf,
-    });
-  }
-
-  return results;
+    };
+  });
 }
 
 export type { RunConfig, RunResult };

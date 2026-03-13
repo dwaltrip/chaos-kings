@@ -20,4 +20,10 @@ function toMoveEvent(move: Move, tick: number): MoveEvent | null {
   };
 }
 
-export { ALL_DIRECTIONS, toMoveEvent };
+function runWithTiming<T>(fn: () => T): [T, number] {
+  const start = performance.now();
+  const result = fn();
+  return [result, performance.now() - start];
+}
+
+export { ALL_DIRECTIONS, toMoveEvent, runWithTiming };
