@@ -12,7 +12,7 @@ import type { FlatBoard } from './flat-board';
 import { processStep as newProcessStep } from './process-step';
 import type { FlatMove } from './process-step';
 import { fromBoardState, toBoardState } from './convert';
-import { parseBoard } from '../perfect-start-solver/prototyping/test-boards';
+import { parseBoard } from '../perfect-start-solver/test-boards';
 
 const timing = DEFAULT_TIMING;
 

@@ -1,4 +1,4 @@
-import { runWithTiming } from './helpers';
+import { runWithTiming } from '../helpers';
 
 interface BeamSearchConfig<S, M> {
   generateMoves: (state: S) => M[];

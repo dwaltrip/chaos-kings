@@ -3,7 +3,7 @@ import type { Coord } from '@core/types';
 import { TileType, Board } from '@/core-next/flat-board';
 import type { FlatBoard } from '@/core-next/flat-board';
 
-import { ALL_DIRECTIONS } from './helpers';
+import { ALL_DIRECTIONS } from '../helpers';
 import type { ScoringFn } from './types';
 
 // -- Shared helpers -----------------------------------------------------------

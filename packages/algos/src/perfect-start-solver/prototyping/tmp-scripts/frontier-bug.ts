@@ -19,9 +19,9 @@ import { processStep } from '@/core-next/process-step';
 import type { FlatMove } from '@/core-next/process-step';
 import { fromBoardState } from '@/core-next/convert';
 
-import { ALL_DIRECTIONS } from '../helpers';
+import { ALL_DIRECTIONS } from '../../helpers';
 import { makeFrontierScorer } from '../scoring-functions';
-import { makeBoard } from '../test-boards';
+import { makeBoard } from '../../test-boards';
 import type { ScoringFn } from '../types';
 
 // ============================================================================

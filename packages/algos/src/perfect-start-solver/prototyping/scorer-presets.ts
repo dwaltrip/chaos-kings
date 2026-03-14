@@ -9,7 +9,7 @@ import {
   makeCapturableScorer,
   makeFrontierScorer,
 } from './scoring-functions';
-import type { TestBoard } from './test-boards';
+import type { TestBoard } from '../test-boards';
 import type { ScoringFn } from './types';
 
 interface ScorerSpec {

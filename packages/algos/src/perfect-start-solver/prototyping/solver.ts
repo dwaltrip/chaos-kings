@@ -1,17 +1,16 @@
 import type { BoardState, Coord } from '@core/types';
-import { Direction } from '@core/types';
 import { DEFAULT_TIMING } from '@core/game-timing-config';
 import type { TimingConfig } from '@core/timing/types';
 
-import { TileType, NO_OWNER, Board, cloneBoard } from '@/core-next/flat-board';
+import { NO_OWNER, cloneBoard } from '@/core-next/flat-board';
 import type { FlatBoard } from '@/core-next/flat-board';
 import { processStep } from '@/core-next/process-step';
 import type { FlatMove } from '@/core-next/process-step';
 import { fromBoardState } from '@/core-next/convert';
 
+import { generateMoves as generateMovesBase, flatMoveToMove } from '../moves';
 import { beamSearch } from './beam-search';
-import { ALL_DIRECTIONS } from './helpers';
-import type { Move, SolverConfig, SolverResult } from './types';
+import type { SolverConfig, SolverResult } from './types';
 
 interface SolverState {
   board: FlatBoard;
@@ -20,21 +19,7 @@ interface SolverState {
 }
 
 function generateMoves(state: SolverState): FlatMove[] {
-  const { board } = state;
-  const moves: FlatMove[] = [null];
-  const n = board.width * board.height;
-
-  for (let i = 0; i < n; i++) {
-    if (board.owners[i] !== 0 || board.units[i] <= 1) continue;
-    for (const dir of ALL_DIRECTIONS) {
-      const dest = Board.neighbor(board, i, dir);
-      if (dest !== -1 && board.types[dest] !== TileType.MOUNTAIN) {
-        moves.push({ src: i, dir });
-      }
-    }
-  }
-
-  return moves;
+  return generateMovesBase(state);
 }
 
 function cloneState(state: SolverState): SolverState {
@@ -76,13 +61,6 @@ function fingerprintState(state: SolverState): string {
     }
   }
   return String.fromCharCode(...buf);
-}
-
-// Convert FlatMove → Move (coord-based) for output compatibility
-function flatMoveToMove(flatMove: FlatMove, board: FlatBoard): Move {
-  if (!flatMove) return null;
-  const { x, y } = Board.toXY(board, flatMove.src);
-  return { sourceCoord: { x, y }, direction: flatMove.dir };
 }
 
 function solve(

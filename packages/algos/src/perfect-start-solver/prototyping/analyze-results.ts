@@ -14,7 +14,7 @@ import path from 'node:path';
 
 import { createTypedCommand, runTypedCommand } from '@utils/typed-command';
 
-import { formatTable } from './format';
+import { formatTable } from '../format';
 
 // -- Types -------------------------------------------------------------------
 

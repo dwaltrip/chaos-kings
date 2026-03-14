@@ -5,13 +5,15 @@ import path from 'node:path';
 import type { Coord } from '@core/types';
 import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 
+import { alignColumns, coordStr, formatMove, formatTable, num } from '../format';
+import { simulate } from '../simulation';
+import { allBoards } from '../test-boards';
+import type { ArmySnapshot, Move } from '../types';
+
 import { runComparison } from './comparison';
 import type { RunConfig, RunResult } from './comparison';
-import { alignColumns, coordStr, formatMove, formatTable, num } from './format';
 import { activePreset } from './scorer-presets';
-import { simulate } from './simulation';
-import { allBoards } from './test-boards';
-import type { ArmySnapshot, Move, ScoringFn } from './types';
+import type { ScoringFn } from './types';
 
 // -- Boards ------------------------------------------------------------------
 

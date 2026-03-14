@@ -1,7 +1,9 @@
+import type { TestBoard } from '../test-boards';
+import type { Move } from '../types';
+
 import { solve } from './solver';
 import type { PerfStats } from './beam-search';
-import type { TestBoard } from './test-boards';
-import type { ScoringFn, Move } from './types';
+import type { ScoringFn } from './types';
 
 interface RunConfig {
   board: TestBoard;
