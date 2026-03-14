@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * sparse-corridor-regression.ts — Analysis of beam width regressions on
  * sparse-mtns-7x7 and corridor-7x7 boards after adding beam deduplication.

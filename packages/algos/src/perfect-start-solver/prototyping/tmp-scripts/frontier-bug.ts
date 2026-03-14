@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * frontier-bug.ts — Analysis of the frontier(2) beam width regression on maze-7x7.
  *
