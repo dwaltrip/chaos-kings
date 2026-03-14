@@ -8,34 +8,14 @@ import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 import { runComparison } from './comparison';
 import type { RunConfig, RunResult } from './comparison';
 import { alignColumns, coordStr, formatMove, formatTable, num } from './format';
-import {
-  landOnly,
-  capturableTiles,
-  landWeightedCapturable,
-  makeFrontierScorer,
-} from './scoring-functions';
+import { activePreset } from './scorer-presets';
 import { simulate } from './simulation';
 import { allBoards } from './test-boards';
-import type { ArmySnapshot, Move } from './types';
+import type { ArmySnapshot, Move, ScoringFn } from './types';
 
 // -- Boards ------------------------------------------------------------------
 
 const boards = allBoards();
-
-// -- Scoring functions -------------------------------------------------------
-
-// NOTE: `fingerprintState` is a net-negative perf-wise for "land-only"
-// because it's scoring fn is so cheap to run. Could make it optional.
-// It's a clear win for all the rest.
-const allScoringFns = [
-  { name: 'land-only', fn: landOnly },
-  { name: 'capturable-tiles', fn: capturableTiles },
-  { name: 'land-weighted-cap', fn: landWeightedCapturable },
-  { name: 'frontier-1.5', fn: makeFrontierScorer(1.5) },
-  { name: 'frontier-2', fn: makeFrontierScorer(2) },
-  { name: 'frontier-3', fn: makeFrontierScorer(3) },
-  { name: 'frontier-5', fn: makeFrontierScorer(5) },
-];
 
 interface ComparisonOptions {
   score?: string;
@@ -50,9 +30,9 @@ const { opts } = parseTypedCommand(
     .option('--beam <widths>', 'Beam widths (comma-separated, default: 50,100,200)'),
 );
 
-const scoringFns = opts.score
-  ? allScoringFns.filter((s) => opts.score!.split(',').some((f) => s.name.includes(f)))
-  : allScoringFns;
+const scorerSpecs = opts.score
+  ? activePreset.filter((s) => opts.score!.split(',').some((f) => s.name.includes(f)))
+  : activePreset;
 
 // -- Build config matrix -----------------------------------------------------
 
@@ -60,8 +40,12 @@ const beamWidths = opts.beam ? opts.beam.split(',').map(Number) : [50, 100, 200]
 const maxTicks = 50;
 
 const configs: RunConfig[] = [];
+// Build scoring fns per-board so gen-aware scorers get the right generalCoord
+const scoringFnsPerBoard = new Map<string, { name: string; fn: ScoringFn }[]>();
 for (const board of boards) {
-  for (const scoringFn of scoringFns) {
+  const fns = scorerSpecs.map((spec) => ({ name: spec.name, fn: spec.make(board) }));
+  scoringFnsPerBoard.set(board.name, fns);
+  for (const scoringFn of fns) {
     for (const beamWidth of beamWidths) {
       configs.push({ board, scoringFn, beamWidth, maxTicks });
     }
@@ -201,7 +185,8 @@ for (const o of outputs) {
 const beamHeaders = beamWidths.map((b) => `beam=${b}`);
 const tableRows: string[][] = [];
 for (const board of boards) {
-  for (const scoringFn of scoringFns) {
+  const fns = scoringFnsPerBoard.get(board.name)!;
+  for (const scoringFn of fns) {
     const cells = beamWidths.map((bw) => {
       const o = resultMap.get(`${board.name}|${scoringFn.name}|${bw}`);
       if (!o) return '–';

@@ -1,14 +1,17 @@
-import { Direction } from '@core/types';
+import type { Coord } from '@core/types';
 
-import { TileType, NO_OWNER, Board } from '@/core-next/flat-board';
+import { TileType, Board } from '@/core-next/flat-board';
 import type { FlatBoard } from '@/core-next/flat-board';
 
 import { ALL_DIRECTIONS } from './helpers';
 import type { ScoringFn } from './types';
 
-const landOnly: ScoringFn = (board: FlatBoard): number => {
-  return board.stats.landCounts[0];
-};
+// -- Shared helpers -----------------------------------------------------------
+
+function generalArmyCount(board: FlatBoard, generalCoord: Coord): number {
+  const idx = generalCoord.y * board.width + generalCoord.x;
+  return board.units[idx];
+}
 
 // Multi-source BFS from all blank tiles. Returns distance-to-nearest-blank
 // for every cell. Mountains get Infinity. Blank tiles get 0.
@@ -45,10 +48,8 @@ function buildDistanceToBlankMap(board: FlatBoard): number[] {
   return dist;
 }
 
-// Score = currentLand + sum(max(0, excess - dist)) for each player tile
 // Estimates how many tiles the current armies could capture via chain moves.
-const capturableTiles: ScoringFn = (board: FlatBoard): number => {
-  const land = board.stats.landCounts[0];
+function capturableCount(board: FlatBoard): number {
   const distMap = buildDistanceToBlankMap(board);
   const n = board.width * board.height;
 
@@ -62,33 +63,33 @@ const capturableTiles: ScoringFn = (board: FlatBoard): number => {
     capturable += Math.max(0, excess - d);
   }
 
-  return land + capturable;
-};
+  return capturable;
+}
 
-// Same as capturableTiles but weights actual land 5x so capturing is
-// always preferred over hoarding armies near blanks.
-const landWeightedCapturable: ScoringFn = (board: FlatBoard): number => {
-  const land = board.stats.landCounts[0];
+// Like capturableCount but uses excess² to reward concentrated armies.
+// A tile with 6 excess scores 36, vs six tiles with 1 excess scoring 6.
+function superlinearCapCount(board: FlatBoard): number {
   const distMap = buildDistanceToBlankMap(board);
   const n = board.width * board.height;
 
-  let capturable = 0;
+  let score = 0;
   for (let i = 0; i < n; i++) {
     if (board.owners[i] !== 0) continue;
     const excess = board.units[i] - 1;
     if (excess <= 0) continue;
     const d = distMap[i];
     if (d === Infinity) continue;
-    capturable += Math.max(0, excess - d);
+    const effective = Math.max(0, excess - d);
+    score += effective * effective;
   }
 
-  return land * 5 + capturable;
-};
+  return score;
+}
 
 // Count unique blank tiles adjacent to player territory.
 function countFrontier(board: FlatBoard): number {
   const n = board.width * board.height;
-  const seen = new Uint8Array(n); // 0 = unseen, 1 = seen
+  const seen = new Uint8Array(n);
   let frontier = 0;
 
   for (let i = 0; i < n; i++) {
@@ -108,11 +109,115 @@ function countFrontier(board: FlatBoard): number {
   return frontier;
 }
 
-function makeFrontierScorer(landWeight: number): ScoringFn {
-  return (board: FlatBoard): number => {
+// -- Factory functions --------------------------------------------------------
+
+function makeLandOnlyScorer(): ScoringFn {
+  return (board) => board.stats.landCounts[0];
+}
+
+interface CapturableOpts {
+  landWeight?: number; // default 1
+  capWeight?: number; // default 1
+  superlinear?: boolean; // use excess² instead of excess - dist
+}
+
+function makeCapturableScorer(opts?: CapturableOpts): ScoringFn {
+  const landW = opts?.landWeight ?? 1;
+  const capW = opts?.capWeight ?? 1;
+  const sup = opts?.superlinear ?? false;
+  return (board) => {
     const land = board.stats.landCounts[0];
-    return land * landWeight + countFrontier(board);
+    const cap = sup ? superlinearCapCount(board) : capturableCount(board);
+    return land * landW + cap * capW;
   };
 }
 
-export { landOnly, capturableTiles, landWeightedCapturable, makeFrontierScorer };
+interface FrontierOpts {
+  landWeight: number;
+}
+
+function makeFrontierScorer(opts: FrontierOpts): ScoringFn {
+  return (board) => board.stats.landCounts[0] * opts.landWeight + countFrontier(board);
+}
+
+// -- General-army-aware factories ---------------------------------------------
+
+interface LandGenOpts {
+  generalCoord: Coord;
+  landWeight?: number; // default 1
+  genWeight: number;
+}
+
+function makeLandGenScorer(opts: LandGenOpts): ScoringFn {
+  const { generalCoord, genWeight } = opts;
+  const landW = opts.landWeight ?? 1;
+  return (board) => {
+    const land = board.stats.landCounts[0];
+    const gen = generalArmyCount(board, generalCoord);
+    return land * landW + gen * genWeight;
+  };
+}
+
+interface CapGenOpts {
+  generalCoord: Coord;
+  landWeight?: number; // default 5
+  genWeight: number;
+}
+
+function makeCapGenScorer(opts: CapGenOpts): ScoringFn {
+  const { generalCoord, genWeight } = opts;
+  const landW = opts.landWeight ?? 5;
+  return (board) => {
+    const land = board.stats.landCounts[0];
+    const gen = generalArmyCount(board, generalCoord);
+    return land * landW + capturableCount(board) + gen * genWeight;
+  };
+}
+
+interface FrontierGenOpts {
+  generalCoord: Coord;
+  landWeight?: number; // default 2
+  genWeight: number;
+}
+
+function makeFrontierGenScorer(opts: FrontierGenOpts): ScoringFn {
+  const { generalCoord, genWeight } = opts;
+  const landW = opts.landWeight ?? 2;
+  return (board) => {
+    const land = board.stats.landCounts[0];
+    const gen = generalArmyCount(board, generalCoord);
+    return land * landW + countFrontier(board) + gen * genWeight;
+  };
+}
+
+// -- Time-aware general-army factories ----------------------------------------
+
+interface TimeAwareCapGenOpts {
+  generalCoord: Coord;
+  landWeight?: number; // default 5
+  genWeight: number;
+  maxTicks: number;
+}
+
+// Gen credit decays linearly: full value at tick 0, zero at maxTicks.
+function makeTimeAwareCapGenScorer(opts: TimeAwareCapGenOpts): ScoringFn {
+  const { generalCoord, genWeight, maxTicks } = opts;
+  const landW = opts.landWeight ?? 5;
+  return (board, tick) => {
+    const land = board.stats.landCounts[0];
+    const cap = capturableCount(board);
+    const ticksLeft = maxTicks - tick;
+    const gen = generalArmyCount(board, generalCoord) * (ticksLeft / maxTicks);
+    return land * landW + cap + gen * genWeight;
+  };
+}
+
+export {
+  makeLandOnlyScorer,
+  makeCapturableScorer,
+  makeFrontierScorer,
+  makeLandGenScorer,
+  makeCapGenScorer,
+  makeFrontierGenScorer,
+  makeTimeAwareCapGenScorer,
+};

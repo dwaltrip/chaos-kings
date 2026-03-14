@@ -8,7 +8,7 @@ type Move = {
   direction: Direction;
 } | null; // null = wait
 
-type ScoringFn = (board: FlatBoard) => number;
+type ScoringFn = (board: FlatBoard, tick: number) => number;
 
 interface SolverConfig {
   beamWidth: number;

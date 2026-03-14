@@ -103,7 +103,7 @@ function solve(
     generateMoves,
     clone: cloneState,
     step: (state, move) => stepState(state, move, timing),
-    score: (state) => config.scoringFn(state.board),
+    score: (state) => config.scoringFn(state.board, state.tick),
     fingerprint: fingerprintState, // pre-score dedup; see comment on fingerprintState for trade-offs
     beamWidth: config.beamWidth,
     numSteps: config.maxTicks,
