@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import type { Coord } from '@core/types';
+import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 
 import { runComparison } from './comparison';
 import type { RunConfig, RunResult } from './comparison';
@@ -36,16 +37,26 @@ const allScoringFns = [
   { name: 'frontier-5', fn: makeFrontierScorer(5) },
 ];
 
-const scoreArg = process.argv.find((a) => a.startsWith('--score='));
-const scoreFilter = scoreArg ? scoreArg.slice(8).split(',') : null;
-const scoringFns = scoreFilter
-  ? allScoringFns.filter((s) => scoreFilter.some((f) => s.name.includes(f)))
+interface ComparisonOptions {
+  score?: string;
+  beam?: string;
+}
+
+const { opts } = parseTypedCommand(
+  createTypedCommand<ComparisonOptions>()
+    .name('run-comparison')
+    .description('Run solver comparison across boards, scorers, and beam widths')
+    .option('--score <filter>', 'Filter scorers by substring match (comma-separated)')
+    .option('--beam <widths>', 'Beam widths (comma-separated, default: 50,100,200)'),
+);
+
+const scoringFns = opts.score
+  ? allScoringFns.filter((s) => opts.score!.split(',').some((f) => s.name.includes(f)))
   : allScoringFns;
 
 // -- Build config matrix -----------------------------------------------------
 
-const beamArg = process.argv.find((a) => a.startsWith('--beam='));
-const beamWidths = beamArg ? beamArg.slice(7).split(',').map(Number) : [50, 100, 200];
+const beamWidths = opts.beam ? opts.beam.split(',').map(Number) : [50, 100, 200];
 const maxTicks = 50;
 
 const configs: RunConfig[] = [];
@@ -160,7 +171,13 @@ execSync(`fjson -i 2 "${jsonPath}" -o "${jsonPath}"`);
 const logPath = path.join(dataDir, `${timestamp}-ticks.log`);
 const logSections = outputs.map((o) => {
   const { json } = o;
-  const header = `=== ${json.scoring} | beam=${json.beamWidth} | ${json.board} | land=${json.finalLand} | ${json.durationMs}ms ===`;
+  const header = [
+    `=== ${json.scoring}`,
+    `beam=${json.beamWidth}`,
+    `${json.board}`,
+    `land=${json.finalLand}`,
+    `${json.durationMs}ms ===`,
+  ].join(' | ');
   return header + '\n' + o.tickLog;
 });
 fs.writeFileSync(logPath, logSections.join('\n') + '\n');

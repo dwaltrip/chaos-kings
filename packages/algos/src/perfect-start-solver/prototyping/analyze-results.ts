@@ -2,22 +2,17 @@
  * Post-processing analysis for solver comparison results.
  * Reads results JSON files from data/ and produces compact views.
  *
+ * Run with --help for full option list.
+ * If no file given, uses the most recent *-results.json in data/.
+ *
  * Usage (from packages/algos):
  *   npx tsx src/perfect-start-solver/prototyping/analyze-results.ts [options] [file]
- *
- * Options:
- *   --pivot          Pivot table: boards × scorers, one per beam width (default)
- *   --summary        Per-scorer scorecard: best, worst, avg, regressions
- *   --regressions    Flag cases where higher beam → lower land
- *   --diff <file>    Compare two result files
- *   --beam=200       Filter to specific beam width(s) for pivot/summary
- *   --board=maze     Filter boards by substring match
- *
- * If no file given, uses the most recent *-results.json in data/.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
+
+import { createTypedCommand, runTypedCommand } from '@utils/typed-command';
 
 import { formatTable } from './format';
 
@@ -291,55 +286,60 @@ function printDiff(
 // -- CLI ---------------------------------------------------------------------
 
 const dataDir = path.join(__dirname, 'data');
-const args = process.argv.slice(2);
 
-const hasFlag = (f: string) => args.includes(f);
-const getArg = (prefix: string) => {
-  const a = args.find((x) => x.startsWith(prefix));
-  return a ? a.slice(prefix.length) : null;
-};
-
-// Non-flag args are file paths
-const fileArgs = args.filter((a) => !a.startsWith('--'));
-
-const beamArg = getArg('--beam=');
-const beamFilter = beamArg ? Number(beamArg) : null;
-const boardFilter = getArg('--board=');
-
-const showPivot = hasFlag('--pivot');
-const showSummary = hasFlag('--summary');
-const showRegressions = hasFlag('--regressions');
-const isDiff = hasFlag('--diff');
-
-// Default: pivot + regressions if no flags given
-const noFlags = !showPivot && !showSummary && !showRegressions && !isDiff;
-
-if (isDiff) {
-  if (fileArgs.length < 2) {
-    console.error('--diff requires two file paths');
-    process.exit(1);
-  }
-  const resolve = (f: string) =>
-    path.isAbsolute(f)
-      ? f
-      : path.resolve(f.startsWith('data/') ? path.join(dataDir, f.slice(5)) : f);
-  const file1 = resolve(fileArgs[0]);
-  const file2 = resolve(fileArgs[1]);
-  const rows1 = filterRows(loadResults(file1), boardFilter);
-  const rows2 = filterRows(loadResults(file2), boardFilter);
-  printDiff(rows1, rows2, path.basename(file1), path.basename(file2));
-} else {
-  const file = fileArgs[0]
-    ? path.isAbsolute(fileArgs[0])
-      ? fileArgs[0]
-      : path.resolve(fileArgs[0])
-    : findLatestResults(dataDir);
-  console.log(`File: ${path.relative(process.cwd(), file)}`);
-  const rows = filterRows(loadResults(file), boardFilter);
-
-  if (noFlags || showPivot) printPivot(rows, beamFilter);
-  if (noFlags || showRegressions) printRegressions(rows);
-  if (showSummary) printSummary(rows, beamFilter);
+function resolveFile(f: string): string {
+  if (path.isAbsolute(f)) return f;
+  return path.resolve(f);
 }
 
-console.log();
+interface AnalyzeOptions {
+  beam?: string;
+  board?: string;
+  pivot?: boolean;
+  summary?: boolean;
+  regressions?: boolean;
+  diff?: boolean;
+}
+
+const program = createTypedCommand<AnalyzeOptions>()
+  .name('analyze-results')
+  .description('Post-processing analysis for solver comparison results')
+  .argument('[files...]', 'Results JSON file(s). Defaults to most recent in data/')
+  .option('--beam <width>', 'Filter to specific beam width for pivot/summary')
+  .option('--board <filter>', 'Filter boards by substring match (comma-separated)')
+  .option('--pivot', 'Pivot table: boards × scorers, one per beam width')
+  .option('--summary', 'Per-scorer scorecard: best, worst, avg, regressions')
+  .option('--regressions', 'Flag cases where higher beam → lower land')
+  .option('--diff', 'Compare two result files (requires two file args)');
+
+function main(opts: AnalyzeOptions, files: string[]) {
+  const beamFilter = opts.beam ? Number(opts.beam) : null;
+  const boardFilter = opts.board ?? null;
+
+  // Default: pivot + regressions if no flags given
+  const noFlags = !opts.pivot && !opts.summary && !opts.regressions && !opts.diff;
+
+  if (opts.diff) {
+    if (files.length < 2) {
+      console.error('--diff requires two file paths');
+      process.exit(1);
+    }
+    const file1 = resolveFile(files[0]);
+    const file2 = resolveFile(files[1]);
+    const rows1 = filterRows(loadResults(file1), boardFilter);
+    const rows2 = filterRows(loadResults(file2), boardFilter);
+    printDiff(rows1, rows2, path.basename(file1), path.basename(file2));
+  } else {
+    const file = files[0] ? resolveFile(files[0]) : findLatestResults(dataDir);
+    console.log(`File: ${path.relative(process.cwd(), file)}`);
+    const rows = filterRows(loadResults(file), boardFilter);
+
+    if (noFlags || opts.pivot) printPivot(rows, beamFilter);
+    if (noFlags || opts.regressions) printRegressions(rows);
+    if (opts.summary) printSummary(rows, beamFilter);
+  }
+
+  console.log();
+}
+
+runTypedCommand(program, main);
