@@ -1,5 +1,7 @@
 import { PriorityQueue } from '@/lib/priority-queue/priority-queue';
-import { Coord } from './types';
+import { number } from 'zod';
+
+type Coord = { x: number; y: number };
 
 interface Node {
   coord: Coord;
