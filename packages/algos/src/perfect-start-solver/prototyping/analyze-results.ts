@@ -11,12 +11,15 @@
  *   --regressions    Flag cases where higher beam → lower land
  *   --diff <file>    Compare two result files
  *   --beam=200       Filter to specific beam width(s) for pivot/summary
+ *   --board=maze     Filter boards by substring match
  *
  * If no file given, uses the most recent *-results.json in data/.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
+
+import { formatTable } from './format';
 
 // -- Types -------------------------------------------------------------------
 
@@ -58,12 +61,10 @@ function groupBy(rows: ResultRow[]): Map<string, ResultRow> {
   return map;
 }
 
-function padR(s: string, w: number): string {
-  return s.padEnd(w);
-}
-
-function padL(s: string, w: number): string {
-  return s.padStart(w);
+function filterRows(rows: ResultRow[], boardFilter: string | null): ResultRow[] {
+  if (!boardFilter) return rows;
+  const filters = boardFilter.split(',');
+  return rows.filter((r) => filters.some((f) => r.board.includes(f)));
 }
 
 // -- Pivot table -------------------------------------------------------------
@@ -76,7 +77,7 @@ function printPivot(rows: ResultRow[], beamFilter: number | null): void {
   const lookup = groupBy(rows);
 
   for (const bw of targets) {
-    console.log(`\n  PIVOT — beam=${bw}`);
+    console.log(`\n  PIVOT — beam=${bw}\n`);
 
     // Find best land per board at this beam width
     const bestPerBoard = new Map<string, number>();
@@ -89,28 +90,19 @@ function printPivot(rows: ResultRow[], beamFilter: number | null): void {
       bestPerBoard.set(board, best);
     }
 
-    const boardW = Math.max(5, ...boards.map((b) => b.length));
-    const colW = Math.max(4, ...scorers.map((s) => s.length));
-
-    // Header
-    const header =
-      '  ' + padR('', boardW) + ' | ' + scorers.map((s) => padL(s, colW)).join(' | ');
-    const divider =
-      '  ' + '-'.repeat(boardW) + '-+-' + scorers.map(() => '-'.repeat(colW)).join('-+-');
-
-    console.log(header);
-    console.log(divider);
-
+    const tableRows: string[][] = [];
     for (const board of boards) {
       const best = bestPerBoard.get(board) ?? 0;
       const cells = scorers.map((scorer) => {
         const r = lookup.get(`${board}|${scorer}|${bw}`);
-        if (!r) return padL('-', colW);
-        const star = r.finalLand === best ? '*' : ' ';
-        return padL(`${r.finalLand}${star}`, colW);
+        if (!r) return '-';
+        const star = r.finalLand === best ? '*' : '';
+        return `${r.finalLand}${star}`;
       });
-      console.log('  ' + padR(board, boardW) + ' | ' + cells.join(' | '));
+      tableRows.push([board, ...cells]);
     }
+
+    console.log(formatTable(['Board', ...scorers], tableRows));
   }
 }
 
@@ -124,7 +116,7 @@ function printSummary(rows: ResultRow[], beamFilter: number | null): void {
 
   const targetBeam = beamFilter ?? beamWidths[beamWidths.length - 1];
 
-  console.log(`\n  SUMMARY — beam=${targetBeam}`);
+  console.log(`\n  SUMMARY — beam=${targetBeam}\n`);
 
   // Count regressions: for each scorer+board, check if any lower beam got higher land
   interface ScorerStats {
@@ -132,9 +124,9 @@ function printSummary(rows: ResultRow[], beamFilter: number | null): void {
     lands: number[];
     best: number;
     worst: number;
-    avg: number;
     regressions: string[]; // board names where higher beam → lower land
-    bestCount: number; // boards where this scorer is best
+    bestCount: string; // boards where this scorer is best
+    avg: string;
   }
 
   const stats: ScorerStats[] = [];
@@ -174,46 +166,39 @@ function printSummary(rows: ResultRow[], beamFilter: number | null): void {
     }
 
     if (lands.length === 0) continue;
+    const avg = (lands.reduce((a, b) => a + b, 0) / lands.length).toFixed(1);
     stats.push({
       name: scorer,
       lands,
       best: Math.max(...lands),
       worst: Math.min(...lands),
-      avg: lands.reduce((a, b) => a + b, 0) / lands.length,
+      avg,
       regressions,
-      bestCount,
+      bestCount: `${bestCount}/${lands.length}`,
     });
   }
 
   // Sort by avg descending, then by regression count ascending
-  stats.sort((a, b) => b.avg - a.avg || a.regressions.length - b.regressions.length);
-
-  const nameW = Math.max(6, ...stats.map((s) => s.name.length));
-  console.log(
-    '  ' + padR('Scorer', nameW) + ' | best | worst |  avg  | #best | regressions',
+  stats.sort(
+    (a, b) =>
+      parseFloat(b.avg) - parseFloat(a.avg) ||
+      a.regressions.length - b.regressions.length,
   );
-  console.log('  ' + '-'.repeat(nameW) + '-+------+-------+-------+-------+------------');
 
-  for (const s of stats) {
-    const regStr =
-      s.regressions.length === 0
-        ? 'none'
-        : `${s.regressions.length}: ${s.regressions.join(', ')}`;
-    console.log(
-      '  ' +
-        padR(s.name, nameW) +
-        ' | ' +
-        padL(String(s.best), 4) +
-        ' | ' +
-        padL(String(s.worst), 5) +
-        ' | ' +
-        padL(s.avg.toFixed(1), 5) +
-        ' | ' +
-        padL(String(s.bestCount) + '/' + String(s.lands.length), 5) +
-        ' | ' +
-        regStr,
-    );
-  }
+  const tableRows = stats.map((s) => [
+    s.name,
+    String(s.best),
+    String(s.worst),
+    s.avg,
+    s.bestCount,
+    s.regressions.length === 0
+      ? 'none'
+      : `${s.regressions.length}: ${s.regressions.join(', ')}`,
+  ]);
+
+  console.log(
+    formatTable(['Scorer', 'best', 'worst', 'avg', '#best', 'regressions'], tableRows),
+  );
 }
 
 // -- Regressions -------------------------------------------------------------
@@ -261,8 +246,6 @@ function printDiff(
   const lookup1 = groupBy(rows1);
   const lookup2 = groupBy(rows2);
 
-  // Find all keys present in either
-  const allKeys = new Set([...lookup1.keys(), ...lookup2.keys()]);
   const boards = unique([...rows1, ...rows2].map((r) => r.board));
   const scorers = unique([...rows1, ...rows2].map((r) => r.scoring));
   const beamWidths = unique([...rows1, ...rows2].map((r) => r.beamWidth)).sort(
@@ -321,6 +304,7 @@ const fileArgs = args.filter((a) => !a.startsWith('--'));
 
 const beamArg = getArg('--beam=');
 const beamFilter = beamArg ? Number(beamArg) : null;
+const boardFilter = getArg('--board=');
 
 const showPivot = hasFlag('--pivot');
 const showSummary = hasFlag('--summary');
@@ -341,8 +325,8 @@ if (isDiff) {
       : path.resolve(f.startsWith('data/') ? path.join(dataDir, f.slice(5)) : f);
   const file1 = resolve(fileArgs[0]);
   const file2 = resolve(fileArgs[1]);
-  const rows1 = loadResults(file1);
-  const rows2 = loadResults(file2);
+  const rows1 = filterRows(loadResults(file1), boardFilter);
+  const rows2 = filterRows(loadResults(file2), boardFilter);
   printDiff(rows1, rows2, path.basename(file1), path.basename(file2));
 } else {
   const file = fileArgs[0]
@@ -351,7 +335,7 @@ if (isDiff) {
       : path.resolve(fileArgs[0])
     : findLatestResults(dataDir);
   console.log(`File: ${path.relative(process.cwd(), file)}`);
-  const rows = loadResults(file);
+  const rows = filterRows(loadResults(file), boardFilter);
 
   if (noFlags || showPivot) printPivot(rows, beamFilter);
   if (noFlags || showRegressions) printRegressions(rows);
