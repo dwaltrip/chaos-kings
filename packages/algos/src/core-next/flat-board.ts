@@ -193,6 +193,27 @@ function forEachTile(board: FlatBoard, fn: (tile: Tile) => void): void {
   }
 }
 
+function mapTiles<T>(board: FlatBoard, mapFn: (tile: Tile) => T): T[] {
+  const mapped = [];
+  const n = board.width * board.height;
+  for (let i = 0; i < n; i++) {
+    mapped.push(mapFn(getTileByIdx(board, i)));
+  }
+  return mapped;
+}
+
+function mapTiles2d<T>(board: FlatBoard, mapFn: (tile: Tile) => T): T[][] {
+  const gridMapped = [];
+  for (let y = 0; y < board.height; y++) {
+    const row = [];
+    for (let x = 0; x < board.width; x++) {
+      row.push(mapFn(getTile(board, x, y)));
+    }
+    gridMapped.push(row);
+  }
+  return gridMapped;
+}
+
 // --- Ergonomic mutation API ---
 // These maintain stats. Use these for non-perf-sensitive code.
 // processStep uses direct array writes + its own stat maintenance internally.
@@ -305,6 +326,8 @@ const Board = {
 
   // Iteration
   forEachTile,
+  mapTiles,
+  mapTiles2d,
 
   // Mutation
   setTile,

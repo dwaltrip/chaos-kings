@@ -1,6 +1,7 @@
 import type { Coord } from '@core/types';
 
 import type { Move } from './types';
+import { FlatBoard, Board, TileType } from '@/core-next/flat-board';
 
 // Auto-pad columns so they align vertically.
 // Each row is an array of cell strings. Returns one joined string per row.
@@ -51,4 +52,42 @@ function formatTable(headers: string[], rows: string[][]): string {
   return [fmtRow(headers), divider, ...rows.map(fmtRow)].join('\n');
 }
 
-export { alignColumns, coordStr, formatMove, formatTable, num };
+function formatBoard(board: FlatBoard) {
+  let maxArmy = 0;
+  Board.forEachTile(board, (tile) => {
+    if (tile.units && tile.units > 0) {
+      maxArmy = Math.max(maxArmy, tile.units);
+    }
+  });
+  const useWideTiles = maxArmy > 9;
+
+  const parts = Board.mapTiles2d(board, (tile) => {
+    let part;
+    switch (tile.type) {
+      case TileType.BLANK:
+        part = '.';
+        break;
+      case TileType.MOUNTAIN:
+        part = '#';
+        break;
+      case TileType.GENERAL:
+        part = 'G';
+        break;
+      case TileType.ARMY:
+        part = tile.units < 100 ? '' + tile.units : '$$';
+        break;
+      default:
+        console.error('Error: Unexpected tile.type:', tile.type);
+        part = '?';
+        break;
+    }
+    if (useWideTiles && part.length == 1) {
+      return ' ' + part;
+    }
+    return part;
+  });
+
+  return parts.map((row) => row.join(' ')).join('\n');
+}
+
+export { alignColumns, coordStr, formatMove, formatTable, num, formatBoard };
