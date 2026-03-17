@@ -1,5 +1,8 @@
 import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 
+import { Board } from '@/core-next/flat-board';
+import type { FlatMove } from '@/core-next/process-step';
+
 import { makeBoard } from '../test-boards';
 
 import { runSA } from './sim-anneal';
@@ -29,8 +32,15 @@ const iterations = Number(opts.iterations);
 const t0 = Number(opts.t0);
 const epsilon = Number(opts.epsilon);
 
+function formatFlatMove(move: FlatMove, boardWidth: number): string {
+  if (!move) return 'WAIT';
+  const { x, y } = Board.toXY({ width: boardWidth } as any, move.src);
+  return `(${x},${y})→${move.dir}`;
+}
+
 function run() {
-  const { board } = makeBoard(boardName);
+  const testBoard = makeBoard(boardName);
+  const { board } = testBoard;
 
   console.log(`Board: ${boardName}`);
   console.log(`Ticks: ${totalTicks}, Iterations: ${iterations.toLocaleString()}`);
@@ -45,6 +55,15 @@ function run() {
   );
   console.log(`Runtime: ${(result.runtimeMs / 1000).toFixed(2)}s`);
   console.log(`Progression (best at 10%..100%): [${result.scoreProgression.join(', ')}]`);
+
+  console.log();
+  console.log('Best move sequence:');
+  for (let i = 0; i < result.bestMoves.length; i++) {
+    const move = result.bestMoves[i];
+    console.log(
+      `  tick ${String(i + 1).padStart(2)}: ${formatFlatMove(move, board.size.width)}`,
+    );
+  }
 }
 
 run();
