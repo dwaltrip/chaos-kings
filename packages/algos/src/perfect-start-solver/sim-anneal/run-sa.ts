@@ -88,6 +88,8 @@ function comboKey(c: ConfigCombo): string {
 }
 
 function buildSummaryTable(records: RunRecord[], combos: ConfigCombo[]): string {
+  const topScore = Math.max(...records.map((r) => r.bestScore));
+
   const grouped = new Map<string, RunRecord[]>();
   for (const r of records) {
     const key = `${r.boardName}|${r.config.iterations}|${r.config.t0}|${r.config.epsilon}`;
@@ -100,6 +102,7 @@ function buildSummaryTable(records: RunRecord[], combos: ConfigCombo[]): string 
     'Iters',
     'T0',
     'Eps',
+    `Hit ${topScore}`,
     'Best',
     'Avg',
     'Worst',
@@ -117,6 +120,7 @@ function buildSummaryTable(records: RunRecord[], combos: ConfigCombo[]): string 
     const best = Math.max(...scores);
     const worst = Math.min(...scores);
     const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+    const hitTop = scores.filter((s) => s === topScore).length;
     const avgTime = group.reduce((a, r) => a + r.runtimeMs, 0) / group.length;
     const avgAccept =
       group.reduce((a, r) => a + r.acceptedCount / r.config.iterations, 0) / group.length;
@@ -126,6 +130,7 @@ function buildSummaryTable(records: RunRecord[], combos: ConfigCombo[]): string 
       combo.iterations.toLocaleString(),
       String(combo.t0),
       String(combo.epsilon),
+      `${hitTop}/${group.length}`,
       String(best),
       avg.toFixed(1),
       String(worst),
@@ -137,7 +142,46 @@ function buildSummaryTable(records: RunRecord[], combos: ConfigCombo[]): string 
   return formatTable(headers, rows);
 }
 
-function writeOutputFiles(records: RunRecord[], summaryTable: string): string[] {
+function buildRunsTable(records: RunRecord[]): string {
+  const headers = [
+    '#',
+    'Board',
+    'Iters',
+    'T0',
+    'Eps',
+    'Seed',
+    'Score',
+    'Time',
+    'Accept%',
+    'Progression',
+  ];
+  const rows: string[][] = [];
+
+  for (let i = 0; i < records.length; i++) {
+    const r = records[i];
+    const pct = ((r.acceptedCount / r.config.iterations) * 100).toFixed(1);
+    rows.push([
+      String(i + 1),
+      r.boardName,
+      r.config.iterations.toLocaleString(),
+      String(r.config.t0),
+      String(r.config.epsilon),
+      String(r.seedIndex),
+      String(r.bestScore),
+      `${(r.runtimeMs / 1000).toFixed(2)}s`,
+      `${pct}%`,
+      `[${r.scoreProgression.join(', ')}]`,
+    ]);
+  }
+
+  return formatTable(headers, rows);
+}
+
+function writeOutputFiles(
+  records: RunRecord[],
+  summaryTable: string,
+  runsTable: string,
+): string[] {
   const dataDir = path.join(__dirname, 'data');
   fs.mkdirSync(dataDir, { recursive: true });
 
@@ -146,7 +190,10 @@ function writeOutputFiles(records: RunRecord[], summaryTable: string): string[] 
   const summaryPath = path.join(dataDir, `${timestamp}-summary.md`);
 
   fs.writeFileSync(jsonPath, JSON.stringify(records, null, 2));
-  fs.writeFileSync(summaryPath, summaryTable);
+  fs.writeFileSync(
+    summaryPath,
+    `# Summary\n\n${summaryTable}\n\n# All Runs\n\n${runsTable}\n`,
+  );
 
   return [
     path.relative(process.cwd(), jsonPath),
@@ -205,12 +252,13 @@ function run() {
     }
   }
 
-  // Summary table
+  // Tables
   const summaryTable = buildSummaryTable(records, combos);
+  const runsTable = buildRunsTable(records);
 
   // Write files
   console.log();
-  const [jsonPath, summaryPath] = writeOutputFiles(records, summaryTable);
+  const [jsonPath, summaryPath] = writeOutputFiles(records, summaryTable, runsTable);
   console.log(`Results: ${jsonPath}`);
   console.log(`Summary: ${summaryPath}`);
 

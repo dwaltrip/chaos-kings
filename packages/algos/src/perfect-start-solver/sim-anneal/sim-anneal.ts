@@ -10,7 +10,7 @@ import { fromBoardState } from '@/core-next/convert';
 
 import { generateMoves } from '../moves';
 
-import type { SASolution, SAConfig, SAResult } from './types';
+import type { SASolution, SAConfig, SAResult, SAProfileData } from './types';
 
 const PLAYER_INDEX = 0;
 const timing = DEFAULT_TIMING;
@@ -102,7 +102,7 @@ function flatMovesEqual(a: FlatMove, b: FlatMove): boolean {
 }
 
 function runSA(boardState: BoardState, totalTicks: number, config: SAConfig): SAResult {
-  const { iterations, t0, epsilon } = config;
+  const { iterations, t0, epsilon, profile: doProfile } = config;
   const alpha = Math.pow(epsilon, 1 / iterations);
 
   let current = createInitialSolution(boardState, totalTicks);
@@ -111,24 +111,94 @@ function runSA(boardState: BoardState, totalTicks: number, config: SAConfig): SA
   let temperature = t0;
   let acceptedCount = 0;
 
-  // Track best score at each 10% milestone
   const milestoneInterval = Math.floor(iterations / 10);
   const scoreProgression: number[] = [];
+
+  // Profiling accumulators
+  let tGenMoves = 0;
+  let tCloneBoard = 0;
+  let tProcessStep = 0;
+  let tArrayBuild = 0;
+  let tAcceptance = 0;
 
   const start = performance.now();
 
   for (let i = 0; i < iterations; i++) {
-    const neighbor = generateNeighbor(current);
-    const delta = neighbor.score - current.score;
+    if (!doProfile) {
+      // Fast path: no timing overhead
+      const neighbor = generateNeighbor(current);
+      const delta = neighbor.score - current.score;
 
-    if (delta >= 0 || Math.random() < Math.exp(delta / temperature)) {
-      current = neighbor;
-      acceptedCount++;
-
-      if (current.score > bestScore) {
-        bestScore = current.score;
-        bestMoves = [...current.moves];
+      if (delta >= 0 || Math.random() < Math.exp(delta / temperature)) {
+        current = neighbor;
+        acceptedCount++;
+        if (current.score > bestScore) {
+          bestScore = current.score;
+          bestMoves = [...current.moves];
+        }
       }
+    } else {
+      // Profiled path: inline generateNeighbor with timing
+      const t = Math.floor(Math.random() * totalTicks);
+      const boardAtT = current.stateCache[t];
+
+      let s = performance.now();
+      const legalMoves = generateMoves({ board: boardAtT });
+      tGenMoves += performance.now() - s;
+
+      let newMove: FlatMove = null;
+      if (legalMoves.length > 1) {
+        const currentMove = current.moves[t];
+        const alternatives = legalMoves.filter((m) => !flatMovesEqual(m, currentMove));
+        newMove =
+          alternatives.length > 0
+            ? alternatives[Math.floor(Math.random() * alternatives.length)]
+            : legalMoves[Math.floor(Math.random() * legalMoves.length)];
+      } else if (legalMoves.length === 1) {
+        newMove = legalMoves[0];
+      }
+
+      // Simulate forward with per-op timing
+      s = performance.now();
+      let board = cloneBoard(boardAtT);
+      tCloneBoard += performance.now() - s;
+
+      const newMoves = [...current.moves];
+      newMoves[t] = newMove;
+      const forwardStates: FlatBoard[] = [];
+
+      for (let j = t; j < totalTicks; j++) {
+        const move = newMoves[j] ?? null;
+        s = performance.now();
+        processStep(board, move, PLAYER_INDEX, j + 1, timing);
+        tProcessStep += performance.now() - s;
+        forwardStates.push(board);
+        if (j < totalTicks - 1) {
+          s = performance.now();
+          board = cloneBoard(board);
+          tCloneBoard += performance.now() - s;
+        }
+      }
+
+      s = performance.now();
+      const newStateCache = [...current.stateCache.slice(0, t + 1), ...forwardStates];
+      tArrayBuild += performance.now() - s;
+
+      const finalBoard = newStateCache[newStateCache.length - 1];
+      const score = finalBoard.stats.landCounts[PLAYER_INDEX];
+      const neighbor: SASolution = { moves: newMoves, score, stateCache: newStateCache };
+
+      s = performance.now();
+      const delta = neighbor.score - current.score;
+      if (delta >= 0 || Math.random() < Math.exp(delta / temperature)) {
+        current = neighbor;
+        acceptedCount++;
+        if (current.score > bestScore) {
+          bestScore = current.score;
+          bestMoves = [...current.moves];
+        }
+      }
+      tAcceptance += performance.now() - s;
     }
 
     temperature *= alpha;
@@ -140,7 +210,7 @@ function runSA(boardState: BoardState, totalTicks: number, config: SAConfig): SA
 
   const runtimeMs = performance.now() - start;
 
-  return {
+  const result: SAResult = {
     bestScore,
     bestMoves,
     scoreProgression,
@@ -148,6 +218,20 @@ function runSA(boardState: BoardState, totalTicks: number, config: SAConfig): SA
     acceptedCount,
     runtimeMs,
   };
+
+  if (doProfile) {
+    result.profile = {
+      genMovesMs: tGenMoves,
+      simForwardMs: tCloneBoard + tProcessStep,
+      cloneBoardMs: tCloneBoard,
+      processStepMs: tProcessStep,
+      arrayBuildMs: tArrayBuild,
+      acceptanceMs: tAcceptance,
+      totalMs: runtimeMs,
+    };
+  }
+
+  return result;
 }
 
 // Rebuild a full SASolution from a move sequence by re-simulating from scratch.

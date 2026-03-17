@@ -14,6 +14,17 @@ interface SAConfig {
   iterations: number;
   t0: number; // initial temperature
   epsilon: number; // final temperature ratio (finalTemp = t0 * epsilon)
+  profile?: boolean;
+}
+
+interface SAProfileData {
+  genMovesMs: number;
+  simForwardMs: number;
+  cloneBoardMs: number;
+  processStepMs: number;
+  arrayBuildMs: number;
+  acceptanceMs: number;
+  totalMs: number;
 }
 
 interface SAResult {
@@ -23,6 +34,7 @@ interface SAResult {
   totalIterations: number;
   acceptedCount: number;
   runtimeMs: number;
+  profile?: SAProfileData;
 }
 
 export type { SASolution, SAConfig, SAResult };
