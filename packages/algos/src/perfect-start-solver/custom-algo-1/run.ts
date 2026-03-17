@@ -1,8 +1,8 @@
 import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
-import { makeBoard } from '../test-boards';
-
-import { solve } from './solver-wip';
 import { fromBoardState } from '@/core-next/convert';
+
+import { makeBoard } from '../test-boards';
+import { solve } from './solver-wip';
 
 interface CustomAlgoOptions {
   board: string;
