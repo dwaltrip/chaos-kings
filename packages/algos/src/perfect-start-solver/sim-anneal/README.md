@@ -10,17 +10,30 @@ that maximize tiles owned at tick 50.
 npx tsx src/perfect-start-solver/sim-anneal/run-sa.ts [options]
 ```
 
-Options:
-- `--board <name>` — Board name (default: `open-7x7`)
+Options (all sweep-able params accept comma-separated lists):
+- `--board <names>` — Board names (default: `open-7x7`)
 - `--ticks <n>` — Number of ticks (default: `50`)
-- `--iterations <n>` — SA iterations (default: `100000`)
-- `--t0 <n>` — Initial temperature (default: `3.0`)
-- `--epsilon <n>` — Final temperature ratio (default: `0.001`)
+- `--iterations <counts>` — SA iterations (default: `100000`)
+- `--t0 <values>` — Initial temperatures (default: `3.0`)
+- `--epsilon <values>` — Final temperature ratios (default: `0.001`)
+- `--seeds <n>` — Runs per config combo (default: `3`)
 
-Example:
+Examples:
 ```bash
-npx tsx src/perfect-start-solver/sim-anneal/run-sa.ts --iterations 1000000
+# Quick single config
+npx tsx src/perfect-start-solver/sim-anneal/run-sa.ts --iterations 100000 --seeds 5
+
+# Sweep temperature
+npx tsx src/perfect-start-solver/sim-anneal/run-sa.ts --t0 1.0,3.0,5.0 --seeds 3
+
+# Multiple boards
+npx tsx src/perfect-start-solver/sim-anneal/run-sa.ts --board open-7x7,sparse-mtns-7x7
+
+# Full sweep
+npx tsx src/perfect-start-solver/sim-anneal/run-sa.ts --board open-7x7,maze-7x7 --iterations 100000,500000 --t0 1.0,3.0 --seeds 3
 ```
+
+Outputs timestamped JSON results and summary table to `data/`.
 
 ## Results
 
@@ -50,8 +63,9 @@ On the open-7x7 board (known optimal = 25 tiles at tick 50):
 
 - `sim-anneal.ts` — Core SA: initial solution, neighbor generation, main loop
 - `types.ts` — SASolution, SAConfig, SAResult
-- `run-sa.ts` — CLI runner
-- `tmp-scripts/` — One-off investigation scripts (created as needed)
+- `run-sa.ts` — Multi-run CLI runner (config sweeps, seeds, file output)
+- `data/` — Timestamped results JSON and summary files
+- `tmp-scripts/` — One-off investigation scripts (delta sampler, etc.)
 
 ## Architecture
 
