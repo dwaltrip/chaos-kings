@@ -150,4 +150,27 @@ function runSA(boardState: BoardState, totalTicks: number, config: SAConfig): SA
   };
 }
 
-export { createInitialSolution, generateNeighbor, runSA, simulateForward, PLAYER_INDEX };
+// Rebuild a full SASolution from a move sequence by re-simulating from scratch.
+function buildSolution(
+  boardState: BoardState,
+  moves: FlatMove[],
+  totalTicks: number,
+): SASolution {
+  const initialBoard = fromBoardState(structuredClone(boardState), 1);
+  const forwardStates = simulateForward(initialBoard, moves, 0, totalTicks, timing);
+
+  const stateCache = [initialBoard, ...forwardStates];
+  const finalBoard = stateCache[stateCache.length - 1];
+  const score = finalBoard.stats.landCounts[PLAYER_INDEX];
+
+  return { moves: [...moves], score, stateCache };
+}
+
+export {
+  buildSolution,
+  createInitialSolution,
+  generateNeighbor,
+  runSA,
+  simulateForward,
+  PLAYER_INDEX,
+};
