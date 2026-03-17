@@ -13,6 +13,7 @@
 
 import type { BoardState, Coord } from '@core/types';
 import { DEFAULT_TIMING } from '@core/game-timing-config';
+import { fingerprintStateClamped } from '../../moves';
 import type { TimingConfig } from '@core/timing/types';
 
 import { TileType, NO_OWNER, Board, cloneBoard } from '@/core-next/flat-board';
@@ -106,16 +107,8 @@ function territoryFingerprint(board: FlatBoard): string {
 }
 
 // Full state fingerprint (matching solver.ts fingerprintState)
-function stateFingerprint(state: SolverState): string {
-  const { board } = state;
-  const n = board.width * board.height;
-  const buf = new Uint8Array(n);
-  for (let i = 0; i < n; i++) {
-    if (board.owners[i] !== NO_OWNER) {
-      buf[i] = Math.min(board.units[i], 15);
-    }
-  }
-  return String.fromCharCode(...buf);
+function stateFingerprint(state: SolverState): number {
+  return fingerprintStateClamped(state.board, 15);
 }
 
 // ============================================================================
@@ -188,7 +181,7 @@ function solveInstrumented(
     // Optional dedup (matching solver.ts logic exactly)
     let dedupedCandidates = candidates;
     if (useDedup) {
-      const seen = new Set<string>();
+      const seen = new Set<number>();
       const unique: SolverState[] = [];
       for (const c of candidates) {
         const fp = stateFingerprint(c);

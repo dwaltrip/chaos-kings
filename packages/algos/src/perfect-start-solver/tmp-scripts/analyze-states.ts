@@ -149,7 +149,7 @@ function trackState(board, fp: string): TrackedState {
 
 // -- BFS with full state capture ---------------------------------------------
 
-const allTicks: Map<string, TrackedState>[] = [];
+const allTicks: Map<number, TrackedState>[] = [];
 
 const board0 = fromBoardState(structuredClone(testBoard.board), 1);
 const fp0 = fingerprintState(board0);

@@ -36,7 +36,7 @@ function solveExact(
   const board = fromBoardState(structuredClone(boardState), 1);
 
   const initialFp = fingerprintState(board);
-  let states = new Map<string, SearchState>();
+  let states = new Map<number, SearchState>();
   states.set(initialFp, { board, moves: [] });
 
   let bestLand = board.stats.landCounts[0];
@@ -45,7 +45,7 @@ function solveExact(
 
   const [, totalTimeMs] = runWithTiming(() => {
     for (let tick = 1; tick <= config.maxTicks; tick++) {
-      const nextStates = new Map<string, SearchState>();
+      const nextStates = new Map<number, SearchState>();
 
       for (const state of states.values()) {
         const legalMoves = generateMoves(state);

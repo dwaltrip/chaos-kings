@@ -74,7 +74,7 @@ function writeTickFile(tick: number, boards: Map<string, any>) {
 
 // -- BFS ---------------------------------------------------------------------
 
-let states = new Map<string, any>();
+let states = new Map<number, any>();
 const board0 = fromBoardState(structuredClone(testBoard.board), 1);
 states.set(fingerprintState(board0), board0);
 writeTickFile(0, states);

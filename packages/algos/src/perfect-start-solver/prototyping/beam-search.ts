@@ -8,7 +8,7 @@ interface BeamSearchConfig<S, M> {
   // If provided, deduplicates candidates pre-score: only the first state with
   // each fingerprint is kept. This prevents the beam from filling with copies
   // of identical board positions that happen to have different move histories.
-  fingerprint?: (state: S) => string;
+  fingerprint?: (state: S) => number;
   beamWidth: number;
   numSteps: number;
 }
@@ -78,7 +78,7 @@ function beamSearch<S, M>(
       // -- Dedup (optional, pre-score to avoid wasted scoring work) --
       const [dedupedCandidates, dedupMs] = runWithTiming(() => {
         if (!fingerprint) return candidates;
-        const seen = new Set<string>();
+        const seen = new Set<number>();
         const unique: S[] = [];
         for (const c of candidates) {
           const fp = fingerprint(c);

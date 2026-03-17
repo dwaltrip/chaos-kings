@@ -2,13 +2,17 @@ import type { BoardState, Coord } from '@core/types';
 import { DEFAULT_TIMING } from '@core/game-timing-config';
 import type { TimingConfig } from '@core/timing/types';
 
-import { NO_OWNER, cloneBoard } from '@/core-next/flat-board';
+import { cloneBoard } from '@/core-next/flat-board';
 import type { FlatBoard } from '@/core-next/flat-board';
 import { processStep } from '@/core-next/process-step';
 import type { FlatMove } from '@/core-next/process-step';
 import { fromBoardState } from '@/core-next/convert';
 
-import { generateMoves as generateMovesBase, flatMoveToMove } from '../moves';
+import {
+  generateMoves as generateMovesBase,
+  fingerprintStateClamped,
+  flatMoveToMove,
+} from '../moves';
 import { beamSearch } from './beam-search';
 import type { SolverConfig, SolverResult } from './types';
 
@@ -51,16 +55,8 @@ function stepState(state: SolverState, move: FlatMove, timing: TimingConfig): vo
 // causes minor regressions on some boards (sparse, corridor) at certain beam
 // widths — same root cause (score plateaus), different trigger. The real fix is
 // better scorer resolution so ties are rarer.
-function fingerprintState(state: SolverState): string {
-  const { board } = state;
-  const n = board.width * board.height;
-  const buf = new Uint8Array(n);
-  for (let i = 0; i < n; i++) {
-    if (board.owners[i] !== NO_OWNER) {
-      buf[i] = Math.min(board.units[i], 15);
-    }
-  }
-  return String.fromCharCode(...buf);
+function fingerprintState(state: SolverState): number {
+  return fingerprintStateClamped(state.board, 15);
 }
 
 function solve(
