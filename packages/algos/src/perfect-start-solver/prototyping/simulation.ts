@@ -5,8 +5,8 @@ import { isPlayerSquare } from '@core/square';
 import { processStep, createGameState } from '@core/step-processor';
 import { DEFAULT_TIMING } from '@core/game-timing-config';
 
-import { toMoveEvent } from './helpers';
-import type { Move, ArmySnapshot, SimulationResult } from './types';
+import { toMoveEvent } from '../helpers';
+import type { Move, ArmySnapshot, SimulationResult } from '../types';
 
 function getGeneralArmy(gameState: GameState, generalCoord: Coord): number {
   const square = Board.getSquare(gameState.board, generalCoord);

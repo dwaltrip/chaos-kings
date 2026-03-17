@@ -6,7 +6,7 @@ import type { Coord } from '@core/types';
 import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 
 import { alignColumns, coordStr, formatMove, formatTable, num } from '../format';
-import { simulate } from '../simulation';
+import { simulate } from './simulation';
 import { allBoards } from '../test-boards';
 import type { ArmySnapshot, Move } from '../types';
 
