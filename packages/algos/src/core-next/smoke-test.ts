@@ -202,3 +202,7 @@ runTest(
 // Test 6: Many ticks with production cycles (test land production at tick 25)
 const manyWaits = new Array(30).fill(null);
 runTest('30-ticks-production', `\n...\n.G.\n...\n`, manyWaits);
+
+// Test 7: 55 ticks — covers tick 50 where both general and land production fire
+const manyWaits55 = new Array(55).fill(null);
+runTest('55-ticks-dual-production', `\n...\n.G.\n...\n`, manyWaits55);
