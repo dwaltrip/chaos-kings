@@ -2,56 +2,49 @@ import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 
 import { makeBoard } from '../test-boards';
 
-import { createInitialSolution, generateNeighbor } from './sim-anneal';
+import { runSA } from './sim-anneal';
 
 interface SAOptions {
   board: string;
   ticks: string;
+  iterations: string;
+  t0: string;
+  epsilon: string;
 }
 
 const { opts } = parseTypedCommand(
   createTypedCommand<SAOptions>()
     .name('run-sa')
     .description('Run simulated annealing on a test board')
-    .option('--board <name>', 'Board name (default: open-7x7)', 'open-7x7')
-    .option('--ticks <n>', 'Number of ticks (default: 50)', '50'),
+    .option('--board <name>', 'Board name', 'open-7x7')
+    .option('--ticks <n>', 'Number of ticks', '50')
+    .option('--iterations <n>', 'SA iterations', '100000')
+    .option('--t0 <n>', 'Initial temperature', '3.0')
+    .option('--epsilon <n>', 'Final temperature ratio', '0.001'),
 );
 
 const boardName = opts.board;
 const totalTicks = Number(opts.ticks);
+const iterations = Number(opts.iterations);
+const t0 = Number(opts.t0);
+const epsilon = Number(opts.epsilon);
 
 function run() {
-  const testBoard = makeBoard(boardName);
-  const { board, generalCoord } = testBoard;
+  const { board } = makeBoard(boardName);
 
-  console.log(`Board: ${boardName}, general at (${generalCoord.x}, ${generalCoord.y})`);
-  console.log(`Ticks: ${totalTicks}`);
+  console.log(`Board: ${boardName}`);
+  console.log(`Ticks: ${totalTicks}, Iterations: ${iterations.toLocaleString()}`);
+  console.log(`T0: ${t0}, epsilon: ${epsilon}`);
   console.log();
 
-  const solution = createInitialSolution(board, totalTicks);
+  const result = runSA(board, totalTicks, { iterations, t0, epsilon });
 
-  console.log(`Initial solution (all WAITs):`);
-  console.log(`  Score: ${solution.score}`);
+  console.log(`Best score: ${result.bestScore}`);
   console.log(
-    `  State cache length: ${solution.stateCache.length} (${totalTicks} ticks + initial)`,
+    `Accepted: ${result.acceptedCount.toLocaleString()} / ${result.totalIterations.toLocaleString()} (${((result.acceptedCount / result.totalIterations) * 100).toFixed(1)}%)`,
   );
-
-  const finalBoard = solution.stateCache[solution.stateCache.length - 1];
-  const generalIdx = generalCoord.y * board.size.width + generalCoord.x;
-  console.log(`  General army at tick ${totalTicks}: ${finalBoard.units[generalIdx]}`);
-
-  // Test neighbor generation
-  console.log();
-  console.log('Generating 10 neighbors from initial solution:');
-  for (let i = 0; i < 10; i++) {
-    const neighbor = generateNeighbor(solution);
-    const changedTicks = neighbor.moves
-      .map((m, idx) => (m !== solution.moves[idx] ? idx : -1))
-      .filter((idx) => idx >= 0);
-    console.log(
-      `  neighbor ${i + 1}: score=${neighbor.score}, changed ticks=[${changedTicks.join(',')}]`,
-    );
-  }
+  console.log(`Runtime: ${(result.runtimeMs / 1000).toFixed(2)}s`);
+  console.log(`Progression (best at 10%..100%): [${result.scoreProgression.join(', ')}]`);
 }
 
 run();

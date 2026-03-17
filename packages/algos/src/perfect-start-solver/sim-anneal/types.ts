@@ -10,4 +10,19 @@ interface SASolution {
   score: number;
 }
 
-export type { SASolution };
+interface SAConfig {
+  iterations: number;
+  t0: number; // initial temperature
+  epsilon: number; // final temperature ratio (finalTemp = t0 * epsilon)
+}
+
+interface SAResult {
+  bestScore: number;
+  bestMoves: FlatMove[];
+  scoreProgression: number[]; // best score at each 10% milestone
+  totalIterations: number;
+  acceptedCount: number;
+  runtimeMs: number;
+}
+
+export type { SASolution, SAConfig, SAResult };

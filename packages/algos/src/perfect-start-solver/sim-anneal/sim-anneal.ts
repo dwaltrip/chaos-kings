@@ -10,7 +10,7 @@ import { fromBoardState } from '@/core-next/convert';
 
 import { generateMoves } from '../moves';
 
-import type { SASolution } from './types';
+import type { SASolution, SAConfig, SAResult } from './types';
 
 const PLAYER_INDEX = 0;
 const timing = DEFAULT_TIMING;
@@ -101,4 +101,53 @@ function flatMovesEqual(a: FlatMove, b: FlatMove): boolean {
   return a.src === b.src && a.dir === b.dir;
 }
 
-export { createInitialSolution, generateNeighbor, simulateForward, PLAYER_INDEX };
+function runSA(boardState: BoardState, totalTicks: number, config: SAConfig): SAResult {
+  const { iterations, t0, epsilon } = config;
+  const alpha = Math.pow(epsilon, 1 / iterations);
+
+  let current = createInitialSolution(boardState, totalTicks);
+  let bestScore = current.score;
+  let bestMoves = [...current.moves];
+  let temperature = t0;
+  let acceptedCount = 0;
+
+  // Track best score at each 10% milestone
+  const milestoneInterval = Math.floor(iterations / 10);
+  const scoreProgression: number[] = [];
+
+  const start = performance.now();
+
+  for (let i = 0; i < iterations; i++) {
+    const neighbor = generateNeighbor(current);
+    const delta = neighbor.score - current.score;
+
+    if (delta >= 0 || Math.random() < Math.exp(delta / temperature)) {
+      current = neighbor;
+      acceptedCount++;
+
+      if (current.score > bestScore) {
+        bestScore = current.score;
+        bestMoves = [...current.moves];
+      }
+    }
+
+    temperature *= alpha;
+
+    if ((i + 1) % milestoneInterval === 0) {
+      scoreProgression.push(bestScore);
+    }
+  }
+
+  const runtimeMs = performance.now() - start;
+
+  return {
+    bestScore,
+    bestMoves,
+    scoreProgression,
+    totalIterations: iterations,
+    acceptedCount,
+    runtimeMs,
+  };
+}
+
+export { createInitialSolution, generateNeighbor, runSA, simulateForward, PLAYER_INDEX };
