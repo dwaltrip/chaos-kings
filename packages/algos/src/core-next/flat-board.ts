@@ -57,6 +57,18 @@ function cloneBoard(board: FlatBoard): FlatBoard {
   };
 }
 
+// Copy source board data into an existing target board (avoids allocation).
+// Target must have the same dimensions and playerCount as source.
+function copyInto(target: FlatBoard, source: FlatBoard): void {
+  target.types.set(source.types);
+  target.owners.set(source.owners);
+  target.units.set(source.units);
+  for (let i = 0; i < source.stats.landCounts.length; i++) {
+    target.stats.landCounts[i] = source.stats.landCounts[i];
+    target.stats.armyCounts[i] = source.stats.armyCounts[i];
+  }
+}
+
 // --- Create ---
 
 function createBoard(width: number, height: number, playerCount: number): FlatBoard {
@@ -228,9 +240,10 @@ function recomputeStats(board: FlatBoard): void {
 // --- Board namespace ---
 
 const Board = {
-  // Create / clone
+  // Create / clone / copy
   create: createBoard,
   clone: cloneBoard,
+  copyInto,
 
   // Index helpers
   toIndex,
@@ -264,4 +277,4 @@ const Board = {
 
 export { TileType, NO_OWNER };
 export type { FlatBoard, Tile };
-export { cloneBoard, Board };
+export { cloneBoard, copyInto, Board };

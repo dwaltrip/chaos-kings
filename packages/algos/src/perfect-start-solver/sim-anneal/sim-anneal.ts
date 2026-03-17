@@ -1,43 +1,120 @@
-import type { BoardState, Coord } from '@core/types';
+import type { BoardState } from '@core/types';
 import { DEFAULT_TIMING } from '@core/game-timing-config';
 import type { TimingConfig } from '@core/timing/types';
 
-import { cloneBoard } from '@/core-next/flat-board';
+import { cloneBoard, copyInto } from '@/core-next/flat-board';
 import type { FlatBoard } from '@/core-next/flat-board';
+import { Board } from '@/core-next/flat-board';
 import { processStep } from '@/core-next/process-step';
 import type { FlatMove } from '@/core-next/process-step';
 import { fromBoardState } from '@/core-next/convert';
 
 import { generateMoves } from '../moves';
 
-import type { SASolution, SAConfig, SAResult, SAProfileData } from './types';
+import type { SASolution, SAConfig, SAResult } from './types';
 
 const PLAYER_INDEX = 0;
 const timing = DEFAULT_TIMING;
 
-// Simulate a move sequence from a given starting state, returning
-// the board state after each tick.
+// --- Timing accumulators (optional profiling) ---
+
+interface TimingAccum {
+  genMoves: number;
+  cloneBoard: number;
+  processStep: number;
+  arrayBuild: number;
+  acceptance: number;
+}
+
+function createTimingAccum(): TimingAccum {
+  return { genMoves: 0, cloneBoard: 0, processStep: 0, arrayBuild: 0, acceptance: 0 };
+}
+
+// --- Scratch buffer ---
+// Pre-allocated boards reused each iteration to avoid allocation on the hot path.
+// Only used in runSA's inner loop. On acceptance, scratch boards are cloned into
+// durable boards for the stateCache.
+
+function allocateScratchBoards(template: FlatBoard, count: number): FlatBoard[] {
+  const boards: FlatBoard[] = [];
+  const playerCount = template.stats.landCounts.length;
+  for (let i = 0; i < count; i++) {
+    boards.push(Board.create(template.width, template.height, playerCount));
+  }
+  return boards;
+}
+
+// Simulate forward into scratch boards. Returns the number of scratch boards used.
+function simulateIntoScratch(
+  startBoard: FlatBoard,
+  moves: FlatMove[],
+  startTick: number,
+  totalTicks: number,
+  timing: TimingConfig,
+  scratch: FlatBoard[],
+  ta?: TimingAccum,
+): number {
+  const count = totalTicks - startTick;
+
+  let s: number;
+  if (ta) s = performance.now();
+  copyInto(scratch[0], startBoard);
+  if (ta) ta.cloneBoard += performance.now() - s!;
+
+  for (let i = 0; i < count; i++) {
+    const tick = startTick + i;
+    const move = moves[tick] ?? null;
+
+    if (ta) s = performance.now();
+    processStep(scratch[i], move, PLAYER_INDEX, tick + 1, timing);
+    if (ta) ta.processStep += performance.now() - s!;
+
+    if (i < count - 1) {
+      if (ta) s = performance.now();
+      copyInto(scratch[i + 1], scratch[i]);
+      if (ta) ta.cloneBoard += performance.now() - s!;
+    }
+  }
+
+  return count;
+}
+
+// --- Simulation (allocating version, used by non-hot-loop callers) ---
+
 function simulateForward(
   startBoard: FlatBoard,
   moves: FlatMove[],
   startTick: number,
   totalTicks: number,
   timing: TimingConfig,
+  ta?: TimingAccum,
 ): FlatBoard[] {
   const states: FlatBoard[] = [];
+
+  let s: number;
+  if (ta) s = performance.now();
   let board = cloneBoard(startBoard);
+  if (ta) ta.cloneBoard += performance.now() - s!;
 
   for (let i = startTick; i < totalTicks; i++) {
     const move = moves[i] ?? null;
+
+    if (ta) s = performance.now();
     processStep(board, move, PLAYER_INDEX, i + 1, timing);
+    if (ta) ta.processStep += performance.now() - s!;
+
     states.push(board);
     if (i < totalTicks - 1) {
+      if (ta) s = performance.now();
       board = cloneBoard(board);
+      if (ta) ta.cloneBoard += performance.now() - s!;
     }
   }
 
   return states;
 }
+
+// --- Solution helpers ---
 
 function createInitialSolution(boardState: BoardState, totalTicks: number): SASolution {
   const initialBoard = fromBoardState(structuredClone(boardState), 1);
@@ -52,22 +129,24 @@ function createInitialSolution(boardState: BoardState, totalTicks: number): SASo
   return { moves, score, stateCache };
 }
 
-// TODO: generateNeighbor rebuilds the full state cache (51 boards) on every call,
-// even for rejected neighbors. When scaling to 1M+ iterations, consider returning
-// only the changed suffix (states from tick t onward) and splicing on acceptance.
-function generateNeighbor(current: SASolution): SASolution {
+function flatMovesEqual(a: FlatMove, b: FlatMove): boolean {
+  if (a === null && b === null) return true;
+  if (a === null || b === null) return false;
+  return a.src === b.src && a.dir === b.dir;
+}
+
+// Pick a random neighbor: change one random tick's move and re-simulate forward.
+// Uses allocating simulateForward — suitable for external callers (e.g. delta-sampler).
+function generateNeighbor(current: SASolution, ta?: TimingAccum): SASolution {
   const totalTicks = current.moves.length;
-
-  // Pick a random tick index to modify
   const t = Math.floor(Math.random() * totalTicks);
-
-  // stateCache[t] = board state before moves[t] is applied
   const boardAtT = current.stateCache[t];
 
-  // Get legal moves at this state
+  let s: number;
+  if (ta) s = performance.now();
   const legalMoves = generateMoves({ board: boardAtT });
+  if (ta) ta.genMoves += performance.now() - s!;
 
-  // Pick a random legal move, preferring one different from the current move
   let newMove: FlatMove = null;
   if (legalMoves.length > 1) {
     const currentMove = current.moves[t];
@@ -80,26 +159,22 @@ function generateNeighbor(current: SASolution): SASolution {
     newMove = legalMoves[0];
   }
 
-  // Build new move array
   const newMoves = [...current.moves];
   newMoves[t] = newMove;
 
-  // Re-simulate from tick t forward
-  const forwardStates = simulateForward(boardAtT, newMoves, t, totalTicks, timing);
+  const forwardStates = simulateForward(boardAtT, newMoves, t, totalTicks, timing, ta);
 
-  // Splice the state cache: keep [0..t], replace [t+1..end]
+  if (ta) s = performance.now();
   const newStateCache = [...current.stateCache.slice(0, t + 1), ...forwardStates];
+  if (ta) ta.arrayBuild += performance.now() - s!;
+
   const finalBoard = newStateCache[newStateCache.length - 1];
   const score = finalBoard.stats.landCounts[PLAYER_INDEX];
 
   return { moves: newMoves, score, stateCache: newStateCache };
 }
 
-function flatMovesEqual(a: FlatMove, b: FlatMove): boolean {
-  if (a === null && b === null) return true;
-  if (a === null || b === null) return false;
-  return a.src === b.src && a.dir === b.dir;
-}
+// --- Main SA loop ---
 
 function runSA(boardState: BoardState, totalTicks: number, config: SAConfig): SAResult {
   const { iterations, t0, epsilon, profile: doProfile } = config;
@@ -114,91 +189,73 @@ function runSA(boardState: BoardState, totalTicks: number, config: SAConfig): SA
   const milestoneInterval = Math.floor(iterations / 10);
   const scoreProgression: number[] = [];
 
-  // Profiling accumulators
-  let tGenMoves = 0;
-  let tCloneBoard = 0;
-  let tProcessStep = 0;
-  let tArrayBuild = 0;
-  let tAcceptance = 0;
+  const ta = doProfile ? createTimingAccum() : undefined;
+
+  // Pre-allocate scratch boards for forward simulation
+  const scratch = allocateScratchBoards(current.stateCache[0], totalTicks);
 
   const start = performance.now();
 
   for (let i = 0; i < iterations; i++) {
-    if (!doProfile) {
-      // Fast path: no timing overhead
-      const neighbor = generateNeighbor(current);
-      const delta = neighbor.score - current.score;
+    const t = Math.floor(Math.random() * totalTicks);
+    const boardAtT = current.stateCache[t];
 
-      if (delta >= 0 || Math.random() < Math.exp(delta / temperature)) {
-        current = neighbor;
-        acceptedCount++;
-        if (current.score > bestScore) {
-          bestScore = current.score;
-          bestMoves = [...current.moves];
-        }
-      }
-    } else {
-      // Profiled path: inline generateNeighbor with timing
-      const t = Math.floor(Math.random() * totalTicks);
-      const boardAtT = current.stateCache[t];
+    // Generate moves
+    let s: number;
+    if (ta) s = performance.now();
+    const legalMoves = generateMoves({ board: boardAtT });
+    if (ta) ta.genMoves += performance.now() - s!;
 
-      let s = performance.now();
-      const legalMoves = generateMoves({ board: boardAtT });
-      tGenMoves += performance.now() - s;
+    // Pick a random legal move, preferring one different from current
+    let newMove: FlatMove = null;
+    if (legalMoves.length > 1) {
+      const currentMove = current.moves[t];
+      const alternatives = legalMoves.filter((m) => !flatMovesEqual(m, currentMove));
+      newMove =
+        alternatives.length > 0
+          ? alternatives[Math.floor(Math.random() * alternatives.length)]
+          : legalMoves[Math.floor(Math.random() * legalMoves.length)];
+    } else if (legalMoves.length === 1) {
+      newMove = legalMoves[0];
+    }
 
-      let newMove: FlatMove = null;
-      if (legalMoves.length > 1) {
-        const currentMove = current.moves[t];
-        const alternatives = legalMoves.filter((m) => !flatMovesEqual(m, currentMove));
-        newMove =
-          alternatives.length > 0
-            ? alternatives[Math.floor(Math.random() * alternatives.length)]
-            : legalMoves[Math.floor(Math.random() * legalMoves.length)];
-      } else if (legalMoves.length === 1) {
-        newMove = legalMoves[0];
-      }
+    const newMoves = [...current.moves];
+    newMoves[t] = newMove;
 
-      // Simulate forward with per-op timing
-      s = performance.now();
-      let board = cloneBoard(boardAtT);
-      tCloneBoard += performance.now() - s;
+    // Simulate forward into scratch boards (no allocation)
+    const scratchCount = simulateIntoScratch(
+      boardAtT,
+      newMoves,
+      t,
+      totalTicks,
+      timing,
+      scratch,
+      ta,
+    );
 
-      const newMoves = [...current.moves];
-      newMoves[t] = newMove;
+    // Score from the last scratch board
+    const score = scratch[scratchCount - 1].stats.landCounts[PLAYER_INDEX];
+    const delta = score - current.score;
+
+    if (delta >= 0 || Math.random() < Math.exp(delta / temperature)) {
+      // Accepted — clone scratch boards into durable stateCache
+      if (ta) s = performance.now();
       const forwardStates: FlatBoard[] = [];
-
-      for (let j = t; j < totalTicks; j++) {
-        const move = newMoves[j] ?? null;
-        s = performance.now();
-        processStep(board, move, PLAYER_INDEX, j + 1, timing);
-        tProcessStep += performance.now() - s;
-        forwardStates.push(board);
-        if (j < totalTicks - 1) {
-          s = performance.now();
-          board = cloneBoard(board);
-          tCloneBoard += performance.now() - s;
-        }
+      for (let j = 0; j < scratchCount; j++) {
+        forwardStates.push(cloneBoard(scratch[j]));
       }
+      if (ta) ta.cloneBoard += performance.now() - s!;
 
-      s = performance.now();
+      if (ta) s = performance.now();
       const newStateCache = [...current.stateCache.slice(0, t + 1), ...forwardStates];
-      tArrayBuild += performance.now() - s;
+      if (ta) ta.arrayBuild += performance.now() - s!;
 
-      const finalBoard = newStateCache[newStateCache.length - 1];
-      const score = finalBoard.stats.landCounts[PLAYER_INDEX];
-      const neighbor: SASolution = { moves: newMoves, score, stateCache: newStateCache };
-
-      s = performance.now();
-      const delta = neighbor.score - current.score;
-      if (delta >= 0 || Math.random() < Math.exp(delta / temperature)) {
-        current = neighbor;
-        acceptedCount++;
-        if (current.score > bestScore) {
-          bestScore = current.score;
-          bestMoves = [...current.moves];
-        }
+      current = { moves: newMoves, score, stateCache: newStateCache };
+      acceptedCount++;
+      if (score > bestScore) {
+        bestScore = score;
+        bestMoves = [...newMoves];
       }
-      tAcceptance += performance.now() - s;
     }
 
     temperature *= alpha;
@@ -219,14 +276,14 @@ function runSA(boardState: BoardState, totalTicks: number, config: SAConfig): SA
     runtimeMs,
   };
 
-  if (doProfile) {
+  if (ta) {
     result.profile = {
-      genMovesMs: tGenMoves,
-      simForwardMs: tCloneBoard + tProcessStep,
-      cloneBoardMs: tCloneBoard,
-      processStepMs: tProcessStep,
-      arrayBuildMs: tArrayBuild,
-      acceptanceMs: tAcceptance,
+      genMovesMs: ta.genMoves,
+      simForwardMs: ta.cloneBoard + ta.processStep,
+      cloneBoardMs: ta.cloneBoard,
+      processStepMs: ta.processStep,
+      arrayBuildMs: ta.arrayBuild,
+      acceptanceMs: ta.acceptance,
       totalMs: runtimeMs,
     };
   }
