@@ -32,8 +32,8 @@ function createTimingAccum(): TimingAccum {
 
 // --- Scratch buffer ---
 // Pre-allocated boards reused each iteration to avoid allocation on the hot path.
-// Only used in runSA's inner loop. On acceptance, scratch boards are cloned into
-// durable boards for the stateCache.
+// Ownership invariant: each FlatBoard is owned by exactly one of {scratch, stateCache}.
+// On acceptance, boards are swapped between scratch and stateCache — no cloning needed.
 
 function allocateScratchBoards(template: FlatBoard, count: number): FlatBoard[] {
   const boards: FlatBoard[] = [];
@@ -42,6 +42,23 @@ function allocateScratchBoards(template: FlatBoard, count: number): FlatBoard[] 
     boards.push(Board.create(template.width, template.height, playerCount));
   }
   return boards;
+}
+
+// Swap board ownership between scratch and stateCache on acceptance.
+// Scratch boards (which hold the simulated result) move into stateCache;
+// old stateCache boards (being replaced) are recycled into scratch.
+function recycleAndSwap(
+  scratch: FlatBoard[],
+  stateCache: FlatBoard[],
+  cacheStart: number,
+  count: number,
+): void {
+  for (let j = 0; j < count; j++) {
+    const recycled = stateCache[cacheStart + j];
+    stateCache[cacheStart + j] = scratch[j];
+    scratch[j] = null!; // crash-fast if read before refill
+    scratch[j] = recycled;
+  }
 }
 
 // Simulate forward into scratch boards. Returns the number of scratch boards used.
@@ -219,13 +236,14 @@ function runSA(boardState: BoardState, totalTicks: number, config: SAConfig): SA
       newMove = legalMoves[0];
     }
 
-    const newMoves = [...current.moves];
-    newMoves[t] = newMove;
+    // Mutate move in-place (restored on rejection)
+    const oldMove = current.moves[t];
+    current.moves[t] = newMove;
 
     // Simulate forward into scratch boards (no allocation)
     const scratchCount = simulateIntoScratch(
       boardAtT,
-      newMoves,
+      current.moves,
       t,
       totalTicks,
       timing,
@@ -238,24 +256,20 @@ function runSA(boardState: BoardState, totalTicks: number, config: SAConfig): SA
     const delta = score - current.score;
 
     if (delta >= 0 || Math.random() < Math.exp(delta / temperature)) {
-      // Accepted — clone scratch boards into durable stateCache
+      // Accepted — swap scratch ↔ stateCache (no cloning)
       if (ta) s = performance.now();
-      const forwardStates: FlatBoard[] = [];
-      for (let j = 0; j < scratchCount; j++) {
-        forwardStates.push(cloneBoard(scratch[j]));
-      }
-      if (ta) ta.cloneBoard += performance.now() - s!;
+      recycleAndSwap(scratch, current.stateCache, t + 1, scratchCount);
+      if (ta) ta.acceptance += performance.now() - s!;
 
-      if (ta) s = performance.now();
-      const newStateCache = [...current.stateCache.slice(0, t + 1), ...forwardStates];
-      if (ta) ta.arrayBuild += performance.now() - s!;
-
-      current = { moves: newMoves, score, stateCache: newStateCache };
+      current.score = score;
       acceptedCount++;
       if (score > bestScore) {
         bestScore = score;
-        bestMoves = [...newMoves];
+        bestMoves = [...current.moves];
       }
+    } else {
+      // Rejected — restore old move
+      current.moves[t] = oldMove;
     }
 
     temperature *= alpha;
