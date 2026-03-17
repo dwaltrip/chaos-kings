@@ -2,7 +2,7 @@ import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 
 import { makeBoard } from '../test-boards';
 
-import { createInitialSolution } from './sim-anneal';
+import { createInitialSolution, generateNeighbor } from './sim-anneal';
 
 interface SAOptions {
   board: string;
@@ -39,6 +39,19 @@ function run() {
   const finalBoard = solution.stateCache[solution.stateCache.length - 1];
   const generalIdx = generalCoord.y * board.size.width + generalCoord.x;
   console.log(`  General army at tick ${totalTicks}: ${finalBoard.units[generalIdx]}`);
+
+  // Test neighbor generation
+  console.log();
+  console.log('Generating 10 neighbors from initial solution:');
+  for (let i = 0; i < 10; i++) {
+    const neighbor = generateNeighbor(solution);
+    const changedTicks = neighbor.moves
+      .map((m, idx) => (m !== solution.moves[idx] ? idx : -1))
+      .filter((idx) => idx >= 0);
+    console.log(
+      `  neighbor ${i + 1}: score=${neighbor.score}, changed ticks=[${changedTicks.join(',')}]`,
+    );
+  }
 }
 
 run();
