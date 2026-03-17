@@ -37,4 +37,4 @@ interface SAResult {
   profile?: SAProfileData;
 }
 
-export type { SASolution, SAConfig, SAResult };
+export type { SASolution, SAConfig, SAProfileData, SAResult };

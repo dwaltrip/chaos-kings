@@ -139,25 +139,21 @@ function applyMove(
 // --- Production ---
 
 function applyProduction(board: FlatBoard, tick: number, timing: TimingConfig): void {
-  const n = board.width * board.height;
-
   if (tick % timing.generalProductionTicks === 0) {
-    for (let i = 0; i < n; i++) {
-      const t = board.types[i];
-      if (t === TileType.GENERAL || t === TileType.PLAYER_CITY) {
-        board.units[i]++;
-        const owner = board.owners[i];
-        board.stats.armyCounts[owner]++;
-      }
+    const pt = board.prodTiles;
+    for (let i = 0; i < pt.length; i++) {
+      const idx = pt[i];
+      board.units[idx]++;
+      board.stats.armyCounts[board.owners[idx]]++;
     }
   }
 
   if (tick % timing.landProductionTicks === 0) {
+    const n = board.width * board.height;
     for (let i = 0; i < n; i++) {
       if (board.owners[i] !== NO_OWNER) {
         board.units[i]++;
-        const owner = board.owners[i];
-        board.stats.armyCounts[owner]++;
+        board.stats.armyCounts[board.owners[i]]++;
       }
     }
   }

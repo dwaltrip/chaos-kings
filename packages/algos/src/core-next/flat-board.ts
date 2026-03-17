@@ -29,6 +29,9 @@ interface FlatBoard {
     landCounts: number[];
     armyCounts: number[];
   };
+  // Indices of tiles that produce at the general rate (generals + player cities).
+  // Maintained by processStep, setTile, and recomputeProdTiles.
+  prodTiles: number[];
 }
 
 // Returned by ergonomic accessors. Fresh object per call.
@@ -54,6 +57,7 @@ function cloneBoard(board: FlatBoard): FlatBoard {
       landCounts: [...board.stats.landCounts],
       armyCounts: [...board.stats.armyCounts],
     },
+    prodTiles: [...board.prodTiles],
   };
 }
 
@@ -66,6 +70,12 @@ function copyInto(target: FlatBoard, source: FlatBoard): void {
   for (let i = 0; i < source.stats.landCounts.length; i++) {
     target.stats.landCounts[i] = source.stats.landCounts[i];
     target.stats.armyCounts[i] = source.stats.armyCounts[i];
+  }
+  // Copy prodTiles — reuse target array slots where possible
+  const len = source.prodTiles.length;
+  target.prodTiles.length = len;
+  for (let i = 0; i < len; i++) {
+    target.prodTiles[i] = source.prodTiles[i];
   }
 }
 
@@ -88,6 +98,7 @@ function createBoard(width: number, height: number, playerCount: number): FlatBo
       landCounts: new Array(playerCount).fill(0),
       armyCounts: new Array(playerCount).fill(0),
     },
+    prodTiles: [],
   };
 }
 
@@ -186,6 +197,10 @@ function forEachTile(board: FlatBoard, fn: (tile: Tile) => void): void {
 // These maintain stats. Use these for non-perf-sensitive code.
 // processStep uses direct array writes + its own stat maintenance internally.
 
+function isProdType(type: TileType): boolean {
+  return type === TileType.GENERAL || type === TileType.PLAYER_CITY;
+}
+
 function setTile(
   board: FlatBoard,
   idx: number,
@@ -193,6 +208,7 @@ function setTile(
   owner: number,
   units: number,
 ): void {
+  const prevType = board.types[idx] as TileType;
   const prevOwner = board.owners[idx];
   const prevUnits = board.units[idx];
 
@@ -211,6 +227,19 @@ function setTile(
     board.stats.landCounts[owner]++;
     board.stats.armyCounts[owner] += units;
   }
+
+  // Maintain prodTiles
+  const wasProd = isProdType(prevType);
+  const isProd = isProdType(type);
+  if (!wasProd && isProd) {
+    board.prodTiles.push(idx);
+  } else if (wasProd && !isProd) {
+    const i = board.prodTiles.indexOf(idx);
+    if (i !== -1) {
+      board.prodTiles[i] = board.prodTiles[board.prodTiles.length - 1];
+      board.prodTiles.pop();
+    }
+  }
 }
 
 function addUnits(board: FlatBoard, idx: number, delta: number): void {
@@ -221,8 +250,18 @@ function addUnits(board: FlatBoard, idx: number, delta: number): void {
   }
 }
 
-// --- Recompute stats from scratch (for init or validation) ---
+function recomputeProdTiles(board: FlatBoard): void {
+  board.prodTiles.length = 0;
+  const n = board.width * board.height;
+  for (let i = 0; i < n; i++) {
+    const t = board.types[i];
+    if (t === TileType.GENERAL || t === TileType.PLAYER_CITY) {
+      board.prodTiles.push(i);
+    }
+  }
+}
 
+// Recompute stats from scratch (for init or validation)
 function recomputeStats(board: FlatBoard): void {
   const { landCounts, armyCounts } = board.stats;
   landCounts.fill(0);
@@ -273,6 +312,7 @@ const Board = {
 
   // Stats
   recomputeStats,
+  recomputeProdTiles,
 };
 
 export { TileType, NO_OWNER };

@@ -50,6 +50,7 @@ function fromBoardState(boardState: BoardState, playerCount: number): FlatBoard 
   }
 
   Board.recomputeStats(board);
+  Board.recomputeProdTiles(board);
   return board;
 }
 
