@@ -22,7 +22,8 @@ const { opts } = parseTypedCommand(
 function run() {
   console.group('run custom-algo-1');
 
-  const boards = [makeBoard('open-7x7'), makeBoard('sparse-mtns-7x7')];
+  // const boards = [makeBoard('open-7x7'), makeBoard('sparse-mtns-7x7')];
+  const boards = [makeBoard('sparse-mtns-7x7'), makeBoard('maze-7x7')];
 
   for (let testBoard of boards) {
     const flat = fromBoardState(testBoard.board, 1);
