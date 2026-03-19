@@ -1,45 +1,42 @@
-import { invariant } from '@utils/assertions/invariant';
-// import { type Move, Direction } from "../types-next";
+import { getBurstInfos } from './get-burst-info';
 
-type BurstLengthPattern = number[];
+type BurstPattern = number[];
 
-// maxLen is the maximum length of a single burst
-function genBurstLengthPatterns(
-  totalMoves: number,
-  maxLen: number,
-): BurstLengthPattern[] {
-  const patterns: BurstLengthPattern[] = [];
+// Enumerate all descending-order burst patterns that sum to `total`,
+// where each burst is at most `maxBurst`. Filters by timing (must fit
+// within `maxTicks`).
+function genValidBurstPatterns(
+  total: number,
+  maxBurst: number,
+  maxTicks: number,
+): BurstPattern[] {
+  const all = genDescendingPartitions(total, maxBurst);
+  return all.filter((p) => {
+    const bursts = getBurstInfos(p);
+    return bursts[bursts.length - 1].endTick <= maxTicks;
+  });
+}
 
-  function genPattern(
-    pattern: BurstLengthPattern,
-    remainingMoves: number,
-    currMax: number,
-    acc: BurstLengthPattern[],
-  ) {
-    invariant(currMax <= remainingMoves, `invalid: ${currMax}, ${remainingMoves}`);
-    // no more moves, pattern is filled out
-    if (remainingMoves === 0) {
-      acc.push(pattern);
+// All descending-order sequences of positive integers that sum to `total`,
+// where each element is at most `maxVal`.
+function genDescendingPartitions(total: number, maxVal: number): BurstPattern[] {
+  const results: BurstPattern[] = [];
+
+  function recurse(remaining: number, maxNext: number, pattern: BurstPattern) {
+    if (remaining === 0) {
+      results.push(pattern);
       return;
     }
 
-    for (let burst = currMax; burst > 0; burst--) {
-      // const newPattern = pattern.concat(burst);
-      const newRemaining = Math.max(0, remainingMoves - burst);
-      genPattern(
-        pattern.concat(burst),
-        newRemaining,
-        Math.min(newRemaining, currMax),
-        acc,
-      );
+    const upper = Math.min(remaining, maxNext);
+    for (let burst = upper; burst >= 1; burst--) {
+      recurse(remaining - burst, burst, pattern.concat(burst));
     }
   }
 
-  const initialRemaining = Math.max(0, totalMoves - maxLen);
-  const initialMax = Math.min(initialRemaining, maxLen);
-  genPattern([maxLen], initialRemaining, initialMax, patterns);
-
-  return patterns;
+  recurse(total, maxVal, []);
+  return results;
 }
 
-export { genBurstLengthPatterns };
+export type { BurstPattern };
+export { genValidBurstPatterns, genDescendingPartitions };

@@ -1,38 +1,68 @@
 import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
+import { Board } from '@/core-next/flat-board';
 import { fromBoardState } from '@/core-next/convert';
 
-import { makeBoard } from '../test-boards';
-import { solve } from './solver-wip';
+import { allBoards, makeBoard } from '../test-boards';
+import { solve } from './solver';
 
-interface CustomAlgoOptions {
+interface RunOptions {
   board: string;
   ticks: string;
 }
 
-// --- CLI ---
-
 const { opts } = parseTypedCommand(
-  createTypedCommand<CustomAlgoOptions>()
-    .name('run-sa')
-    .description('Run custom-algo-1 (multi-config sweep)')
-    .option('--board <names>', 'Board names, comma-separated', 'open-7x7')
+  createTypedCommand<RunOptions>()
+    .name('run-custom-algo')
+    .description('Run custom-algo-1 burst-path solver')
+    .option('--board <names>', 'Board names, comma-separated', 'all')
     .option('--ticks <n>', 'Number of ticks', '50'),
 );
 
-function run() {
-  console.group('run custom-algo-1');
+const maxTicks = Number(opts.ticks);
+const boards =
+  opts.board === 'all' ? allBoards() : opts.board.split(',').map((n) => makeBoard(n));
 
-  // const boards = [makeBoard('open-7x7'), makeBoard('sparse-mtns-7x7')];
-  const boards = [makeBoard('sparse-mtns-7x7'), makeBoard('maze-7x7')];
+for (const testBoard of boards) {
+  const board = fromBoardState(testBoard.board, 1);
+  const generalPos = Board.toIndex(
+    board,
+    testBoard.generalCoord.x,
+    testBoard.generalCoord.y,
+  );
 
-  for (let testBoard of boards) {
-    const flat = fromBoardState(testBoard.board, 1);
-    console.log('testBoard:', testBoard.name);
-    solve(flat);
-    console.log();
+  console.log(`=== ${testBoard.name} ===`);
+  const result = solve(board, generalPos, { maxTicks });
+
+  if (!result.solution) {
+    console.log(
+      `  No solution found. Checked ${result.patternsChecked} patterns in ${result.elapsedMs.toFixed(0)}ms`,
+    );
+  } else {
+    const s = result.solution;
+    console.log(
+      `  ${s.totalCaptured} tiles captured (+1 general = ${s.totalCaptured + 1} land)`,
+    );
+    console.log(`  Pattern: ${JSON.stringify(s.pattern)}`);
+    console.log(
+      `  Checked ${result.patternsChecked} patterns in ${result.elapsedMs.toFixed(0)}ms`,
+    );
+
+    const lastBurst = s.burstInfos[s.burstInfos.length - 1];
+    console.log(`  Last move: t=${lastBurst.endTick}`);
+
+    for (let i = 0; i < s.paths.length; i++) {
+      const p = s.paths[i];
+      const bi = s.burstInfos[i];
+      const coords = p.tiles.map((t) => {
+        const x = t % board.width;
+        const y = Math.floor(t / board.width);
+        return `(${x},${y})`;
+      });
+      console.log(
+        `    b${i + 1} (${bi.burstLen}) t=${bi.startTick}-${bi.endTick}: ${coords.join(' ')}`,
+      );
+    }
   }
 
-  console.groupEnd();
+  console.log();
 }
-
-run();
