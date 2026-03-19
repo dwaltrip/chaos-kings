@@ -1,6 +1,6 @@
 import { Direction } from '@core/types';
 
-import { type FlatBoard, Board } from '@/core-next/flat-board';
+import { type FlatBoard, Board, TileType } from '@/core-next/flat-board';
 
 type Path = number[];
 
@@ -28,6 +28,9 @@ function getAllChildPaths(board: FlatBoard, path: PathWS): PathWS[] {
     const next = Board.neighbor(board, path.seq[path.seq.length - 1], dir);
 
     if (!Board.isValidIndex(board, next)) {
+      continue;
+    }
+    if (board.types[next] === TileType.MOUNTAIN) {
       continue;
     }
     if (path.tiles.has(next)) {
