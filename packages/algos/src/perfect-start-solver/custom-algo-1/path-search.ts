@@ -1,6 +1,4 @@
-import { tilesToMask } from './bitmask';
-
-type PathsByLen = Map<number, number[][]>;
+import { type GenPath, type GenPathsByLen } from './gen-paths';
 
 interface PathEntry {
   tiles: number[];
@@ -9,25 +7,26 @@ interface PathEntry {
 
 type PathEntriesByLen = Map<number, PathEntry[]>;
 
-// Takes genPathsDP output, strips the start tile (index 0 of each path),
-// builds bitmask entries grouped by length.
-function buildPathEntries(pathsByLen: PathsByLen): PathEntriesByLen {
+// Takes genPathsDP output, strips the start tile from each path and
+// re-keys by the new length. Masks are adjusted to exclude the start tile.
+function buildPathEntries(genPaths: GenPathsByLen): PathEntriesByLen {
   const result: PathEntriesByLen = new Map();
 
-  for (const [len, paths] of pathsByLen.entries()) {
+  for (const [len, paths] of genPaths.entries()) {
+    if (len <= 1) continue;
+
+    const startTile = paths[0]?.tiles[0];
+    const startBit = startTile !== undefined ? 1n << BigInt(startTile) : 0n;
+
     const entries: PathEntry[] = [];
     for (const path of paths) {
-      // strip the general (first element)
-      const tiles = path.slice(1);
-      if (tiles.length === 0) continue;
-      entries.push({ tiles, mask: tilesToMask(tiles) });
+      entries.push({
+        tiles: path.tiles.slice(1),
+        mask: path.mask & ~startBit,
+      });
     }
-    // key by the new length (without the general tile)
-    if (entries.length > 0) {
-      const newLen = len - 1;
-      const existing = result.get(newLen) || [];
-      result.set(newLen, existing.concat(entries));
-    }
+
+    result.set(len - 1, entries);
   }
 
   return result;

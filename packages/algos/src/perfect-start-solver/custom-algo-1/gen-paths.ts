@@ -1,72 +1,55 @@
 import { Direction } from '@core/types';
 
 import { type FlatBoard, Board, TileType } from '@/core-next/flat-board';
+import { tilesToMask } from './bitmask';
 
-type Path = number[];
-
-// path "with set" for membership checking
-interface PathWS {
-  seq: Path;
-  tiles: Set<number>;
+interface GenPath {
+  tiles: number[];
+  mask: bigint;
 }
 
-type PathsByLen = Map<number, Path[]>;
+type GenPathsByLen = Map<number, GenPath[]>;
 
 const DIRECTIONS = [Direction.LEFT, Direction.UP, Direction.RIGHT, Direction.DOWN];
 
-function cloneAndExtendPath(path: PathWS, newTip: number) {
-  return {
-    seq: path.seq.concat(newTip),
-    tiles: new Set(path.tiles).add(newTip),
-    tip: newTip,
-  };
-}
-
-function getAllChildPaths(board: FlatBoard, path: PathWS): PathWS[] {
-  const paths = [];
-  for (let dir of DIRECTIONS) {
-    const next = Board.neighbor(board, path.seq[path.seq.length - 1], dir);
-
-    if (!Board.isValidIndex(board, next)) {
-      continue;
-    }
-    if (board.types[next] === TileType.MOUNTAIN) {
-      continue;
-    }
-    if (path.tiles.has(next)) {
-      continue;
-    }
-
-    paths.push(cloneAndExtendPath(path, next));
-  }
-  return paths;
-}
-
-function genPathsDP(board: FlatBoard, start: number, maxLen: number): PathsByLen {
+function genPathsDP(board: FlatBoard, start: number, maxLen: number): GenPathsByLen {
   if (!Board.isValidIndex(board, start)) {
     throw new Error(`Invalid index: ${start}`);
   }
 
-  const allPaths = new Map<number, PathWS[]>();
-  const baseCase = { seq: [start], tiles: new Set([start]) };
-  allPaths.set(1, [baseCase]);
+  const result: GenPathsByLen = new Map();
+  const startMask = 1n << BigInt(start);
+
+  let prevLevel: GenPath[] = [{ tiles: [start], mask: startMask }];
+  result.set(1, prevLevel);
 
   for (let k = 2; k <= maxLen; k++) {
-    const nextPathsNested = [];
-    const prevPaths = allPaths.get(k - 1) || [];
-    for (let path of prevPaths) {
-      nextPathsNested.push(getAllChildPaths(board, path));
+    const nextLevel: GenPath[] = [];
+
+    for (const path of prevLevel) {
+      const tip = path.tiles[path.tiles.length - 1];
+
+      for (const dir of DIRECTIONS) {
+        const next = Board.neighbor(board, tip, dir);
+
+        if (!Board.isValidIndex(board, next)) continue;
+        if (board.types[next] === TileType.MOUNTAIN) continue;
+
+        const bit = 1n << BigInt(next);
+        if (path.mask & bit) continue;
+
+        const newTiles = path.tiles.slice();
+        newTiles.push(next);
+        nextLevel.push({ tiles: newTiles, mask: path.mask | bit });
+      }
     }
-    allPaths.set(k, nextPathsNested.flat());
+
+    result.set(k, nextLevel);
+    prevLevel = nextLevel;
   }
 
-  // construct new map from `allPaths`
-  return new Map(
-    Array.from(allPaths.entries()).map(([k, paths]) => {
-      // convert arry of PathWs to array of Path
-      return [k, paths.map((path) => path.seq)];
-    }),
-  );
+  return result;
 }
 
+export type { GenPath, GenPathsByLen };
 export { genPathsDP };

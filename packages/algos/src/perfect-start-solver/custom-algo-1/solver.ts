@@ -1,4 +1,4 @@
-import { type FlatBoard, Board } from '@/core-next/flat-board';
+import { type FlatBoard } from '@/core-next/flat-board';
 
 import { type BurstPattern, genValidBurstPatterns } from './burst-patterns';
 import { genPathsDP } from './gen-paths';
@@ -25,7 +25,9 @@ interface SolverConfig {
 
 const DEFAULT_CONFIG: SolverConfig = {
   maxTicks: 50,
-  maxBurst: 16,
+  // Path counts grow ~2.5x per length. On open 11x11, length 12 is ~60K
+  // paths which is fine; length 14+ OOMs. Cap conservatively for now.
+  maxBurst: 12,
   maxCaptures: 24,
   minCaptures: 15,
 };

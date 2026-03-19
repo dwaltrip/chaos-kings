@@ -48,4 +48,5 @@ function getBurstInfos(pattern: number[]): BurstInfo[] {
   return bursts;
 }
 
+export type { BurstInfo };
 export { getBurstInfos, getMoveTicksForBurstPattern };
