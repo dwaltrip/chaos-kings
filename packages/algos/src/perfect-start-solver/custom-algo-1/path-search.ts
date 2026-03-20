@@ -1,5 +1,6 @@
 import { type GenPath, type GenPathsByLen } from './gen-paths';
 import { simulateOneBurst, type BurstSpec, type TimingState } from './get-burst-info';
+import { popcount } from './bitmask';
 
 interface PathEntry {
   tiles: number[];
@@ -129,6 +130,11 @@ function findPaths(
             continue;
           }
         } else {
+          const overlapBits = cand.mask & coveredMask;
+          if (popcount(overlapBits) !== overlap) {
+            burstStats.overlapSkips++;
+            continue;
+          }
           const prefixLen = countPrefixOverlap(cand.tiles, coveredMask);
           if (prefixLen !== overlap) {
             burstStats.overlapSkips++;
