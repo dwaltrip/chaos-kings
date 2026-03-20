@@ -54,7 +54,12 @@ interface SolverResult {
 
 interface TimingGroup {
   burst1Moves: number;
-  entries: TimingEntry[];
+  entries: EntryWithMoves[];
+}
+
+interface EntryWithMoves {
+  entry: TimingEntry;
+  moves: number[];
 }
 
 // Group timing entries by burst-1 move length (always = burst-1 captures,
@@ -63,14 +68,19 @@ interface TimingGroup {
 function buildTimingGroups(
   totalCaptures: number,
   config: TimingTableConfig,
+  entriesByLen: PathEntriesByLen,
 ): TimingGroup[] {
   const entries = buildTimingEntries(totalCaptures, config);
 
-  const byB1 = new Map<number, TimingEntry[]>();
+  const byB1 = new Map<number, EntryWithMoves[]>();
   for (const entry of entries) {
+    const moves = entry.captures.map((c, i) => c + entry.overlaps[i]);
+    // filter: all required path lengths must exist
+    if (!moves.every((m, i) => i === 0 || entriesByLen.has(m))) continue;
+
     const b1 = entry.captures[0];
     if (!byB1.has(b1)) byB1.set(b1, []);
-    byB1.get(b1)!.push(entry);
+    byB1.get(b1)!.push({ entry, moves });
   }
 
   const groups: TimingGroup[] = [];
@@ -82,71 +92,71 @@ function buildTimingGroups(
   return groups;
 }
 
-// ── Forward checking ──
+// ── Grouped backtracking search (burst-2+) ──
 
-// For a given burst-1 path (coveredMask), check if an entry has at least
-// one compatible burst-2 candidate.
-function hasViableBurst2(
-  entry: TimingEntry,
-  coveredMask: bigint,
+// Encode (moveLen, overlap) as a single number for bucketing.
+function bucketKey(moveLen: number, overlap: number): number {
+  return moveLen * 100 + overlap;
+}
+
+interface SearchResult {
+  entry: TimingEntry;
+  paths: PathEntry[];
+}
+
+// Search for compatible paths across a set of timing entries simultaneously.
+// At each depth, groups entries by their next burst's (moveLen, overlap),
+// scans candidates once per unique combo, then recurses with the sub-bucket.
+function searchGrouped(
   entriesByLen: PathEntriesByLen,
-): boolean {
-  if (entry.captures.length < 2) return true;
-
-  const moveLen = entry.captures[1] + entry.overlaps[1];
-  const overlap = entry.overlaps[1];
-  const candidates = entriesByLen.get(moveLen);
-  if (!candidates) return false;
-
-  for (const cand of candidates) {
-    if (overlap === 0) {
-      if ((cand.mask & coveredMask) === 0n) return true;
-    } else {
-      if (popcount(cand.mask & coveredMask) !== overlap) continue;
-      if (countPrefixOverlap(cand.tiles, coveredMask) === overlap) return true;
+  entries: EntryWithMoves[],
+  burstIdx: number,
+  coveredMask: bigint,
+): SearchResult | null {
+  // any entry fully assigned at this depth is a solution
+  for (const es of entries) {
+    if (burstIdx === es.moves.length) {
+      return { entry: es.entry, paths: [] };
     }
   }
 
-  return false;
-}
-
-// ── Backtracking search (burst-2+) ──
-
-// Search for paths for bursts 2..n with a fixed timing entry.
-// Same structure as v2's findPathsFixed, starting at burstIdx.
-function searchRemaining(
-  entriesByLen: PathEntriesByLen,
-  entry: TimingEntry,
-  moves: number[],
-  burstIdx: number,
-  coveredMask: bigint,
-): PathEntry[] | null {
-  if (burstIdx === moves.length) return [];
-
-  const moveLen = moves[burstIdx];
-  const overlap = entry.overlaps[burstIdx];
-  const candidates = entriesByLen.get(moveLen);
-  if (!candidates) return null;
-
-  for (const cand of candidates) {
-    if (overlap === 0) {
-      if ((cand.mask & coveredMask) !== 0n) continue;
-    } else {
-      if (popcount(cand.mask & coveredMask) !== overlap) continue;
-      if (countPrefixOverlap(cand.tiles, coveredMask) !== overlap) continue;
+  // bucket entries by their next burst's (moveLen, overlap)
+  const buckets = new Map<number, EntryWithMoves[]>();
+  for (const es of entries) {
+    const key = bucketKey(es.moves[burstIdx], es.entry.overlaps[burstIdx]);
+    let bucket = buckets.get(key);
+    if (!bucket) {
+      bucket = [];
+      buckets.set(key, bucket);
     }
+    bucket.push(es);
+  }
 
-    const newTiles = overlap > 0 ? cand.mask & ~coveredMask : cand.mask;
-    const rest = searchRemaining(
-      entriesByLen,
-      entry,
-      moves,
-      burstIdx + 1,
-      coveredMask | newTiles,
-    );
-    if (rest) {
-      rest.unshift(cand);
-      return rest;
+  for (const [key, bucket] of buckets) {
+    const moveLen = Math.floor(key / 100);
+    const overlap = key % 100;
+    const candidates = entriesByLen.get(moveLen);
+    if (!candidates) continue;
+
+    for (const cand of candidates) {
+      if (overlap === 0) {
+        if ((cand.mask & coveredMask) !== 0n) continue;
+      } else {
+        if (popcount(cand.mask & coveredMask) !== overlap) continue;
+        if (countPrefixOverlap(cand.tiles, coveredMask) !== overlap) continue;
+      }
+
+      const newMask = overlap > 0 ? cand.mask & ~coveredMask : cand.mask;
+      const result = searchGrouped(
+        entriesByLen,
+        bucket,
+        burstIdx + 1,
+        coveredMask | newMask,
+      );
+      if (result) {
+        result.paths.unshift(cand);
+        return result;
+      }
     }
   }
 
@@ -176,61 +186,40 @@ function solveV3(
   let entriesChecked = 0;
 
   for (let captures = cfg.maxCaptures; captures >= cfg.minCaptures; captures--) {
-    const groups = buildTimingGroups(captures, timingConfig);
+    const groups = buildTimingGroups(captures, timingConfig, entriesByLen);
 
     for (const group of groups) {
       const candidates = entriesByLen.get(group.burst1Moves);
       if (!candidates) continue;
-
-      // precompute moves arrays for each entry (avoid recomputing per candidate)
-      const entryMoves = group.entries.map((entry) =>
-        entry.captures.map((c, i) => c + entry.overlaps[i]),
-      );
-
-      // filter entries that have paths at all required lengths
-      const viableEntryIndices: number[] = [];
-      for (let ei = 0; ei < group.entries.length; ei++) {
-        if (entryMoves[ei].every((m, i) => i === 0 || entriesByLen.has(m))) {
-          viableEntryIndices.push(ei);
-        }
-      }
-      if (viableEntryIndices.length === 0) continue;
+      if (group.entries.length === 0) continue;
 
       for (const cand of candidates) {
-        const coveredMask = cand.mask;
+        entriesChecked++;
+        const result = searchGrouped(entriesByLen, group.entries, 1, cand.mask);
+        if (result) {
+          const paths = [cand, ...result.paths];
+          const entry = result.entry;
+          const moves = entry.captures.map((c, i) => c + entry.overlaps[i]);
+          const burstSpecs: BurstSpec[] = entry.captures.map((c, i) => ({
+            captures: c,
+            moves: moves[i],
+          }));
 
-        for (const ei of viableEntryIndices) {
-          const entry = group.entries[ei];
-          const moves = entryMoves[ei];
+          let solvedMask = 0n;
+          for (const p of paths) solvedMask |= p.mask;
 
-          // forward check: does burst-2 have a compatible candidate?
-          if (!hasViableBurst2(entry, coveredMask, entriesByLen)) continue;
-
-          entriesChecked++;
-          const rest = searchRemaining(entriesByLen, entry, moves, 1, coveredMask);
-          if (rest) {
-            const paths = [cand, ...rest];
-            const burstSpecs: BurstSpec[] = entry.captures.map((c, i) => ({
-              captures: c,
-              moves: moves[i],
-            }));
-
-            let solvedMask = 0n;
-            for (const p of paths) solvedMask |= p.mask;
-
-            return {
-              solution: {
-                pattern: entry.captures,
-                burstSpecs,
-                burstInfos: getBurstInfosFromSpecs(burstSpecs, cfg.maxTicks)!,
-                paths,
-                coveredMask: solvedMask,
-                totalCaptured: popcount(solvedMask),
-              },
-              entriesChecked,
-              elapsedMs: performance.now() - t0,
-            };
-          }
+          return {
+            solution: {
+              pattern: entry.captures,
+              burstSpecs,
+              burstInfos: getBurstInfosFromSpecs(burstSpecs, cfg.maxTicks)!,
+              paths,
+              coveredMask: solvedMask,
+              totalCaptured: popcount(solvedMask),
+            },
+            entriesChecked,
+            elapsedMs: performance.now() - t0,
+          };
         }
       }
     }
