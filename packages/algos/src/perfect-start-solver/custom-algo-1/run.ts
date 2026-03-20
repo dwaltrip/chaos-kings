@@ -18,7 +18,7 @@ const { opts } = parseTypedCommand(
     .description('Run custom-algo-1 burst-path solver')
     .option('--board <names>', 'Board names, comma-separated', 'all')
     .option('--ticks <n>', 'Number of ticks', '50')
-    .option('--solver <version>', 'v1, v2, or both', 'both'),
+    .option('--solver <version>', 'v1, v2, or both', 'v2'),
 );
 
 const maxTicks = Number(opts.ticks);
