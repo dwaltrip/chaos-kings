@@ -251,6 +251,21 @@ function entryIsFeasibleAggregate(
   return blankTiles >= totalCaptures;
 }
 
+// NOTE: A stronger "distance-band packing" check was considered that
+// subsumes both per-burst and aggregate checks. The idea: sort remaining
+// bursts by moveLen ascending, then check cumulative captures at each
+// distance threshold. At position j in the sorted order, the j
+// shortest-reach bursts are ALL restricted to tiles within
+// blankByDist[moveLen_j], so their combined captures must fit.
+// This catches cases where multiple short-reach bursts compete for the
+// same inner tiles — neither per-burst nor aggregate alone would catch it.
+// However, since burst captures are generated in descending order
+// (genDescendingPartitions), short-reach bursts tend to have few captures,
+// making the intermediate constraints rarely binding. Profiling on all
+// test boards showed zero additional prunes, with a ~30% regression from
+// the larger EntryWithMoves objects hurting cache locality in the hot loop.
+// Reverted in favor of the simpler separate checks.
+
 // ── Grouped backtracking search (burst-2+) ──
 
 // Encode (moveLen, overlap) as a single number for bucketing.
