@@ -184,42 +184,56 @@ function sortByFlexibility(entriesByLen: PathEntriesByLen, distMasks: bigint[]):
 // least one burst that can't get enough free tiles within its reach,
 // prune this branch.
 
-// Build cumulative free tile counts by distance from the general.
-// cumFree[d] = total uncovered tiles within distances 1..d.
-function buildCumFree(coveredMask: bigint, distMasks: bigint[]): number[] {
-  const cumFree = new Array(distMasks.length).fill(0);
+// Build cumulative blank (uncovered) tile counts by distance from the general.
+// blankTilesWithinDist[d] = total uncovered tiles within distances 1..d.
+function buildBlankTilesWithinDist(coveredMask: bigint, distMasks: bigint[]): number[] {
+  const counts = new Array(distMasks.length).fill(0);
   let running = 0;
   for (let d = 1; d < distMasks.length; d++) {
     running += popcount(distMasks[d] & ~coveredMask);
-    cumFree[d] = running;
+    counts[d] = running;
   }
-  return cumFree;
+  return counts;
 }
 
-// Check if a timing entry's remaining bursts (after burstIdx) are all
-// spatially feasible. Returns false if any burst needs more captures
-// than there are free tiles within its reach.
-function entryIsFeasible(
+// Per-burst feasibility: each burst must have enough blank tiles within
+// its individual reach.
+function entryIsFeasiblePerBurst(
   es: EntryWithMoves,
   burstIdx: number,
-  cumFree: number[],
+  blankByDist: number[],
 ): boolean {
-  const maxDist = cumFree.length - 1;
+  const maxDist = blankByDist.length - 1;
   for (let i = burstIdx; i < es.moves.length; i++) {
     const moveLen = es.moves[i];
     const captures = es.entry.captures[i];
     if (moveLen > maxDist) {
-      // Beyond our distance masks. Upper-bound the captures: known free
-      // tiles within maxDist, plus at most (moveLen - maxDist) tiles beyond
-      // (reaching distance maxDist+1 costs maxDist+1 steps, leaving
-      // moveLen - maxDist - 1 additional steps, +1 for the tile at maxDist+1).
       const beyondTiles = moveLen - maxDist;
-      if (cumFree[maxDist] + beyondTiles < captures) return false;
+      if (blankByDist[maxDist] + beyondTiles < captures) return false;
       continue;
     }
-    if (cumFree[moveLen] < captures) return false;
+    if (blankByDist[moveLen] < captures) return false;
   }
   return true;
+}
+
+// Aggregate feasibility: total remaining captures must not exceed total
+// blank tiles within the max reach of any remaining burst.
+function entryIsFeasibleAggregate(
+  es: EntryWithMoves,
+  burstIdx: number,
+  blankByDist: number[],
+): boolean {
+  const maxDist = blankByDist.length - 1;
+  let totalCaptures = 0;
+  let maxMoveLen = 0;
+  for (let i = burstIdx; i < es.moves.length; i++) {
+    totalCaptures += es.entry.captures[i];
+    if (es.moves[i] > maxMoveLen) maxMoveLen = es.moves[i];
+  }
+  const dist = Math.min(maxMoveLen, maxDist);
+  const blankTiles = blankByDist[dist] + Math.max(0, maxMoveLen - maxDist);
+  return blankTiles >= totalCaptures;
 }
 
 // ── Grouped backtracking search (burst-2+) ──
@@ -257,8 +271,12 @@ function searchGrouped(
   // early feasibility: before scanning any candidates, check if remaining
   // bursts are spatially possible given current coverage
   stats.feasibilityChecks++;
-  const cumFree = buildCumFree(coveredMask, distMasks);
-  const feasible = entries.filter((es) => entryIsFeasible(es, burstIdx, cumFree));
+  const blankByDist = buildBlankTilesWithinDist(coveredMask, distMasks);
+  const feasible = entries.filter(
+    (es) =>
+      entryIsFeasiblePerBurst(es, burstIdx, blankByDist) &&
+      entryIsFeasibleAggregate(es, burstIdx, blankByDist),
+  );
   stats.feasibilityEntriesKilled += entries.length - feasible.length;
   if (feasible.length === 0) {
     stats.feasibilityPrunes++;
@@ -297,9 +315,11 @@ function searchGrouped(
 
       // feasibility pruning: check if remaining bursts are possible
       stats.feasibilityChecks++;
-      const cumFree = buildCumFree(newCovered, distMasks);
-      const feasibleEntries = bucket.filter((es) =>
-        entryIsFeasible(es, burstIdx + 1, cumFree),
+      const blankByDist = buildBlankTilesWithinDist(newCovered, distMasks);
+      const feasibleEntries = bucket.filter(
+        (es) =>
+          entryIsFeasiblePerBurst(es, burstIdx + 1, blankByDist) &&
+          entryIsFeasibleAggregate(es, burstIdx + 1, blankByDist),
       );
       const killed = bucket.length - feasibleEntries.length;
       stats.feasibilityEntriesKilled += killed;
