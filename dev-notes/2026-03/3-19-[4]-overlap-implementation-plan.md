@@ -60,8 +60,8 @@ Used by solver to build solution output (where we know the actual
 moves/captures per burst).
 
 **Keep old functions for now.** `getMoveTicksForBurstPattern` and
-`getBurstInfos` stay until blocks 2+4 update their callers, then
-get removed.
+`getBurstInfos` stay until Block 4 updates all callers and tests,
+then get removed.
 
 **Exports:** `BurstSpec`, `TimingState`, `simulateOneBurst`,
 `getBurstInfosFromSpecs`, plus existing exports.
@@ -141,14 +141,22 @@ Optional param — when absent, current zero-overlap behavior exactly.
 **Modify `search` inner function:**
 
 When `overlapConfig` is provided, the recursive `search` function
-gains a `TimingState` parameter and an overlap loop:
+gains a `TimingState` parameter and an overlap loop. Return type
+changes from `PathEntry[] | null` to `SearchHit[] | null` where:
+
+```ts
+type SearchHit = { path: PathEntry; overlap: number };
+```
+
+This captures the overlap value at the source (inside the overlap
+loop) rather than reconstructing it after the fact.
 
 ```ts
 function search(
   burstIdx: number,
   coveredMask: bigint,
   timingState?: TimingState,
-): PathEntry[] | null {
+): SearchHit[] | null {
   if (burstIdx === burstPattern.length) return [];
 
   const captures = burstPattern[burstIdx];
@@ -194,7 +202,7 @@ function search(
         nextTimingState,
       );
       if (rest) {
-        rest.unshift(cand);
+        rest.unshift({ path: cand, overlap });
         return rest;
       }
     }
@@ -204,59 +212,46 @@ function search(
 }
 ```
 
+`findPaths` then maps `SearchHit[]` → `burstSpecs` and `paths`:
+
+```ts
+const burstSpecs = hits.map((h, i) => ({
+  captures: burstPattern[i],
+  moves: burstPattern[i] + h.overlap,
+}));
+const paths = hits.map((h) => h.path);
+```
+
 Key design points:
 - `overlap=0` preserves the existing fast bitmask-AND check
-- Timing is computed once per (captures, overlap) pair, not per candidate
+- Timing is computed once per (captures, overlap) pair, not per
+  candidate
 - `simulateOneBurst` returning null prunes all higher overlap values
 - `newTilesMask` strips already-owned tiles from the candidate mask
   when overlap > 0, so `coveredMask` only accumulates new tiles
-- Stats tracking extends naturally (overlapSkips for prefix mismatches)
+- Stats tracking extends naturally
+
+**Path length cap note:** `entriesByLen.get(captures + overlap)` may
+return undefined when captures + overlap > maxBurst (no paths that
+long were generated). This is intentional — the `if (!candidates)
+continue` handles it. Largest bursts can't use overlap, which is
+fine since they expand into open territory where overlap isn't
+needed.
 
 **Update `SearchResult`:**
 
-Add per-burst overlap info:
-
-```ts
-interface BurstAssignment {
-  path: PathEntry;
-  overlap: number;   // number of prefix overlap tiles
-  captures: number;  // burstPattern[i]
-  moves: number;     // captures + overlap
-}
-
-interface SearchResult {
-  assignments: BurstAssignment[];
-  coveredMask: bigint;
-  stats: SearchStats;
-  // keep `paths` as convenience accessor for backward compat
-  paths: PathEntry[];
-}
-```
-
-Wait — this changes the return type which ripples into solver.ts
-and tests. Let me think about ordering...
-
-Actually, simpler approach: keep the existing `paths` field on
-SearchResult. Add a parallel `burstSpecs: BurstSpec[]` field that
-records the actual (captures, moves) for each burst. This is enough
-for the solver to build BurstInfos and the change is minimal.
-
 ```ts
 interface SearchResult {
   paths: PathEntry[];
-  burstSpecs: BurstSpec[];  // NEW: actual (captures, moves) per burst
+  burstSpecs: BurstSpec[];  // actual (captures, moves) per burst
   coveredMask: bigint;
   stats: SearchStats;
 }
 ```
-
-When overlap=0 (no config), `burstSpecs` entries have
-moves=captures=burstPattern[i]. When overlap is used, moves
-includes the overlap.
 
 ---
 
-### Block 4: Wire up in `solver.ts` and `run.ts`
+### Block 4: Wire up in `solver.ts`, `run.ts`, remove old functions
 
 **`solver.ts`:**
 
@@ -305,29 +300,27 @@ console.log(
 );
 ```
 
-**Remove old functions from `get-burst-info.ts`:**
+**Remove old functions + update tests together:**
 
-After this block, `getMoveTicksForBurstPattern` and `getBurstInfos`
-are no longer called by any production code. Remove them. Update
-test imports.
+Remove `getMoveTicksForBurstPattern` and `getBurstInfos` from
+`get-burst-info.ts`. Update `get-burst-info.test.ts` and
+`burst-patterns.test.ts` imports in the same block (no intermediate
+breakage).
 
 ---
 
-### Block 5: Update tests
+### Block 5: Update and add tests
 
 **`get-burst-info.test.ts`:**
-- Add tests for `simulateOneBurst`:
-  - Single burst, moves=captures: matches old model
-  - Single burst, moves>captures: extra ticks consumed
-  - Returns null when exceeds maxTicks
-  - Verify threading: sequential bursts produce correct cumulative state
-- Add tests for `getBurstInfosFromSpecs`:
-  - Specs with moves=captures match old `getBurstInfos` output
-  - Specs with overlap produce correct timing
-  - Returns null for invalid (exceeds maxTicks)
-- Update existing tests: replace `getMoveTicksForBurstPattern`
-  references. The old parameterized test cases can be converted to
-  test `simulateOneBurst` with moves=captures.
+- Rewrite existing `getMoveTicksForBurstPattern` tests as
+  `simulateOneBurst` tests (moves=captures, verify endTick matches)
+- Rewrite existing `getBurstInfos` tests as
+  `getBurstInfosFromSpecs` tests
+- Add: `simulateOneBurst` with moves>captures (hand-calculated
+  expected values — leave TODOs for Daniel to verify)
+- Add: returns null when exceeds maxTicks
+- Add: threading — sequential single-burst calls match multi-burst
+  `getBurstInfosFromSpecs` output
 
 **`path-search.test.ts`:**
 - Add tests for `countPrefixOverlap`:
@@ -344,8 +337,9 @@ test imports.
   overlapConfig, should still pass)
 
 **`solver.test.ts`:**
-- Update existing assertions that reference `solution.pattern`
-  vs `solution.burstSpecs`
+- Existing zero-overlap tests: pass `{ maxOverlapPerBurst: 0 }`
+  to keep current assertions valid (pairwise non-overlapping,
+  pattern matches path lengths)
 - Add: corridor-7x7 with overlap enabled gets >= 24 captures
   (this is the main validation — currently stuck at 23)
 - Add: solution burstSpecs captures match pattern, moves >= captures
@@ -377,12 +371,33 @@ If corridor doesn't reach 24, check:
 
 ---
 
+## Resolved decisions from review
+
+1. **burstSpecs population (option a):** `search` returns
+   `SearchHit[] | null` where `SearchHit = { path, overlap }`.
+   Data captured at source, not reconstructed.
+
+2. **Existing zero-overlap tests:** Pass `{ maxOverlapPerBurst: 0 }`
+   to solver tests that assert non-overlapping / pattern-length
+   matching. New tests cover overlap behavior separately.
+
+3. **Path length cap:** Implicit — `entriesByLen.get()` returns
+   undefined for too-long paths, `continue` handles it. Largest
+   bursts can't overlap, which is fine.
+
+4. **Old function removal + test updates in same block:** Block 4
+   does both to avoid intermediate breakage.
+
+5. **Hand-calculated test values:** For tricky tick math (especially
+   overlap>0 timing), leave TODO placeholders for Daniel to verify.
+
 ## Implementation order summary
 
 1. `get-burst-info.ts` — add new types/functions (additive)
 2. `burst-patterns.ts` — use new timing (pure refactor)
 3. `path-search.ts` — overlap support (core feature)
-4. `solver.ts` + `run.ts` — wire up + remove old functions
+4. `solver.ts` + `run.ts` + remove old functions + update test
+   imports (all in one block)
 5. Tests — update and add
 6. Validate on all boards
 
