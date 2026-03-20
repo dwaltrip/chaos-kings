@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
 import type { BoardState, Coord, Square } from '@core/types';
 import { SquareType } from '@core/types';
 
@@ -174,6 +177,24 @@ const SPARSE_MTNS_11x11 = parseBoard(
 `,
 );
 
+// -- File-based boards -------------------------------------------------------
+
+const DATA_DIR = path.join(__dirname, 'test-boards-data');
+
+function loadBoard(filename: string): TestBoard {
+  const name = filename.replace(/\.txt$/, '');
+  const text = fs.readFileSync(path.join(DATA_DIR, filename), 'utf-8');
+  return parseBoard(name, text);
+}
+
+const CORNER_9x9 = loadBoard('corner-9x9.txt');
+const DOUBLE_CORRIDOR_9x9 = loadBoard('double-corridor-9x9.txt');
+const DENSE_MTNS_9x9 = loadBoard('dense-mtns-9x9.txt');
+const MAZE_9x9 = loadBoard('maze-9x9.txt');
+const EDGE_9x9 = loadBoard('edge-9x9.txt');
+const PINCH_9x9 = loadBoard('pinch-9x9.txt');
+const CORRIDOR_11x11 = loadBoard('corridor-11x11.txt');
+
 // -- Board registry ----------------------------------------------------------
 
 const ALL_BOARDS: TestBoard[] = [
@@ -183,8 +204,15 @@ const ALL_BOARDS: TestBoard[] = [
   MAZE_7x7,
   OPEN_9x9,
   SPARSE_MTNS_9x9,
+  CORNER_9x9,
+  DOUBLE_CORRIDOR_9x9,
+  DENSE_MTNS_9x9,
+  MAZE_9x9,
+  EDGE_9x9,
+  PINCH_9x9,
   OPEN_11x11,
   SPARSE_MTNS_11x11,
+  CORRIDOR_11x11,
 ];
 
 function makeBoard(name: string): TestBoard {
