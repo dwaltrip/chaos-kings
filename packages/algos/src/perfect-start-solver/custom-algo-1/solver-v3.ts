@@ -122,13 +122,14 @@ const FLEX_SCORE_MAX_DIST = 4;
 const FEASIBILITY_MAX_DIST = 4;
 const DIRECTIONS = [Direction.LEFT, Direction.UP, Direction.RIGHT, Direction.DOWN];
 
-// BFS from general, return mask of tiles at each distance (1..maxDist).
-function buildDistanceMasks(
+// BFS from general, return cumulative masks of tiles within each distance.
+// blankTileMasks[d] = all reachable non-mountain tiles within distances 1..d.
+function buildBlankTileDistMasks(
   board: FlatBoard,
   generalPos: number,
   maxDist: number,
 ): bigint[] {
-  const masks: bigint[] = new Array(maxDist + 1).fill(0n);
+  const blankTileMasks: bigint[] = new Array(maxDist + 1).fill(0n);
   const visited = new Set<number>();
   let frontier = [generalPos];
   visited.add(generalPos);
@@ -143,32 +144,32 @@ function buildDistanceMasks(
         if (visited.has(next)) continue;
         visited.add(next);
         nextFrontier.push(next);
-        masks[d] |= 1n << BigInt(next);
       }
+    }
+    blankTileMasks[d] = blankTileMasks[d - 1];
+    for (const pos of nextFrontier) {
+      blankTileMasks[d] |= 1n << BigInt(pos);
     }
     frontier = nextFrontier;
   }
 
-  return masks;
+  return blankTileMasks;
 }
 
-// Count free (uncovered) tiles near the general.
-// NOTE: currently uses equal weights for all distances. Could try
-// distance-based weights (e.g. weights[d] = maxDist - d + 1) to
-// prioritize keeping tiles closest to the general free.
-function flexScore(candidateMask: bigint, distMasks: bigint[]): number {
-  let score = 0;
-  for (let d = 1; d < distMasks.length; d++) {
-    score += popcount(distMasks[d] & ~candidateMask);
-  }
-  return score;
+// Flexibility score: how many blank tiles remain near the general after
+// placing a candidate. Higher = more room for future bursts.
+function flexScore(candidateMask: bigint, blankTileMasks: bigint[]): number {
+  return popcount(blankTileMasks[FLEX_SCORE_MAX_DIST] & ~candidateMask);
 }
 
 // Sort each candidate list in entriesByLen by flexibility score (descending).
 // Candidates that leave more open space near the general are tried first.
-function sortByFlexibility(entriesByLen: PathEntriesByLen, distMasks: bigint[]): void {
+function sortByFlexibility(
+  entriesByLen: PathEntriesByLen,
+  blankTileMasks: bigint[],
+): void {
   for (const [, candidates] of entriesByLen) {
-    const scores = candidates.map((c) => flexScore(c.mask, distMasks));
+    const scores = candidates.map((c) => flexScore(c.mask, blankTileMasks));
     const indices = candidates.map((_, i) => i);
     indices.sort((a, b) => scores[b] - scores[a]);
     const sorted = indices.map((i) => candidates[i]);
@@ -184,16 +185,18 @@ function sortByFlexibility(entriesByLen: PathEntriesByLen, distMasks: bigint[]):
 // least one burst that can't get enough free tiles within its reach,
 // prune this branch.
 
-// Build cumulative blank (uncovered) tile counts by distance from the general.
-// blankTilesWithinDist[d] = total uncovered tiles within distances 1..d.
-function buildBlankTilesWithinDist(coveredMask: bigint, distMasks: bigint[]): number[] {
-  const counts = new Array(distMasks.length).fill(0);
-  let running = 0;
-  for (let d = 1; d < distMasks.length; d++) {
-    running += popcount(distMasks[d] & ~coveredMask);
-    counts[d] = running;
+// Count blank tiles within a given distance, using cumulative masks.
+function blankTilesWithinDist(
+  dist: number,
+  coveredMask: bigint,
+  blankTileMasks: bigint[],
+): number {
+  const maxDist = blankTileMasks.length - 1;
+  if (dist > maxDist) {
+    const beyondTiles = dist - maxDist;
+    return popcount(blankTileMasks[maxDist] & ~coveredMask) + beyondTiles;
   }
-  return counts;
+  return popcount(blankTileMasks[dist] & ~coveredMask);
 }
 
 // Per-burst feasibility: each burst must have enough blank tiles within
@@ -201,18 +204,12 @@ function buildBlankTilesWithinDist(coveredMask: bigint, distMasks: bigint[]): nu
 function entryIsFeasiblePerBurst(
   es: EntryWithMoves,
   burstIdx: number,
-  blankByDist: number[],
+  coveredMask: bigint,
+  blankTileMasks: bigint[],
 ): boolean {
-  const maxDist = blankByDist.length - 1;
   for (let i = burstIdx; i < es.moves.length; i++) {
-    const moveLen = es.moves[i];
-    const captures = es.entry.captures[i];
-    if (moveLen > maxDist) {
-      const beyondTiles = moveLen - maxDist;
-      if (blankByDist[maxDist] + beyondTiles < captures) return false;
-      continue;
-    }
-    if (blankByDist[moveLen] < captures) return false;
+    const blank = blankTilesWithinDist(es.moves[i], coveredMask, blankTileMasks);
+    if (blank < es.entry.captures[i]) return false;
   }
   return true;
 }
@@ -237,18 +234,17 @@ function entryIsFeasibleNeighbors(
 function entryIsFeasibleAggregate(
   es: EntryWithMoves,
   burstIdx: number,
-  blankByDist: number[],
+  coveredMask: bigint,
+  blankTileMasks: bigint[],
 ): boolean {
-  const maxDist = blankByDist.length - 1;
   let totalCaptures = 0;
   let maxMoveLen = 0;
   for (let i = burstIdx; i < es.moves.length; i++) {
     totalCaptures += es.entry.captures[i];
     if (es.moves[i] > maxMoveLen) maxMoveLen = es.moves[i];
   }
-  const dist = Math.min(maxMoveLen, maxDist);
-  const blankTiles = blankByDist[dist] + Math.max(0, maxMoveLen - maxDist);
-  return blankTiles >= totalCaptures;
+  const blank = blankTilesWithinDist(maxMoveLen, coveredMask, blankTileMasks);
+  return blank >= totalCaptures;
 }
 
 // NOTE: A stronger "distance-band packing" check was considered that
@@ -286,7 +282,7 @@ function searchGrouped(
   entries: EntryWithMoves[],
   burstIdx: number,
   coveredMask: bigint,
-  distMasks: bigint[],
+  blankTileMasks: bigint[],
   stats: SearchStats,
 ): SearchResult | null {
   stats.searchCalls++;
@@ -300,13 +296,12 @@ function searchGrouped(
 
   // feasibility: check if remaining bursts are spatially possible
   stats.feasibilityChecks++;
-  const blankByDist = buildBlankTilesWithinDist(coveredMask, distMasks);
-  const blankNeighborCount = popcount(distMasks[1] & ~coveredMask);
+  const blankNeighborCount = popcount(blankTileMasks[1] & ~coveredMask);
   const feasible = entries.filter(
     (es) =>
       entryIsFeasibleNeighbors(es, burstIdx, blankNeighborCount) &&
-      entryIsFeasiblePerBurst(es, burstIdx, blankByDist) &&
-      entryIsFeasibleAggregate(es, burstIdx, blankByDist),
+      entryIsFeasiblePerBurst(es, burstIdx, coveredMask, blankTileMasks) &&
+      entryIsFeasibleAggregate(es, burstIdx, coveredMask, blankTileMasks),
   );
   stats.feasibilityEntriesKilled += entries.length - feasible.length;
   if (feasible.length === 0) {
@@ -349,7 +344,7 @@ function searchGrouped(
         bucket,
         burstIdx + 1,
         newCovered,
-        distMasks,
+        blankTileMasks,
         stats,
       );
       if (result) {
@@ -375,10 +370,9 @@ function solveV3(
   const pathsByLen = genPathsDP(board, generalPos, cfg.maxBurst + 1);
   const entriesByLen = buildPathEntries(pathsByLen);
 
-  const flexDistMasks = buildDistanceMasks(board, generalPos, FLEX_SCORE_MAX_DIST);
-  sortByFlexibility(entriesByLen, flexDistMasks);
-
-  const feasDistMasks = buildDistanceMasks(board, generalPos, FEASIBILITY_MAX_DIST);
+  const maxDist = Math.max(FLEX_SCORE_MAX_DIST, FEASIBILITY_MAX_DIST);
+  const blankTileMasks = buildBlankTileDistMasks(board, generalPos, maxDist);
+  sortByFlexibility(entriesByLen, blankTileMasks);
 
   const timingConfig: TimingTableConfig = {
     maxTicks: cfg.maxTicks,
@@ -405,7 +399,7 @@ function solveV3(
           group.entries,
           1,
           cand.mask,
-          feasDistMasks,
+          blankTileMasks,
           stats,
         );
         if (result) {
