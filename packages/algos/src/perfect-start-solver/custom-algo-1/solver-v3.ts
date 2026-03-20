@@ -113,18 +113,12 @@ function buildTimingGroups(
   return groups;
 }
 
-// ── Flexibility scoring ──
-// Score candidates by how much open space they leave near the general.
-// Candidates that "trap" the general (cover all nearby tiles) score low;
-// candidates that extend outward, leaving room for future bursts, score high.
-
-const FLEX_SCORE_MAX_DIST = 4;
 const FEASIBILITY_MAX_DIST = 4;
 const DIRECTIONS = [Direction.LEFT, Direction.UP, Direction.RIGHT, Direction.DOWN];
 
 // BFS from general, return cumulative masks of tiles within each distance.
 // blankTileMasks[d] = all reachable non-mountain tiles within distances 1..d.
-function buildBlankTileDistMasks(
+function precomputeBlankTileDistMasks(
   board: FlatBoard,
   generalPos: number,
   maxDist: number,
@@ -154,29 +148,6 @@ function buildBlankTileDistMasks(
   }
 
   return blankTileMasks;
-}
-
-// Flexibility score: how many blank tiles remain near the general after
-// placing a candidate. Higher = more room for future bursts.
-function flexScore(candidateMask: bigint, blankTileMasks: bigint[]): number {
-  return popcount(blankTileMasks[FLEX_SCORE_MAX_DIST] & ~candidateMask);
-}
-
-// Sort each candidate list in entriesByLen by flexibility score (descending).
-// Candidates that leave more open space near the general are tried first.
-function sortByFlexibility(
-  entriesByLen: PathEntriesByLen,
-  blankTileMasks: bigint[],
-): void {
-  for (const [, candidates] of entriesByLen) {
-    const scores = candidates.map((c) => flexScore(c.mask, blankTileMasks));
-    const indices = candidates.map((_, i) => i);
-    indices.sort((a, b) => scores[b] - scores[a]);
-    const sorted = indices.map((i) => candidates[i]);
-    for (let i = 0; i < candidates.length; i++) {
-      candidates[i] = sorted[i];
-    }
-  }
 }
 
 // ── Feasibility pruning ──
@@ -369,10 +340,11 @@ function solveV3(
 
   const pathsByLen = genPathsDP(board, generalPos, cfg.maxBurst + 1);
   const entriesByLen = buildPathEntries(pathsByLen);
-
-  const maxDist = Math.max(FLEX_SCORE_MAX_DIST, FEASIBILITY_MAX_DIST);
-  const blankTileMasks = buildBlankTileDistMasks(board, generalPos, maxDist);
-  sortByFlexibility(entriesByLen, blankTileMasks);
+  const blankTileMasks = precomputeBlankTileDistMasks(
+    board,
+    generalPos,
+    FEASIBILITY_MAX_DIST,
+  );
 
   const timingConfig: TimingTableConfig = {
     maxTicks: cfg.maxTicks,
