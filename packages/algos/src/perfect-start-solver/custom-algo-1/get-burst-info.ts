@@ -56,6 +56,8 @@ function getBurstInfosFromSpecs(
   for (const spec of specs) {
     const result = simulateOneBurst(spec.captures, spec.moves, state, maxTicks);
     if (!result) return null;
+    // startTick is the first movement tick, which may be a traversal
+    // (not a capture) when overlap > 0
     infos.push({
       burstLen: spec.moves,
       startTick: result.endTick - spec.moves + 1,

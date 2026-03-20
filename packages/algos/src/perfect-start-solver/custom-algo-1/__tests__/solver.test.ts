@@ -26,6 +26,8 @@ describe('solve', () => {
 
     expect(result.solution).not.toBeNull();
     expect(result.solution!.totalCaptured).toBe(24);
+    const hasOverlapBurst = result.solution!.burstSpecs.some((s) => s.moves > s.captures);
+    expect(hasOverlapBurst).toBe(true);
   });
 
   it('maze-7x7 gets 24 captures with overlap', () => {
@@ -34,6 +36,8 @@ describe('solve', () => {
 
     expect(result.solution).not.toBeNull();
     expect(result.solution!.totalCaptured).toBe(24);
+    const hasOverlapBurst = result.solution!.burstSpecs.some((s) => s.moves > s.captures);
+    expect(hasOverlapBurst).toBe(true);
   });
 
   it('corridor-7x7 without overlap gets fewer than 24', () => {

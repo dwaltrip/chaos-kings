@@ -120,6 +120,9 @@ function findPaths(
       if (!candidates) continue;
 
       for (const cand of candidates) {
+        // overlapSkips counts both "any overlap" rejections (overlap=0)
+        // and "wrong overlap count or non-prefix" rejections (overlap>0)
+        // TODO: could count these separately
         if (overlap === 0) {
           if ((cand.mask & coveredMask) !== 0n) {
             burstStats.overlapSkips++;

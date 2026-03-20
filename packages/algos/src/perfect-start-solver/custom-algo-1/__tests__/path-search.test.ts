@@ -129,16 +129,11 @@ describe('findPaths', () => {
     }
   });
 
-  it('overlap enables solutions that zero-overlap cannot find', () => {
-    // Use a small open board where we can construct the scenario:
-    // a pattern that fails without overlap but succeeds with it.
-    // The solver test for corridor-7x7 validates the real-world case;
-    // here we just verify the findPaths overlap mechanics work.
+  it('findPaths with overlapConfig populates burstSpecs correctly', () => {
     const { board, generalPos } = makeTestBoard('open-7x7');
     const genPaths = genPathsDP(board, generalPos, 13);
     const entries = buildPathEntries(genPaths);
 
-    // With overlap config, burstSpecs should be populated correctly
     const result = findPaths(entries, [10, 8, 4, 2], {
       maxOverlapPerBurst: 3,
       maxTicks: 50,
