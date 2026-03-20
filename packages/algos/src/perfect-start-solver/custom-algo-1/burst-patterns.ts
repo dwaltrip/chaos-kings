@@ -25,14 +25,14 @@ function genValidBurstPatterns(
 
 // All descending-order sequences of positive integers that sum to `total`,
 // where each element is at most `maxVal` and the sequence has at most
-// `maxParts` elements (unlimited if not provided).
+// `maxParts` elements.
 function genDescendingPartitions(
   total: number,
   maxVal: number,
-  maxParts?: number,
+  maxParts: number = 8,
 ): BurstPattern[] {
   const results: BurstPattern[] = [];
-  const partsLimit = maxParts ?? Infinity;
+  const partsLimit = maxParts;
 
   function recurse(remaining: number, maxNext: number, pattern: BurstPattern) {
     if (remaining === 0) {

@@ -5,6 +5,7 @@ import { fromBoardState } from '@/core-next/convert';
 import { allBoards, makeBoard } from '../test-boards';
 import { solve } from './solver';
 import { solveV2 } from './solver-v2';
+import { solveV3 } from './solver-v3';
 
 interface RunOptions {
   board: string;
@@ -17,18 +18,28 @@ const { opts } = parseTypedCommand(
   createTypedCommand<RunOptions>()
     .name('run-custom-algo')
     .description('Run custom-algo-1 burst-path solver')
-    .option('--board <names>', 'Board names, comma-separated', 'all')
+    .option('--board <names>', 'Board names, comma-separated (or "all")')
     .option('--ticks <n>', 'Number of ticks', '50')
-    .option('--solver <version>', 'v1, v2, or both', 'v2')
+    .option('--solver <version>', 'v1, v2, v3, or both (v2+v3)')
     .option('--max-bursts <n>', 'Max number of bursts', ''),
 );
+
+if (!opts.board) {
+  console.error('--board is required (e.g. --board all, --board corridor-7x7)');
+  process.exit(1);
+}
+if (!opts.solver) {
+  console.error('--solver is required (v1, v2, v3, or both)');
+  process.exit(1);
+}
 
 const maxTicks = Number(opts.ticks);
 const maxBursts = opts.maxBursts ? Number(opts.maxBursts) : undefined;
 const boards =
   opts.board === 'all' ? allBoards() : opts.board.split(',').map((n) => makeBoard(n));
-const runV1 = opts.solver === 'v1' || opts.solver === 'both';
+const runV1 = opts.solver === 'v1';
 const runV2 = opts.solver === 'v2' || opts.solver === 'both';
+const runV3 = opts.solver === 'v3' || opts.solver === 'both';
 
 for (const testBoard of boards) {
   const board = fromBoardState(testBoard.board, 1);
@@ -41,13 +52,27 @@ for (const testBoard of boards) {
   console.log(`=== ${testBoard.name} ===`);
 
   if (runV1) {
-    const result = solve(board, generalPos, { maxTicks, maxBursts });
+    const result = solve(board, generalPos, {
+      maxTicks,
+      ...(maxBursts !== undefined && { maxBursts }),
+    });
     printResult('v1', result.solution, result.patternsChecked, result.elapsedMs, board);
   }
 
   if (runV2) {
-    const result = solveV2(board, generalPos, { maxTicks, maxBursts });
+    const result = solveV2(board, generalPos, {
+      maxTicks,
+      ...(maxBursts !== undefined && { maxBursts }),
+    });
     printResult('v2', result.solution, result.entriesChecked, result.elapsedMs, board);
+  }
+
+  if (runV3) {
+    const result = solveV3(board, generalPos, {
+      maxTicks,
+      ...(maxBursts !== undefined && { maxBursts }),
+    });
+    printResult('v3', result.solution, result.entriesChecked, result.elapsedMs, board);
   }
 
   console.log();
