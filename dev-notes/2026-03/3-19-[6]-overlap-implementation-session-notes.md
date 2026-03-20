@@ -3,7 +3,7 @@
 ## What we did
 
 Implemented prefix-only overlap re-traversal for custom-algo-1,
-following the design in 3-19-[2]-overlap-design-sketch.md.
+following the design in 3-19-[3]-overlap-design-sketch.md.
 
 ### Changes
 

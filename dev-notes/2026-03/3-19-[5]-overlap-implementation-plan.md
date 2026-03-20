@@ -1,6 +1,6 @@
 # Overlap Re-traversal — Implementation Plan
 
-Reference: design sketch in 3-19-[2]-overlap-design-sketch.md
+Reference: design sketch in 3-19-[3]-overlap-design-sketch.md
 
 ## Implementation blocks
 

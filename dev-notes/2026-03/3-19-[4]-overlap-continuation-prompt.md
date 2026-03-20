@@ -3,7 +3,7 @@
 ## Context
 
 Read these for full background:
-- dev-notes/2026-03/3-19-[2]-overlap-design-sketch.md (the design)
+- dev-notes/2026-03/3-19-[3]-overlap-design-sketch.md (the design)
 - dev-notes/2026-03/3-19-[1]-custom-algo-session-notes.md (prior session)
 - dev-notes/2026-03/3-18-[1]-notes-for-custom-algo-burst-path-search.md (algorithm idea)
 

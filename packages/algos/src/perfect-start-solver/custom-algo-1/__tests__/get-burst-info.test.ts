@@ -9,10 +9,6 @@ describe('simulateOneBurst', () => {
   const initial: TimingState = { tick: 1, generalTroops: 1 };
 
   it.each([
-    // TODO: Daniel — verify these expected endTicks by hand.
-    // Each case is: [description, captures, moves, expectedEndTick]
-    // For moves=captures (no overlap), these should match the old
-    // getMoveTicksForBurstPattern model exactly.
     ['single capture', 1, 1, 3],
     ['2 captures', 2, 2, 6],
     ['3 captures', 3, 3, 9],
@@ -26,16 +22,12 @@ describe('simulateOneBurst', () => {
     },
   );
 
-  // TODO: Daniel — verify these by hand. The idea:
-  // moves > captures means extra traversal ticks. troopsNeeded is
-  // still captures+1 (traversal is free army-wise), but the burst
-  // takes more ticks of movement.
-  // For captures=2, moves=3: need 3 troops (captures+1), so depart
-  // at same tick as captures=2. But 3 moves instead of 2, so endTick
-  // should be one tick later than the pure 2-capture case (6 → 7?).
+  // `moves > captures` means some moves are re-traversing owned land.
+  // NOTE: These cases aren't possible as an initial burst in an actual game.
+  // Spatially it doesn't tmake sense. But the timing math is "correct", which
+  // is all we need here.
   it.each([
     ['2 captures + 1 overlap', 2, 3, 7],
-    // TODO: Daniel — verify 11 is correct here (agent got 11 from test run)
     ['3 captures + 2 overlap', 3, 5, 11],
   ] as [string, number, number, number][])(
     '%s (moves>captures): endTick=%i',
@@ -71,8 +63,6 @@ describe('simulateOneBurst', () => {
 });
 
 describe('getBurstInfosFromSpecs', () => {
-  // TODO: Daniel — verify these expected values match old getBurstInfos
-  // output for the same capture patterns (moves=captures).
   it('matches old model for [2, 1] with moves=captures', () => {
     const specs: BurstSpec[] = [
       { captures: 2, moves: 2 },
@@ -129,9 +119,6 @@ describe('getBurstInfosFromSpecs', () => {
     expect(infos).toBeNull();
   });
 
-  // TODO: Daniel — verify this by hand. Second burst has 1 overlap move,
-  // so burstLen=4 (3 captures + 1 overlap), taking 4 movement ticks.
-  // troopsNeeded for second burst is still 3+1=4 (overlap is free).
   it('handles overlap specs correctly', () => {
     const specs: BurstSpec[] = [
       { captures: 5, moves: 5 },
@@ -139,8 +126,9 @@ describe('getBurstInfosFromSpecs', () => {
     ];
     const infos = getBurstInfosFromSpecs(specs, 50);
     expect(infos).not.toBeNull();
-    expect(infos![1].burstLen).toBe(4);
-    // endTick should be 1 tick later than pure [5,3] due to extra move
-    // TODO: fill in exact expected startTick/endTick after hand verification
+    const b2 = infos![1];
+    expect(b2.burstLen).toBe(4);
+    expect(b2.startTick).toBe(17);
+    expect(b2.endTick).toBe(20);
   });
 });
