@@ -204,11 +204,19 @@ function entryIsFeasible(
   burstIdx: number,
   cumFree: number[],
 ): boolean {
+  const maxDist = cumFree.length - 1;
   for (let i = burstIdx; i < es.moves.length; i++) {
     const moveLen = es.moves[i];
     const captures = es.entry.captures[i];
-    // bursts with moveLen beyond our distance masks — assume feasible
-    if (moveLen >= cumFree.length) continue;
+    if (moveLen > maxDist) {
+      // Beyond our distance masks. Upper-bound the captures: known free
+      // tiles within maxDist, plus at most (moveLen - maxDist) tiles beyond
+      // (reaching distance maxDist+1 costs maxDist+1 steps, leaving
+      // moveLen - maxDist - 1 additional steps, +1 for the tile at maxDist+1).
+      const beyondTiles = moveLen - maxDist;
+      if (cumFree[maxDist] + beyondTiles < captures) return false;
+      continue;
+    }
     if (cumFree[moveLen] < captures) return false;
   }
   return true;
