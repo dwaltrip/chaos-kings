@@ -1,4 +1,4 @@
-import { solve } from '../solver';
+import { solveV3 as solve } from '../solver-v3';
 import { hasOverlap, popcount } from '../bitmask';
 
 import { makeTestBoard } from './helpers';
