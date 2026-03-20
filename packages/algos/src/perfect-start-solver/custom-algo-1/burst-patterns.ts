@@ -1,4 +1,4 @@
-import { getBurstInfos } from './get-burst-info';
+import { simulateOneBurst, type TimingState } from './get-burst-info';
 
 type BurstPattern = number[];
 
@@ -11,9 +11,14 @@ function genValidBurstPatterns(
   maxTicks: number,
 ): BurstPattern[] {
   const all = genDescendingPartitions(total, maxBurst);
-  return all.filter((p) => {
-    const bursts = getBurstInfos(p);
-    return bursts[bursts.length - 1].endTick <= maxTicks;
+  return all.filter((pattern) => {
+    let state: TimingState = { tick: 1, generalTroops: 1 };
+    for (const captures of pattern) {
+      const result = simulateOneBurst(captures, captures, state, maxTicks);
+      if (!result) return false;
+      state = result.nextState;
+    }
+    return true;
   });
 }
 
