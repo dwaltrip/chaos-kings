@@ -53,13 +53,18 @@ for (const testBoard of boards) {
     for (let i = 0; i < s.paths.length; i++) {
       const p = s.paths[i];
       const bi = s.burstInfos[i];
+      const spec = s.burstSpecs[i];
       const coords = p.tiles.map((t) => {
         const x = t % board.width;
         const y = Math.floor(t / board.width);
         return `(${x},${y})`;
       });
+      const overlapStr =
+        spec.moves > spec.captures
+          ? ` (${spec.captures}cap+${spec.moves - spec.captures}ovlp)`
+          : '';
       console.log(
-        `    b${i + 1} (${bi.burstLen}) t=${bi.startTick}-${bi.endTick}: ${coords.join(' ')}`,
+        `    b${i + 1} (${spec.moves}mv) t=${bi.startTick}-${bi.endTick}${overlapStr}: ${coords.join(' ')}`,
       );
     }
   }

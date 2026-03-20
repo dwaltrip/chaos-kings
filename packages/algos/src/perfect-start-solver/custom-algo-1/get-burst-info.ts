@@ -67,54 +67,5 @@ function getBurstInfosFromSpecs(
   return infos;
 }
 
-// ── Legacy functions (used by existing callers, removed in Block 4) ──
-
-function getMoveTicksForBurstPattern(pattern: number[]): number[] {
-  const moveTicks: number[] = [];
-  let generalTroops = 1;
-  let burstIdx = 0;
-  let burstMovesRemaining = 0;
-
-  for (let t = 1; burstIdx < pattern.length; t++) {
-    if (burstMovesRemaining > 0) {
-      moveTicks.push(t);
-      burstMovesRemaining--;
-      if (burstMovesRemaining === 0) burstIdx++;
-    } else {
-      const troopsNeeded = pattern[burstIdx] + 1;
-      if (generalTroops >= troopsNeeded) {
-        generalTroops = 1;
-        moveTicks.push(t);
-        burstMovesRemaining = pattern[burstIdx] - 1;
-        if (burstMovesRemaining === 0) burstIdx++;
-      }
-    }
-
-    if (t % 2 === 0) {
-      generalTroops++;
-    }
-  }
-
-  return moveTicks;
-}
-
-function getBurstInfos(pattern: number[]): BurstInfo[] {
-  const ticks = getMoveTicksForBurstPattern(pattern);
-  const bursts: BurstInfo[] = [];
-  let tickIdx = 0;
-  for (const burstLen of pattern) {
-    const startTick = ticks[tickIdx];
-    const endTick = ticks[tickIdx + burstLen - 1];
-    bursts.push({ burstLen, startTick, endTick });
-    tickIdx += burstLen;
-  }
-  return bursts;
-}
-
 export type { BurstInfo, BurstSpec, TimingState };
-export {
-  getBurstInfos,
-  getBurstInfosFromSpecs,
-  getMoveTicksForBurstPattern,
-  simulateOneBurst,
-};
+export { getBurstInfosFromSpecs, simulateOneBurst };

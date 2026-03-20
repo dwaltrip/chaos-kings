@@ -2,12 +2,18 @@ import { type FlatBoard } from '@/core-next/flat-board';
 
 import { type BurstPattern, genValidBurstPatterns } from './burst-patterns';
 import { genPathsDP } from './gen-paths';
-import { getBurstInfos, type BurstInfo } from './get-burst-info';
-import { buildPathEntries, findPaths, type PathEntry } from './path-search';
+import { getBurstInfosFromSpecs, type BurstInfo, type BurstSpec } from './get-burst-info';
+import {
+  buildPathEntries,
+  findPaths,
+  type OverlapConfig,
+  type PathEntry,
+} from './path-search';
 import { popcount } from './bitmask';
 
 interface Solution {
   pattern: BurstPattern;
+  burstSpecs: BurstSpec[];
   burstInfos: BurstInfo[];
   paths: PathEntry[];
   coveredMask: bigint;
@@ -17,10 +23,9 @@ interface Solution {
 interface SolverConfig {
   maxTicks: number;
   maxBurst: number;
-  // highest capture count to try (works down from here)
   maxCaptures: number;
-  // stop trying below this capture count
   minCaptures: number;
+  maxOverlapPerBurst: number;
 }
 
 const DEFAULT_CONFIG: SolverConfig = {
@@ -30,6 +35,7 @@ const DEFAULT_CONFIG: SolverConfig = {
   maxBurst: 12,
   maxCaptures: 24,
   minCaptures: 15,
+  maxOverlapPerBurst: 3,
 };
 
 interface SolverResult {
@@ -50,6 +56,11 @@ function solve(
   const pathsByLen = genPathsDP(board, generalPos, cfg.maxBurst + 1);
   const entries = buildPathEntries(pathsByLen);
 
+  const overlapConfig: OverlapConfig = {
+    maxOverlapPerBurst: cfg.maxOverlapPerBurst,
+    maxTicks: cfg.maxTicks,
+  };
+
   let patternsChecked = 0;
 
   for (let captures = cfg.maxCaptures; captures >= cfg.minCaptures; captures--) {
@@ -57,13 +68,14 @@ function solve(
 
     for (const pattern of patterns) {
       patternsChecked++;
-      const result = findPaths(entries, pattern);
+      const result = findPaths(entries, pattern, overlapConfig);
 
       if (result) {
         return {
           solution: {
             pattern,
-            burstInfos: getBurstInfos(pattern),
+            burstSpecs: result.burstSpecs,
+            burstInfos: getBurstInfosFromSpecs(result.burstSpecs, cfg.maxTicks)!,
             paths: result.paths,
             coveredMask: result.coveredMask,
             totalCaptured: popcount(result.coveredMask),

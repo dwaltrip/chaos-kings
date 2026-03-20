@@ -1,5 +1,5 @@
 import { genDescendingPartitions, genValidBurstPatterns } from '../burst-patterns';
-import { getBurstInfos } from '../get-burst-info';
+import { simulateOneBurst, type TimingState } from '../get-burst-info';
 
 describe('genDescendingPartitions', () => {
   it('all partitions sum to target', () => {
@@ -56,9 +56,16 @@ describe('genValidBurstPatterns', () => {
   it('all results fit within maxTicks', () => {
     const maxTicks = 50;
     const patterns = genValidBurstPatterns(20, 12, maxTicks);
-    for (const p of patterns) {
-      const bursts = getBurstInfos(p);
-      expect(bursts[bursts.length - 1].endTick).toBeLessThanOrEqual(maxTicks);
+    for (const pattern of patterns) {
+      let state: TimingState = { tick: 1, generalTroops: 1 };
+      let endTick = 0;
+      for (const captures of pattern) {
+        const result = simulateOneBurst(captures, captures, state, maxTicks);
+        expect(result).not.toBeNull();
+        endTick = result!.endTick;
+        state = result!.nextState;
+      }
+      expect(endTick).toBeLessThanOrEqual(maxTicks);
     }
   });
 });
