@@ -187,13 +187,29 @@ function loadBoard(filename: string): TestBoard {
   return parseBoard(name, text);
 }
 
+const CORNER_7x7 = loadBoard('corner-7x7.txt');
+
 const CORNER_9x9 = loadBoard('corner-9x9.txt');
 const DOUBLE_CORRIDOR_9x9 = loadBoard('double-corridor-9x9.txt');
 const DENSE_MTNS_9x9 = loadBoard('dense-mtns-9x9.txt');
 const MAZE_9x9 = loadBoard('maze-9x9.txt');
 const EDGE_9x9 = loadBoard('edge-9x9.txt');
 const PINCH_9x9 = loadBoard('pinch-9x9.txt');
+const EDGE_POCKET_9x9 = loadBoard('edge-pocket-9x9.txt');
+const EDGE_POCKET_2_9x9 = loadBoard('edge-pocket-2-9x9.txt');
+
 const CORRIDOR_11x11 = loadBoard('corridor-11x11.txt');
+const NARROW_CORRIDORS_11x11 = loadBoard('narrow-corridors-11x11.txt');
+const POCKET_11x11 = loadBoard('pocket-11x11.txt');
+const CROSS_WALLS_11x11 = loadBoard('cross-walls-11x11.txt');
+const ISLAND_11x11 = loadBoard('island-11x11.txt');
+const FLOATING_CORNER_11x11 = loadBoard('floating-corner-11x11.txt');
+
+const OPEN_13x13 = loadBoard('open-13x13.txt');
+const CORNER_13x13 = loadBoard('corner-13x13.txt');
+const SPARSE_MTNS_13x13 = loadBoard('sparse-mtns-13x13.txt');
+const OFF_CENTER_13x13 = loadBoard('off-center-13x13.txt');
+const SCATTERED_POCKETS_13x13 = loadBoard('scattered-pockets-13x13.txt');
 
 // -- Board registry ----------------------------------------------------------
 
@@ -202,6 +218,8 @@ const ALL_BOARDS: TestBoard[] = [
   SPARSE_MTNS_7x7,
   CORRIDOR_7x7,
   MAZE_7x7,
+  CORNER_7x7,
+
   OPEN_9x9,
   SPARSE_MTNS_9x9,
   CORNER_9x9,
@@ -210,9 +228,23 @@ const ALL_BOARDS: TestBoard[] = [
   MAZE_9x9,
   EDGE_9x9,
   PINCH_9x9,
+  EDGE_POCKET_9x9,
+  EDGE_POCKET_2_9x9,
+
   OPEN_11x11,
   SPARSE_MTNS_11x11,
   CORRIDOR_11x11,
+  NARROW_CORRIDORS_11x11,
+  POCKET_11x11,
+  CROSS_WALLS_11x11,
+  ISLAND_11x11,
+  FLOATING_CORNER_11x11,
+
+  OPEN_13x13,
+  CORNER_13x13,
+  SPARSE_MTNS_13x13,
+  OFF_CENTER_13x13,
+  SCATTERED_POCKETS_13x13,
 ];
 
 function makeBoard(name: string): TestBoard {
