@@ -217,6 +217,21 @@ function entryIsFeasiblePerBurst(
   return true;
 }
 
+// General neighbor bottleneck: every path starts from the general.
+// Each burst with overlap=0 must step to a distinct blank neighbor.
+// If more zero-overlap bursts remain than blank neighbors, prune.
+function entryIsFeasibleNeighbors(
+  es: EntryWithMoves,
+  burstIdx: number,
+  blankNeighborCount: number,
+): boolean {
+  let zeroOverlapBursts = 0;
+  for (let i = burstIdx; i < es.moves.length; i++) {
+    if (es.entry.overlaps[i] === 0) zeroOverlapBursts++;
+  }
+  return zeroOverlapBursts <= blankNeighborCount;
+}
+
 // Aggregate feasibility: total remaining captures must not exceed total
 // blank tiles within the max reach of any remaining burst.
 function entryIsFeasibleAggregate(
@@ -271,8 +286,10 @@ function searchGrouped(
   // feasibility: check if remaining bursts are spatially possible
   stats.feasibilityChecks++;
   const blankByDist = buildBlankTilesWithinDist(coveredMask, distMasks);
+  const blankNeighborCount = popcount(distMasks[1] & ~coveredMask);
   const feasible = entries.filter(
     (es) =>
+      entryIsFeasibleNeighbors(es, burstIdx, blankNeighborCount) &&
       entryIsFeasiblePerBurst(es, burstIdx, blankByDist) &&
       entryIsFeasibleAggregate(es, burstIdx, blankByDist),
   );
