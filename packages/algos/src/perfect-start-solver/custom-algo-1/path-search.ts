@@ -1,4 +1,5 @@
 import { type GenPath, type GenPathsByLen } from './gen-paths';
+import { simulateOneBurst, type BurstSpec, type TimingState } from './get-burst-info';
 
 interface PathEntry {
   tiles: number[];
@@ -32,6 +33,28 @@ function buildPathEntries(genPaths: GenPathsByLen): PathEntriesByLen {
   return result;
 }
 
+// Checks whether a path's overlap with owned territory is a clean prefix.
+// Returns number of prefix overlap tiles, or -1 if overlap is non-prefix.
+function countPrefixOverlap(tiles: number[], coveredMask: bigint): number {
+  let prefixLen = 0;
+
+  while (prefixLen < tiles.length) {
+    if (!(coveredMask & (1n << BigInt(tiles[prefixLen])))) break;
+    prefixLen++;
+  }
+
+  for (let i = prefixLen; i < tiles.length; i++) {
+    if (coveredMask & (1n << BigInt(tiles[i]))) return -1;
+  }
+
+  return prefixLen;
+}
+
+interface OverlapConfig {
+  maxOverlapPerBurst: number;
+  maxTicks: number;
+}
+
 interface BurstStats {
   tried: number;
   overlapSkips: number;
@@ -43,56 +66,100 @@ interface SearchStats {
 
 interface SearchResult {
   paths: PathEntry[];
+  burstSpecs: BurstSpec[];
   coveredMask: bigint;
   stats: SearchStats;
 }
 
-// Finds non-overlapping paths for each burst length in the pattern.
-// Returns the first valid assignment, or null if none exists.
+type SearchHit = { path: PathEntry; overlap: number };
+
+// Finds paths for each burst in the pattern, with optional overlap support.
+// Without overlapConfig: zero-overlap only (original behavior).
+// With overlapConfig: tries increasing prefix overlap per burst.
 function findPaths(
   entriesByLen: PathEntriesByLen,
   burstPattern: number[],
+  overlapConfig?: OverlapConfig,
 ): SearchResult | null {
   const stats: SearchStats = {
     perBurst: burstPattern.map(() => ({ tried: 0, overlapSkips: 0 })),
   };
 
-  function search(burstIdx: number, coveredMask: bigint): PathEntry[] | null {
-    if (burstIdx === burstPattern.length) {
-      return [];
-    }
+  const initialTimingState: TimingState | undefined = overlapConfig
+    ? { tick: 1, generalTroops: 1 }
+    : undefined;
 
-    const burstLen = burstPattern[burstIdx];
-    const candidates = entriesByLen.get(burstLen);
-    if (!candidates) return null;
+  function search(
+    burstIdx: number,
+    coveredMask: bigint,
+    timingState?: TimingState,
+  ): SearchHit[] | null {
+    if (burstIdx === burstPattern.length) return [];
 
+    const captures = burstPattern[burstIdx];
+    const maxOverlap =
+      overlapConfig && burstIdx > 0 ? overlapConfig.maxOverlapPerBurst : 0;
     const burstStats = stats.perBurst[burstIdx];
 
-    for (const cand of candidates) {
-      if ((cand.mask & coveredMask) !== 0n) {
-        burstStats.overlapSkips++;
-        continue;
+    for (let overlap = 0; overlap <= maxOverlap; overlap++) {
+      const moves = captures + overlap;
+
+      let nextTimingState: TimingState | undefined;
+      if (overlapConfig && timingState) {
+        const result = simulateOneBurst(
+          captures,
+          moves,
+          timingState,
+          overlapConfig.maxTicks,
+        );
+        if (!result) break;
+        nextTimingState = result.nextState;
       }
 
-      burstStats.tried++;
-      const rest = search(burstIdx + 1, coveredMask | cand.mask);
-      if (rest) {
-        rest.unshift(cand);
-        return rest;
+      const candidates = entriesByLen.get(moves);
+      if (!candidates) continue;
+
+      for (const cand of candidates) {
+        if (overlap === 0) {
+          if ((cand.mask & coveredMask) !== 0n) {
+            burstStats.overlapSkips++;
+            continue;
+          }
+        } else {
+          const prefixLen = countPrefixOverlap(cand.tiles, coveredMask);
+          if (prefixLen !== overlap) {
+            burstStats.overlapSkips++;
+            continue;
+          }
+        }
+
+        burstStats.tried++;
+        const newTilesMask = overlap > 0 ? cand.mask & ~coveredMask : cand.mask;
+        const rest = search(burstIdx + 1, coveredMask | newTilesMask, nextTimingState);
+        if (rest) {
+          rest.unshift({ path: cand, overlap });
+          return rest;
+        }
       }
     }
 
     return null;
   }
 
-  const paths = search(0, 0n);
-  if (!paths) return null;
+  const hits = search(0, 0n, initialTimingState);
+  if (!hits) return null;
+
+  const paths = hits.map((h) => h.path);
+  const burstSpecs = hits.map((h, i) => ({
+    captures: burstPattern[i],
+    moves: burstPattern[i] + h.overlap,
+  }));
 
   let coveredMask = 0n;
   for (const p of paths) coveredMask |= p.mask;
 
-  return { paths, coveredMask, stats };
+  return { paths, burstSpecs, coveredMask, stats };
 }
 
-export type { PathEntry, PathEntriesByLen };
-export { buildPathEntries, findPaths };
+export type { OverlapConfig, PathEntry, PathEntriesByLen, SearchResult };
+export { buildPathEntries, countPrefixOverlap, findPaths };
