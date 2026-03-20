@@ -21,84 +21,79 @@ Check recent git log (`git log --oneline -20` on branch `custom-algo-1`).
 ## Where we left off
 
 Built solver-v2 with precomputed timing tables. Added 7 new test
-boards. Did deep perf analysis and found that v2's main weakness is
-redundant burst-1 work (re-scanning candidates for each timing entry).
-Designed a "grouped iteration" approach (v3) that fixes this. Also
-identified forward checking as a complementary optimization.
+boards (corner-9x9, edge-9x9, double-corridor-9x9, dense-mtns-9x9,
+maze-9x9, pinch-9x9, corridor-11x11). Did deep perf analysis. The
+key findings and ideas are in the docs above — read them carefully,
+but treat them as working hypotheses, not settled conclusions.
 
 Created reusable CLI tools: `board-info.ts`, `timing-info.ts`,
 `tools/check-burst-timing.ts`, `tools/profile-search-detail.ts`.
 
-## What to do next
+## Goals for this session
 
-### 1. Implement grouped iteration (v3)
+The overall goal is improving solver performance, especially on the
+hard boards (corridor-7x7, double-corridor-9x9, corner-9x9, edge-9x9).
+We have ideas but haven't committed to a specific path yet. Please
+check in with Daniel before diving deep into implementation — discuss
+the approach, brainstorm alternatives, poke holes in assumptions.
 
-Follow the design in `3-20-[3]-grouped-iteration-design-sketch.md`.
-Key files to create:
-- `solver-v3.ts` — new solver with grouped iteration
-- Update `timing-table.ts` to support grouping by burst-1 length
+### Grouped iteration (v3) — our leading idea
 
-The search structure:
-```
-for each capture target (24 down to 15):
-  for each burst-1 move length group (longest first):
-    for each burst-1 candidate path:
-      for each timing entry in this group:
-        searchRemaining(burst-1 path, entry, burstIdx=1)
-```
+The design sketch in `3-20-[3]-grouped-iteration-design-sketch.md`
+proposes grouping timing entries by burst-1 move length and sharing
+burst-1 path picks across entries. The analysis looks promising but
+there are open questions about ordering, forward checking details,
+and whether the grouping actually helps on the hardest boards.
 
-Include forward checking: after choosing a burst-1 path, verify at
-least one entry has a viable burst-2 candidate before recursing.
+Worth discussing before building:
+- Does the cost model analysis hold up? (See the "no filtering at
+  burst-1" insight in the design doc — it complicates things)
+- Is grouped iteration the right level of optimization, or should
+  we be thinking about the problem differently?
+- Forward checking: how deep should it go? Just burst-2, or deeper?
 
-Wire into `run.ts` (already supports `--solver` flag, add `v3`).
-Compare v1/v2/v3 on all boards, especially corridor-7x7,
-double-corridor-9x9, corner-9x9, and edge-9x9.
+If we build it: `solver-v3.ts`, wire into `run.ts` (`--solver v3`),
+compare against v2 on all boards. v3 would replace v1 (delete v1).
+Keep v2 as a simple reference for correctness checks.
 
-### 2. Continue verifying assumptions
+### Verify assumptions
 
-Key assumptions to test (from the perf analysis doc):
+Several assumptions underpin the solver design. Some may be wrong.
+Worth investigating — could change what we optimize for:
 
-- **"maxBursts=6 covers all optimal solutions"** — Run v1 with
-  maxBursts=8 on a few boards and confirm no solution needs 7+ bursts.
-  Quick check, should do this early.
+- **"maxBursts=6 covers all optimal solutions"** — Quick to check:
+  run v2 with maxBursts=8 on a few boards.
+- **"Overlap is prefix-only"** — Assumed but not proven. Could
+  matter on constrained boards.
+- **"Solutions always use 4 bursts"** — True on current boards, but
+  is this fundamental or just an artifact of the test set?
+- **"Longer burst-1 is always better"** — All solutions so far use
+  burst-1=10+. Relevant for group ordering.
 
-- **"Overlap is prefix-only"** — Hard to verify without a reference
-  solver. Could check: on boards where the solver struggles, does
-  relaxing the prefix constraint (allowing mid-path overlap) find
-  better solutions? Would need to modify `countPrefixOverlap` to
-  allow non-prefix overlap and see if results improve.
+### Build CLI tools as we go
 
-- **"Solutions always use 4 bursts"** — Check the burst count
-  distribution across solutions. The timing-info script shows most
-  entries have 5-6 bursts at 24 captures — are any of those needed?
+We've been building small, composable CLI scripts (`board-info.ts`,
+`timing-info.ts`) to make analysis easier. Keep doing this — when
+you find yourself writing ad-hoc `npx tsx -e` scripts more than
+once, consider promoting to a proper tool. Next likely candidate:
+`profile-solve.ts` (phase-by-phase timing breakdown).
 
-- **"Longer burst-1 is always better"** — All current solutions use
-  burst-1=10, 11, or 12. Is there a board where burst-1=8 or shorter
-  produces a better result? Relevant for group ordering in v3.
+Convention: `typed-command` pattern, `--board` flag, clean text
+output, live in `tools/` or alongside `run.ts`.
 
-### 3. Build more CLI tools
+### Other directions to think about
 
-We have `board-info.ts` and `timing-info.ts`. Next useful tool:
-
-- **`profile-solve.ts`** — Phase-by-phase timing breakdown for a
-  solve. Path gen time, table build time, search time (separately).
-  Entries checked, nodes visited, rejection rates per burst. More
-  detailed than `run.ts` but uses the real solver (not duplicated
-  instrumented code like the tmp-scripts do).
-
-General principle: small, composable scripts using `typed-command`,
-same `--board` flag convention, living in `tools/` or alongside
-`run.ts`. Each script does one thing and outputs clean text.
-
-### 4. Stretch: think about candidate ordering
-
-The grouped iteration design note mentions candidate ordering as an
-open question. On corner-9x9 (36K len-12 candidates), the order in
-which burst-1 candidates are tried matters a lot. If the "good"
-candidates (ones that leave room for burst-2+) appear late in the
-enumeration order, even v3 with forward checking will be slow.
-
-Possible heuristics: prefer paths that spread outward (maximize
-distance from general), prefer paths that go in "unique" directions,
-sort by number of compatible burst-2 candidates. All speculative —
-measure before optimizing.
+These are speculative but worth discussing:
+- **Candidate ordering** — on corner-9x9 (36K len-12 candidates),
+  the order in which burst-1 candidates are tried matters a lot. If
+  the "good" candidates (ones that leave room for burst-2+) appear
+  late in the enumeration order, even v3 with forward checking will
+  be slow. Possible heuristics: prefer paths that spread outward
+  (maximize distance from general), prefer paths that go in "unique"
+  directions, sort by number of compatible burst-2 candidates. All
+  speculative — measure before optimizing.
+- **Are there fundamentally different approaches** we haven't
+  considered? The burst-path decomposition is one framing — are
+  there others?
+- **What's a realistic perf target?** Is <1s on all 9x9 boards
+  reasonable, or are some boards inherently hard?
