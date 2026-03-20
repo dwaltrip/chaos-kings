@@ -10,6 +10,7 @@ interface RunOptions {
   board: string;
   ticks: string;
   solver: string;
+  maxBursts: string;
 }
 
 const { opts } = parseTypedCommand(
@@ -18,10 +19,12 @@ const { opts } = parseTypedCommand(
     .description('Run custom-algo-1 burst-path solver')
     .option('--board <names>', 'Board names, comma-separated', 'all')
     .option('--ticks <n>', 'Number of ticks', '50')
-    .option('--solver <version>', 'v1, v2, or both', 'v2'),
+    .option('--solver <version>', 'v1, v2, or both', 'v2')
+    .option('--max-bursts <n>', 'Max number of bursts', ''),
 );
 
 const maxTicks = Number(opts.ticks);
+const maxBursts = opts.maxBursts ? Number(opts.maxBursts) : undefined;
 const boards =
   opts.board === 'all' ? allBoards() : opts.board.split(',').map((n) => makeBoard(n));
 const runV1 = opts.solver === 'v1' || opts.solver === 'both';
@@ -38,12 +41,12 @@ for (const testBoard of boards) {
   console.log(`=== ${testBoard.name} ===`);
 
   if (runV1) {
-    const result = solve(board, generalPos, { maxTicks });
+    const result = solve(board, generalPos, { maxTicks, maxBursts });
     printResult('v1', result.solution, result.patternsChecked, result.elapsedMs, board);
   }
 
   if (runV2) {
-    const result = solveV2(board, generalPos, { maxTicks });
+    const result = solveV2(board, generalPos, { maxTicks, maxBursts });
     printResult('v2', result.solution, result.entriesChecked, result.elapsedMs, board);
   }
 
