@@ -23,6 +23,7 @@ interface Solution {
 interface SolverConfig {
   maxTicks: number;
   maxBurst: number;
+  maxBursts: number;
   maxCaptures: number;
   minCaptures: number;
   maxOverlapPerBurst: number;
@@ -33,6 +34,7 @@ const DEFAULT_CONFIG: SolverConfig = {
   // Path counts grow ~2.5x per length. On open 11x11, length 12 is ~60K
   // paths which is fine; length 14+ OOMs. Cap conservatively for now.
   maxBurst: 12,
+  maxBursts: 8,
   maxCaptures: 24,
   minCaptures: 15,
   maxOverlapPerBurst: 3,
@@ -64,9 +66,16 @@ function solve(
   let patternsChecked = 0;
 
   for (let captures = cfg.maxCaptures; captures >= cfg.minCaptures; captures--) {
-    const patterns = genValidBurstPatterns(captures, cfg.maxBurst, cfg.maxTicks);
+    const patterns = genValidBurstPatterns(
+      captures,
+      cfg.maxBurst,
+      cfg.maxTicks,
+      cfg.maxBursts,
+    );
 
     for (const pattern of patterns) {
+      // skip patterns that need a burst length with no available paths
+      if (pattern.some((len) => !entries.has(len))) continue;
       patternsChecked++;
       const result = findPaths(entries, pattern, overlapConfig);
 
