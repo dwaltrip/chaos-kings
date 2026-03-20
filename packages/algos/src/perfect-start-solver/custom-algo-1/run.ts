@@ -73,6 +73,14 @@ for (const testBoard of boards) {
       ...(maxBursts !== undefined && { maxBursts }),
     });
     printResult('v3', result.solution, result.entriesChecked, result.elapsedMs, board);
+    const st = result.stats;
+    console.log(
+      `    stats: ${st.searchCalls.toLocaleString()} search calls, ` +
+        `${st.candidatesChecked.toLocaleString()} cands checked, ` +
+        `${st.feasibilityChecks.toLocaleString()} feas checks, ` +
+        `${st.feasibilityPrunes.toLocaleString()} feas prunes, ` +
+        `${st.feasibilityEntriesKilled.toLocaleString()} entries killed`,
+    );
   }
 
   console.log();

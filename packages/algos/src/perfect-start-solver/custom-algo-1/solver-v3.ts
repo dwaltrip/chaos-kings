@@ -46,10 +46,29 @@ const DEFAULT_CONFIG: SolverConfig = {
   maxOverlapPerBurst: 3,
 };
 
+interface SearchStats {
+  feasibilityChecks: number;
+  feasibilityPrunes: number;
+  feasibilityEntriesKilled: number;
+  candidatesChecked: number;
+  searchCalls: number;
+}
+
+function emptyStats(): SearchStats {
+  return {
+    feasibilityChecks: 0,
+    feasibilityPrunes: 0,
+    feasibilityEntriesKilled: 0,
+    candidatesChecked: 0,
+    searchCalls: 0,
+  };
+}
+
 interface SolverResult {
   solution: Solution | null;
   entriesChecked: number;
   elapsedMs: number;
+  stats: SearchStats;
 }
 
 // ── Timing groups ──
@@ -100,7 +119,7 @@ function buildTimingGroups(
 // candidates that extend outward, leaving room for future bursts, score high.
 
 const FLEX_SCORE_MAX_DIST = 4;
-const FEASIBILITY_MAX_DIST = 8;
+const FEASIBILITY_MAX_DIST = 4;
 const DIRECTIONS = [Direction.LEFT, Direction.UP, Direction.RIGHT, Direction.DOWN];
 
 // BFS from general, return mask of tiles at each distance (1..maxDist).
@@ -216,7 +235,10 @@ function searchGrouped(
   burstIdx: number,
   coveredMask: bigint,
   distMasks: bigint[],
+  stats: SearchStats,
 ): SearchResult | null {
+  stats.searchCalls++;
+
   // any entry fully assigned at this depth is a solution
   for (const es of entries) {
     if (burstIdx === es.moves.length) {
@@ -224,9 +246,20 @@ function searchGrouped(
     }
   }
 
+  // early feasibility: before scanning any candidates, check if remaining
+  // bursts are spatially possible given current coverage
+  stats.feasibilityChecks++;
+  const cumFree = buildCumFree(coveredMask, distMasks);
+  const feasible = entries.filter((es) => entryIsFeasible(es, burstIdx, cumFree));
+  stats.feasibilityEntriesKilled += entries.length - feasible.length;
+  if (feasible.length === 0) {
+    stats.feasibilityPrunes++;
+    return null;
+  }
+
   // bucket entries by their next burst's (moveLen, overlap)
   const buckets = new Map<number, EntryWithMoves[]>();
-  for (const es of entries) {
+  for (const es of feasible) {
     const key = bucketKey(es.moves[burstIdx], es.entry.overlaps[burstIdx]);
     let bucket = buckets.get(key);
     if (!bucket) {
@@ -243,6 +276,7 @@ function searchGrouped(
     if (!candidates) continue;
 
     for (const cand of candidates) {
+      stats.candidatesChecked++;
       if (overlap === 0) {
         if ((cand.mask & coveredMask) !== 0n) continue;
       } else {
@@ -254,11 +288,17 @@ function searchGrouped(
       const newCovered = coveredMask | newMask;
 
       // feasibility pruning: check if remaining bursts are possible
+      stats.feasibilityChecks++;
       const cumFree = buildCumFree(newCovered, distMasks);
       const feasibleEntries = bucket.filter((es) =>
         entryIsFeasible(es, burstIdx + 1, cumFree),
       );
-      if (feasibleEntries.length === 0) continue;
+      const killed = bucket.length - feasibleEntries.length;
+      stats.feasibilityEntriesKilled += killed;
+      if (feasibleEntries.length === 0) {
+        stats.feasibilityPrunes++;
+        continue;
+      }
 
       const result = searchGrouped(
         entriesByLen,
@@ -266,6 +306,7 @@ function searchGrouped(
         burstIdx + 1,
         newCovered,
         distMasks,
+        stats,
       );
       if (result) {
         result.paths.unshift(cand);
@@ -303,6 +344,7 @@ function solveV3(
   };
 
   let entriesChecked = 0;
+  const stats = emptyStats();
 
   for (let captures = cfg.maxCaptures; captures >= cfg.minCaptures; captures--) {
     const groups = buildTimingGroups(captures, timingConfig, entriesByLen);
@@ -320,6 +362,7 @@ function solveV3(
           1,
           cand.mask,
           feasDistMasks,
+          stats,
         );
         if (result) {
           const paths = [cand, ...result.paths];
@@ -344,6 +387,7 @@ function solveV3(
             },
             entriesChecked,
             elapsedMs: performance.now() - t0,
+            stats,
           };
         }
       }
@@ -354,6 +398,7 @@ function solveV3(
     solution: null,
     entriesChecked,
     elapsedMs: performance.now() - t0,
+    stats,
   };
 }
 
