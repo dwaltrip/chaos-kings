@@ -268,8 +268,7 @@ function searchGrouped(
     }
   }
 
-  // early feasibility: before scanning any candidates, check if remaining
-  // bursts are spatially possible given current coverage
+  // feasibility: check if remaining bursts are spatially possible
   stats.feasibilityChecks++;
   const blankByDist = buildBlankTilesWithinDist(coveredMask, distMasks);
   const feasible = entries.filter(
@@ -313,24 +312,9 @@ function searchGrouped(
       const newMask = overlap > 0 ? cand.mask & ~coveredMask : cand.mask;
       const newCovered = coveredMask | newMask;
 
-      // feasibility pruning: check if remaining bursts are possible
-      stats.feasibilityChecks++;
-      const blankByDist = buildBlankTilesWithinDist(newCovered, distMasks);
-      const feasibleEntries = bucket.filter(
-        (es) =>
-          entryIsFeasiblePerBurst(es, burstIdx + 1, blankByDist) &&
-          entryIsFeasibleAggregate(es, burstIdx + 1, blankByDist),
-      );
-      const killed = bucket.length - feasibleEntries.length;
-      stats.feasibilityEntriesKilled += killed;
-      if (feasibleEntries.length === 0) {
-        stats.feasibilityPrunes++;
-        continue;
-      }
-
       const result = searchGrouped(
         entriesByLen,
-        feasibleEntries,
+        bucket,
         burstIdx + 1,
         newCovered,
         distMasks,
