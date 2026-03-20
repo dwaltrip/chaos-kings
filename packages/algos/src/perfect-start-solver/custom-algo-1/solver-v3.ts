@@ -1,4 +1,6 @@
-import { type FlatBoard } from '@/core-next/flat-board';
+import { Direction } from '@core/types';
+
+import { type FlatBoard, Board, TileType } from '@/core-next/flat-board';
 
 import { popcount } from './bitmask';
 import { genPathsDP } from './gen-paths';
@@ -92,6 +94,107 @@ function buildTimingGroups(
   return groups;
 }
 
+// ── Flexibility scoring ──
+// Score candidates by how much open space they leave near the general.
+// Candidates that "trap" the general (cover all nearby tiles) score low;
+// candidates that extend outward, leaving room for future bursts, score high.
+
+const FLEX_SCORE_MAX_DIST = 4;
+const FEASIBILITY_MAX_DIST = 8;
+const DIRECTIONS = [Direction.LEFT, Direction.UP, Direction.RIGHT, Direction.DOWN];
+
+// BFS from general, return mask of tiles at each distance (1..maxDist).
+function buildDistanceMasks(
+  board: FlatBoard,
+  generalPos: number,
+  maxDist: number,
+): bigint[] {
+  const masks: bigint[] = new Array(maxDist + 1).fill(0n);
+  const visited = new Set<number>();
+  let frontier = [generalPos];
+  visited.add(generalPos);
+
+  for (let d = 1; d <= maxDist; d++) {
+    const nextFrontier: number[] = [];
+    for (const pos of frontier) {
+      for (const dir of DIRECTIONS) {
+        const next = Board.neighbor(board, pos, dir);
+        if (!Board.isValidIndex(board, next)) continue;
+        if (board.types[next] === TileType.MOUNTAIN) continue;
+        if (visited.has(next)) continue;
+        visited.add(next);
+        nextFrontier.push(next);
+        masks[d] |= 1n << BigInt(next);
+      }
+    }
+    frontier = nextFrontier;
+  }
+
+  return masks;
+}
+
+// Count free (uncovered) tiles near the general.
+// NOTE: currently uses equal weights for all distances. Could try
+// distance-based weights (e.g. weights[d] = maxDist - d + 1) to
+// prioritize keeping tiles closest to the general free.
+function flexScore(candidateMask: bigint, distMasks: bigint[]): number {
+  let score = 0;
+  for (let d = 1; d < distMasks.length; d++) {
+    score += popcount(distMasks[d] & ~candidateMask);
+  }
+  return score;
+}
+
+// Sort each candidate list in entriesByLen by flexibility score (descending).
+// Candidates that leave more open space near the general are tried first.
+function sortByFlexibility(entriesByLen: PathEntriesByLen, distMasks: bigint[]): void {
+  for (const [, candidates] of entriesByLen) {
+    const scores = candidates.map((c) => flexScore(c.mask, distMasks));
+    const indices = candidates.map((_, i) => i);
+    indices.sort((a, b) => scores[b] - scores[a]);
+    const sorted = indices.map((i) => candidates[i]);
+    for (let i = 0; i < candidates.length; i++) {
+      candidates[i] = sorted[i];
+    }
+  }
+}
+
+// ── Feasibility pruning ──
+// After choosing a path at some depth, check if the remaining bursts
+// for each timing entry are spatially feasible. If every entry has at
+// least one burst that can't get enough free tiles within its reach,
+// prune this branch.
+
+// Build cumulative free tile counts by distance from the general.
+// cumFree[d] = total uncovered tiles within distances 1..d.
+function buildCumFree(coveredMask: bigint, distMasks: bigint[]): number[] {
+  const cumFree = new Array(distMasks.length).fill(0);
+  let running = 0;
+  for (let d = 1; d < distMasks.length; d++) {
+    running += popcount(distMasks[d] & ~coveredMask);
+    cumFree[d] = running;
+  }
+  return cumFree;
+}
+
+// Check if a timing entry's remaining bursts (after burstIdx) are all
+// spatially feasible. Returns false if any burst needs more captures
+// than there are free tiles within its reach.
+function entryIsFeasible(
+  es: EntryWithMoves,
+  burstIdx: number,
+  cumFree: number[],
+): boolean {
+  for (let i = burstIdx; i < es.moves.length; i++) {
+    const moveLen = es.moves[i];
+    const captures = es.entry.captures[i];
+    // bursts with moveLen beyond our distance masks — assume feasible
+    if (moveLen >= cumFree.length) continue;
+    if (cumFree[moveLen] < captures) return false;
+  }
+  return true;
+}
+
 // ── Grouped backtracking search (burst-2+) ──
 
 // Encode (moveLen, overlap) as a single number for bucketing.
@@ -112,6 +215,7 @@ function searchGrouped(
   entries: EntryWithMoves[],
   burstIdx: number,
   coveredMask: bigint,
+  distMasks: bigint[],
 ): SearchResult | null {
   // any entry fully assigned at this depth is a solution
   for (const es of entries) {
@@ -147,11 +251,21 @@ function searchGrouped(
       }
 
       const newMask = overlap > 0 ? cand.mask & ~coveredMask : cand.mask;
+      const newCovered = coveredMask | newMask;
+
+      // feasibility pruning: check if remaining bursts are possible
+      const cumFree = buildCumFree(newCovered, distMasks);
+      const feasibleEntries = bucket.filter((es) =>
+        entryIsFeasible(es, burstIdx + 1, cumFree),
+      );
+      if (feasibleEntries.length === 0) continue;
+
       const result = searchGrouped(
         entriesByLen,
-        bucket,
+        feasibleEntries,
         burstIdx + 1,
-        coveredMask | newMask,
+        newCovered,
+        distMasks,
       );
       if (result) {
         result.paths.unshift(cand);
@@ -176,6 +290,11 @@ function solveV3(
   const pathsByLen = genPathsDP(board, generalPos, cfg.maxBurst + 1);
   const entriesByLen = buildPathEntries(pathsByLen);
 
+  const flexDistMasks = buildDistanceMasks(board, generalPos, FLEX_SCORE_MAX_DIST);
+  sortByFlexibility(entriesByLen, flexDistMasks);
+
+  const feasDistMasks = buildDistanceMasks(board, generalPos, FEASIBILITY_MAX_DIST);
+
   const timingConfig: TimingTableConfig = {
     maxTicks: cfg.maxTicks,
     maxBurst: cfg.maxBurst,
@@ -195,7 +314,13 @@ function solveV3(
 
       for (const cand of candidates) {
         entriesChecked++;
-        const result = searchGrouped(entriesByLen, group.entries, 1, cand.mask);
+        const result = searchGrouped(
+          entriesByLen,
+          group.entries,
+          1,
+          cand.mask,
+          feasDistMasks,
+        );
         if (result) {
           const paths = [cand, ...result.paths];
           const entry = result.entry;
