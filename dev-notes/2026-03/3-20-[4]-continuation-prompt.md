@@ -26,8 +26,12 @@ maze-9x9, pinch-9x9, corridor-11x11). Did deep perf analysis. The
 key findings and ideas are in the docs above — read them carefully,
 but treat them as working hypotheses, not settled conclusions.
 
-Created reusable CLI tools: `board-info.ts`, `timing-info.ts`,
-`tools/check-burst-timing.ts`, `tools/profile-search-detail.ts`.
+Created reusable CLI tools:
+
+- `tools/board-info.ts`
+- `tools/timing-info.ts`
+- `tools/check-burst-timing.ts`
+- `tools/profile-search-detail.ts`
 
 ## Goals for this session
 
@@ -72,8 +76,8 @@ Worth investigating — could change what we optimize for:
 
 ### Build CLI tools as we go
 
-We've been building small, composable CLI scripts (`board-info.ts`,
-`timing-info.ts`) to make analysis easier. Keep doing this — when
+We've been building small, composable CLI scripts (`tools/board-info.ts`,
+`tools/timing-info.ts`) to make analysis easier. Keep doing this — when
 you find yourself writing ad-hoc `npx tsx -e` scripts more than
 once, consider promoting to a proper tool. Next likely candidate:
 `profile-solve.ts` (phase-by-phase timing breakdown).
