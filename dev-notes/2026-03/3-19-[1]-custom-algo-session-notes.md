@@ -16,7 +16,7 @@ match each burst length.
 Key files created:
 - `bitmask.ts` — BigInt bitmask helpers (tilesToMask, maskToTiles, hasOverlap, popcount)
 - `path-search.ts` — `buildPathEntries` (strips general, builds masks) + `findPaths` (recursive backtracking search)
-- `tmp-scripts/check-burst-timing.ts` — CLI: `npx tsx check-burst-timing.ts "10,8,4,2"`
+- `tools/check-burst-timing.ts` — CLI: `npx tsx check-burst-timing.ts "10,8,4,2"`
 - `tmp-scripts/test-path-search.ts` — multi-board POC runner
 
 First result: finds a valid 24-capture assignment on open-11×11 in **0.2ms**
@@ -108,5 +108,6 @@ custom-algo-1/
   solver.ts               — Full solver (iterates patterns × path search)
   run.ts                  — CLI runner (typed-command)
   __tests__/              — Jest tests (48 tests, 7 files)
-  tmp-scripts/            — Ad-hoc scripts (check-burst-timing, test-*)
+  tools/                  — Reusable CLI tools (check-burst-timing, profile-search-detail)
+  tmp-scripts/            — Ad-hoc scripts (test-*)
 ```

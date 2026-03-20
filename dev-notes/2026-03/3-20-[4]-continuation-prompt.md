@@ -13,7 +13,8 @@ Read these in order:
 7. `dev-notes/2026-03/3-20-[3]-grouped-iteration-design-sketch.md` — v3 grouped iteration design
 
 Code lives in `packages/algos/src/perfect-start-solver/custom-algo-1/`.
-Read all top-level `.ts` files (not `__tests__/` or `tmp-scripts/`).
+Read all top-level `.ts` files (not `__tests__/`, `tools/`, or `tmp-scripts/`).
+Also skim `tools/` — reusable CLI scripts for analysis.
 
 Check recent git log (`git log --oneline -20` on branch `custom-algo-1`).
 
@@ -25,7 +26,8 @@ redundant burst-1 work (re-scanning candidates for each timing entry).
 Designed a "grouped iteration" approach (v3) that fixes this. Also
 identified forward checking as a complementary optimization.
 
-Created two reusable CLI tools: `board-info.ts` and `timing-info.ts`.
+Created reusable CLI tools: `board-info.ts`, `timing-info.ts`,
+`tools/check-burst-timing.ts`, `tools/profile-search-detail.ts`.
 
 ## What to do next
 
@@ -85,8 +87,8 @@ We have `board-info.ts` and `timing-info.ts`. Next useful tool:
   instrumented code like the tmp-scripts do).
 
 General principle: small, composable scripts using `typed-command`,
-same `--board` flag convention, living alongside `run.ts` (not in
-`tmp-scripts/`). Each script does one thing and outputs clean text.
+same `--board` flag convention, living in `tools/` or alongside
+`run.ts`. Each script does one thing and outputs clean text.
 
 ### 4. Stretch: think about candidate ordering
 

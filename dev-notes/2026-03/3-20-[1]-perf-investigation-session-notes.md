@@ -86,7 +86,7 @@ boards already solve instantly.
 
 ### Detailed search profiling (corridor-7x7, pattern [12,6,4,2])
 
-Instrumented search with counters (see `tmp-scripts/profile-search-detail.ts`):
+Instrumented search with counters (see `tools/profile-search-detail.ts`):
 
 ```
 search calls by depth:     1 → 1,178 → 104,322 → 1,177,384 → 1
@@ -189,8 +189,10 @@ timing overhead is completely gone.
 - `path-search.ts` — popcount pre-filter before `countPrefixOverlap`
 - `__tests__/solver.test.ts` — skip slow corridor tests
 
+### New tools/ (moved from tmp-scripts)
+- `profile-search-detail.ts` — instrumented search with detailed counters
+
 ### New tmp-scripts
 - `profile-overlap-search.ts` — per-pattern timing across all boards
-- `profile-search-detail.ts` — instrumented search with detailed counters
 - `bench-mask-ops.ts` — BigInt vs number[] mask benchmark
 - `count-timing-combos.ts` — enumerate timing table dimensions
