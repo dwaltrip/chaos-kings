@@ -42,8 +42,12 @@ None actively in progress. Next candidates:
 
 ## What's next
 
-1.2 (phase timing) and 3.2 (neighbor pre-filtering) are the natural next steps. They're complementary:
-- 1.2 tells us *where time goes* — if candidate scanning dominates, neighbor partitioning is high-value; if backtracking dominates, we need better pruning or ordering instead.
-- 3.2 is a cheap implementation experiment — partition paths by `tiles[0]`, filter per burst. Could validate the neighbor distribution insight with actual solver speedup numbers.
+After re-reading the survey and review in light of 1.3 results (see findings doc for full analysis), the strongest next direction is the **review's pipeline idea**: timing entry → neighbor assignment → path partitioning by starting direction → per-partition search. This is grounded in data we have, incrementally buildable, and each step is independently testable.
 
-Either can be done independently. 1.2 is more diagnostic, 3.2 is more directly actionable.
+Concrete candidates for next session:
+
+1. **The pipeline (3.2+)** — build the neighbor assignment → path partitioning pipeline. Start with the simplest version: partition paths by `tiles[0]`, assign zero-overlap bursts to specific neighbors based on timing entry, search within partitions. Measure actual solver speedup.
+2. **Quick wins: group ordering + symmetry breaking** — ~10 lines each, directly attack known bottlenecks. Group ordering addresses corner-9x9 specifically. Symmetry breaking (fix burst-1 direction) is free and stacks with everything.
+3. **1.2 Phase timing** — still useful diagnostically but less urgent now that we have a concrete direction to try.
+
+See `findings/1.3-path-mask-redundancy.md` "Re-reading the survey and review" section for which ideas got stronger/weaker after 1.3.
