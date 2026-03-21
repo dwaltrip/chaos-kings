@@ -14,7 +14,7 @@ Research effort exploring improvements to the `custom-algo-1` burst-path solver.
 
 - **Session notes**: Write to `sessions/` as you go — observations, intermediate results, design discussions, dead ends. Named as `{M}.{DD}-{N}-{topic}.md` (e.g., `3.21-1-bigint-bench.md`).
 - **Session logs**: Create a `{M}.{DD}-{N}-LOG.md` in `sessions/` to summarize what happened in the session.
-- **Running experiments**: Scripts live in `../experiments/`. They import from `custom-algo-1` (paths, bitmasks, timing, boards, etc.).
+- **Running experiments**: Scripts live in `../experiments/`. They import from `custom-algo-1` (paths, bitmasks, timing, boards, etc.). Save raw output to `../experiments/output/` (gitignored). Name output files to match the script: `{M}.{DD}-{N}-{topic}.txt`.
 - **Findings**: When a thread reaches a clear conclusion, distill it into `findings/` (e.g., `findings/bigint-benchmark.md`). Reference session docs for the full trail.
 
 ### Ending a session
@@ -32,5 +32,6 @@ Research effort exploring improvements to the `custom-algo-1` burst-path solver.
 | `STATUS.md` | Living dashboard — read this first | Regularly |
 | `sessions/` | Session logs, notes, and handoffs | Per session |
 | `findings/` | Polished writeups of conclusions | When a thread concludes |
+| `../experiments/` | Experiment scripts + `output/` (gitignored) for raw results | Per session |
 | `EXPLORATION-SURVEY.md` | Original brainstorm survey (historical) | Rarely |
 | `SURVEY-DOC-CRITICAL-REVIEW.md` | Idea-gaps review of survey (historical) | Rarely |
