@@ -16,7 +16,7 @@ Self-contained measurements that inform everything else. These don't require cha
 
 **Why it matters**: Bitmask operations (overlap checks, popcount, union, andNot) are in the innermost loop of the solver. Every candidate path check does at least one `(cand.mask & coveredMask) !== 0n`. If BigInt is 10x slower than equivalent Uint32Array operations, that's a 10x constant-factor improvement on the tightest loop.
 
-**What to measure**: Implement both BigInt and Uint32Array(4) versions (128 bits, enough for 11x11=121 tiles) of:
+**What to measure**: Implement both BigInt and Uint32Array versions of the core operations. Size the arrays to match actual board sizes: `Uint32Array(4)` for 11x11 (121 tiles, 128 bits) and `Uint32Array(6)` for 13x13 (169 tiles, 192 bits). Benchmark both sizes since performance may differ. Operations to benchmark:
 - `hasOverlap(a, b)` — `(a & b) !== 0n` vs manual word-by-word AND
 - `popcount(mask)` — Kernighan bit trick on BigInt vs lookup-table or Hamming weight on 32-bit words
 - `union(a, b)` — `a | b` vs word-by-word OR
@@ -135,7 +135,7 @@ Also: extend paths from each neighbor simultaneously (like a flood fill from all
 - Dead ends and funnels — areas where paths are forced through narrow corridors.
 - Whether the greedy paths look anything like the solver's optimal paths (do they pick the same regions?).
 
-**This is exploratory, not prescriptive.** We don't know exactly what the probing will reveal. The point is to build visual and quantitative intuition about each board's topology from the general's perspective.
+**This is exploratory, not prescriptive.** We don't know exactly what the probing will reveal. The point is to build visual and quantitative intuition about each board's topology from the general's perspective. Some things to capture per-neighbor along the way: greedy reach length, where branches and dead ends appear, how the greedy paths compare to the solver's chosen paths. But the specific outputs should evolve as we learn what's informative.
 
 **Connections**: Feeds into 2.1 (sector decomposition), 2.5 (tree structure), and 3.3 (tree packing). Also useful for validating whether spatial heuristics match what the solver finds.
 
@@ -170,7 +170,7 @@ Also: extend paths from each neighbor simultaneously (like a flood fill from all
 
 A tighter check: actually run the solver (or a fast feasibility check) on the board with T removed. This is expensive but definitive.
 
-A quick approximation: if T is a bottleneck tile gating access to K tiles behind it, and W - K < C, then T is must-capture (removing it makes too many tiles unreachable).
+A quick approximation: if T is a bottleneck tile gating access to K tiles behind it, and (W - 1 - K) < C, then T is must-capture (removing T itself plus the K tiles it gates leaves too few tiles to reach the capture target).
 
 **What to measure**: For each board:
 - W (walkable tiles), C (target captures), slack = W - C
@@ -231,6 +231,8 @@ Using structural understanding to make the existing solver smarter. These range 
 
 **Expected impact**: Significant on constrained boards where sectors are unbalanced. On corner-9x9, after placing a long burst in one direction, the current check might say "plenty of tiles left" because it counts tiles in both directions. The sector-aware check would correctly report "this direction is nearly exhausted."
 
+**Also worth investigating**: The current global feasibility check uses BFS distance masks capped at distance 4, with a linear approximation beyond. Per-sector masks would inherit this same approximation. It's worth measuring whether the linear approximation is the binding source of looseness (in which case extending exact masks to distance 5-6 might matter more than per-sector splitting) or whether the directional blindness is the bigger issue. The phase profiling (1.2) and pruning instrumentation can help answer this.
+
 **Risk**: If sectors are poorly defined (lots of contested tiles), the per-sector masks might not be much tighter than global masks. The affinity analysis (2.1) determines whether this is viable.
 
 **Connections**: Depends on 2.1 (sector decomposition). Improved version of current feasibility pruning — could be a drop-in enhancement.
@@ -250,7 +252,7 @@ Using structural understanding to make the existing solver smarter. These range 
 - Measure the kill rate by general degree (2, 3, 4 neighbors)
 - For corner-9x9 specifically: what fraction of timing entries at captures=24 are killed?
 
-**Expected impact**: High on corner/edge boards. On corner-9x9 (degree 2), a 4-burst solution requires at least 2 overlap bursts. Timing entries like [12, 7, 3, 2] with all-zero overlaps are immediately dead. This should eliminate a large portion of the search space before it even begins.
+**Expected impact**: High on corner/edge boards. On corner-9x9 (degree 2), a 4-burst solution requires at least 2 overlap bursts. Any timing entry for a partition like [12, 7, 3, 2] where all four overlap values are 0 is immediately dead (the partition itself may still be viable with different overlap assignments). This should eliminate a large portion of the search space before it even begins.
 
 **Implementation complexity**: Low. Just add a filter in `buildTimingEntries` or `buildTimingGroups` based on general degree. Very easy to test and measure.
 
@@ -350,7 +352,8 @@ Reducing the number of things the solver needs to consider, without changing the
 
 Aggregate across boards:
 - Frequency of each burst count (2-burst solutions vs 3-burst vs 4-burst)
-- Most common patterns (e.g., is [12, 8, 4] always a winner?)
+- Most common burst patterns / partitions (e.g., is [12, 8, 4] a frequent partition?)
+- Most common full timing entries (partition + overlap combo)
 - How often overlap is needed (fraction of solutions with any overlap > 0)
 - How early in the entry ordering the solution appears (if always in the first 10 entries, the full enumeration is wasteful)
 
@@ -385,7 +388,7 @@ Prioritized by: self-containedness, effort, and how much downstream work it unbl
 
 **Phase 2 — Board structure characterization**:
 4. **2.1 Sector/affinity decomposition** — core structural analysis, unlocks theme 3
-5. **3.2 Neighbor pre-filtering** — trivial to implement and measure, immediate payoff
+5. **3.2 Neighbor pre-filtering** — thematically a search improvement (Theme 3), but placed here because it's trivial to implement, requires no structural analysis, and has immediate payoff
 6. **2.3 Tile reachability scarcity** — builds on path data from 1.3
 
 **Phase 3 — Structure-aware improvements** (informed by phases 1-2):
@@ -396,6 +399,8 @@ Prioritized by: self-containedness, effort, and how much downstream work it unbl
 **Ongoing / as-needed**:
 - 4.3 Timing utilization, 4.4 Solution census, 2.4 Must-capture analysis — run when useful for validating other ideas
 
+**Note on combined effects**: Individual improvements may interact in non-obvious ways (e.g., neighbor pre-filtering + path dedup + direction-aware feasibility together might be more than the sum of their parts, or they might overlap). As Phase 3 progresses, it's worth measuring combined configurations, not just individual improvements in isolation.
+
 ---
 
 ## Discussion Context & Reasoning
@@ -404,7 +409,7 @@ This section documents the reasoning, claims, and decisions from the discussion 
 
 ### Problem Knowledge & Constraints
 
-**25 is the provable maximum.** For any board with 50 ticks, 25 owned tiles (24 captures + the general) is the theoretical maximum. This is a hard ceiling imposed by troop production rates. Most boards with moderate openness can hit this. This means the solver's job is not "find how many captures are possible" but "quickly confirm 24-25 is achievable and find a valid path assignment."
+**24 captures is the provable maximum.** Under the standard timing model (1 troop per 2 ticks, starting with 1 troop), 24 captures (25 owned tiles including the general) is the theoretical maximum within 50 ticks. Most boards with moderate openness can achieve this. This means the solver's job is not "find how many captures are possible" but "quickly confirm 24 captures is achievable and find a valid path assignment."
 
 **Naive BFS is intractable.** A tick-by-tick brute-force search (at each tick, choose one of 4 directions or wait) has a state space that explodes even on 7x7 boards. The burst decomposition is what makes the problem tractable — it reduces the search from 50 sequential decisions to 4-6 burst assignments.
 
@@ -430,15 +435,17 @@ This section documents the reasoning, claims, and decisions from the discussion 
 
 **Oracle experiments** (giving solver the correct burst-1 path): Less valuable because we already know the solver finds solutions — the question is efficiency, not capability. Also, it would tell us "burst-1 choice matters" which we already suspect.
 
-**Burst model optimality gap** (tick-by-tick BFS on small boards): Since we know 25 is the ceiling and the burst model hits it, measuring the gap has limited value. Also, naive BFS is intractable even on 7x7, so the experiment itself is hard to run.
+**Burst model optimality gap** (tick-by-tick BFS on small boards): Since we know 24 captures is the ceiling and the burst model hits it, measuring the gap has limited value. Also, naive BFS is intractable even on 7x7, so the experiment itself is hard to run.
 
 **ASCII board visualization**: Potentially useful but likely requires extensive UI/UX iteration to find what's actually helpful to visualize. High effort, uncertain payoff. Could revisit if structural experiments produce results that need visual interpretation.
 
-**Group ordering experiments** (trying different burst-1 length orderings): Most optimal solutions can be expressed as long-to-short burst patterns. The solver already uses this ordering. Alternative orderings are unlikely to help because the problem is not "we're trying the wrong order" but "we're trying too many things."
+**Group ordering experiments** (trying different burst-1 length orderings): The README's "Open directions" flags this as "the biggest remaining win for corner cases." Our assessment differs: most optimal solutions can be expressed as long-to-short burst patterns, and the solver already uses this ordering. The deeper issue on constrained boards isn't ordering — it's that the solver tries too many spatially-redundant candidates regardless of order. Structural improvements (sector awareness, path dedup) address the root cause more directly. That said, if structural experiments don't pan out, revisiting group ordering is a reasonable fallback.
 
 **Partial return / non-general-return bursts**: Since backtracking isn't needed on boards with any movement flexibility, relaxing the return-to-general constraint would add model complexity without improving results on realistic boards.
 
 **Board difficulty prediction**: We aren't struggling with "hard boards" per se — we're seeking fundamental improvements to search efficiency. Predicting difficulty doesn't help us search better.
+
+**Symmetry breaking**: On boards with symmetric geometry and a centrally-placed general, the solver explores mirror-image paths redundantly. Fixing the first burst's direction could cut search by up to 4x on symmetric boards. Deprioritized because most real game boards aren't symmetric, and the structural improvements we're pursuing would subsume symmetry breaking as a special case (sector decomposition naturally identifies symmetric sectors).
 
 **Pruning ablation**: Already partially done. Current pruning rules have a smooth profile without catastrophic edge cases. Further ablation is low-priority validation, not discovery.
 
