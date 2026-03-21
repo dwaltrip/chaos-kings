@@ -3,6 +3,7 @@ import { Direction } from '@core/types';
 import { type FlatBoard, Board, TileType } from '@/core-next/flat-board';
 
 import { popcount } from './bitmask';
+import { bfsCumulativeMasks } from './board-bfs';
 import { genPathsDP } from './gen-paths';
 import { getBurstInfosFromSpecs, type BurstInfo, type BurstSpec } from './get-burst-info';
 import {
@@ -79,6 +80,10 @@ interface SolverResult {
 interface NeighborInfo {
   tile: number;
   bit: bigint;
+  // Cumulative BFS masks from this neighbor (excluding general).
+  // blankMasks[d] = reachable non-mountain tiles within distance d from this neighbor.
+  // Used for L3 per-neighbor feasibility pruning.
+  blankMasks: bigint[];
 }
 
 // Candidates grouped by starting neighbor for each move length.
@@ -93,13 +98,24 @@ interface SearchContext {
   stats: SearchStats;
 }
 
-function getNeighborInfos(board: FlatBoard, generalPos: number): NeighborInfo[] {
+function getNeighborInfos(
+  board: FlatBoard,
+  generalPos: number,
+  maxBurstLen: number,
+): NeighborInfo[] {
   const infos: NeighborInfo[] = [];
   for (const dir of DIRECTIONS) {
     const next = Board.neighbor(board, generalPos, dir);
     if (!Board.isValidIndex(board, next)) continue;
     if (board.types[next] === TileType.MOUNTAIN) continue;
-    infos.push({ tile: next, bit: 1n << BigInt(next) });
+    infos.push({
+      tile: next,
+      bit: 1n << BigInt(next),
+      // Path of moveLen M starts at the neighbor (tiles[0]) and extends M-1
+      // more steps. BFS from neighbor excluding general — tiles reachable
+      // through this neighbor specifically.
+      blankMasks: bfsCumulativeMasks(board, [next], maxBurstLen - 1, [generalPos]),
+    });
   }
   return infos;
 }
@@ -172,36 +188,15 @@ function buildTimingGroups(
 
 // BFS from general, return cumulative masks of tiles within each distance.
 // blankTileMasks[d] = all reachable non-mountain tiles within distances 1..d.
+// The general tile itself is excluded from the masks (it's the start, not capturable).
 function precomputeBlankTileDistMasks(
   board: FlatBoard,
   generalPos: number,
   maxDist: number,
 ): bigint[] {
-  const blankTileMasks: bigint[] = new Array(maxDist + 1).fill(0n);
-  const visited = new Set<number>();
-  let frontier = [generalPos];
-  visited.add(generalPos);
-
-  for (let d = 1; d <= maxDist; d++) {
-    const nextFrontier: number[] = [];
-    for (const pos of frontier) {
-      for (const dir of DIRECTIONS) {
-        const next = Board.neighbor(board, pos, dir);
-        if (!Board.isValidIndex(board, next)) continue;
-        if (board.types[next] === TileType.MOUNTAIN) continue;
-        if (visited.has(next)) continue;
-        visited.add(next);
-        nextFrontier.push(next);
-      }
-    }
-    blankTileMasks[d] = blankTileMasks[d - 1];
-    for (const pos of nextFrontier) {
-      blankTileMasks[d] |= 1n << BigInt(pos);
-    }
-    frontier = nextFrontier;
-  }
-
-  return blankTileMasks;
+  const raw = bfsCumulativeMasks(board, [generalPos], maxDist);
+  const generalBit = 1n << BigInt(generalPos);
+  return raw.map((mask) => mask & ~generalBit);
 }
 
 // ── Feasibility pruning ──
@@ -399,9 +394,20 @@ function searchGrouped(
     // Overlap > 0: tiles[0] MUST be covered, because prefix overlap requires
     // contiguous coverage starting at tiles[0] (countPrefixOverlap invariant).
     for (let ni = 0; ni < ctx.neighborInfos.length; ni++) {
-      const neighborCovered = (coveredMask & ctx.neighborInfos[ni].bit) !== 0n;
+      const nb = ctx.neighborInfos[ni];
+      const neighborCovered = (coveredMask & nb.bit) !== 0n;
       if (overlap === 0 && neighborCovered) continue;
       if (overlap > 0 && !neighborCovered) continue;
+
+      // L3 pruning: for zero-overlap bursts, check if this neighbor's
+      // reachable territory has enough blank tiles for the required captures.
+      // All entries in a bucket share the same captures at this burstIdx
+      // (same moveLen and overlap → same captures).
+      if (overlap === 0 && nb.blankMasks.length > moveLen - 1) {
+        const captures = moveLen; // overlap=0 → captures = moveLen
+        const reachable = popcount(nb.blankMasks[moveLen - 1] & ~coveredMask);
+        if (reachable < captures) continue;
+      }
 
       const partition = partitionsAtLen[ni];
       for (const cand of partition) {
@@ -440,7 +446,7 @@ function solveV3(
 
   const pathsByLen = genPathsDP(board, generalPos, cfg.maxBurst + 1);
   const entriesByLen = buildPathEntries(pathsByLen);
-  const neighborInfos = getNeighborInfos(board, generalPos);
+  const neighborInfos = getNeighborInfos(board, generalPos, cfg.maxBurst);
   const partitioned = buildPartitionedEntries(entriesByLen, neighborInfos);
   const blankTileMasks = precomputeBlankTileDistMasks(
     board,
