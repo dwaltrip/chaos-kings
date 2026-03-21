@@ -17,6 +17,9 @@ import {
   type TimingTableConfig,
 } from './timing-table';
 
+const FEASIBILITY_MAX_DIST = 4;
+const DIRECTIONS = [Direction.LEFT, Direction.UP, Direction.RIGHT, Direction.DOWN];
+
 // ── Types ──
 
 interface Solution {
@@ -71,6 +74,60 @@ interface SolverResult {
   stats: SearchStats;
 }
 
+// ── Neighbor partitioning (L1) ──
+
+interface NeighborInfo {
+  tile: number;
+  bit: bigint;
+}
+
+// Candidates grouped by starting neighbor for each move length.
+// partitioned.get(moveLen)?.[neighborIdx] → PathEntry[]
+type PartitionedEntries = Map<number, PathEntry[][]>;
+
+// Static context shared across all recursive search calls.
+interface SearchContext {
+  partitioned: PartitionedEntries;
+  neighborInfos: NeighborInfo[];
+  blankTileMasks: bigint[];
+  stats: SearchStats;
+}
+
+function getNeighborInfos(board: FlatBoard, generalPos: number): NeighborInfo[] {
+  const infos: NeighborInfo[] = [];
+  for (const dir of DIRECTIONS) {
+    const next = Board.neighbor(board, generalPos, dir);
+    if (!Board.isValidIndex(board, next)) continue;
+    if (board.types[next] === TileType.MOUNTAIN) continue;
+    infos.push({ tile: next, bit: 1n << BigInt(next) });
+  }
+  return infos;
+}
+
+function buildPartitionedEntries(
+  entriesByLen: PathEntriesByLen,
+  neighborInfos: NeighborInfo[],
+): PartitionedEntries {
+  const neighborIdx = new Map<number, number>();
+  for (let i = 0; i < neighborInfos.length; i++) {
+    neighborIdx.set(neighborInfos[i].tile, i);
+  }
+
+  const result: PartitionedEntries = new Map();
+  for (const [len, entries] of entriesByLen) {
+    const byNeighbor: PathEntry[][] = neighborInfos.map(() => []);
+    for (const entry of entries) {
+      const idx = neighborIdx.get(entry.tiles[0]);
+      if (idx === undefined) {
+        throw new Error(`tiles[0]=${entry.tiles[0]} is not a neighbor of the general`);
+      }
+      byNeighbor[idx].push(entry);
+    }
+    result.set(len, byNeighbor);
+  }
+  return result;
+}
+
 // ── Timing groups ──
 
 interface TimingGroup {
@@ -112,9 +169,6 @@ function buildTimingGroups(
 
   return groups;
 }
-
-const FEASIBILITY_MAX_DIST = 4;
-const DIRECTIONS = [Direction.LEFT, Direction.UP, Direction.RIGHT, Direction.DOWN];
 
 // BFS from general, return cumulative masks of tiles within each distance.
 // blankTileMasks[d] = all reachable non-mountain tiles within distances 1..d.
@@ -245,18 +299,40 @@ interface SearchResult {
   paths: PathEntry[];
 }
 
+function buildSolution(
+  entry: TimingEntry,
+  paths: PathEntry[],
+  maxTicks: number,
+): Solution {
+  const moves = entry.captures.map((c, i) => c + entry.overlaps[i]);
+  const burstSpecs: BurstSpec[] = entry.captures.map((c, i) => ({
+    captures: c,
+    moves: moves[i],
+  }));
+  let coveredMask = 0n;
+  for (const p of paths) coveredMask |= p.mask;
+  return {
+    pattern: entry.captures,
+    burstSpecs,
+    burstInfos: getBurstInfosFromSpecs(burstSpecs, maxTicks)!,
+    paths,
+    coveredMask,
+    totalCaptured: popcount(coveredMask),
+  };
+}
+
 // Search for compatible paths across a set of timing entries simultaneously.
 // At each depth, groups entries by their next burst's (moveLen, overlap),
-// scans candidates once per unique combo, then recurses with the sub-bucket.
+// then iterates only relevant neighbor partitions (L1 filtering).
+// Scans candidates once per unique (moveLen, overlap) combo per partition,
+// then recurses with the sub-bucket.
 function searchGrouped(
-  entriesByLen: PathEntriesByLen,
+  ctx: SearchContext,
   entries: EntryWithMoves[],
   burstIdx: number,
   coveredMask: bigint,
-  blankTileMasks: bigint[],
-  stats: SearchStats,
 ): SearchResult | null {
-  stats.searchCalls++;
+  ctx.stats.searchCalls++;
 
   // any entry fully assigned at this depth is a solution
   for (const es of entries) {
@@ -266,17 +342,20 @@ function searchGrouped(
   }
 
   // feasibility: check if remaining bursts are spatially possible
-  stats.feasibilityChecks++;
-  const blankNeighborCount = popcount(blankTileMasks[1] & ~coveredMask);
+  ctx.stats.feasibilityChecks++;
+  let blankNeighborCount = 0;
+  for (const nb of ctx.neighborInfos) {
+    if ((coveredMask & nb.bit) === 0n) blankNeighborCount++;
+  }
   const feasible = entries.filter(
     (es) =>
       entryIsFeasibleNeighbors(es, burstIdx, blankNeighborCount) &&
-      entryIsFeasiblePerBurst(es, burstIdx, coveredMask, blankTileMasks) &&
-      entryIsFeasibleAggregate(es, burstIdx, coveredMask, blankTileMasks),
+      entryIsFeasiblePerBurst(es, burstIdx, coveredMask, ctx.blankTileMasks) &&
+      entryIsFeasibleAggregate(es, burstIdx, coveredMask, ctx.blankTileMasks),
   );
-  stats.feasibilityEntriesKilled += entries.length - feasible.length;
+  ctx.stats.feasibilityEntriesKilled += entries.length - feasible.length;
   if (feasible.length === 0) {
-    stats.feasibilityPrunes++;
+    ctx.stats.feasibilityPrunes++;
     return null;
   }
 
@@ -295,32 +374,36 @@ function searchGrouped(
   for (const [key, bucket] of buckets) {
     const moveLen = Math.floor(key / 100);
     const overlap = key % 100;
-    const candidates = entriesByLen.get(moveLen);
-    if (!candidates) continue;
+    const partitionsAtLen = ctx.partitioned.get(moveLen);
+    if (!partitionsAtLen) continue;
 
-    for (const cand of candidates) {
-      stats.candidatesChecked++;
-      if (overlap === 0) {
-        if ((cand.mask & coveredMask) !== 0n) continue;
-      } else {
-        if (popcount(cand.mask & coveredMask) !== overlap) continue;
-        if (countPrefixOverlap(cand.tiles, coveredMask) !== overlap) continue;
-      }
+    // Iterate only relevant neighbor partitions (L1 filtering).
+    // Zero-overlap: tiles[0] must NOT be covered → skip covered neighbors.
+    // Overlap > 0: tiles[0] MUST be covered, because prefix overlap requires
+    // contiguous coverage starting at tiles[0] (countPrefixOverlap invariant).
+    for (let ni = 0; ni < ctx.neighborInfos.length; ni++) {
+      const neighborCovered = (coveredMask & ctx.neighborInfos[ni].bit) !== 0n;
+      if (overlap === 0 && neighborCovered) continue;
+      if (overlap > 0 && !neighborCovered) continue;
 
-      const newMask = overlap > 0 ? cand.mask & ~coveredMask : cand.mask;
-      const newCovered = coveredMask | newMask;
+      const partition = partitionsAtLen[ni];
+      for (const cand of partition) {
+        ctx.stats.candidatesChecked++;
+        if (overlap === 0) {
+          if ((cand.mask & coveredMask) !== 0n) continue;
+        } else {
+          if (popcount(cand.mask & coveredMask) !== overlap) continue;
+          if (countPrefixOverlap(cand.tiles, coveredMask) !== overlap) continue;
+        }
 
-      const result = searchGrouped(
-        entriesByLen,
-        bucket,
-        burstIdx + 1,
-        newCovered,
-        blankTileMasks,
-        stats,
-      );
-      if (result) {
-        result.paths.unshift(cand);
-        return result;
+        const newMask = overlap > 0 ? cand.mask & ~coveredMask : cand.mask;
+        const newCovered = coveredMask | newMask;
+
+        const result = searchGrouped(ctx, bucket, burstIdx + 1, newCovered);
+        if (result) {
+          result.paths.unshift(cand);
+          return result;
+        }
       }
     }
   }
@@ -340,6 +423,8 @@ function solveV3(
 
   const pathsByLen = genPathsDP(board, generalPos, cfg.maxBurst + 1);
   const entriesByLen = buildPathEntries(pathsByLen);
+  const neighborInfos = getNeighborInfos(board, generalPos);
+  const partitioned = buildPartitionedEntries(entriesByLen, neighborInfos);
   const blankTileMasks = precomputeBlankTileDistMasks(
     board,
     generalPos,
@@ -355,46 +440,29 @@ function solveV3(
 
   let entriesChecked = 0;
   const stats = emptyStats();
+  const ctx: SearchContext = { partitioned, neighborInfos, blankTileMasks, stats };
 
   for (let captures = cfg.maxCaptures; captures >= cfg.minCaptures; captures--) {
     const groups = buildTimingGroups(captures, timingConfig, entriesByLen);
 
     for (const group of groups) {
+      // Burst-1 iterates flat candidates — not partitioned. coveredMask is
+      // empty here so no neighbor partitions can be skipped (all are free).
       const candidates = entriesByLen.get(group.burst1Moves);
       if (!candidates) continue;
       if (group.entries.length === 0) continue;
 
       for (const cand of candidates) {
         entriesChecked++;
-        const result = searchGrouped(
-          entriesByLen,
-          group.entries,
-          1,
-          cand.mask,
-          blankTileMasks,
-          stats,
-        );
+        const result = searchGrouped(ctx, group.entries, 1, cand.mask);
         if (result) {
-          const paths = [cand, ...result.paths];
-          const entry = result.entry;
-          const moves = entry.captures.map((c, i) => c + entry.overlaps[i]);
-          const burstSpecs: BurstSpec[] = entry.captures.map((c, i) => ({
-            captures: c,
-            moves: moves[i],
-          }));
-
-          let solvedMask = 0n;
-          for (const p of paths) solvedMask |= p.mask;
-
+          const solution = buildSolution(
+            result.entry,
+            [cand, ...result.paths],
+            cfg.maxTicks,
+          );
           return {
-            solution: {
-              pattern: entry.captures,
-              burstSpecs,
-              burstInfos: getBurstInfosFromSpecs(burstSpecs, cfg.maxTicks)!,
-              paths,
-              coveredMask: solvedMask,
-              totalCaptured: popcount(solvedMask),
-            },
+            solution,
             entriesChecked,
             elapsedMs: performance.now() - t0,
             stats,
@@ -414,6 +482,9 @@ function solveV3(
 
 export type {
   EntryWithMoves,
+  NeighborInfo,
+  PartitionedEntries,
+  SearchContext,
   SearchResult,
   SearchStats,
   Solution,
@@ -423,6 +494,8 @@ export type {
 };
 export {
   bucketKey,
+  buildPartitionedEntries,
+  buildSolution,
   buildTimingGroups,
   DEFAULT_CONFIG,
   emptyStats,
@@ -430,6 +503,7 @@ export {
   entryIsFeasibleNeighbors,
   entryIsFeasiblePerBurst,
   FEASIBILITY_MAX_DIST,
+  getNeighborInfos,
   precomputeBlankTileDistMasks,
   solveV3,
 };

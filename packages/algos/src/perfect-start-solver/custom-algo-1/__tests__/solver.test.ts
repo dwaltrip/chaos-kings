@@ -20,7 +20,7 @@ describe('solve', () => {
     expect(result.solution!.totalCaptured).toBe(24);
   });
 
-  it.skip('corridor-7x7 gets 24 captures with overlap', () => {
+  it('corridor-7x7 gets 24 captures with overlap', () => {
     const { board, generalPos } = makeTestBoard('corridor-7x7');
     const result = solve(board, generalPos);
 
@@ -40,7 +40,7 @@ describe('solve', () => {
     expect(hasOverlapBurst).toBe(true);
   });
 
-  it.skip('corridor-7x7 without overlap gets fewer than 24', () => {
+  it('corridor-7x7 without overlap gets fewer than 24', () => {
     const { board, generalPos } = makeTestBoard('corridor-7x7');
     const result = solve(board, generalPos, { maxOverlapPerBurst: 0 });
 
