@@ -197,6 +197,7 @@ const EDGE_9x9 = loadBoard('edge-9x9.txt');
 const PINCH_9x9 = loadBoard('pinch-9x9.txt');
 const EDGE_POCKET_9x9 = loadBoard('edge-pocket-9x9.txt');
 const EDGE_POCKET_2_9x9 = loadBoard('edge-pocket-2-9x9.txt');
+const HARD_DEGREE3_9x9 = loadBoard('hard-degree3-9x9.txt');
 
 const CORRIDOR_11x11 = loadBoard('corridor-11x11.txt');
 const NARROW_CORRIDORS_11x11 = loadBoard('narrow-corridors-11x11.txt');
@@ -230,6 +231,7 @@ const ALL_BOARDS: TestBoard[] = [
   PINCH_9x9,
   EDGE_POCKET_9x9,
   EDGE_POCKET_2_9x9,
+  HARD_DEGREE3_9x9,
 
   OPEN_11x11,
   SPARSE_MTNS_11x11,
