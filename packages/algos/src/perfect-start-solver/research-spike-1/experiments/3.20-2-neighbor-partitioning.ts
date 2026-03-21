@@ -29,7 +29,7 @@ import {
   type SolverConfig,
   type SolverResult,
   type TimingGroup,
-  bucketKey,
+  BucketKey,
   buildTimingGroups,
   DEFAULT_CONFIG,
   emptyStats,
@@ -101,7 +101,7 @@ function searchGroupedPartitioned(
 
   const buckets = new Map<number, EntryWithMoves[]>();
   for (const es of feasible) {
-    const key = bucketKey(es.moves[burstIdx], es.entry.overlaps[burstIdx]);
+    const key = BucketKey.pack(es.moves[burstIdx], es.entry.overlaps[burstIdx]);
     let bucket = buckets.get(key);
     if (!bucket) {
       bucket = [];

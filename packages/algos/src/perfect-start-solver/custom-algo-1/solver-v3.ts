@@ -290,8 +290,35 @@ function entryIsFeasibleAggregate(
 // ── Grouped backtracking search (burst-2+) ──
 
 // Encode (moveLen, overlap) as a single number for bucketing.
-function bucketKey(moveLen: number, overlap: number): number {
-  return moveLen * 100 + overlap;
+const BucketKey = {
+  pack(moveLen: number, overlap: number): number {
+    return moveLen * 100 + overlap;
+  },
+  moveLen(key: number): number {
+    return Math.floor(key / 100);
+  },
+  overlap(key: number): number {
+    return key % 100;
+  },
+};
+
+// Group entries by their next burst's (moveLen, overlap) tuple.
+// Entries with the same combo share a candidate scan.
+function bucketByMoveLenOverlap(
+  entries: EntryWithMoves[],
+  burstIdx: number,
+): Map<number, EntryWithMoves[]> {
+  const buckets = new Map<number, EntryWithMoves[]>();
+  for (const es of entries) {
+    const key = BucketKey.pack(es.moves[burstIdx], es.entry.overlaps[burstIdx]);
+    let bucket = buckets.get(key);
+    if (!bucket) {
+      bucket = [];
+      buckets.set(key, bucket);
+    }
+    bucket.push(es);
+  }
+  return buckets;
 }
 
 interface SearchResult {
@@ -359,21 +386,11 @@ function searchGrouped(
     return null;
   }
 
-  // bucket entries by their next burst's (moveLen, overlap)
-  const buckets = new Map<number, EntryWithMoves[]>();
-  for (const es of feasible) {
-    const key = bucketKey(es.moves[burstIdx], es.entry.overlaps[burstIdx]);
-    let bucket = buckets.get(key);
-    if (!bucket) {
-      bucket = [];
-      buckets.set(key, bucket);
-    }
-    bucket.push(es);
-  }
+  const buckets = bucketByMoveLenOverlap(feasible, burstIdx);
 
   for (const [key, bucket] of buckets) {
-    const moveLen = Math.floor(key / 100);
-    const overlap = key % 100;
+    const moveLen = BucketKey.moveLen(key);
+    const overlap = BucketKey.overlap(key);
     const partitionsAtLen = ctx.partitioned.get(moveLen);
     if (!partitionsAtLen) continue;
 
@@ -493,7 +510,8 @@ export type {
   TimingGroup,
 };
 export {
-  bucketKey,
+  bucketByMoveLenOverlap,
+  BucketKey,
   buildPartitionedEntries,
   buildSolution,
   buildTimingGroups,
