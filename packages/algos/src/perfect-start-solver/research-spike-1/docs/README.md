@@ -38,5 +38,6 @@ Research effort exploring improvements to the `custom-algo-1` burst-path solver.
 | `sessions/` | Session logs, notes, and handoffs | Per session |
 | `findings/` | Polished writeups of conclusions | When a thread concludes |
 | `../experiments/` | Experiment scripts + `output/` (gitignored) for raw results | Per session |
+| `WORKFLOW-LOG.md` | Session-level workflow notes and improvements | Per session |
 | `EXPLORATION-SURVEY.md` | Original brainstorm survey (historical) | Rarely |
 | `SURVEY-DOC-CRITICAL-REVIEW.md` | Idea-gaps review of survey (historical) | Rarely |
