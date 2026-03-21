@@ -412,5 +412,24 @@ function solveV3(
   };
 }
 
-export type { Solution, SolverConfig, SolverResult };
-export { solveV3 };
+export type {
+  EntryWithMoves,
+  SearchResult,
+  SearchStats,
+  Solution,
+  SolverConfig,
+  SolverResult,
+  TimingGroup,
+};
+export {
+  bucketKey,
+  buildTimingGroups,
+  DEFAULT_CONFIG,
+  emptyStats,
+  entryIsFeasibleAggregate,
+  entryIsFeasibleNeighbors,
+  entryIsFeasiblePerBurst,
+  FEASIBILITY_MAX_DIST,
+  precomputeBlankTileDistMasks,
+  solveV3,
+};
