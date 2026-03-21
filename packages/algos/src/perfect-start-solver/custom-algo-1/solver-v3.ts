@@ -403,6 +403,15 @@ function searchGrouped(
       // reachable territory has enough blank tiles for the required captures.
       // All entries in a bucket share the same captures at this burstIdx
       // (same moveLen and overlap → same captures).
+      //
+      // NOTE: This check produced zero additional prunes on all 29 test boards
+      // (session 3.21-1). On degree-2 corners (all hard boards), the surviving
+      // neighbor has access to ~half the board, so per-neighbor feasibility
+      // trivially passes. The check would fire on boards with asymmetric
+      // neighbor territories (e.g., general at the mouth of a narrow corridor).
+      // Kept because it's cheap (one bigint AND + popcount per neighbor per
+      // bucket), and the blankMasks infrastructure is useful for future work.
+      // See findings/3.21-l3-per-neighbor-pruning.md.
       if (overlap === 0 && nb.blankMasks.length > moveLen - 1) {
         const captures = moveLen; // overlap=0 → captures = moveLen
         const reachable = popcount(nb.blankMasks[moveLen - 1] & ~coveredMask);

@@ -1,32 +1,33 @@
 # Status
 
-Last updated: 2026-03-21 (session 3.20-3)
+Last updated: 2026-03-21 (session 3.21-1)
 
 ## Current state
 
-Three experiments complete. L1 neighbor partitioning is proven (1.28–1.41x on hard boards). L2 explicit assignment without grouping was a negative result — per-entry overhead from dropped grouping outweighed assignment benefits. The original L1→L2→L3 pipeline has been revised: L1 is the foundation, L3's spatial pruning can be applied directly to L1 without L2 as an intermediate step.
+L1 neighbor partitioning is integrated into solver-v3 with reduced overhead. L3 per-neighbor pruning is implemented but produced zero additional prunes on all test boards — per-neighbor spatial feasibility is not the binding constraint on current boards. The bottleneck on hard boards is combinatorial (too many compatible candidates), not spatial.
 
-The research spike is transitioning from experimentation to integration: L1 is ready to go into the main solver.
+The neighbor partitioning branch of work (L1/L2/L3) is complete. The research spike is pivoting to ordering and early-termination approaches.
 
 Start with `INTRO.md` for problem/model context.
 
 ## Completed threads
 
+- **L3 per-neighbor pruning** — see `findings/3.21-l3-per-neighbor-pruning.md`. Zero additional prunes on all 29 boards. Correct implementation, but the geometry that triggers it (asymmetric neighbor territories) isn't in the test suite. Kept in solver as cheap insurance. Produced useful infrastructure: `board-bfs.ts`, `NeighborInfo.blankMasks`.
+- **L1 integration into solver-v3** — done in session 3.21-1. SearchContext, NeighborInfo struct, buildSolution helper, BucketKey namespace. 50% candidate reduction on corner boards confirmed. 68 tests passing.
 - **3.2 Neighbor partitioning — Level 2** — see `findings/3.2-neighbor-partitioning-level-2.md`. Negative result: L2-without-grouping is slower than L1 on all boards. Revised pipeline documented. L2-with-grouping collapses to L1 on degree-2 boards (all our hard boards).
-- **3.2 Neighbor partitioning — Level 1** — see `findings/3.2-neighbor-partitioning-level-1.md`. 1.28–1.41x speedup on corner boards, 50% candidate reduction. Confirms candidate scanning is the bottleneck on hard boards. Mild overhead on easy boards.
+- **3.2 Neighbor partitioning — Level 1** — see `findings/3.2-neighbor-partitioning-level-1.md`. 1.28–1.41x speedup on corner boards, 50% candidate reduction. Confirms candidate scanning is the bottleneck on hard boards.
 - **1.3 Path mask redundancy** — see `findings/1.3-path-mask-redundancy.md`. Compression ratio ~1.2x across all boards. Zero dominated masks. Dedup (4.1), inverted-index search, and cheap arc consistency are ruled out.
 
 ## Key decisions / learnings
 
+- **The bottleneck is combinatorial, not spatial** — L3's zero-prune result combined with L2's negative result shows that per-neighbor spatial feasibility is not the binding constraint. Too many compatible candidates, not too few reachable tiles.
 - **Candidate scanning is the bottleneck on hard boards** — Level 1 partitioning gave 1.28–1.41x from filtering alone, confirming that the inner candidate loop is where time goes on corner-general boards.
 - **Easy boards have a different bottleneck** — they solve in <100ms with few candidates checked. Optimizations targeting the scan loop don't help here.
 - **L1 is already optimal on degree-2 boards** — after burst-1 claims one neighbor, exactly one partition remains. No variant of L2 can improve on this.
 - **Dropping grouping is never worth it** — timing-entry grouping amortizes candidate scanning. Any optimization that breaks grouping must compensate with large per-search savings. L2-without-grouping failed this test.
-- **L3's spatial ideas don't require L2** — per-neighbor feasibility and partition ordering can be applied directly to L1's partition loop. The pipeline is L1 + L3, not L1→L2→L3.
-- **L1 overhead can be reduced** — precompute neighbor bits (avoid BigInt allocation per depth), use arrays instead of Maps. Would make L1 closer to pure win on easy boards.
-- **Degree-3 boards show higher candidate reduction** — hard-degree3-9x9 showed 53% reduction (vs 50% on degree-2). L1 gave 1.10x on a fast (~8ms) board, notable since other fast boards had slight regression.
 - **Path masks are nearly unique** — non-backtracking paths on a grid are ~1:1 with their bitmasks. Dedup is not a lever.
-- Spatial/structural awareness is the main research direction — making the solver see what humans see (sectors, directional structure, bottlenecks)
+- **Test suite may not be hard enough** — worst case is ~1.5s (corner-9x9). Symmetry breaking + group ordering could bring everything under 200ms. Need harder boards (asymmetric neighbors, larger boards, more mountains) and clarity on whether the goal is optimizing current boards or handling intractable ones.
+- **Phase timing is a gap** — search vs path-gen breakdown was never measured. The assumption that search dominates is untested.
 - Constraint propagation (CSP framing) surfaced as a major missing angle in the critical review
 - Tree packing (3.3) is likely a dead end per the review
 
@@ -40,17 +41,17 @@ Start with `INTRO.md` for problem/model context.
 - `findings/1.3-path-mask-redundancy.md` — path mask redundancy result
 - `findings/3.2-neighbor-partitioning-level-1.md` — Level 1 partitioning result
 - `findings/3.2-neighbor-partitioning-level-2.md` — Level 2 result + revised pipeline
-- `sessions/3.20-2-neighbor-partitioning-levels.md` — original theory doc (three levels)
+- `findings/3.21-l3-per-neighbor-pruning.md` — L3 result + broader analysis
+- `sessions/3.21-1-LOG.md` — session log with reviewer feedback
+- `sessions/3.21-1-l1-integration-sketch.md` — L1 integration plan
 - `sessions/3.20-2-solver-architecture-reference.md` — solver internals reference
-- `sessions/3.20-3-neighbor-assignment-notes.md` — L2 experiment analysis + review critique
 
 ## What's next
 
-The next step is integrating L1 into the main solver, then adding L3 pruning.
+The neighbor partitioning line of work is complete. Next directions, in priority order:
 
-Concrete candidates for next session:
-
-1. **Integrate L1 into solver-v3** — replace flat candidate iteration with partitioned search. Reduce overhead: precompute neighbor bits, use arrays instead of Maps. Run full test suite to confirm speedups and no regressions.
-2. **L3 pruning: per-neighbor feasibility** — precompute `neighborBlankMasks` (BFS from each neighbor excluding general, cumulative by distance). Add per-neighbor feasibility check in L1's partition loop: `popcount(neighborBlankMasks[B][M-1] & ~coveredMask) >= captures`. Strict prune, one bigint op per check.
-3. **Symmetry breaking** — fix burst-1 direction on symmetric boards. Independent, stacks with everything. ~2x on symmetric degree-2 corners. ~10 lines.
-4. **Group ordering** — reorder timing groups by feasibility heuristic. Attacks corner-9x9 bottleneck. ~10 lines.
+1. **Symmetry breaking** — fix burst-1 direction on symmetric boards. One `continue` statement, instant ~2x on symmetric degree-2 corners. Independent, stacks with everything. Overdue.
+2. **Group ordering** — reorder timing groups by feasibility heuristic. Solver currently exhausts all longer-burst-1 groups before trying shorter ones. ~10 lines, significant practical win.
+3. **Add harder test boards** — boards with asymmetric neighbor territories (general at mouth of corridor), larger constrained boards, higher capture targets. Needed to validate future optimizations and exercise L3.
+4. **Phase timing** — measure search vs path-gen breakdown. Validate the assumption that search dominates.
+5. **CSP / constraint propagation** — forced-move propagation (must-capture tiles with few covering paths). Most promising structural idea, heaviest to implement.
