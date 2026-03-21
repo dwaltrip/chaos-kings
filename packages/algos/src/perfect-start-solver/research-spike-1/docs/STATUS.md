@@ -1,35 +1,28 @@
 # Status
 
-Last updated: 2026-03-20 (session 3.20-1)
+Last updated: 2026-03-20 (session 3.20-2)
 
 ## Current state
 
-First experiment complete. 1.3 (path mask redundancy) returned a definitive negative result — redundancy is only 1.1–1.4x, ruling out dedup as a meaningful optimization. A follow-up on starting-neighbor distribution surfaced a promising lead for direction-based candidate partitioning.
+Two experiments complete. 3.2 Level 1 (neighbor partitioning) confirmed that candidate scanning is a real bottleneck on hard boards — 1.28–1.41x speedup on corner-general boards by partitioning candidates by starting neighbor and skipping irrelevant partitions. Easy boards unaffected (scanning isn't their bottleneck). The three-level pipeline progression is well understood and documented.
 
 Start with `INTRO.md` for problem/model context.
 
-## Active threads
-
-None actively in progress. Next candidates:
-
-- **1.2 Phase timing breakdown** — where does solver time go per board. Would clarify whether candidate scanning (where neighbor partitioning helps) or backtracking over timing entries is the bottleneck.
-- **3.2 Neighbor pre-filtering** — trivial to implement, immediate signal. The neighbor distribution data (session 3.20-1) suggests this could skip 50–85% of candidates on asymmetric boards.
-- **1.1 BigInt vs Uint32Array** — microbenchmark of core bitmask ops. Still independent, but the critical review argues constant-factor gains are less impactful than search structure improvements.
-- **Group ordering** — reviewer argued this is a near-free win for corner-9x9
-
 ## Completed threads
 
-- **1.3 Path mask redundancy** — see `findings/1.3-path-mask-redundancy.md`. Compression ratio ~1.2x across all boards. Zero dominated masks. Dedup (4.1), inverted-index search, and cheap arc consistency are ruled out. Follow-up: neighbor distribution shows significant imbalance on asymmetric boards.
+- **3.2 Neighbor partitioning — Level 1** — see `findings/3.2-neighbor-partitioning-level-1.md`. 1.28–1.41x speedup on corner boards, 50% candidate reduction. Confirms candidate scanning is the bottleneck on hard boards. Mild overhead on easy boards.
+- **1.3 Path mask redundancy** — see `findings/1.3-path-mask-redundancy.md`. Compression ratio ~1.2x across all boards. Zero dominated masks. Dedup (4.1), inverted-index search, and cheap arc consistency are ruled out.
 
 ## Key decisions / learnings
 
-- **Path masks are nearly unique** — non-backtracking paths on a grid are ~1:1 with their bitmasks. The contiguity constraint kills the combinatorial explosion we expected.
-- **Dedup (4.1) is not worth pursuing** — 1.2x reduction doesn't justify the code.
-- **Direction-based candidate partitioning looks promising** — paths distribute unevenly across neighbors on asymmetric boards (2–4x imbalance at length 12). Partitioning by `tiles[0]` is the simplest form of directional awareness. Not yet validated as a solver speedup.
+- **Candidate scanning is the bottleneck on hard boards** — Level 1 partitioning gave 1.28–1.41x from filtering alone, confirming that the inner candidate loop is where time goes on corner-general boards.
+- **Easy boards have a different bottleneck** — they solve in <100ms with few candidates checked. The bottleneck is elsewhere (likely path generation or feasibility pruning overhead). Optimizations targeting the scan loop don't help here.
+- **The partition filter works for both zero-overlap and prefix-overlap bursts** — zero-overlap skips covered neighbors, prefix-overlap skips uncovered neighbors. Same mechanism, opposite filter.
+- **Corner generals (degree-2) see exactly 50% reduction** — after burst-1 claims one of two neighbors, exactly one partition remains.
+- **Path masks are nearly unique** — non-backtracking paths on a grid are ~1:1 with their bitmasks. Dedup is not a lever.
 - Spatial/structural awareness is the main research direction — making the solver see what humans see (sectors, directional structure, bottlenecks)
-- Hard sector boundaries won't work well in practice; fuzzy tile affinity is more promising
 - Constraint propagation (CSP framing) surfaced as a major missing angle in the critical review
-- Tree packing (3.3) is likely a dead end per the review — tree approximation is worst where you need it most
+- Tree packing (3.3) is likely a dead end per the review
 
 ## Key docs
 
@@ -38,16 +31,18 @@ None actively in progress. Next candidates:
 - `SURVEY-DOC-CRITICAL-REVIEW.md` — critical review (missing techniques, contrarian takes)
 - `README.md` — docs workflow guide
 - `custom-algo-1/README.md` — solver implementation details
-- `findings/1.3-path-mask-redundancy.md` — first experimental result + neighbor distribution follow-up
+- `findings/1.3-path-mask-redundancy.md` — path mask redundancy result
+- `findings/3.2-neighbor-partitioning-level-1.md` — Level 1 partitioning result
+- `sessions/3.20-2-neighbor-partitioning-levels.md` — theory doc explaining all three levels
+- `sessions/3.20-2-solver-architecture-reference.md` — solver internals reference
 
 ## What's next
 
-After re-reading the survey and review in light of 1.3 results (see findings doc for full analysis), the strongest next direction is the **review's pipeline idea**: timing entry → neighbor assignment → path partitioning by starting direction → per-partition search. This is grounded in data we have, incrementally buildable, and each step is independently testable.
+The pipeline progression is clear: Level 1 (done) → Level 2 → Level 3. Each builds on the same `PartitionedEntries` data structure.
 
 Concrete candidates for next session:
 
-1. **The pipeline (3.2+)** — build the neighbor assignment → path partitioning pipeline. Start with the simplest version: partition paths by `tiles[0]`, assign zero-overlap bursts to specific neighbors based on timing entry, search within partitions. Measure actual solver speedup.
-2. **Quick wins: group ordering + symmetry breaking** — ~10 lines each, directly attack known bottlenecks. Group ordering addresses corner-9x9 specifically. Symmetry breaking (fix burst-1 direction) is free and stacks with everything.
-3. **1.2 Phase timing** — still useful diagnostically but less urgent now that we have a concrete direction to try.
-
-See `findings/1.3-path-mask-redundancy.md` "Re-reading the survey and review" section for which ideas got stronger/weaker after 1.3.
+1. **Level 2: explicit neighbor assignment** — enumerate burst→neighbor assignments, search within single partitions per depth. Adds upfront pruning (skip assignments where a neighbor lacks candidates at the required length) and per-neighbor feasibility. Small implementation on top of existing infrastructure.
+2. **Symmetry breaking** — fix burst-1 direction on symmetric boards. Independent of the pipeline, stacks with everything. On degree-2 corners this is a free 2x. ~10 lines.
+3. **Group ordering** — reorder timing groups by feasibility heuristic instead of burst-1 length descending. Attacks the known corner-9x9 bottleneck (exhausting long burst-1 groups before finding solutions in shorter ones). ~10 lines.
+4. **1.2 Phase timing** — less urgent now. Level 1 results already confirmed scanning is the bottleneck on hard boards. Still useful for understanding easy-board bottlenecks if we want to optimize those.

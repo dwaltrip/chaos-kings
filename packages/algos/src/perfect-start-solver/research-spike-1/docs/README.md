@@ -17,12 +17,17 @@ Research effort exploring improvements to the `custom-algo-1` burst-path solver.
 - **Running experiments**: Scripts live in `../experiments/`. They import from `custom-algo-1` (paths, bitmasks, timing, boards, etc.). Save raw output to `../experiments/output/` (gitignored). Name output files to match the script: `{M}.{DD}-{N}-{topic}.txt`.
 - **Findings**: When a thread reaches a clear conclusion, distill it into `findings/` (e.g., `findings/bigint-benchmark.md`). Reference session docs for the full trail.
 
+### During experiments
+
+- Save output to `../experiments/output/` from the start — don't treat it as an afterthought.
+
 ### Ending a session
 
-- Write or update the session LOG in `sessions/`.
-- Update `STATUS.md` with any changes to active threads, new learnings, or shifts in priorities. The "what's next" section in STATUS serves as a brief handoff.
+- Write or update the session LOG in `sessions/` first.
+- Then update `STATUS.md` — completed threads, key decisions, shifts in priorities. The "what's next" section serves as a brief handoff.
 - If the next session needs more detailed context (mid-flight work, tricky state, specific instructions), write a `{M}.{DD}-{N}-HANDOFF.md` in `sessions/` and link to it from STATUS.
 - Commit everything.
+- At wrap-up, write a clean copy-pasteable next-session prompt as the last message. For heavier handoffs, create a HANDOFF doc — I'll paste its content myself. Apply any workflow tweaks discussed.
 
 ## Doc index
 
