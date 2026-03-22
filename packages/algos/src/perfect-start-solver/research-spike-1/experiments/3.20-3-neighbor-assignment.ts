@@ -48,6 +48,7 @@ import {
   solveV3,
 } from '../../custom-algo-1/solver-v3';
 import { type TimingTableConfig } from '../../custom-algo-1/timing-table';
+import { formatTable } from '../../format';
 import { allBoards } from '../../test-boards';
 
 // ── Partitioned data structure (reused from L1) ──
@@ -374,10 +375,6 @@ function solveL2(
 
 // ── Experiment harness ──
 
-function pad(s: string | number, width: number): string {
-  return String(s).padStart(width);
-}
-
 interface RunResult {
   boardName: string;
   baselineMs: number;
@@ -502,31 +499,6 @@ function main() {
   }
 
   // Summary table
-  console.log('\n\n=== SUMMARY ===\n');
-  console.log(
-    ' Board                       | Base ms |  L2 ms  | Speedup | Base cands |  L2 cands  | Cand -% | Assigns | Cap B | Cap L2',
-  );
-  console.log(
-    '-----------------------------|---------|---------|---------|------------|------------|---------|---------|-------|-------',
-  );
-
-  for (const r of results) {
-    const warn = !r.capturesMatch ? ' !!!' : '';
-    console.log(
-      ` ${r.boardName.padEnd(28)}|` +
-        `${pad(r.baselineMs.toFixed(1), 8)} |` +
-        `${pad(r.l2Ms.toFixed(1), 8)} |` +
-        `${pad(r.speedup.toFixed(2), 7)}x |` +
-        `${pad(r.baselineCandidates, 11)} |` +
-        `${pad(r.l2Candidates, 11)} |` +
-        `${pad((r.candidateReduction * 100).toFixed(0), 6)}% |` +
-        `${pad(r.l2Stats.assignmentsGenerated, 8)} |` +
-        `${pad(r.baselineCaptures ?? '-', 6)} |` +
-        `${pad(r.l2Captures ?? '-', 6)}${warn}`,
-    );
-  }
-
-  // Aggregate stats
   const totalBaseMs = results.reduce((s, r) => s + r.baselineMs, 0);
   const totalL2Ms = results.reduce((s, r) => s + r.l2Ms, 0);
   const totalBaseCands = results.reduce((s, r) => s + r.baselineCandidates, 0);
@@ -534,20 +506,48 @@ function main() {
   const totalAssigns = results.reduce((s, r) => s + r.l2Stats.assignmentsGenerated, 0);
   const mismatches = results.filter((r) => !r.capturesMatch);
 
-  console.log(
-    '-----------------------------|---------|---------|---------|------------|------------|---------|---------|-------|-------',
-  );
-  console.log(
-    ` ${'TOTAL'.padEnd(28)}|` +
-      `${pad(totalBaseMs.toFixed(1), 8)} |` +
-      `${pad(totalL2Ms.toFixed(1), 8)} |` +
-      `${pad((totalBaseMs / totalL2Ms).toFixed(2), 7)}x |` +
-      `${pad(totalBaseCands, 11)} |` +
-      `${pad(totalL2Cands, 11)} |` +
-      `${pad(((1 - totalL2Cands / totalBaseCands) * 100).toFixed(0), 6)}% |` +
-      `${pad(totalAssigns, 8)} |` +
-      `       |`,
-  );
+  const summaryHeaders = [
+    'Board',
+    'Base ms',
+    'L2 ms',
+    'Speedup',
+    'Base cands',
+    'L2 cands',
+    'Cand -%',
+    'Assigns',
+    'Cap B',
+    'Cap L2',
+  ];
+  const summaryRows = results.map((r) => {
+    const warn = !r.capturesMatch ? ' !!!' : '';
+    return [
+      r.boardName,
+      r.baselineMs.toFixed(1),
+      r.l2Ms.toFixed(1),
+      r.speedup.toFixed(2) + 'x',
+      String(r.baselineCandidates),
+      String(r.l2Candidates),
+      (r.candidateReduction * 100).toFixed(0) + '%',
+      String(r.l2Stats.assignmentsGenerated),
+      String(r.baselineCaptures ?? '-'),
+      String(r.l2Captures ?? '-') + warn,
+    ];
+  });
+  summaryRows.push([
+    'TOTAL',
+    totalBaseMs.toFixed(1),
+    totalL2Ms.toFixed(1),
+    (totalBaseMs / totalL2Ms).toFixed(2) + 'x',
+    String(totalBaseCands),
+    String(totalL2Cands),
+    ((1 - totalL2Cands / totalBaseCands) * 100).toFixed(0) + '%',
+    String(totalAssigns),
+    '',
+    '',
+  ]);
+
+  console.log('\n# Summary\n');
+  console.log(formatTable(summaryHeaders, summaryRows));
 
   if (mismatches.length > 0) {
     console.log(
@@ -556,23 +556,25 @@ function main() {
   }
 
   // L2-specific stats detail
-  console.log('\n\n=== L2 STATS DETAIL ===\n');
-  console.log(
-    ' Board                       | Assigns | Entries pruned | Search calls | Feas prunes | Feas killed',
-  );
-  console.log(
-    '-----------------------------|---------|----------------|--------------|-------------|------------',
-  );
-  for (const r of results) {
-    console.log(
-      ` ${r.boardName.padEnd(28)}|` +
-        `${pad(r.l2Stats.assignmentsGenerated, 8)} |` +
-        `${pad(r.l2Stats.entriesPrunedFeasibility, 15)} |` +
-        `${pad(r.l2Stats.searchCalls, 13)} |` +
-        `${pad(r.l2Stats.feasibilityPrunes, 12)} |` +
-        `${pad(r.l2Stats.feasibilityEntriesKilled, 11)}`,
-    );
-  }
+  const detailHeaders = [
+    'Board',
+    'Assigns',
+    'Entries pruned',
+    'Search calls',
+    'Feas prunes',
+    'Feas killed',
+  ];
+  const detailRows = results.map((r) => [
+    r.boardName,
+    String(r.l2Stats.assignmentsGenerated),
+    String(r.l2Stats.entriesPrunedFeasibility),
+    String(r.l2Stats.searchCalls),
+    String(r.l2Stats.feasibilityPrunes),
+    String(r.l2Stats.feasibilityEntriesKilled),
+  ]);
+
+  console.log('\n# L2 Stats Detail\n');
+  console.log(formatTable(detailHeaders, detailRows));
 }
 
 main();

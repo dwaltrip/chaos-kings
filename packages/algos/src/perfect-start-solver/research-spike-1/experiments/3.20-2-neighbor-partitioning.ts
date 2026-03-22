@@ -9,6 +9,8 @@
 import { Board } from '@/core-next/flat-board';
 import { fromBoardState } from '@/core-next/convert';
 
+import { formatTable } from '../../format';
+
 import { popcount } from '../../custom-algo-1/bitmask';
 import { genPathsDP } from '../../custom-algo-1/gen-paths';
 import {
@@ -244,10 +246,6 @@ function solvePartitioned(
 
 // ── Experiment harness ──
 
-function pad(s: string | number, width: number): string {
-  return String(s).padStart(width);
-}
-
 interface RunResult {
   boardName: string;
   baselineMs: number;
@@ -366,49 +364,51 @@ function main() {
   }
 
   // Summary table
-  console.log('\n\n=== SUMMARY ===\n');
-  console.log(
-    ' Board                       | Base ms | Part ms | Speedup | Base cands | Part cands | Cand -% | Cap B | Cap P',
-  );
-  console.log(
-    '-----------------------------|---------|---------|---------|------------|------------|---------|-------|------',
-  );
-
-  for (const r of results) {
-    const warn = !r.capturesMatch ? ' !!!' : '';
-    console.log(
-      ` ${r.boardName.padEnd(28)}|` +
-        `${pad(r.baselineMs.toFixed(1), 8)} |` +
-        `${pad(r.partitionedMs.toFixed(1), 8)} |` +
-        `${pad(r.speedup.toFixed(2), 7)}x |` +
-        `${pad(r.baselineCandidates, 11)} |` +
-        `${pad(r.partitionedCandidates, 11)} |` +
-        `${pad((r.candidateReduction * 100).toFixed(0), 6)}% |` +
-        `${pad(r.baselineCaptures ?? '-', 6)} |` +
-        `${pad(r.partitionedCaptures ?? '-', 5)}${warn}`,
-    );
-  }
-
-  // Aggregate stats
   const totalBaseMs = results.reduce((s, r) => s + r.baselineMs, 0);
   const totalPartMs = results.reduce((s, r) => s + r.partitionedMs, 0);
   const totalBaseCands = results.reduce((s, r) => s + r.baselineCandidates, 0);
   const totalPartCands = results.reduce((s, r) => s + r.partitionedCandidates, 0);
   const mismatches = results.filter((r) => !r.capturesMatch);
 
-  console.log(
-    '-----------------------------|---------|---------|---------|------------|------------|---------|-------|------',
-  );
-  console.log(
-    ` ${'TOTAL'.padEnd(28)}|` +
-      `${pad(totalBaseMs.toFixed(1), 8)} |` +
-      `${pad(totalPartMs.toFixed(1), 8)} |` +
-      `${pad((totalBaseMs / totalPartMs).toFixed(2), 7)}x |` +
-      `${pad(totalBaseCands, 11)} |` +
-      `${pad(totalPartCands, 11)} |` +
-      `${pad(((1 - totalPartCands / totalBaseCands) * 100).toFixed(0), 6)}% |` +
-      `       |`,
-  );
+  const headers = [
+    'Board',
+    'Base ms',
+    'Part ms',
+    'Speedup',
+    'Base cands',
+    'Part cands',
+    'Cand -%',
+    'Cap B',
+    'Cap P',
+  ];
+  const rows = results.map((r) => {
+    const warn = !r.capturesMatch ? ' !!!' : '';
+    return [
+      r.boardName,
+      r.baselineMs.toFixed(1),
+      r.partitionedMs.toFixed(1),
+      r.speedup.toFixed(2) + 'x',
+      String(r.baselineCandidates),
+      String(r.partitionedCandidates),
+      (r.candidateReduction * 100).toFixed(0) + '%',
+      String(r.baselineCaptures ?? '-'),
+      String(r.partitionedCaptures ?? '-') + warn,
+    ];
+  });
+  rows.push([
+    'TOTAL',
+    totalBaseMs.toFixed(1),
+    totalPartMs.toFixed(1),
+    (totalBaseMs / totalPartMs).toFixed(2) + 'x',
+    String(totalBaseCands),
+    String(totalPartCands),
+    ((1 - totalPartCands / totalBaseCands) * 100).toFixed(0) + '%',
+    '',
+    '',
+  ]);
+
+  console.log('\n# Summary\n');
+  console.log(formatTable(headers, rows));
 
   if (mismatches.length > 0) {
     console.log(

@@ -2,8 +2,9 @@ import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 import { Board } from '@/core-next/flat-board';
 import { fromBoardState } from '@/core-next/convert';
 
+import { formatTable } from '../format';
 import { allBoards, simpleBoards, realisticBoards } from '../test-boards';
-import { solveV3 } from './solver-v3';
+import { solveV3, type SolverResult } from './solver-v3';
 
 interface RunOptions {
   board: string;
@@ -53,6 +54,13 @@ if (boards.length === 0) {
   process.exit(1);
 }
 
+interface BoardRun {
+  name: string;
+  result: SolverResult;
+}
+
+const runs: BoardRun[] = [];
+
 for (const testBoard of boards) {
   const board = fromBoardState(testBoard.board, 1);
   const generalPos = Board.toIndex(
@@ -61,13 +69,15 @@ for (const testBoard of boards) {
     testBoard.generalCoord.y,
   );
 
-  console.log(`=== ${testBoard.name} ===`);
+  console.log(`## ${testBoard.name}`);
 
   const result = solveV3(board, generalPos, {
     maxTicks,
     ...(maxBursts !== undefined && { maxBursts }),
     profile: opts.profile,
   });
+  runs.push({ name: testBoard.name, result });
+
   printResult(result.solution, result.entriesChecked, result.elapsedMs, board);
   const st = result.stats;
   console.log(
@@ -91,6 +101,26 @@ for (const testBoard of boards) {
   }
 
   console.log();
+}
+
+// Summary table
+if (runs.length > 1) {
+  const headers = ['Board', 'Caps', 'Time', 'Entries', 'Search', 'Cands', 'Feas prunes'];
+  const rows = runs.map((r) => {
+    const s = r.result.solution;
+    const st = r.result.stats;
+    return [
+      r.name,
+      s ? String(s.totalCaptured) : '-',
+      `${r.result.elapsedMs.toFixed(0)}ms`,
+      r.result.entriesChecked.toLocaleString(),
+      st.searchCalls.toLocaleString(),
+      st.candidatesChecked.toLocaleString(),
+      st.feasibilityPrunes.toLocaleString(),
+    ];
+  });
+  console.log('# Summary');
+  console.log(formatTable(headers, rows));
 }
 
 function printResult(
