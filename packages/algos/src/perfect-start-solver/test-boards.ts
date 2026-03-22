@@ -84,6 +84,7 @@ const SIMPLE_BOARDS: TestBoard[] = [
   loadBoard('corridor-11x11.txt'),
   loadBoard('narrow-corridors-11x11.txt'),
   loadBoard('pocket-11x11.txt'),
+  loadBoard('pocket-2-11x11.txt'),
   loadBoard('cross-walls-11x11.txt'),
   loadBoard('island-11x11.txt'),
   loadBoard('floating-corner-11x11.txt'),
