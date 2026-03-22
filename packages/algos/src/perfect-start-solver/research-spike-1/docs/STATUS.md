@@ -1,12 +1,14 @@
 # Status
 
-Last updated: 2026-03-22 (session 3.22-3)
+Last updated: 2026-03-22 (session 3.22-4)
 
 ## Current state
 
 Deep phase analysis complete — three performance regimes identified across 26 boards (including 9 new 30x30). Board geometry near the general drives difficulty, not board size. `slowSearch()` (13 boards) and `slowPathgen()` (3 boards) defined as optimization targets in `test-boards.ts`.
 
 The solver handles most boards in <100ms. Hard boards fall into three regimes: infeasible-target waste (timing entry explosion), deep recursive search (~90% candidate waste), and path generation cost. See `findings/3.22-3-deep-phase-analysis.md` for the full breakdown.
+
+**Session 3.22-4 investigated pocket-11x11 infeasibility.** Exhaustive search over hand-designed burst patterns confirmed 24 captures is genuinely timing-infeasible on pocket boards (closest: 55 ticks, 5 over budget). The solver is correct. Naive pre-check approaches (#1 reachable tile count, #2 per-neighbor capacity) are dead — the binding constraint is timing, not tile availability. Thread 5 needs smarter approaches.
 
 Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for current direction and thread catalog.
 
@@ -30,6 +32,9 @@ Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for cur
 - **Board geometry near the general drives difficulty, not board size** — corner-9x9 (81 tiles) = 5.8s; fairly-open-30x30 (900 tiles) = 55ms.
 - **Timing entry counts are board-independent** — same config → same entries/group at each capture target. 678/grp at cap=24, 3,858 at cap=23, 8,401 at cap=22. The board only determines which targets are feasible.
 - **Infeasible-target waste is the biggest single time sink** — 7 of 13 slowSearch boards spend 68-99% of time on infeasible targets. pocket-11x11 spends 99.2% of time on infeasible cap=24, then solves at cap=23 in 0.3ms.
+- **Infeasible targets are genuinely infeasible** — confirmed on pocket-11x11 via exhaustive manual pattern search (session 3.22-4). The solver's feasibility check is correct, not over-pruning. The binding constraint is timing (50 ticks), not tile availability.
+- **scattered-pockets-13x13 is NOT tile-count-limited** — has plenty of reachable tiles, geometry just makes them hard to capture within timing constraints. Simple "reachable tiles < target" pre-checks won't work on any current board.
+- **At 24 captures, max total overlap is 9 tiles** (with maxBursts=6, maxOverlapPerBurst=3). All 24-capture entries land at ticks 49-50 — zero timing slack.
 - **Neighbor check (N) is the dominant feasibility filter** — kills 53-100% of entries across all boards. perBurst (P) almost never fires (<2%). Aggregate (A) fires meaningfully on some boards (up to 47% on scattered-pockets).
 - **Candidate scanning is the bottleneck on deep-search boards** — L1 partitioning gave 1.28-1.41x from filtering alone.
 - **Longest-first group ordering is already good** — fewest-candidates-first was 3-8x worse.
@@ -50,6 +55,6 @@ Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for cur
 
 ## What's next
 
-Next session: **Thread 5 — capture-target pre-check.** The highest-leverage optimization: 7 of 13 slowSearch boards spend 68-99% of time on infeasible targets. Multiple approaches to try, and the thread is open-ended (may reveal deeper sub-threads). See handoff doc for details.
+Next session: **Thread 5 — capture-target pre-check.** The highest-leverage optimization: 7 of 13 slowSearch boards spend 68-99% of time on infeasible targets. Naive approaches (reachable tile count, per-neighbor capacity union) are dead. Need smarter approaches — perhaps degree-based timing entry filtering, or root-level feasibility probes with better distance approximations. See `sessions/3.22-4-LOG.md` and the handoff doc for context.
 
 See `ROADMAP.md` for the full thread catalog (13 threads, sequentially numbered).
