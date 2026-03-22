@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { genDescendingPartitions } from '../burst-patterns';
 import { getBurstInfos } from '../get-burst-info';
 

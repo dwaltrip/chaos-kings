@@ -186,7 +186,7 @@ function solvePartitioned(
   };
 
   let entriesChecked = 0;
-  const stats = emptyStats();
+  const stats = emptyStats(false);
 
   for (let captures = cfg.maxCaptures; captures >= cfg.minCaptures; captures--) {
     const groups = buildTimingGroups(captures, timingConfig, entriesByLen);

@@ -1,6 +1,6 @@
 import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 
-import { buildTimingEntries, type TimingEntry } from './timing-table';
+import { buildTimingEntries, type TimingEntry } from '../timing-table';
 
 interface Options {
   captures: string;

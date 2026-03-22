@@ -99,7 +99,7 @@ interface L2Stats extends SearchStats {
 
 function emptyL2Stats(): L2Stats {
   return {
-    ...emptyStats(),
+    ...emptyStats(false),
     assignmentsGenerated: 0,
     entriesPrunedFeasibility: 0,
   };

@@ -2,9 +2,9 @@ import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 import { Board, TileType } from '@/core-next/flat-board';
 import { fromBoardState } from '@/core-next/convert';
 
-import { allBoards, makeBoard } from '../test-boards';
-import { genPathsDP } from './gen-paths';
-import { buildPathEntries } from './path-search';
+import { allBoards, makeBoard } from '../../test-boards';
+import { genPathsDP } from '../gen-paths';
+import { buildPathEntries } from '../path-search';
 
 interface Options {
   board: string;
