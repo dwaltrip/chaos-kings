@@ -43,13 +43,15 @@ import {
   entryIsFeasibleAggregate,
   entryIsFeasibleNeighbors,
   entryIsFeasiblePerBurst,
-  FEASIBILITY_MAX_DIST,
   precomputeBlankTileDistMasks,
   solveV3,
 } from '../../custom-algo-1/solver-v3';
 import { type TimingTableConfig } from '../../custom-algo-1/timing-table';
 import { formatTable } from '../../format';
 import { allBoards } from '../../test-boards';
+
+// Frozen at the value used when this experiment was run
+const FEASIBILITY_MAX_DIST = 4;
 
 // ── Partitioned data structure (reused from L1) ──
 

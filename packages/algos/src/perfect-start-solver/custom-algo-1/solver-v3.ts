@@ -18,7 +18,6 @@ import {
   type TimingTableConfig,
 } from './timing-table';
 
-const FEASIBILITY_MAX_DIST = 4;
 const DIRECTIONS = [Direction.LEFT, Direction.UP, Direction.RIGHT, Direction.DOWN];
 
 // ── Types ──
@@ -533,11 +532,11 @@ function solveV3(
   const entriesByLen = buildPathEntries(pathsByLen);
   const neighborInfos = getNeighborInfos(board, generalPos, cfg.maxBurst);
   const partitioned = buildPartitionedEntries(entriesByLen, neighborInfos);
-  const blankTileMasks = precomputeBlankTileDistMasks(
-    board,
-    generalPos,
-    FEASIBILITY_MAX_DIST,
-  );
+  // Must cover the longest possible move (captures + overlap) so
+  // blankTilesWithinDist always does an exact lookup instead of
+  // falling back to the beyondTiles heuristic, which underestimates.
+  const feasMaxDist = cfg.maxBurst + cfg.maxOverlapPerBurst;
+  const blankTileMasks = precomputeBlankTileDistMasks(board, generalPos, feasMaxDist);
 
   const tPathGenDone = cfg.profile ? performance.now() : 0;
 
@@ -675,7 +674,6 @@ export {
   entryIsFeasibleAggregate,
   entryIsFeasibleNeighbors,
   entryIsFeasiblePerBurst,
-  FEASIBILITY_MAX_DIST,
   getNeighborInfos,
   precomputeBlankTileDistMasks,
   solveV3,
