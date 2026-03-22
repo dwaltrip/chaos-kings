@@ -129,21 +129,23 @@ function makeBoard(name: string): TestBoard {
 // -- Slow boards (>100ms, optimization targets) -----------------------------
 // Remove boards from these lists as performance improves.
 
-// Search-bottlenecked: >500ms, dominated by search time.
+// Search-bottlenecked: >100ms with heavy search. Updated session 3.22-5.
 const SLOW_SEARCH: TestBoard[] = [
-  makeBoard('corner-7x7'), // 1866ms — deep search
-  makeBoard('corner-9x9'), // 5841ms — deep search
-  makeBoard('corner-13x13'), // 7046ms — deep search
-  makeBoard('edge-pocket-9x9'), // 1132ms — mixed
-  makeBoard('edge-pocket-2-9x9'), // 2212ms — infeasible target
-  makeBoard('pocket-11x11'), // 3592ms — infeasible target
-  makeBoard('floating-corner-11x11'), // 2938ms — deep search
-  makeBoard('scattered-pockets-13x13'), // 3187ms — infeasible target
-  makeBoard('3.21-real-board-half-enclosed-half-open'), // 678ms — deep search
-  makeBoard('3.21-real-board-tight-corner-1'), // 1076ms — infeasible target
-  makeBoard('3.21-real-board-tight-corner-2'), // 6756ms — infeasible target
-  makeBoard('3.22-semi-open-with-small-pocket'), // 2083ms — deep search
-  makeBoard('3-22.tight-edge-with-chokes'), // 1408ms — infeasible target
+  makeBoard('corner-7x7'),
+  makeBoard('corner-9x9'),
+  makeBoard('corner-13x13'),
+  // trivial board — should solve fast, 120K candidates is suspicious
+  makeBoard('edge-9x9'),
+  makeBoard('edge-pocket-9x9'),
+  makeBoard('edge-pocket-2-9x9'),
+  makeBoard('pocket-11x11'),
+  makeBoard('pocket-2-11x11'),
+  makeBoard('floating-corner-11x11'),
+  makeBoard('scattered-pockets-13x13'),
+  makeBoard('3.21-real-board-tight-corner-1'),
+  makeBoard('3.21-real-board-tight-corner-2'),
+  makeBoard('3.22-semi-open-with-small-pocket'),
+  makeBoard('3-22.tight-edge-with-chokes'),
 ];
 
 // Path-gen-bottlenecked: >100ms, dominated by path generation.
