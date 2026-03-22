@@ -9,6 +9,7 @@ interface RunOptions {
   board: string;
   ticks: string;
   maxBursts: string;
+  profile: boolean;
 }
 
 const { opts } = parseTypedCommand(
@@ -20,7 +21,8 @@ const { opts } = parseTypedCommand(
       'Board name filters, comma-separated (e.g. "25x25,corner" or "all")',
     )
     .option('--ticks <n>', 'Number of ticks', '50')
-    .option('--max-bursts <n>', 'Max number of bursts', ''),
+    .option('--max-bursts <n>', 'Max number of bursts', '')
+    .option('--profile', 'Profile feasibility checks (no short-circuit)', false),
 );
 
 if (!opts.board) {
@@ -64,6 +66,7 @@ for (const testBoard of boards) {
   const result = solveV3(board, generalPos, {
     maxTicks,
     ...(maxBursts !== undefined && { maxBursts }),
+    profile: opts.profile,
   });
   printResult(result.solution, result.entriesChecked, result.elapsedMs, board);
   const st = result.stats;
@@ -74,6 +77,18 @@ for (const testBoard of boards) {
       `${st.feasibilityPrunes.toLocaleString()} feas prunes, ` +
       `${st.feasibilityEntriesKilled.toLocaleString()} entries killed`,
   );
+  if (st.feasProfile) {
+    const fp = st.feasProfile;
+    const total = Object.values(fp).reduce((a, b) => a + b, 0);
+    console.log(
+      `    feasibility profile (N_P_A → count, total=${total.toLocaleString()}):`,
+    );
+    for (const [key, count] of Object.entries(fp)) {
+      if (count === 0) continue;
+      const pct = ((count / total) * 100).toFixed(1);
+      console.log(`      ${key}: ${count.toLocaleString()} (${pct}%)`);
+    }
+  }
 
   console.log();
 }

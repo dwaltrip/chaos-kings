@@ -39,6 +39,7 @@ interface SolverConfig {
   maxCaptures: number;
   minCaptures: number;
   maxOverlapPerBurst: number;
+  profile: boolean;
 }
 
 const DEFAULT_CONFIG: SolverConfig = {
@@ -48,7 +49,26 @@ const DEFAULT_CONFIG: SolverConfig = {
   maxCaptures: 24,
   minCaptures: 15,
   maxOverlapPerBurst: 3,
+  profile: false,
 };
+
+// Keys: "N_P_A" where N=neighbors, P=perBurst, A=aggregate.
+// 1 = passed, 0 = failed. E.g. "1_0_1" = passed neighbors, failed perBurst, passed aggregate.
+type FeasProfileKey = `${0 | 1}_${0 | 1}_${0 | 1}`;
+type FeasibilityProfile = Record<FeasProfileKey, number>;
+
+function emptyFeasProfile(): FeasibilityProfile {
+  return {
+    '0_0_0': 0,
+    '0_0_1': 0,
+    '0_1_0': 0,
+    '0_1_1': 0,
+    '1_0_0': 0,
+    '1_0_1': 0,
+    '1_1_0': 0,
+    '1_1_1': 0,
+  };
+}
 
 interface SearchStats {
   feasibilityChecks: number;
@@ -56,15 +76,17 @@ interface SearchStats {
   feasibilityEntriesKilled: number;
   candidatesChecked: number;
   searchCalls: number;
+  feasProfile: FeasibilityProfile | null;
 }
 
-function emptyStats(): SearchStats {
+function emptyStats(profile: boolean): SearchStats {
   return {
     feasibilityChecks: 0,
     feasibilityPrunes: 0,
     feasibilityEntriesKilled: 0,
     candidatesChecked: 0,
     searchCalls: 0,
+    feasProfile: profile ? emptyFeasProfile() : null,
   };
 }
 
@@ -96,6 +118,7 @@ interface SearchContext {
   neighborInfos: NeighborInfo[];
   blankTileMasks: bigint[];
   stats: SearchStats;
+  profile: boolean;
 }
 
 function getNeighborInfos(
@@ -369,12 +392,29 @@ function searchGrouped(
   for (const nb of ctx.neighborInfos) {
     if ((coveredMask & nb.bit) === 0n) blankNeighborCount++;
   }
-  const feasible = entries.filter(
-    (es) =>
-      entryIsFeasibleNeighbors(es, burstIdx, blankNeighborCount) &&
-      entryIsFeasiblePerBurst(es, burstIdx, coveredMask, ctx.blankTileMasks) &&
-      entryIsFeasibleAggregate(es, burstIdx, coveredMask, ctx.blankTileMasks),
-  );
+
+  const feasible: EntryWithMoves[] = [];
+  const shortCircuit = !ctx.profile;
+  for (const es of entries) {
+    const n = entryIsFeasibleNeighbors(es, burstIdx, blankNeighborCount);
+    if (!n && shortCircuit) {
+      continue;
+    }
+    const p = entryIsFeasiblePerBurst(es, burstIdx, coveredMask, ctx.blankTileMasks);
+    if (!p && shortCircuit) {
+      continue;
+    }
+    const a = entryIsFeasibleAggregate(es, burstIdx, coveredMask, ctx.blankTileMasks);
+
+    if (ctx.profile) {
+      const key = `${n ? 1 : 0}_${p ? 1 : 0}_${a ? 1 : 0}` as FeasProfileKey;
+      ctx.stats.feasProfile![key]++;
+    }
+    if (n && p && a) {
+      feasible.push(es);
+    }
+  }
+
   ctx.stats.feasibilityEntriesKilled += entries.length - feasible.length;
   if (feasible.length === 0) {
     ctx.stats.feasibilityPrunes++;
@@ -471,8 +511,14 @@ function solveV3(
   };
 
   let entriesChecked = 0;
-  const stats = emptyStats();
-  const ctx: SearchContext = { partitioned, neighborInfos, blankTileMasks, stats };
+  const stats = emptyStats(cfg.profile);
+  const ctx: SearchContext = {
+    partitioned,
+    neighborInfos,
+    blankTileMasks,
+    stats,
+    profile: cfg.profile,
+  };
 
   for (let captures = cfg.maxCaptures; captures >= cfg.minCaptures; captures--) {
     const groups = buildTimingGroups(captures, timingConfig, entriesByLen);
@@ -514,6 +560,8 @@ function solveV3(
 
 export type {
   EntryWithMoves,
+  FeasibilityProfile,
+  FeasProfileKey,
   NeighborInfo,
   PartitionedEntries,
   SearchContext,
