@@ -16,30 +16,31 @@ Written after 5 sessions of research-spike-1 work. Captures the full landscape o
 ### Thread catalog
 
 **Profiling / Measurement**
-- A1: Phase timing breakdown
-- A2: Timing entry utilization
-- E14: Path gen profiling
-- F15: BigInt vs Uint32Array
+- A1: Phase timing breakdown — per-target timing, path-gen vs search split. Foundation for prioritizing everything else.
+- A2: Timing entry utilization — which burst patterns produce solutions? How early in the entry ordering? Fast-path potential.
+- E14: Path gen profiling — where does the 20-60ms go? Exploration vs materialization vs allocation. Prerequisite for path gen optimization.
+- F15: BigInt vs Uint32Array — constant-factor benchmark at realistic mask sizes (625-900+ bits). Reveals if there's a board-size cliff.
 
 **Feasibility & Target Selection**
-- B3: Capture-target pre-check
-- B4-light: Per-neighbor capacity pruning
+- B3: Capture-target pre-check — skip provably infeasible capture targets before entering search. Multiple approaches from cheap to sophisticated.
+- B4-light: Per-neighbor capacity pruning — check whether burst sizes can be distributed across neighbors. Uses existing L3 infrastructure, no sector dependency.
 
-**Board Structure** (one body of work)
-- C6: Sector/affinity decomposition
-- C7: Tile scarcity & bottlenecks
-- C8: Must-capture analysis
-- C9: BFS tree structure (folded into C6/C7)
+**Board Structure** (one body of work, multiple sub-questions)
+- C6: Sector/affinity decomposition — per-tile directional affinity, contested vs clearly-owned tiles. Foundational spatial analysis.
+- C7: Tile scarcity & bottlenecks — path inclusion counts, articulation points / cut vertices, corridor detection. Directly actionable for constraint propagation.
+- C8: Must-capture analysis — which tiles must appear in every solution? Slack analysis. Most relevant on constrained boards.
+- C9: BFS tree structure — folded into C6/C7, not standalone. Non-backtracking insight (paths are more tree-like than assumed) lives here.
 
 **CSP / Search Structure**
-- D10: Arc consistency (lighter forms)
-- D11: Watched literals / event-driven invalidation
-- D12: Forced-move propagation (downstream of C7/C8)
+- D11: Watched literals / event-driven invalidation — inverted index (tile → candidates), propagate coverage events instead of scanning all candidates. Measurement first (quantify scan waste), then prototype.
+- D10: Arc consistency (lighter forms) — pairwise path pruning between bursts. Raw version too expensive; lighter forms (forward checking, partitioned AC) worth exploring.
+- D12: Forced-move propagation — must-capture tiles with few covering paths → forced assignment cascade. Downstream of C7/C8.
 
 **Path Generation**
-- E13: Lazy path generation
+- E13: Lazy path generation — defer materialization of unused path lengths. Depends on E14 to know if it helps.
 
-**Also needed:** Board suite expansion (more 25x25, 30x30+, adversarial geometries).
+**Infrastructure**
+- Board suite expansion — more 25x25 variety, 30x30-40x40, adversarial geometries. Needed early for credible benchmarking.
 
 ---
 
@@ -51,13 +52,13 @@ Written after 5 sessions of research-spike-1 work. Captures the full landscape o
 
 **Path generation is a significant fixed cost.** 20-60ms on 25x25 boards. Dominates on easy boards where the solution is found on the first burst-1 candidate. For the sub-50ms stretch goal, path gen optimization is necessary.
 
-**The spatial dimension is not the binding constraint (so far).** Multiple independent experiments converged:
-- L2 (explicit neighbor assignment): negative result — no improvement over L1 on degree-2 boards.
+**The specific spatial approaches tried so far haven't been the binding constraint.** Several experiments probed spatial/structural reasoning without finding large gains:
+- L2 (explicit neighbor assignment): inconclusive — implementation dropped grouping; collapses to L1 on degree-2 boards regardless.
 - L3 (per-neighbor spatial feasibility): zero additional prunes on all 29 boards.
 - Symmetry breaking: narrow applicability — rarely fires on realistic boards with random terrain.
 - Path mask redundancy: 1.2x compression — masks are nearly unique, killing the dedup line of work.
 
-The solver's waste is **combinatorial** (too many compatible candidates to scan through), not **spatial** (too few reachable tiles).
+These results suggest that the solver's waste on hard boards is primarily **combinatorial** (too many compatible candidates to scan through) rather than **spatial** (too few reachable tiles). However, these experiments represent a small slice of the spatial/structural possibility space — broader approaches (sector decomposition, bottleneck detection, constraint propagation using spatial structure) remain untested.
 
 **Candidate scanning is the bottleneck on hard boards.** L1 partitioning gave 1.28-1.41x speedup purely from scanning fewer candidates, confirming the inner loop is where time goes on corner-general boards.
 
@@ -65,7 +66,7 @@ The solver's waste is **combinatorial** (too many compatible candidates to scan 
 
 **Longest-first group ordering is already good.** Fewest-candidates-first was 3-8x worse. Short burst-1 groups have fewer candidates but trigger deeper, more expensive recursion.
 
-**L1 is optimal on degree-2 boards.** After burst-1 claims one neighbor, exactly one partition remains. No variant of L2 or beyond can improve on this for the boards that are currently hard.
+**L1 is optimal on degree-2 boards.** After burst-1 claims one neighbor, exactly one partition remains. On degree-2 boards (which are all the currently hard boards), L2+ variants collapse to L1. On degree-3+ boards, L2-with-grouping could still have value — but this was never properly tested (the L2 experiment dropped grouping).
 
 **Dropping grouping is never worth it.** Timing-entry grouping amortizes candidate scanning. Any optimization that breaks grouping must compensate with large per-search savings. (L2 failed partly because it dropped grouping.)
 
@@ -77,8 +78,8 @@ The solver's waste is **combinatorial** (too many compatible candidates to scan 
 ### What's dead
 
 - **Path dedup (4.1):** 1.3 showed 1.2x compression — not enough to justify.
-- **Tree packing (3.3) as a solver replacement:** Review argued the tree approximation is bad where you need it. However, the underlying insight (non-backtracking paths are more tree-like than arbitrary walks) is worth noting — the early branching decision is "sticky" because self-avoiding walks can't cross their own trail. This observation may be useful within board structure analysis but doesn't warrant a standalone thread.
-- **Inverted-index search:** Depended on dedup shrinking domains. Dead.
+- **Tree packing (3.3) as a solver replacement:** Review argued the tree approximation is bad where you need it. However, see "Non-backtracking paths and tree structure" under Key Framings for a nuance that partially rehabilitates the underlying insight. Still dead as a solver replacement.
+- **Inverted-index search (as proposed in the review):** The review's version depended on dedup shrinking domains to make the index small. With domains at 50-200K, that specific approach is dead. However, the inverted index *data structure* (tile → candidate list) is very much alive as the foundation for watched literals (D11) — which works on the raw domain without needing dedup. See D11.
 
 ---
 
@@ -92,19 +93,27 @@ Two complementary lenses for understanding the problem:
 
 **Path structure** = properties of the candidate set. How generated paths relate to each other — spatial clustering, conflict density, diversity distribution, tile-to-path membership. This is about the *search space* — what the solver has to navigate.
 
-The solver currently understands neither. Most ideas in the survey target board structure. But several threads (watched literals, coverage clustering, arc consistency, conflict-count ordering) are really about path structure. The most powerful optimizations probably exploit both.
+Path structure can also be viewed as another angle on **search space reduction** — understanding the shape of the candidate set (not just its size) to avoid redundant or wasted exploration. Prior work on search space reduction (path dedup, coverage clustering) approached this from a "shrink the set" perspective. Path structure broadens that to "understand the set's geometry" — clustering, conflict patterns, diversity — which opens different optimization strategies even when the set can't be shrunk.
 
-Several threads map to both lenses. Board structure analysis (C6/C7) reveals terrain properties; path structure analysis reveals how those properties manifest in the candidate set the solver actually works with.
+The solver currently understands neither board structure nor path structure. Most ideas in the survey target board structure. But several threads (watched literals, coverage clustering, arc consistency, conflict-count ordering) are really about path structure. The most powerful optimizations probably exploit both.
 
-### Broad-then-deep strategy
+### Non-backtracking paths and tree structure
 
-The first 5 sessions went deep on one branch (neighbor partitioning L1→L2→L3) plus targeted pokes (group ordering, symmetry, path redundancy). That depth produced definitive answers but left large swaths untouched.
+An insight from our discussion of tree packing (3.3): the review dismissed tree-based approaches because "the grid has cycles everywhere." But our paths are **non-backtracking** (self-avoiding walks), which significantly constrains them toward tree-like behavior.
 
-Next phase: **broad initial coverage** across the top threads. For each, do enough work to get a signal (promising / neutral / dead), then go deep on the 2-3 winners. Each mini-spike should have a concrete hypothesis and a measurable outcome. Target 3-5 sessions of broad exploration, then depth.
+The key mechanism: the early branching decision is **sticky**. When a path starts through neighbor A and takes the leftward fork, the non-backtracking constraint means it largely stays in the left region — it can't cross its own trail to switch branches. On larger boards with length-12 paths (12 tiles out of 500+), the path is too short to meander far from its initial direction.
+
+This means the BFS tree's coarse branch structure — which direction does each burst serve, where do overlap bursts through the same neighbor diverge — is a reasonable approximation of actual path behavior, even on open boards. This doesn't resurrect tree packing as a solver (still dead), but it means tree/branch reasoning could usefully inform search ordering, burst-to-sector assignment, and understanding of overlap burst divergence within the board structure work (C6/C7).
+
+### Greedy strategies as exploration tools
+
+Greedy path extension (from survey 2.2) is parked as a standalone experiment, but "greedy" approaches are a useful general-purpose tool throughout the research — both for exploration and potentially as sub-components of actual solver techniques. Quick greedy probes can reveal board topology, validate whether heuristics match optimal solutions, and build intuition about specific geometries. Beyond exploration, greedy results could feed into rigorous techniques — e.g., a greedy solution attempt could produce a coverage bound that tightens feasibility pruning, or greedy path extension could identify likely capture regions to prioritize in search ordering. Not a research thread — a technique and a framing to keep in mind across other threads.
 
 ---
 
 ## Thread Deep-Dives
+
+**A note on follow-ups:** Some threads will naturally spawn sub-investigations and new directions as we explore them. The board structure body of work (C6/C7/C8) is the most likely to branch — understanding spatial structure could open several optimization paths we can't predict yet. We should stay open to unexpected follow-ups while being careful not to chase too many rabbit holes without pausing to assess where we are.
 
 ### A1: Phase Timing Breakdown
 
@@ -269,6 +278,27 @@ Build BFS trees from the general / each neighbor. Measure branching factors, sub
 
 ---
 
+### D11: Watched Literals / Event-Driven Invalidation
+
+**Review ref:** Section 1 (watched literals). **Pipeline phase:** Search (inner loop). **Work type:** Algorithmic/architectural.
+
+Build an inverted index: for each tile, which candidates include it? When a burst covers tiles, propagate invalidation only to affected candidates. Replaces the O(all candidates) scan with O(newly-covered-tiles × candidates-per-tile) propagation. Note: this uses the same inverted-index data structure that the review proposed for search, but applied differently — the review's version depended on dedup shrinking the index; this version works on the raw (large) candidate set.
+
+**Napkin math for 25x25:** ~100K candidates at length 12, each covering 12 tiles, ~500 walkable tiles → ~2400 candidates per tile. A 12-tile burst invalidates ~29K candidates via the index vs scanning all 100K. ~3x fewer checks. Additionally, validity state carries across timing entries within a search node — no re-scanning for the next group.
+
+**Implementation considerations:**
+- Need push/pop bookkeeping for backtracking (undo invalidations when the solver backtracks)
+- Current approach (flat scan + bitmask check) is simple and cache-friendly
+- A simplified prototype (rebuild index at each depth, no push/pop) could validate the gains before building the full version
+
+**Measurement-first approach:** Before building anything, instrument the current inner loop to count candidates scanned vs candidates that pass the overlap check, per search node. If 95%+ of scans are wasted rejections, the case is strong. If it's only 60%, the overhead might eat the gains. This measurement is relevant context for the whole CSP section — it quantifies how much the inner loop wastes on dead candidates.
+
+**Effort:** Moderate for measurement, significant for full implementation. Well-scoped despite the architectural change.
+
+**Assessment:** Potentially a large constant-factor win on the search inner loop. The measurement step is cheap and definitive — it tells us the ceiling before we build anything. Worth an early measurement spike, then prototype if signal is strong.
+
+---
+
 ### D10: Arc Consistency (Lighter Forms)
 
 **Review ref:** Section 1 (biggest omission). **Pipeline phase:** Search. **Work type:** Algorithmic (research).
@@ -285,27 +315,6 @@ The solver is implicitly a CSP: bursts are variables, candidate paths are domain
 **Effort:** Full session to prototype and evaluate. Need to find the sweet spot between "cheap loose feasibility" and "expensive exact AC."
 
 **Assessment:** The most intellectually interesting idea in the CSP cluster. Large domains make the raw version impractical, but lighter forms could find a useful middle ground. Worth a spike to explore.
-
----
-
-### D11: Watched Literals / Event-Driven Invalidation
-
-**Review ref:** Section 1 (watched literals). **Pipeline phase:** Search (inner loop). **Work type:** Algorithmic/architectural.
-
-Build an inverted index: for each tile, which candidates include it? When a burst covers tiles, propagate invalidation only to affected candidates. Replaces the O(all candidates) scan with O(newly-covered-tiles × candidates-per-tile) propagation.
-
-**Napkin math for 25x25:** ~100K candidates at length 12, each covering 12 tiles, ~500 walkable tiles → ~2400 candidates per tile. A 12-tile burst invalidates ~29K candidates via the index vs scanning all 100K. ~3x fewer checks. Additionally, validity state carries across timing entries within a search node — no re-scanning for the next group.
-
-**Implementation considerations:**
-- Need push/pop bookkeeping for backtracking (undo invalidations when the solver backtracks)
-- Current approach (flat scan + bitmask check) is simple and cache-friendly
-- A simplified prototype (rebuild index at each depth, no push/pop) could validate the gains before building the full version
-
-**Measurement-first approach:** Before building anything, instrument the current inner loop to count candidates scanned vs candidates that pass the overlap check, per search node. If 95%+ of scans are wasted rejections, the case is strong. If it's only 60%, the overhead might eat the gains.
-
-**Effort:** Moderate for measurement, significant for full implementation. Well-scoped despite the architectural change.
-
-**Assessment:** Potentially a large constant-factor win on the search inner loop. The measurement step is cheap and definitive — it tells us the ceiling before we build anything. Worth an early measurement spike, then prototype if signal is strong.
 
 ---
 
@@ -344,9 +353,11 @@ Generate paths on demand instead of eagerly. Multiple versions:
 
 ---
 
+## Infrastructure
+
 ### Board Suite Expansion
 
-Not an experiment, but essential infrastructure. The current test suite has 29 simple boards (7x7-13x13) and 6 realistic boards (25x25). The sub-100ms target needs to be measured against a representative set.
+The current test suite has 29 simple boards (7x7-13x13) and 6 realistic boards (25x25). The sub-100ms target needs to be measured against a representative set.
 
 **What to add:**
 - 4-5 more realistic 25x25 boards with terrain generation — variety of general positions, mountain densities
@@ -359,32 +370,37 @@ Not an experiment, but essential infrastructure. The current test suite has 29 s
 
 ## Resolved Threads
 
-### Completed (results integrated)
+### Integrated into solver
 
 | Thread | Key finding |
 |--------|-------------|
-| **L1 neighbor partitioning** | 1.3-1.4x on corner boards. Integrated. Optimal on degree-2. |
-| **L3 per-neighbor pruning** | Zero fires. Integrated as cheap insurance. Produced `board-bfs.ts`, `NeighborInfo.blankMasks`. |
-| **Path mask redundancy (1.3)** | 1.2x compression. Masks nearly unique — non-backtracking paths on grids are ~1:1 with bitmasks. |
-| **Group ordering** | Fewest-candidates-first 3-8x worse. Longest-first is already good. |
-| **Symmetry breaking** | Thorough analysis. BFS territory comparison is the correct approach, but narrow applicability on realistic boards. |
-| **L2 neighbor assignment** | Negative result — dropped grouping, collapses to L1 on degree-2. |
+| **L1 neighbor partitioning** | 1.3-1.4x on corner boards. Candidates partitioned by starting neighbor, irrelevant partitions skipped. Optimal on degree-2. |
+| **L3 per-neighbor pruning** | Zero fires on current boards. Kept as cheap insurance. Produced `board-bfs.ts` and `NeighborInfo.blankMasks` infrastructure. |
+
+### Completed experiments (not integrated)
+
+| Thread | Result | Key finding |
+|--------|--------|-------------|
+| **Path mask redundancy (1.3)** | Neutral | 1.2x compression — masks nearly unique. Non-backtracking paths on grids are ~1:1 with bitmasks. Killed the dedup line of work but produced useful neighbor distribution data. |
+| **Group ordering** | Negative | Fewest-candidates-first 3-8x worse. Longest-first is already good — long burst-1 front-loads coverage. Other orderings (interleaving, board-structure-informed) are conceivable but nothing concrete; likely to be subsumed by improvements from other threads. |
+| **Symmetry breaking** | Low priority | Thorough analysis. BFS territory comparison under reflection is the correct detection approach. But narrow applicability on realistic boards with random mountains. Most interesting follow-up: BFS territory comparison could be a cheap pre-check on boards where it does fire (see `findings/3.21-symmetry-breaking-analysis.md`). |
+| **L2 neighbor assignment** | Inconclusive | Implementation dropped grouping (design error), causing regressions. L2-with-grouping was never tested. Collapses to L1 on degree-2 boards regardless. Could still have value on degree-3+ boards if properly implemented with grouping preserved. |
 
 ### Dead
 
 | Thread | Why |
 |--------|-----|
 | **Path dedup (4.1)** | Killed by 1.3 — only 1.2x compression, not worth it. |
-| **Tree packing (3.3) as solver** | Tree approximation is bad where you need it. Non-backtracking insight noted but doesn't warrant standalone thread. |
-| **Inverted-index search** | Depended on dedup shrinking domains. Dead. |
+| **Tree packing (3.3) as solver** | Tree approximation is bad where you need it. Non-backtracking insight partially rehabilitates the idea as an analytical tool (see Key Framings) but still dead as a solver replacement. |
+| **Inverted-index search (review's version)** | Depended on dedup shrinking domains. Dead as proposed. The inverted index data structure itself is alive as the foundation for watched literals (D11). |
 
 ### Parked
 
 | Thread | Status | Notes |
 |--------|--------|-------|
-| **Coverage clustering (4.2)** | Mechanism suspect | Threshold tuning problem. But the underlying observation (solver grinds through near-duplicate candidates) is valid — folds into "path structure" lens. |
-| **Greedy probing (2.2)** | Needs falsifiable hypothesis | Useful as a general exploration/visualization technique across sub-problems, not a standalone experiment. |
-| **Solution census (4.4)** | Tractability concerns | Possible small-board validation tool (confirm must-capture tiles, validate solver for sub-24 solutions). Not a priority. |
-| **Flow/matching/planarity** | Theoretical, no practical path | Full treewidth-based approach out of scope. Conflict graph as analysis tool noted under path structure. |
+| **Coverage clustering (4.2)** | Mechanism suspect | Threshold tuning problem. But the underlying observation (solver grinds through near-duplicate candidates) is valid — folds into "path structure" lens. Could be addressed through lighter approaches (diversity ordering, skip-ahead after rejection). |
+| **Greedy probing (2.2)** | Not standalone | Parked as a dedicated experiment. Greedy strategies live on as a general-purpose technique / framing (see Key Framings). |
+| **Solution census (4.4)** | Tractability concerns | Exhaustive enumeration likely intractable even on 7x7. Possible as a small-board validation tool (confirm must-capture tiles, validate solver for sub-24 solutions on tiny boards). Not a priority. |
+| **Flow/matching/planarity** | Theoretical | Full treewidth-based approach out of scope. Conflict graph as analysis tool noted under path structure. |
 | **Dynamic BFS feasibility (B5)** | Expensive, better alternatives | BFS recomputation per search node is costly. The useful kernel (detecting when coverage creates unreachable regions) is better addressed through cut-vertex analysis (C7). |
 | **B4-full (direction-aware feasibility with sectors)** | Deferred | Needs C6 results first. B4-light is the sector-free version to try first. |
