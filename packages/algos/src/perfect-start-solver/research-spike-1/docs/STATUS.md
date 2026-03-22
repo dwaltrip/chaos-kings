@@ -1,10 +1,10 @@
 # Status
 
-Last updated: 2026-03-22 (session 3.21-3)
+Last updated: 2026-03-22 (session 3.22-1)
 
 ## Current state
 
-Research reflection session complete. Produced a draft of `ROADMAP.md` — a comprehensive thread catalog and deep-dive document covering all promising directions for the next phase. The roadmap needs finishing: restructure board structure sections (C6/C7/C8/C9) into 3 layers, renumber threads, final consistency pass and review. Updated performance targets: sub-100ms for all boards (stretch: sub-50ms), board scope expanded to include 30x30.
+`ROADMAP.md` is complete — thread catalog with 13 threads (sequentially numbered), deep-dives, key framings, resolved threads. Board structure sections restructured into 3 layers (graph topology, directional structure, spatial path analysis). Performance targets: sub-100ms for all boards (stretch: sub-50ms), board scope includes 30x30.
 
 The solver handles realistic 25x25 boards in <500ms. Path gen is 20-60ms (dominates on easy boards). Search dominates on tight-corner boards (260-412ms). The first 5 sessions explored neighbor partitioning (L1/L2/L3), group ordering, symmetry breaking, and path mask redundancy — producing definitive results that narrow the search space of ideas.
 
@@ -48,11 +48,6 @@ Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for cur
 
 ## What's next
 
-Next session: **finish ROADMAP.md revisions** (restructure board structure sections into 3 layers, renumber threads, final consistency pass, opus review). Then pick first experiments.
+Next session: **instrumentation pass** — thread 1 (phase timing breakdown) + thread 10 measurement (inner-loop scan waste). Combined "turn on the lights" work. If time remains, thread 4 (BigInt benchmark).
 
-See `ROADMAP.md` for the full thread catalog. Priority areas for the broad phase:
-- Profiling / measurement (phase timing, path gen profiling, BigInt benchmark)
-- Board structure analysis (graph topology, directional structure, spatial path analysis)
-- Capture-target pre-check
-- Watched literals / inner-loop measurement
-- Board suite expansion (more 25x25, 30x30+)
+See `ROADMAP.md` for the full thread catalog (13 threads, sequentially numbered).
