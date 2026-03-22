@@ -2,7 +2,7 @@ import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 import { Board } from '@/core-next/flat-board';
 import { fromBoardState } from '@/core-next/convert';
 
-import { allBoards, makeBoard } from '../test-boards';
+import { allBoards, simpleBoards, realisticBoards } from '../test-boards';
 import { solveV3 } from './solver-v3';
 
 interface RunOptions {
@@ -15,7 +15,10 @@ const { opts } = parseTypedCommand(
   createTypedCommand<RunOptions>()
     .name('run-custom-algo')
     .description('Run custom-algo-1 burst-path solver')
-    .option('--board <names>', 'Board names, comma-separated (or "all")')
+    .option(
+      '--board <filters>',
+      'Board name filters, comma-separated (e.g. "25x25,corner" or "all")',
+    )
     .option('--ticks <n>', 'Number of ticks', '50')
     .option('--max-bursts <n>', 'Max number of bursts', ''),
 );
@@ -25,10 +28,28 @@ if (!opts.board) {
   process.exit(1);
 }
 
+const BOARD_GROUP_KEYWORDS: Record<string, () => ReturnType<typeof allBoards>> = {
+  all: allBoards,
+  simple: simpleBoards,
+  realistic: realisticBoards,
+};
+
+function resolveBoards(input: string) {
+  const group = BOARD_GROUP_KEYWORDS[input];
+  if (group) return group();
+  const filters = input.split(',').map((f) => f.trim());
+  const matched = allBoards().filter((b) => filters.some((f) => b.name.includes(f)));
+  return matched;
+}
+
 const maxTicks = Number(opts.ticks);
 const maxBursts = opts.maxBursts ? Number(opts.maxBursts) : undefined;
-const boards =
-  opts.board === 'all' ? allBoards() : opts.board.split(',').map((n) => makeBoard(n));
+const boards = resolveBoards(opts.board);
+
+if (boards.length === 0) {
+  console.error(`No boards matched filter: ${opts.board}`);
+  process.exit(1);
+}
 
 for (const testBoard of boards) {
   const board = fromBoardState(testBoard.board, 1);
