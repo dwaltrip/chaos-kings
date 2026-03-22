@@ -130,6 +130,33 @@ function makeBoard(name: string): TestBoard {
   return board;
 }
 
+// -- Slow boards (>100ms, optimization targets) -----------------------------
+// Remove boards from these lists as performance improves.
+
+// Search-bottlenecked: >500ms, dominated by search time.
+const SLOW_SEARCH: TestBoard[] = [
+  makeBoard('corner-7x7'), // 1866ms — deep search
+  makeBoard('corner-9x9'), // 5841ms — deep search
+  makeBoard('corner-13x13'), // 7046ms — deep search
+  makeBoard('edge-pocket-9x9'), // 1132ms — mixed
+  makeBoard('edge-pocket-2-9x9'), // 2212ms — infeasible target
+  makeBoard('pocket-11x11'), // 3592ms — infeasible target
+  makeBoard('floating-corner-11x11'), // 2938ms — deep search
+  makeBoard('scattered-pockets-13x13'), // 3187ms — infeasible target
+  makeBoard('3.21-real-board-half-enclosed-half-open'), // 678ms — deep search
+  makeBoard('3.21-real-board-tight-corner-1'), // 1076ms — infeasible target
+  makeBoard('3.21-real-board-tight-corner-2'), // 6756ms — infeasible target
+  makeBoard('3.22-semi-open-with-small-pocket'), // 2083ms — deep search
+  makeBoard('3-22.tight-edge-with-chokes'), // 1408ms — infeasible target
+];
+
+// Path-gen-bottlenecked: >100ms, dominated by path generation.
+const SLOW_PATHGEN: TestBoard[] = [
+  makeBoard('open-9x9'), // 128ms — 95% path gen
+  makeBoard('open-11x11'), // 225ms — 97% path gen
+  makeBoard('open-13x13'), // 293ms — 97% path gen
+];
+
 function allBoards(): TestBoard[] {
   return ALL_BOARDS;
 }
@@ -146,5 +173,22 @@ function boards30x30(): TestBoard[] {
   return BOARDS_30X30;
 }
 
+function slowSearch(): TestBoard[] {
+  return SLOW_SEARCH;
+}
+
+function slowPathgen(): TestBoard[] {
+  return SLOW_PATHGEN;
+}
+
 export type { TestBoard };
-export { makeBoard, allBoards, simpleBoards, realisticBoards, boards30x30, parseBoard };
+export {
+  makeBoard,
+  allBoards,
+  simpleBoards,
+  realisticBoards,
+  boards30x30,
+  slowSearch,
+  slowPathgen,
+  parseBoard,
+};
