@@ -50,9 +50,10 @@ function walkPath(dirs: Direction[]): number[] | null {
   return tiles;
 }
 
-// Build direction sequence: prefix + fill direction repeated.
+// Build direction sequence: prefix (truncated if needed) + fill direction repeated.
+// If totalMoves < prefix.length, uses only the first totalMoves directions from prefix.
 function makeDirs(prefix: Direction[], fill: Direction, totalMoves: number): Direction[] {
-  if (totalMoves < prefix.length) return [];
+  if (totalMoves <= prefix.length) return prefix.slice(0, totalMoves);
   return [...prefix, ...Array(totalMoves - prefix.length).fill(fill)];
 }
 
@@ -62,7 +63,7 @@ function tileLabel(idx: number): string {
   return `(${y},${x})`;
 }
 
-// ── Solution checking ──
+// ── Burst building ──
 
 interface BurstPath {
   tiles: number[];
@@ -70,25 +71,56 @@ interface BurstPath {
   dirs: Direction[];
 }
 
+// Walk all direction sequences, auto-compute overlap from prior bursts.
+// Returns null if any path is geometrically invalid.
+function buildBursts(dirArrays: Direction[][]): BurstPath[] | null {
+  const bursts: BurstPath[] = [];
+  const capturedSoFar = new Set<number>();
+
+  for (const dirs of dirArrays) {
+    if (dirs.length === 0) {
+      bursts.push({ tiles: [], overlap: 0, dirs });
+      continue;
+    }
+    const tiles = walkPath(dirs);
+    if (!tiles) return null;
+
+    // Count leading tiles already captured = overlap.
+    let overlap = 0;
+    while (overlap < tiles.length && capturedSoFar.has(tiles[overlap])) {
+      overlap++;
+    }
+
+    // New captures start after overlap.
+    for (let i = overlap; i < tiles.length; i++) {
+      capturedSoFar.add(tiles[i]);
+    }
+
+    bursts.push({ tiles, overlap, dirs });
+  }
+  return bursts;
+}
+
+// ── Solution checking ──
+
+const TIMING_PROBE_MAX = 60; // check up to this many ticks for "almost" solutions
+
 function checkSolution(bursts: BurstPath[]): {
   valid: boolean;
   reason?: string;
   specs?: BurstSpec[];
+  minTicks?: number; // minimum ticks needed (if geometry + captures OK)
 } {
   // Build specs — execution order is smallest captures first (departs first).
-  const withCaptures = bursts.map((b, i) => ({
-    idx: i,
-    captures: b.tiles.length - b.overlap,
-    moves: b.tiles.length,
-    overlap: b.overlap,
-  }));
+  const withCaptures = bursts
+    .map((b) => ({
+      captures: b.tiles.length - b.overlap,
+      moves: b.tiles.length,
+    }))
+    .filter((s) => s.moves > 0);
 
   // Sort by captures ascending for execution order (fewest troops needed first).
-  const sorted = [...withCaptures].sort((a, b) => a.captures - b.captures);
-  const specs: BurstSpec[] = sorted.map((s) => ({
-    captures: s.captures,
-    moves: s.moves,
-  }));
+  const specs: BurstSpec[] = [...withCaptures].sort((a, b) => a.captures - b.captures);
 
   // Check total captures.
   const totalCap = specs.reduce((s, sp) => s + sp.captures, 0);
@@ -96,35 +128,41 @@ function checkSolution(bursts: BurstPath[]): {
     return { valid: false, reason: `total captures ${totalCap} != ${TARGET_CAPTURES}` };
   }
 
-  // Check timing.
-  const infos = getBurstInfosFromSpecs(specs, MAX_TICKS);
-  if (!infos) {
-    return { valid: false, reason: 'timing: exceeds max ticks' };
-  }
-
-  // Check overlap tiles are captured by prior bursts (in burst order, not execution order).
-  const capturedSoFar = new Set<number>();
+  // Check no tile captured by two different bursts (overlap tiles are excluded
+  // from captures, so just check that new-capture tiles don't collide).
+  const captured = new Set<number>();
   for (const burst of bursts) {
-    for (let i = 0; i < burst.overlap; i++) {
-      if (!capturedSoFar.has(burst.tiles[i])) {
-        return {
-          valid: false,
-          reason: `overlap tile ${tileLabel(burst.tiles[i])} not yet captured`,
-        };
-      }
-    }
     for (let i = burst.overlap; i < burst.tiles.length; i++) {
-      if (capturedSoFar.has(burst.tiles[i])) {
+      if (captured.has(burst.tiles[i])) {
         return {
           valid: false,
           reason: `tile ${tileLabel(burst.tiles[i])} captured twice`,
         };
       }
-      capturedSoFar.add(burst.tiles[i]);
+      captured.add(burst.tiles[i]);
     }
   }
 
-  return { valid: true, specs };
+  // Check timing — try at MAX_TICKS first, then probe up to TIMING_PROBE_MAX.
+  const infos = getBurstInfosFromSpecs(specs, MAX_TICKS);
+  if (infos) {
+    return { valid: true, specs, minTicks: infos[infos.length - 1].endTick };
+  }
+
+  // Find minimum ticks needed.
+  for (let t = MAX_TICKS + 1; t <= TIMING_PROBE_MAX; t++) {
+    const probe = getBurstInfosFromSpecs(specs, t);
+    if (probe) {
+      return {
+        valid: false,
+        reason: 'timing: exceeds max ticks',
+        specs,
+        minTicks: probe[probe.length - 1].endTick,
+      };
+    }
+  }
+
+  return { valid: false, reason: `timing: exceeds ${TIMING_PROBE_MAX} ticks`, specs };
 }
 
 // ── Pattern definitions ──
@@ -139,68 +177,74 @@ type PatternFn = (lengths: number[]) => BurstPath[] | null;
 //   B2: LEFT×all (overlap=4, re-traverses B1's first 4 left moves)
 //   B3: LEFT, DOWN, LEFT×rest (overlap=1)
 //   B4: DOWN×rest (overlap=0)
-const idea1: PatternFn = ([l1, l2, l3, l4]) => {
-  const d1 = makeDirs([L, L, L, L], U, l1);
-  const d2 = makeDirs([], L, l2);
-  const d3 = makeDirs([L, D], L, l3);
-  const d4 = makeDirs([], D, l4);
-
-  if (d1.length === 0 || d2.length === 0 || d3.length === 0 || d4.length === 0)
-    return null;
-
-  const t1 = walkPath(d1);
-  const t2 = walkPath(d2);
-  const t3 = walkPath(d3);
-  const t4 = walkPath(d4);
-
-  if (!t1 || !t2 || !t3 || !t4) return null;
-
-  return [
-    { tiles: t1, overlap: 0, dirs: d1 },
-    { tiles: t2, overlap: 4, dirs: d2 },
-    { tiles: t3, overlap: 1, dirs: d3 },
-    { tiles: t4, overlap: 0, dirs: d4 },
-  ];
-};
+const idea1: PatternFn = ([l1, l2, l3, l4]) =>
+  buildBursts([
+    makeDirs([L, L, L, L], U, l1),
+    makeDirs([], L, l2),
+    makeDirs([L, D], L, l3),
+    makeDirs([], D, l4),
+  ]);
 
 // Idea 2:
 //   B1: LEFT×4, UP×rest (overlap=0)
 //   B2: LEFT×2, DOWN, LEFT×rest (overlap=2)
 //   B3: LEFT, DOWN×2, LEFT×rest (overlap=1)
-//   B4: DOWN×2 (overlap=0, fixed)
-const idea2: PatternFn = ([l1, l2, l3]) => {
-  const d1 = makeDirs([L, L, L, L], U, l1);
-  const d2 = makeDirs([L, L, D], L, l2);
-  const d3 = makeDirs([L, D, D], L, l3);
-  const d4 = [D, D] as Direction[];
+//   B4: DOWN×rest (overlap=0)
+const idea2: PatternFn = ([l1, l2, l3, l4]) =>
+  buildBursts([
+    makeDirs([L, L, L, L], U, l1),
+    makeDirs([L, L, D], L, l2),
+    makeDirs([L, D, D], L, l3),
+    makeDirs([], D, l4),
+  ]);
 
-  if (d1.length === 0 || d2.length === 0 || d3.length === 0) return null;
+const idea3: PatternFn = ([l1, l2, l3, l4]) =>
+  buildBursts([
+    makeDirs([L, L, L, L], U, l1),
+    makeDirs([L, L, D, L, L, L], U, l2),
+    makeDirs([L, D, D], L, l3),
+    makeDirs([], D, l4),
+  ]);
 
-  const t1 = walkPath(d1);
-  const t2 = walkPath(d2);
-  const t3 = walkPath(d3);
-  const t4 = walkPath(d4);
+const idea4: PatternFn = ([l1, l2, l3, l4, l5]) =>
+  buildBursts([
+    makeDirs([L, L, L, L], U, l1),
+    makeDirs([L, L, L, D, L, L], U, l2),
+    makeDirs([L, L, D, D], L, l3),
+    makeDirs([L], D, l4),
+    makeDirs([], D, l5),
+  ]);
 
-  if (!t1 || !t2 || !t3 || !t4) return null;
-
-  return [
-    { tiles: t1, overlap: 0, dirs: d1 },
-    { tiles: t2, overlap: 2, dirs: d2 },
-    { tiles: t3, overlap: 1, dirs: d3 },
-    { tiles: t4, overlap: 0, dirs: d4 },
-  ];
-};
+const idea5: PatternFn = ([l1, l2, l3, l4, l5]) =>
+  buildBursts([
+    makeDirs([L, L, L, L], U, l1),
+    makeDirs([L, L, L, L, L], U, l2),
+    makeDirs([L, L, D], L, l3),
+    makeDirs([L, D, D], L, l4),
+    makeDirs([], D, l5),
+  ]);
 
 // ── Search ──
 
 function searchPattern(name: string, pattern: PatternFn, nBursts: number) {
   console.log(`\n## ${name}`);
+  console.log(`  Variable bursts: ${nBursts}, each 0..${MAX_BURST}`);
+
+  // Probe pattern at max lengths to discover total burst count + fixed bursts.
+  const probe = pattern(Array(nBursts).fill(MAX_BURST));
+  if (probe) {
+    const burstDescs = probe.map((b, i) => {
+      if (i < nBursts) return `B${i + 1}=0..${MAX_BURST}`;
+      return `B${i + 1}=fixed(${b.tiles.length})`;
+    });
+    console.log(`  Bursts: ${burstDescs.join(', ')}`);
+  }
 
   const solutions: string[] = [];
-  const timingFailures: string[] = [];
+  const timingByTick: Record<number, number> = {}; // tick → count of almost-solutions
   const failures = { geometry: 0, captures: 0, timing: 0, overlap: 0, other: 0 };
 
-  // Enumerate all length combos. Each burst length: 1..MAX_BURST.
+  // Enumerate all length combos. Each variable burst length: 0..MAX_BURST.
   function enumerate(depths: number[], remaining: number) {
     if (depths.length === nBursts) {
       const bursts = pattern(depths);
@@ -219,19 +263,16 @@ function searchPattern(name: string, pattern: PatternFn, nBursts: number) {
         if (r.includes('captures')) failures.captures++;
         else if (r.includes('timing')) {
           failures.timing++;
-          const caps = bursts.map((b) => b.tiles.length - b.overlap);
-          const overlaps = bursts.map((b) => b.overlap);
-          const moves = bursts.map((b) => b.tiles.length);
-          timingFailures.push(
-            `  lengths=[${moves}] captures=[${caps}] overlaps=[${overlaps}]`,
-          );
+          if (result.minTicks) {
+            timingByTick[result.minTicks] = (timingByTick[result.minTicks] || 0) + 1;
+          }
         } else if (r.includes('overlap') || r.includes('captured twice'))
           failures.overlap++;
         else failures.other++;
       }
       return;
     }
-    for (let len = 1; len <= MAX_BURST; len++) {
+    for (let len = 0; len <= MAX_BURST; len++) {
       enumerate([...depths, len], remaining);
     }
   }
@@ -245,9 +286,15 @@ function searchPattern(name: string, pattern: PatternFn, nBursts: number) {
     console.log(`  No solutions found.`);
   }
   console.log(`  Failures: ${JSON.stringify(failures)}`);
-  if (timingFailures.length > 0) {
-    console.log(`  Timing failures (geometry OK, captures=24, but >50 ticks):`);
-    for (const s of timingFailures) console.log(s);
+  const tickCounts = Object.entries(timingByTick)
+    .map(([t, n]) => [Number(t), n] as [number, number])
+    .filter(([t]) => t <= MAX_TICKS + 10)
+    .sort((a, b) => a[0] - b[0]);
+  if (tickCounts.length > 0) {
+    console.log(`  Almost-solutions (ticks 51-${MAX_TICKS + 10}):`);
+    for (const [tick, count] of tickCounts) {
+      console.log(`    ${tick} ticks: ${count}`);
+    }
   }
 }
 
@@ -259,4 +306,7 @@ console.log(
 );
 
 searchPattern('Idea 1 (4 variable bursts)', idea1, 4);
-searchPattern('Idea 2 (3 variable + fixed B4=DOWN×2)', idea2, 3);
+searchPattern('Idea 2 (3 variable + fixed B4=DOWN×2)', idea2, 4);
+searchPattern('Idea 3', idea3, 4);
+searchPattern('Idea 4', idea4, 5);
+searchPattern('Idea 5', idea5, 5);
