@@ -4,7 +4,7 @@ Research effort exploring improvements to the `custom-algo-1` burst-path solver.
 
 ## Guidelines
 
-- **Check in before implementing.** Share your plan and get alignment before editing solver code.
+- **Check in at natural boundaries.** Don't jump ahead to the next task without pausing to align. Check in before: starting implementation after analysis, switching between tasks, making structural decisions (new files, reorganizing code, adding infrastructure). A quick "ready to move on to X?" is enough.
 - **Update `custom-algo-1/README.md` if changing solver code.** That doc is the architectural reference — keep it current so future sessions don't have to re-read the full source to orient.
 - **Commit after completing a block of work.** Don't batch up multiple unrelated changes.
 - **Save experiment output from the start.** Write to `../experiments/output/` (gitignored) as you go.

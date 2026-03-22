@@ -1,39 +1,41 @@
 # Status
 
-Last updated: 2026-03-22 (session 3.22-1)
+Last updated: 2026-03-22 (session 3.22-3)
 
 ## Current state
 
-`ROADMAP.md` is complete — thread catalog with 13 threads (sequentially numbered), deep-dives, key framings, resolved threads. Board structure sections restructured into 3 layers (graph topology, directional structure, spatial path analysis). Performance targets: sub-100ms for all boards (stretch: sub-50ms), board scope includes 30x30.
+Deep phase analysis complete — three performance regimes identified across 26 boards (including 9 new 30x30). Board geometry near the general drives difficulty, not board size. `slowSearch()` (13 boards) and `slowPathgen()` (3 boards) defined as optimization targets in `test-boards.ts`.
 
-The solver handles realistic 25x25 boards in <500ms. Path gen is 20-60ms (dominates on easy boards). Search dominates on tight-corner boards (260-412ms). The first 5 sessions explored neighbor partitioning (L1/L2/L3), group ordering, symmetry breaking, and path mask redundancy — producing definitive results that narrow the search space of ideas.
+The solver handles most boards in <100ms. Hard boards fall into three regimes: infeasible-target waste (timing entry explosion), deep recursive search (~90% candidate waste), and path generation cost. See `findings/3.22-3-deep-phase-analysis.md` for the full breakdown.
 
 Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for current direction and thread catalog.
 
 ## Completed threads
 
-- **Symmetry breaking analysis** — see `findings/3.21-symmetry-breaking-analysis.md`. BFS territory comparison under reflection is the correct approach, but local symmetry is rare on realistic boards. Contains 5 claims requiring independent verification. Deprioritized.
-- **Group ordering experiment** — negative result (session 3.21-2). Fewest-candidates-first ordering is 3-8x slower than longest-first on most hard boards. Short burst-1 groups have fewer candidates but trigger deeper, more expensive recursion. Longest-first is already a good heuristic.
-- **Realistic board profiling** — 6 boards at 25x25 with generated terrain. 4 solve in 20-53ms (path gen dominates). 2 tight-corner boards: 260ms and 412ms, 22 captures. Per-feasibility-check profiling shows neighbor check (N) kills 96%+ of entries.
-- **L3 per-neighbor pruning** — see `findings/3.21-l3-per-neighbor-pruning.md`. Zero additional prunes on all 29 boards. Correct implementation, but the geometry that triggers it (asymmetric neighbor territories) isn't in the test suite. Kept in solver as cheap insurance. Produced useful infrastructure: `board-bfs.ts`, `NeighborInfo.blankMasks`.
-- **L1 integration into solver-v3** — done in session 3.21-1. SearchContext, NeighborInfo struct, buildSolution helper, BucketKey namespace. 50% candidate reduction on corner boards confirmed. 68 tests passing.
-- **3.2 Neighbor partitioning — Level 2** — see `findings/3.2-neighbor-partitioning-level-2.md`. Inconclusive: L2-without-grouping is slower than L1 on all boards (dropped grouping was a design error). L2-with-grouping collapses to L1 on degree-2 boards (all our hard boards). Could have value on degree-3+ if properly implemented.
-- **3.2 Neighbor partitioning — Level 1** — see `findings/3.2-neighbor-partitioning-level-1.md`. 1.28–1.41x speedup on corner boards, 50% candidate reduction. Confirms candidate scanning is the bottleneck on hard boards.
-- **1.3 Path mask redundancy** — see `findings/1.3-path-mask-redundancy.md`. Compression ratio ~1.2x across all boards. Zero dominated masks. Dedup (4.1), inverted-index search, and cheap arc consistency are ruled out.
+- **Deep phase analysis (threads 1 + 10, enhanced)** — see `findings/3.22-3-deep-phase-analysis.md`. Three regimes: infeasible-target waste (thread 5 lever), deep recursive search (thread 10 lever), path gen (thread 3/13 lever). Timing entries explode combinatorially (678/grp at cap=24 → 3,858 at cap=23 → 8,401 at cap=22) — board-independent, config-determined. Board size is not the driver: corner-9x9 takes 5.8s while 30x30 boards solve in 8-55ms.
+- **Phase timing + scan waste (threads 1 + 10, initial)** — see `sessions/3.22-2-phase-timing-and-scan-waste.md`. Built profiling infrastructure. Preliminary data identified infeasible-target waste and candidate scan waste.
+- **BigInt vs Uint32Array (thread 4)** — see `sessions/3.22-2-bigint-vs-uint32array.md`. No board-size cliff. U32 is 1.7-1.8x faster on hot-path at 625-900 bits. BigInt wins on union.
+- **Symmetry breaking analysis** — see `findings/3.21-symmetry-breaking-analysis.md`. BFS territory comparison under reflection is the correct approach, but local symmetry is rare on realistic boards. Deprioritized.
+- **Group ordering experiment** — negative result (session 3.21-2). Fewest-candidates-first 3-8x slower. Longest-first is already good.
+- **Realistic board profiling** — 6 boards at 25x25. 4 solve in 20-53ms (path gen dominates). 2 tight-corner boards: 260-412ms, 22 captures.
+- **L3 per-neighbor pruning** — see `findings/3.21-l3-per-neighbor-pruning.md`. Zero additional prunes on all 29 boards. Kept as cheap insurance. Produced `board-bfs.ts`, `NeighborInfo.blankMasks`.
+- **L1 integration into solver-v3** — 50% candidate reduction on corner boards. 68 tests passing.
+- **L2 neighbor assignment** — inconclusive. Collapses to L1 on degree-2 boards.
+- **L1 neighbor partitioning** — see `findings/3.2-neighbor-partitioning-level-1.md`. 1.28-1.41x speedup on corner boards.
+- **Path mask redundancy (1.3)** — see `findings/1.3-path-mask-redundancy.md`. ~1.2x compression. Dedup killed.
 
 ## Key decisions / learnings
 
-- **Realistic 25x25 boards are not a scaling challenge** — all 6 solve in <500ms. The toy board performance was misleading about what needs optimizing.
-- **Path generation is a significant fixed cost** — 20-60ms on 25x25 boards, dominates on easy boards. Search optimizations are irrelevant when path gen is the bottleneck.
-- **Capture-target iteration may be a source of waste** — tight-corner boards get 22 captures, meaning the solver exhausts all timing groups at captures=24 and 23 before finding anything. Per-target timing hasn't been measured yet.
-- **The specific spatial approaches tried so far haven't been the binding constraint** — L2/L3/symmetry all underperformed. But these represent a small slice of the spatial possibility space; broader approaches (sector decomposition, bottleneck detection) remain untested.
-- **Candidate scanning is the bottleneck on hard boards** — Level 1 partitioning gave 1.28–1.41x from filtering alone, confirming that the inner candidate loop is where time goes on corner-general boards.
+- **Three distinct performance regimes** — infeasible-target waste, deep recursive search, path generation. Different boards need different optimizations. See finding doc for classification of all 13 slowSearch boards.
+- **Board geometry near the general drives difficulty, not board size** — corner-9x9 (81 tiles) = 5.8s; fairly-open-30x30 (900 tiles) = 55ms.
+- **Timing entry counts are board-independent** — same config → same entries/group at each capture target. 678/grp at cap=24, 3,858 at cap=23, 8,401 at cap=22. The board only determines which targets are feasible.
+- **Infeasible-target waste is the biggest single time sink** — 7 of 13 slowSearch boards spend 68-99% of time on infeasible targets. pocket-11x11 spends 99.2% of time on infeasible cap=24, then solves at cap=23 in 0.3ms.
+- **Neighbor check (N) is the dominant feasibility filter** — kills 53-100% of entries across all boards. perBurst (P) almost never fires (<2%). Aggregate (A) fires meaningfully on some boards (up to 47% on scattered-pockets).
+- **Candidate scanning is the bottleneck on deep-search boards** — L1 partitioning gave 1.28-1.41x from filtering alone.
 - **Longest-first group ordering is already good** — fewest-candidates-first was 3-8x worse.
-- **L1 is already optimal on degree-2 boards** — after burst-1 claims one neighbor, exactly one partition remains.
-- **Dropping grouping is never worth it** — timing-entry grouping amortizes candidate scanning.
-- **Path masks are nearly unique** — non-backtracking paths on a grid are ~1:1 with their bitmasks. Dedup is not a lever.
-- **Board structure vs path structure** — two complementary lenses identified during session 3.21-3. Board structure = terrain properties. Path structure = candidate set properties. Most powerful optimizations probably exploit both.
-- **Non-backtracking paths are more tree-like than assumed** — early branching is "sticky" because self-avoiding walks can't cross their own trail. Relevant for sector/tree reasoning.
+- **L1 is optimal on degree-2 boards** — after burst-1 claims one neighbor, exactly one partition remains.
+- **Path masks are nearly unique** — dedup is not a lever.
+- **Board structure vs path structure** — two complementary lenses. Most powerful optimizations probably exploit both.
 
 ## Key docs
 
@@ -48,6 +50,6 @@ Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for cur
 
 ## What's next
 
-Next session: **instrumentation pass** — thread 1 (phase timing breakdown) + thread 10 measurement (inner-loop scan waste). Combined "turn on the lights" work. If time remains, thread 4 (BigInt benchmark).
+Next session: **Thread 5 — capture-target pre-check.** The highest-leverage optimization: 7 of 13 slowSearch boards spend 68-99% of time on infeasible targets. Multiple approaches to try, and the thread is open-ended (may reveal deeper sub-threads). See handoff doc for details.
 
 See `ROADMAP.md` for the full thread catalog (13 threads, sequentially numbered).
