@@ -125,7 +125,7 @@ Instrument the solver to report time per phase (path gen, timing table, search) 
 
 **Effort:** Low — half a session or less. Pure instrumentation, no algorithmic changes.
 
-**Assessment:** Should be one of the very first things done. Almost every other decision benefits from this data. "Turn on the lights."
+**Assessment:** Should be one of the very first things done. Almost every other decision benefits from this data. "Turn on the lights." Can be combined with D11's measurement step (count candidates scanned vs passing) in a single instrumentation pass to save time.
 
 ---
 
@@ -250,6 +250,8 @@ For each tile: path inclusion count (how many paths cover it), bottleneck score 
 
 **Assessment:** Pairs with C6 as part of the board structure body of work. Potentially more directly actionable than C6 — if we find tiles with very low path coverage, that immediately suggests forced-move propagation.
 
+**Potential follow-up — constrained-tile-first ordering (survey 3.4):** If C7 reveals tiles with meaningfully different scarcity levels, a natural next step is ordering candidate paths by how many scarce tiles they cover — try paths covering the most constrained tiles first. This is lighter than D12 (forced-move propagation): it's a search ordering heuristic, not a propagation cascade, and works even when no tile is strictly must-capture. It sits at the intersection of board structure (scarcity data from C7) and path structure (candidate ordering). Would be a quick follow-up if C7 shows significant scarcity variation.
+
 ---
 
 ### C8: Must-Capture Analysis
@@ -284,7 +286,7 @@ Build BFS trees from the general / each neighbor. Measure branching factors, sub
 
 Build an inverted index: for each tile, which candidates include it? When a burst covers tiles, propagate invalidation only to affected candidates. Replaces the O(all candidates) scan with O(newly-covered-tiles × candidates-per-tile) propagation. Note: this uses the same inverted-index data structure that the review proposed for search, but applied differently — the review's version depended on dedup shrinking the index; this version works on the raw (large) candidate set.
 
-**Napkin math for 25x25:** ~100K candidates at length 12, each covering 12 tiles, ~500 walkable tiles → ~2400 candidates per tile. A 12-tile burst invalidates ~29K candidates via the index vs scanning all 100K. ~3x fewer checks. Additionally, validity state carries across timing entries within a search node — no re-scanning for the next group.
+**Rough napkin math for 25x25** (actual path counts at this scale are unknown — we only have toy-board data): ~100K candidates at length 12, each covering 12 tiles, ~500 walkable tiles → ~2400 candidates per tile. A 12-tile burst invalidates ~29K candidates via the index vs scanning all 100K. ~3x fewer checks as a rough floor. The real gain could be larger: validity state carries across timing entries within a search node (no re-scanning for the next group), and tiles near the general appear in far more candidates than distant tiles, so covering general-adjacent tiles invalidates disproportionately many candidates. Profiling (A1) will give real numbers.
 
 **Implementation considerations:**
 - Need push/pop bookkeeping for backtracking (undo invalidations when the solver backtracks)
@@ -353,6 +355,34 @@ Generate paths on demand instead of eagerly. Multiple versions:
 
 ---
 
+## Additional Ideas (from review discussion)
+
+Ideas surfaced during the sub-agent review of this roadmap. Not yet developed into full threads — captured here for future reference.
+
+### CDCL / Nogood Recording
+
+When a search branch fails, record *which* coverage pattern caused the failure and avoid that combination in future branches. E.g., if burst-1 covering tiles {X, Y, Z} leads to failure because no burst-2 candidate is compatible, record that nogood — and skip any other burst-1 candidate whose mask is a superset of {X, Y, Z} (since it would fail for the same reason).
+
+This is standard in modern SAT/CSP solvers and is orthogonal to the other CSP techniques (D10, D11, D12). The main question is practical overhead: nogoods accumulate during search, and checking whether a new candidate matches any recorded nogood requires superset checks against potentially many stored masks. Whether the pruning gains outweigh the bookkeeping cost depends on how often the same conflict pattern recurs across different search branches.
+
+**Status:** Noted, not yet evaluated. Worth considering during any CSP/search structure work.
+
+### Degree-2 Decomposition as Independent Subproblems
+
+On degree-2 boards (all current hard boards), the two sectors are nearly independent — burst-1 goes one way, burst-2 goes the other. L1 already exploits this by filtering candidates by starting neighbor. But the idea goes further: independently enumerate what's achievable through each neighbor (which burst sizes can each sector support?), then combine compatible pairs. This reframes the search from "try assignments and backtrack" to "compute per-sector capabilities and match."
+
+This is concretely motivated by degree-2 structure and related to C6 (sector decomposition). Whether it generalizes to degree-3+ is unclear.
+
+**Status:** Noted. Could surface naturally during board structure work (C6) or feasibility improvements (B4-light).
+
+### Solution-Symmetry on Same-Length Bursts
+
+When two zero-overlap bursts in a timing entry have the same length (e.g., [10, 10, 4]), "10 through A then 10 through B" covers the same total territory as "10 through B then 10 through A." This is genuine symmetry that holds regardless of board geometry. However, same-length burst pairs are a narrow subset of timing entries, and the savings would be small (skip one of two assignments). For different-length bursts, the assignments are NOT symmetric — different territory at different lengths — so there's no safe symmetry to break. The broader "solution symmetry" idea from the review reduces to board symmetry in the general case, which was already analyzed and deprioritized.
+
+**Status:** Unlikely to be useful. Not worth a thread. Noted for completeness.
+
+---
+
 ## Infrastructure
 
 ### Board Suite Expansion
@@ -383,7 +413,7 @@ The current test suite has 29 simple boards (7x7-13x13) and 6 realistic boards (
 |--------|--------|-------------|
 | **Path mask redundancy (1.3)** | Neutral | 1.2x compression — masks nearly unique. Non-backtracking paths on grids are ~1:1 with bitmasks. Killed the dedup line of work but produced useful neighbor distribution data. |
 | **Group ordering** | Negative | Fewest-candidates-first 3-8x worse. Longest-first is already good — long burst-1 front-loads coverage. Other orderings (interleaving, board-structure-informed) are conceivable but nothing concrete; likely to be subsumed by improvements from other threads. |
-| **Symmetry breaking** | Low priority | Thorough analysis. BFS territory comparison under reflection is the correct detection approach. But narrow applicability on realistic boards with random mountains. Most interesting follow-up: BFS territory comparison could be a cheap pre-check on boards where it does fire (see `findings/3.21-symmetry-breaking-analysis.md`). |
+| **Symmetry breaking** | Low priority | Thorough analysis. BFS territory comparison under reflection is the correct detection approach. But narrow applicability on realistic boards with random mountains. Most interesting follow-up: BFS territory comparison could be a cheap pre-check on boards where it does fire (see `findings/3.21-symmetry-breaking-analysis.md`). Solution-level symmetry (same-length bursts through different neighbors) is a narrow special case — see "Additional Ideas" section. |
 | **L2 neighbor assignment** | Inconclusive | Implementation dropped grouping (design error), causing regressions. L2-with-grouping was never tested. Collapses to L1 on degree-2 boards regardless. Could still have value on degree-3+ boards if properly implemented with grouping preserved. |
 
 ### Dead
@@ -398,7 +428,7 @@ The current test suite has 29 simple boards (7x7-13x13) and 6 realistic boards (
 
 | Thread | Status | Notes |
 |--------|--------|-------|
-| **Coverage clustering (4.2)** | Mechanism suspect | Threshold tuning problem. But the underlying observation (solver grinds through near-duplicate candidates) is valid — folds into "path structure" lens. Could be addressed through lighter approaches (diversity ordering, skip-ahead after rejection). |
+| **Coverage clustering (4.2)** | Mechanism suspect | Threshold tuning problem. But the underlying observation (solver grinds through near-duplicate candidates) is valid — folds into "path structure" lens. Could be addressed through lighter approaches (diversity ordering, skip-ahead after rejection). Note: D11 (watched literals) may be a cleaner solution to the same underlying problem — event-driven invalidation naturally handles near-duplicate candidates that share covered tiles. |
 | **Greedy probing (2.2)** | Not standalone | Parked as a dedicated experiment. Greedy strategies live on as a general-purpose technique / framing (see Key Framings). |
 | **Solution census (4.4)** | Tractability concerns | Exhaustive enumeration likely intractable even on 7x7. Possible as a small-board validation tool (confirm must-capture tiles, validate solver for sub-24 solutions on tiny boards). Not a priority. |
 | **Flow/matching/planarity** | Theoretical | Full treewidth-based approach out of scope. Conflict graph as analysis tool noted under path structure. |
