@@ -75,6 +75,7 @@ interface SearchStats {
   feasibilityPrunes: number;
   feasibilityEntriesKilled: number;
   candidatesChecked: number;
+  candidatesPassed: number;
   searchCalls: number;
   feasProfile: FeasibilityProfile | null;
 }
@@ -85,9 +86,25 @@ function emptyStats(profile: boolean): SearchStats {
     feasibilityPrunes: 0,
     feasibilityEntriesKilled: 0,
     candidatesChecked: 0,
+    candidatesPassed: 0,
     searchCalls: 0,
     feasProfile: profile ? emptyFeasProfile() : null,
   };
+}
+
+interface TargetProfile {
+  captures: number;
+  timingTableMs: number;
+  searchMs: number;
+  groupCount: number;
+  burst1Entries: number;
+  candidatesChecked: number;
+  candidatesPassed: number;
+}
+
+interface ProfileData {
+  pathGenMs: number;
+  targets: TargetProfile[];
 }
 
 interface SolverResult {
@@ -95,6 +112,7 @@ interface SolverResult {
   entriesChecked: number;
   elapsedMs: number;
   stats: SearchStats;
+  profileData: ProfileData | null;
 }
 
 // ── Neighbor partitioning (L1) ──
@@ -468,6 +486,7 @@ function searchGrouped(
           if (countPrefixOverlap(cand.tiles, coveredMask) !== overlap) continue;
         }
 
+        ctx.stats.candidatesPassed++;
         const newMask = overlap > 0 ? cand.mask & ~coveredMask : cand.mask;
         const newCovered = coveredMask | newMask;
 
@@ -503,6 +522,8 @@ function solveV3(
     FEASIBILITY_MAX_DIST,
   );
 
+  const tPathGenDone = cfg.profile ? performance.now() : 0;
+
   const timingConfig: TimingTableConfig = {
     maxTicks: cfg.maxTicks,
     maxBurst: cfg.maxBurst,
@@ -520,9 +541,19 @@ function solveV3(
     profile: cfg.profile,
   };
 
+  const targetProfiles: TargetProfile[] | null = cfg.profile ? [] : null;
+
   for (let captures = cfg.maxCaptures; captures >= cfg.minCaptures; captures--) {
+    const tTargetStart = cfg.profile ? performance.now() : 0;
+    const prevEntries = cfg.profile ? entriesChecked : 0;
+    const prevChecked = cfg.profile ? stats.candidatesChecked : 0;
+    const prevPassed = cfg.profile ? stats.candidatesPassed : 0;
+
     const groups = buildTimingGroups(captures, timingConfig, entriesByLen);
 
+    const tSearchStart = cfg.profile ? performance.now() : 0;
+
+    let solved = false;
     for (const group of groups) {
       // Burst-1 iterates flat candidates — not partitioned. coveredMask is
       // empty here so no neighbor partitions can be skipped (all are free).
@@ -539,14 +570,42 @@ function solveV3(
             [cand, ...result.paths],
             cfg.maxTicks,
           );
+
+          if (targetProfiles) {
+            targetProfiles.push({
+              captures,
+              timingTableMs: tSearchStart - tTargetStart,
+              searchMs: performance.now() - tSearchStart,
+              groupCount: groups.length,
+              burst1Entries: entriesChecked - prevEntries,
+              candidatesChecked: stats.candidatesChecked - prevChecked,
+              candidatesPassed: stats.candidatesPassed - prevPassed,
+            });
+          }
+
           return {
             solution,
             entriesChecked,
             elapsedMs: performance.now() - t0,
             stats,
+            profileData: targetProfiles
+              ? { pathGenMs: tPathGenDone - t0, targets: targetProfiles }
+              : null,
           };
         }
       }
+    }
+
+    if (targetProfiles) {
+      targetProfiles.push({
+        captures,
+        timingTableMs: tSearchStart - tTargetStart,
+        searchMs: performance.now() - tSearchStart,
+        groupCount: groups.length,
+        burst1Entries: entriesChecked - prevEntries,
+        candidatesChecked: stats.candidatesChecked - prevChecked,
+        candidatesPassed: stats.candidatesPassed - prevPassed,
+      });
     }
   }
 
@@ -555,6 +614,9 @@ function solveV3(
     entriesChecked,
     elapsedMs: performance.now() - t0,
     stats,
+    profileData: targetProfiles
+      ? { pathGenMs: tPathGenDone - t0, targets: targetProfiles }
+      : null,
   };
 }
 
@@ -564,12 +626,14 @@ export type {
   FeasProfileKey,
   NeighborInfo,
   PartitionedEntries,
+  ProfileData,
   SearchContext,
   SearchResult,
   SearchStats,
   Solution,
   SolverConfig,
   SolverResult,
+  TargetProfile,
   TimingGroup,
 };
 export {
