@@ -4,14 +4,14 @@
 
 import { Direction } from '@core/types';
 
-import { Board, TileType, type FlatBoard } from '@/core-next/flat-board';
-import { fromBoardState } from '@/core-next/convert';
+import { Board } from '@/core-next/flat-board';
 
-import { makeBoard } from '../../test-boards';
 import {
   getBurstInfosFromSpecs,
   type BurstSpec,
 } from '../../custom-algo-1/get-burst-info';
+import { type BoardCtx, loadBoardCtx } from '../../utils/board';
+import { buildBursts, type BurstPath } from '../../utils/burst-pattern';
 
 const MAX_TICKS = 50;
 const TARGET_CAPTURES = 24;
@@ -31,84 +31,9 @@ function makeDirs(prefix: Direction[], fill: Direction, totalMoves: number): Dir
   return [...prefix, ...Array(totalMoves - prefix.length).fill(fill)];
 }
 
-// ── Board context ──
-
-interface BoardCtx {
-  flatBoard: FlatBoard;
-  generalPos: number;
-}
-
-function loadBoardCtx(boardName: string): BoardCtx {
-  const testBoard = makeBoard(boardName);
-  const flatBoard = fromBoardState(testBoard.board, 1);
-  const generalPos = Board.toIndex(
-    flatBoard,
-    testBoard.generalCoord.x,
-    testBoard.generalCoord.y,
-  );
-  return { flatBoard, generalPos };
-}
-
 function tileLabel(ctx: BoardCtx, idx: number): string {
   const { x, y } = Board.toXY(ctx.flatBoard, idx);
   return `(${y},${x})`;
-}
-
-// Walk a path from the general following direction sequence.
-// Returns tile indices (excluding general), or null if path is invalid.
-function walkPath(ctx: BoardCtx, dirs: Direction[]): number[] | null {
-  const tiles: number[] = [];
-  let pos = ctx.generalPos;
-  const visited = new Set<number>([pos]);
-
-  for (const dir of dirs) {
-    const next = Board.neighbor(ctx.flatBoard, pos, dir);
-    if (!Board.isValidIndex(ctx.flatBoard, next)) return null;
-    if (ctx.flatBoard.types[next] === TileType.MOUNTAIN) return null;
-    if (visited.has(next)) return null;
-    tiles.push(next);
-    visited.add(next);
-    pos = next;
-  }
-  return tiles;
-}
-
-// ── Burst building ──
-
-interface BurstPath {
-  tiles: number[];
-  overlap: number;
-  dirs: Direction[];
-}
-
-// Walk all direction sequences, auto-compute overlap from prior bursts.
-// Returns null if any path is geometrically invalid.
-function buildBursts(ctx: BoardCtx, dirArrays: Direction[][]): BurstPath[] | null {
-  const bursts: BurstPath[] = [];
-  const capturedSoFar = new Set<number>();
-
-  for (const dirs of dirArrays) {
-    if (dirs.length === 0) {
-      bursts.push({ tiles: [], overlap: 0, dirs });
-      continue;
-    }
-    const tiles = walkPath(ctx, dirs);
-    if (!tiles) return null;
-
-    // Count leading tiles already captured = overlap.
-    let overlap = 0;
-    while (overlap < tiles.length && capturedSoFar.has(tiles[overlap])) {
-      overlap++;
-    }
-
-    // New captures start after overlap.
-    for (let i = overlap; i < tiles.length; i++) {
-      capturedSoFar.add(tiles[i]);
-    }
-
-    bursts.push({ tiles, overlap, dirs });
-  }
-  return bursts;
 }
 
 // ── Solution checking ──
@@ -335,16 +260,28 @@ const patternsPocket2: PatternDef[] = [
     name: 'Pocket 2 - Idea 1',
     fn: (ctx, [l1, l2, l3, l4, l5]) =>
       buildBursts(ctx, [
+        makeDirs([L, L, L], L, l1),
+        makeDirs([L, L, L], U, l2),
+        makeDirs([L, L, D], L, l3),
+        makeDirs([L], D, l4),
+        makeDirs([], D, l5),
+      ]),
+    nBursts: 5,
+  },
+  {
+    name: 'Pocket 2 - Idea 2',
+    fn: (ctx, [l1, l2, l3, l4, l5, l6]) =>
+      buildBursts(ctx, [
         makeDirs([L, L, L], U, l1),
         makeDirs([L, L, L, L], U, l2),
         makeDirs([L, L, L, D, L, L], U, l3),
         makeDirs([L, L, D, D], L, l4),
         makeDirs([L], D, l5),
-        makeDirs([], D, l5),
+        makeDirs([], D, l6),
       ]),
     nBursts: 6,
   },
 ];
 
-// runBoard('pocket-11x11', patternsPocket1);
+runBoard('pocket-11x11', patternsPocket1);
 runBoard('pocket-2-11x11', patternsPocket2);
