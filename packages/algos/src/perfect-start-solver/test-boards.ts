@@ -95,7 +95,7 @@ const SIMPLE_BOARDS: TestBoard[] = [
   loadBoard('scattered-pockets-13x13.txt'),
 ];
 
-// -- Realistic boards (25x25, generated with terrain-generation) -------------
+// -- Realistic boards (25x25+, generated with terrain-generation) ------------
 
 const REALISTIC_BOARDS: TestBoard[] = [
   loadBoard('25x25/3.21-real-board-edge-choke-point.txt'),
@@ -104,11 +104,6 @@ const REALISTIC_BOARDS: TestBoard[] = [
   loadBoard('25x25/3.21-real-board-semi-enclosed-region.txt'),
   loadBoard('25x25/3.21-real-board-tight-corner-1.txt'),
   loadBoard('25x25/3.21-real-board-tight-corner-2.txt'),
-];
-
-// -- 30x30 boards (generated with terrain-generation) -----------------------
-
-const BOARDS_30X30: TestBoard[] = [
   loadBoard('30x30/3.22-fairly-open.txt'),
   loadBoard('30x30/3.22-fairly-open-2.txt'),
   loadBoard('30x30/3.22-semi-open-with-small-pocket.txt'),
@@ -122,7 +117,7 @@ const BOARDS_30X30: TestBoard[] = [
 
 // -- Board registry ----------------------------------------------------------
 
-const ALL_BOARDS: TestBoard[] = [...SIMPLE_BOARDS, ...REALISTIC_BOARDS, ...BOARDS_30X30];
+const ALL_BOARDS: TestBoard[] = [...SIMPLE_BOARDS, ...REALISTIC_BOARDS];
 
 function makeBoard(name: string): TestBoard {
   const board = ALL_BOARDS.find((b) => b.name === name);
@@ -169,10 +164,6 @@ function realisticBoards(): TestBoard[] {
   return REALISTIC_BOARDS;
 }
 
-function boards30x30(): TestBoard[] {
-  return BOARDS_30X30;
-}
-
 function slowSearch(): TestBoard[] {
   return SLOW_SEARCH;
 }
@@ -187,7 +178,6 @@ export {
   allBoards,
   simpleBoards,
   realisticBoards,
-  boards30x30,
   slowSearch,
   slowPathgen,
   parseBoard,

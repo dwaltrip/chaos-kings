@@ -343,6 +343,7 @@ function solveL2(
               let solvedMask = 0n;
               for (const p of paths) solvedMask |= p.mask;
 
+              // @ts-ignore — old experiment, missing profileData field
               return {
                 solution: {
                   pattern: entry.captures,
@@ -364,6 +365,7 @@ function solveL2(
     }
   }
 
+  // @ts-ignore — old experiment, missing profileData field
   return {
     solution: null,
     entriesChecked,

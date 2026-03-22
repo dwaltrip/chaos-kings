@@ -17,7 +17,6 @@ import {
 import {
   allBoards,
   realisticBoards,
-  boards30x30,
   slowSearch,
   type TestBoard,
 } from '../../test-boards';
@@ -49,7 +48,6 @@ function getBoards(): TestBoard[] {
   const names = [
     // ...SLOW_SMALL_BOARDS,
     // ...realisticBoards().map((b) => b.name),
-    // ...boards30x30().map((b) => b.name),
     ...slowSearch().map((b) => b.name),
   ];
 

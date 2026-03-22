@@ -32,7 +32,7 @@ Research effort exploring improvements to the `custom-algo-1` burst-path solver.
 
 - Write or update the session LOG in `sessions/` first.
 - Then update `STATUS.md` — completed threads, key decisions, shifts in priorities. The "what's next" section serves as a brief handoff.
-- If the next session needs more detailed context (mid-flight work, tricky state, specific instructions), write a HANDOFF doc in `sessions/`. Number it for the session it kicks off, not the one it was written in (e.g., session 3.22-1 writes `3.22-2-HANDOFF.md`).
+- If the next session needs more detailed context (mid-flight work, tricky state, specific instructions), write a HANDOFF doc in `sessions/`. Number it for the session that writes it (e.g., session 3.22-1 writes `3.22-1-HANDOFF.md`).
 - Commit everything.
 - At wrap-up, write a clean copy-pasteable next-session prompt as the last message. For heavier handoffs, create a HANDOFF doc — I'll paste its content myself. Apply any workflow tweaks discussed.
 
