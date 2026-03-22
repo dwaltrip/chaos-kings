@@ -106,9 +106,23 @@ const REALISTIC_BOARDS: TestBoard[] = [
   loadBoard('25x25/3.21-real-board-tight-corner-2.txt'),
 ];
 
+// -- 30x30 boards (generated with terrain-generation) -----------------------
+
+const BOARDS_30X30: TestBoard[] = [
+  loadBoard('30x30/3.22-fairly-open.txt'),
+  loadBoard('30x30/3.22-fairly-open-2.txt'),
+  loadBoard('30x30/3.22-semi-open-with-small-pocket.txt'),
+  loadBoard('30x30/3.22-nooks-and-crannies.txt'),
+  loadBoard('30x30/3-22.edge-1.txt'),
+  loadBoard('30x30/3-22.tight-edge-with-chokes.txt'),
+  loadBoard('30x30/3.22-big-region-with-tight-choke.txt'),
+  loadBoard('30x30/3.22-semi-tight-near-corner.txt'),
+  loadBoard('30x30/3.22-small-corner-pocket.txt'),
+];
+
 // -- Board registry ----------------------------------------------------------
 
-const ALL_BOARDS: TestBoard[] = [...SIMPLE_BOARDS, ...REALISTIC_BOARDS];
+const ALL_BOARDS: TestBoard[] = [...SIMPLE_BOARDS, ...REALISTIC_BOARDS, ...BOARDS_30X30];
 
 function makeBoard(name: string): TestBoard {
   const board = ALL_BOARDS.find((b) => b.name === name);
@@ -128,5 +142,9 @@ function realisticBoards(): TestBoard[] {
   return REALISTIC_BOARDS;
 }
 
+function boards30x30(): TestBoard[] {
+  return BOARDS_30X30;
+}
+
 export type { TestBoard };
-export { makeBoard, allBoards, simpleBoards, realisticBoards, parseBoard };
+export { makeBoard, allBoards, simpleBoards, realisticBoards, boards30x30, parseBoard };

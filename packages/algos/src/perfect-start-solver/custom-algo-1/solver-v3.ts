@@ -70,6 +70,17 @@ function emptyFeasProfile(): FeasibilityProfile {
   };
 }
 
+function feasProfileDelta(
+  current: FeasibilityProfile,
+  prev: FeasibilityProfile,
+): FeasibilityProfile {
+  const result = emptyFeasProfile();
+  for (const key of Object.keys(result) as FeasProfileKey[]) {
+    result[key] = current[key] - prev[key];
+  }
+  return result;
+}
+
 interface SearchStats {
   feasibilityChecks: number;
   feasibilityPrunes: number;
@@ -97,9 +108,15 @@ interface TargetProfile {
   timingTableMs: number;
   searchMs: number;
   groupCount: number;
+  totalTimingEntries: number;
   burst1Entries: number;
   candidatesChecked: number;
   candidatesPassed: number;
+  searchCalls: number;
+  feasibilityChecks: number;
+  feasibilityPrunes: number;
+  feasibilityEntriesKilled: number;
+  feasProfile: FeasibilityProfile | null;
 }
 
 interface ProfileData {
@@ -548,12 +565,39 @@ function solveV3(
     const prevEntries = cfg.profile ? entriesChecked : 0;
     const prevChecked = cfg.profile ? stats.candidatesChecked : 0;
     const prevPassed = cfg.profile ? stats.candidatesPassed : 0;
+    const prevSearchCalls = cfg.profile ? stats.searchCalls : 0;
+    const prevFeasChecks = cfg.profile ? stats.feasibilityChecks : 0;
+    const prevFeasPrunes = cfg.profile ? stats.feasibilityPrunes : 0;
+    const prevFeasKilled = cfg.profile ? stats.feasibilityEntriesKilled : 0;
+    const prevFeasProfile =
+      cfg.profile && stats.feasProfile ? { ...stats.feasProfile } : null;
 
     const groups = buildTimingGroups(captures, timingConfig, entriesByLen);
+    const totalTimingEntries = cfg.profile
+      ? groups.reduce((s, g) => s + g.entries.length, 0)
+      : 0;
 
     const tSearchStart = cfg.profile ? performance.now() : 0;
 
-    let solved = false;
+    const buildTargetProfile = (): TargetProfile => ({
+      captures,
+      timingTableMs: tSearchStart - tTargetStart,
+      searchMs: performance.now() - tSearchStart,
+      groupCount: groups.length,
+      totalTimingEntries,
+      burst1Entries: entriesChecked - prevEntries,
+      candidatesChecked: stats.candidatesChecked - prevChecked,
+      candidatesPassed: stats.candidatesPassed - prevPassed,
+      searchCalls: stats.searchCalls - prevSearchCalls,
+      feasibilityChecks: stats.feasibilityChecks - prevFeasChecks,
+      feasibilityPrunes: stats.feasibilityPrunes - prevFeasPrunes,
+      feasibilityEntriesKilled: stats.feasibilityEntriesKilled - prevFeasKilled,
+      feasProfile:
+        prevFeasProfile && stats.feasProfile
+          ? feasProfileDelta(stats.feasProfile, prevFeasProfile)
+          : null,
+    });
+
     for (const group of groups) {
       // Burst-1 iterates flat candidates — not partitioned. coveredMask is
       // empty here so no neighbor partitions can be skipped (all are free).
@@ -572,15 +616,7 @@ function solveV3(
           );
 
           if (targetProfiles) {
-            targetProfiles.push({
-              captures,
-              timingTableMs: tSearchStart - tTargetStart,
-              searchMs: performance.now() - tSearchStart,
-              groupCount: groups.length,
-              burst1Entries: entriesChecked - prevEntries,
-              candidatesChecked: stats.candidatesChecked - prevChecked,
-              candidatesPassed: stats.candidatesPassed - prevPassed,
-            });
+            targetProfiles.push(buildTargetProfile());
           }
 
           return {
@@ -597,15 +633,7 @@ function solveV3(
     }
 
     if (targetProfiles) {
-      targetProfiles.push({
-        captures,
-        timingTableMs: tSearchStart - tTargetStart,
-        searchMs: performance.now() - tSearchStart,
-        groupCount: groups.length,
-        burst1Entries: entriesChecked - prevEntries,
-        candidatesChecked: stats.candidatesChecked - prevChecked,
-        candidatesPassed: stats.candidatesPassed - prevPassed,
-      });
+      targetProfiles.push(buildTargetProfile());
     }
   }
 
