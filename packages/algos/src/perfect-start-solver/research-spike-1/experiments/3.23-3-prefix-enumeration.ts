@@ -3,7 +3,13 @@
 // Measures: prefix pool sizes, per-neighbor breakdown, fan-out to full-length
 // paths, and tip properties (degree, free neighbors).
 //
-// Usage: npx tsx src/perfect-start-solver/research-spike-1/experiments/3.23-3-prefix-enumeration.ts
+// Usage:
+//   npx tsx .../3.23-3-prefix-enumeration.ts                     # default selection
+//   npx tsx .../3.23-3-prefix-enumeration.ts slow realistic      # board sets
+//   npx tsx .../3.23-3-prefix-enumeration.ts corner-9x9          # individual board
+//
+// Board sets: slow, realistic, simple, all
+// Boards are deduplicated if sets overlap.
 
 import { Board, type FlatBoard } from '@/core-next/flat-board';
 import { fromBoardState } from '@/core-next/convert';
@@ -11,7 +17,14 @@ import { fromBoardState } from '@/core-next/convert';
 import type { PathEntriesByLen, PathEntry } from '../../custom-algo-1/path-search';
 import { getWalkableNeighbors } from '../../utils/board-graph';
 import { formatTable } from '../../format';
-import { makeBoard, type TestBoard } from '../../test-boards';
+import {
+  makeBoard,
+  allBoards,
+  simpleBoards,
+  realisticBoards,
+  slowSearch,
+  type TestBoard,
+} from '../../test-boards';
 import {
   buildFanoutMap,
   computeFanoutStats,
@@ -23,24 +36,34 @@ import {
   type TipStats,
 } from '../prefix-utils';
 
-// ── Config ──
+// ── Board resolution ──
 
-const BOARD_NAMES = [
-  // Fast simple
-  'open-7x7',
-  'sparse-mtns-9x9',
-  // Fast realistic
-  '3.21-real-board-medium-spacious',
-  '3.22-fairly-open',
-  // Slow simple
-  'corner-9x9',
-  'pocket-11x11',
-  'pocket-2-11x11',
-  'corner-13x13',
-  // Slow realistic
-  '3.21-real-board-tight-corner-1',
-  '3.21-real-board-tight-corner-2',
-];
+const BOARD_SETS: Record<string, () => TestBoard[]> = {
+  slow: slowSearch,
+  realistic: realisticBoards,
+  simple: simpleBoards,
+  all: allBoards,
+};
+
+function resolveBoards(args: string[]): TestBoard[] {
+  if (args.length === 0) {
+    return allBoards();
+  }
+
+  const seen = new Set<string>();
+  const boards: TestBoard[] = [];
+  for (const arg of args) {
+    const setFn = BOARD_SETS[arg];
+    const list = setFn ? setFn() : [makeBoard(arg)];
+    for (const tb of list) {
+      if (!seen.has(tb.name)) {
+        seen.add(tb.name);
+        boards.push(tb);
+      }
+    }
+  }
+  return boards;
+}
 
 const MAX_PREFIX_DEPTH = 4;
 const FANOUT_TARGETS = [8, 10, 12];
@@ -239,7 +262,7 @@ function printTipProperties(results: BoardResult[]): void {
 
 // ── Main ──
 
-const boards = BOARD_NAMES.map((name) => makeBoard(name));
+const boards = resolveBoards(process.argv.slice(2));
 
 console.error('Running prefix enumeration experiment...');
 const results: BoardResult[] = [];
