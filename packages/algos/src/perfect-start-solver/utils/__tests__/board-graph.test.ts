@@ -113,25 +113,31 @@ describe('findCorridors', () => {
     expect(result.corridorTiles.has(48)).toBe(true);
   });
 
-  it('corridor-11x11 has corridor tiles forming a segment through the gap', () => {
+  it('corridor-11x11 has corridor tiles at the gap and corners', () => {
     // corridor-11x11: row 5 is MMMMM.MMMMM, gap at (5,5)=60.
-    // The tiles directly above (5,4)=49 and below (5,6)=71 the gap
-    // are squeezed between mountains, giving them degree 2 (corridor tiles).
-    // The gap tile (5,5)=60 itself also has degree 2.
+    // Degree-2 tiles: the gap tile (60), the tiles flanking it on
+    // the mountain row (44, 54, 66, 76), and the 4 board corners.
+    // Each is an isolated single-tile segment (neighbors have degree 3+).
     const { board } = makeTestBoard('corridor-11x11');
     const result = findCorridors(board);
-    expect(result.corridorTiles.size).toBeGreaterThan(0);
-    expect(result.segments.length).toBeGreaterThan(0);
-    // TODO: fill in expected corridor tiles and segment details
+    const expected = new Set([0, 10, 44, 54, 60, 66, 76, 110, 120]);
+    expect(result.corridorTiles).toEqual(expected);
+    expect(result.segments).toHaveLength(9);
+    // All segments are length 1 (isolated degree-2 tiles)
+    for (const seg of result.segments) {
+      expect(seg.tiles).toHaveLength(1);
+    }
   });
 
   it('narrow-corridors-11x11 has multiple corridor segments', () => {
-    // narrow-corridors-11x11 has three mountain walls with single-tile gaps
-    // at rows 3, 6, and 9, creating multiple corridor segments.
+    // narrow-corridors-11x11 has three mountain walls with single-tile gaps.
+    // 22 corridor tiles forming 10 segments — mix of isolated tiles (gaps)
+    // and multi-tile chains (corners squeezed between walls and board edges,
+    // plus a 4-tile chain along the bottom row between walls).
     const { board } = makeTestBoard('narrow-corridors-11x11');
     const result = findCorridors(board);
-    expect(result.segments.length).toBeGreaterThan(1);
-    // TODO: fill in expected segment count and tiles
+    expect(result.corridorTiles.size).toBe(22);
+    expect(result.segments).toHaveLength(10);
   });
 
   it('every corridor tile has exactly degree 2', () => {
@@ -173,30 +179,40 @@ describe('tarjan', () => {
 
   it('finds articulation points on corridor-7x7', () => {
     // corridor-7x7: row 3 is MMMM.MM, gap at (4,3)=25.
-    // Tile 25 is the only passage between top and bottom halves.
+    // Three articulation points form the vertical passage: tile 18=(4,2)
+    // above the gap, the gap tile 25=(4,3), and tile 32=(4,4) below.
+    // Removing any one disconnects the path between halves.
     const { board } = makeTestBoard('corridor-7x7');
     const result = tarjan(board);
-    expect(result.articulationPoints.has(25)).toBe(true);
-    // TODO: fill in expected full set of articulation points
+    expect(result.articulationPoints).toEqual(new Set([18, 25, 32]));
   });
 
   it('finds articulation points on narrow-corridors-11x11', () => {
-    // narrow-corridors-11x11 has gaps at (5,3)=38, (3,6)=69/(4,6)=70,
-    // and (5,9)=104. These single-tile gaps should produce
-    // articulation points that separate the horizontal bands.
+    // narrow-corridors-11x11 has three mountain walls with single-tile gaps.
+    // 14 articulation points: the vertical passages through the walls
+    // (27, 38, 49 through row-3 gap; 93, 104 through row-9 gap) plus
+    // a chain along the bottom row (111-119) where tiles between walls
+    // form a linear corridor — every interior tile is a cut vertex.
     const { board } = makeTestBoard('narrow-corridors-11x11');
     const result = tarjan(board);
-    expect(result.articulationPoints.size).toBeGreaterThan(0);
-    // TODO: fill in expected articulation points
+    expect(result.articulationPoints).toEqual(
+      new Set([27, 38, 49, 93, 104, 111, 112, 113, 114, 115, 116, 117, 118, 119]),
+    );
   });
 
   it('finds bridges on corridor-11x11', () => {
-    // The gap at (5,5)=60 with its neighbors above/below should form bridges,
-    // since they are the only connection between top and bottom.
+    // The vertical passage through the gap has 2 bridges:
+    // (49,60) and (60,71) — the only edges connecting top to bottom.
     const { board } = makeTestBoard('corridor-11x11');
     const result = tarjan(board);
-    expect(result.bridges.length).toBeGreaterThan(0);
-    // TODO: fill in expected bridges
+    expect(result.bridges).toHaveLength(2);
+    // Bridges are unordered pairs; normalize for comparison
+    const normalized = result.bridges.map(([a, b]) => (a < b ? [a, b] : [b, a]));
+    normalized.sort((a, b) => a[0] - b[0]);
+    expect(normalized).toEqual([
+      [49, 60],
+      [60, 71],
+    ]);
   });
 
   it('corner-7x7 has no articulation points', () => {
