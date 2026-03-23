@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-03-23 (session 3.23-1)
+Last updated: 2026-03-23 (session 3.23-2)
 
 ## Current state
 
-Thread 7 (graph topology) analysis in progress. Built reusable graph topology infrastructure (`utils/board-graph.ts`) and ran two experiments across all 46 boards. Key result: **slow boards split into two distinct populations** — structurally constrained (high pocket density near general) and structurally open (topology-free, difficulty is purely combinatorial from degree-2). These likely need different optimization strategies. See `sessions/3.23-1-graph-topology-analysis.md` for full data.
+Developing a **path prefix structure theory** — the idea that the solver's search space can be dramatically reduced by reasoning about the first 3-4 tiles of each burst (the "prefix") rather than full-length paths. Theory doc: `docs/PREFIX-STRUCTURE-THEORY.md`. Ready for first experiments to validate.
+
+Thread 7 (graph topology) initial spike is complete. Built reusable graph topology infrastructure (`utils/board-graph.ts`) and ran two experiments across all 46 boards. Key result: **slow boards split into two distinct populations** — structurally constrained (high pocket density near general) and structurally open (topology-free, difficulty is purely combinatorial from degree-2). These likely need different optimization strategies. See `sessions/3.23-1-graph-topology-analysis.md` for full data.
 
 The solver handles most boards in <100ms. Hard boards fall into three regimes: infeasible-target waste, deep recursive search (~90% candidate waste), and path generation cost. See `findings/3.22-3-deep-phase-analysis.md` for the structural analysis (note: absolute times in that doc are pre-bugfix).
 
@@ -54,14 +56,19 @@ Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for cur
 - `custom-algo-1/README.md` — solver implementation details
 - `findings/` — experiment findings (one doc per completed experiment)
 - `sessions/` — session logs and working notes
+- `PREFIX-STRUCTURE-THEORY.md` — working theory on path prefix structure
 
 ## What's next
 
-Thread 7 graph topology analysis is in progress. Infrastructure is built, first two experiments complete. Open directions:
+**Path prefix structure experiments** — validating the theory in `PREFIX-STRUCTURE-THEORY.md`. Exploratory mindset — several sessions of open-ended analysis before worrying about solver integration.
 
-- **Thread 8 (directional structure)** — BFS-based sector assignment from general's perspective. The degree-2 independent subproblems idea is concretely motivated by the topology data.
-- **Thread 9 (spatial path analysis)** — per-tile path inclusion counts, scarcity distribution. Bridges board structure and path structure.
-- **Expansion profile idea** — open-ended thought experiment about per-tile frontier growth rate as a measure of "dead-end-ness." Would need more brainstorming to make concretely useful.
-- **2-vertex cut sets** — not yet computed. Could reveal wider passages (2 tiles wide) gating larger regions than single cut vertices do.
+Next session experiments (priority order):
+1. **Prefix enumeration** — enumerate all non-backtracking paths from general at depths 1-4. Count per depth, per neighbor. Fan-out to full-length paths (how many length-8/10/12 paths share each prefix). End tile properties (degree, local structure — where does the prefix "open up"?).
+2. **Solution prefix spot-check** — map the solver's found solution onto the prefix data. Do the solution's bursts use prefixes from the enumerated pool? What are their properties?
+3. **Prefix compatibility** — how many prefix pairs at depth 3 are compatible (no shared tiles)? Structure of the compatibility graph.
 
-See `ROADMAP.md` for the full thread catalog (13 threads, sequentially numbered).
+Other open directions (from thread 7 and roadmap, lower priority for now):
+- Thread 8 (directional structure), Thread 9 (spatial path analysis)
+- 2-vertex cut sets, expansion profile idea
+
+See `ROADMAP.md` for the full thread catalog.
