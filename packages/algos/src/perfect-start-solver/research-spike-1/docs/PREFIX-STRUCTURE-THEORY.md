@@ -18,7 +18,9 @@ A working theory about how the near-general structure of paths can dramatically 
 
 ## Core concept: prefix sets
 
-A **prefix set** is a collection of short non-backtracking paths from the general (length ~3-4), one per burst slot, that are mutually compatible. Compatible means: zero-overlap bursts don't share tiles; overlap bursts share exactly the right prefix tiles as a contiguous prefix.
+A **prefix set** is a collection of short non-backtracking paths from the general (length 3-4), one per burst slot, that are mutually compatible. Compatible means: zero-overlap bursts don't share tiles; overlap-K bursts have their first K tiles in the covered set (union of all prior bursts' tiles). The overlap lands on *any* previously covered tiles, not on a specific prior burst's path.
+
+*Terminology note:* "Prefix" in this doc means the first few tiles of a burst that determine its direction — the **directional prefix**. This is distinct from the solver's existing "prefix overlap" concept (the segment of a burst that retraces covered territory). When a burst has overlap, the overlap segment is part of the directional prefix. These definitions are loose and exploratory — don't over-index on them. They'll sharpen as experiments reveal what matters.
 
 The number of viable prefix sets is conjectured to be small — tens to low hundreds per board.
 
@@ -28,11 +30,12 @@ A prefix is *good* if its tip leads into space where the burst can extend freely
 
 This is NOT about disjoint regions. Multiple bursts can share the same area of the board. The key is **non-crossing trajectories** — parallel lines through shared space. Think two bursts following an L-shaped corridor side by side, both with flexible length.
 
-Two outcomes at the tip:
+Three outcomes at the tip:
 - **Clean lines** — suffix extension is unconstrained, burst length doesn't matter
 - **Fixed boundary** (pocket, edge, corridor end) — burst length is capped but deterministic
+- **Moderate flexibility** — enough space for some burst lengths but not all; suffix needs a small search
 
-A good prefix set has every prefix either opening into clean flexible trajectories or hitting a clear fixed end.
+The mitigating factor: most bursts have short or zero suffixes (see "Why most suffixes are short" below), so even the moderate case has small combinatorics.
 
 **Width as a proto-metric:** The available "width" perpendicular to a trajectory determines how many parallel non-crossing bursts can pass through. Width=1 is a corridor (one burst only). Width=2 supports two flexible-length bursts side by side. Extends naturally around turns — an L-shaped region 2 tiles wide supports 2 parallel L-shaped paths. Generalizes the thread 7 corridor concept to arbitrary widths.
 
@@ -40,7 +43,11 @@ A good prefix set has every prefix either opening into clean flexible trajectori
 
 The overlap budget (0 to maxOverlapPerBurst per burst) controls where divergence happens. Overlap=K means "retrace K tiles of prior territory, then take a fresh step that commits to a direction." The prefix = overlap segment + first fresh divergence.
 
-Different overlap budgets produce different prefix set geometries. The total number of overlap configurations is bounded by something like maxOverlapPerBurst^(numBursts-1) — in practice much smaller after timing constraints prune infeasible combos.
+Different overlap budgets produce different prefix set geometries. The total number of overlap configurations is bounded by something like (maxOverlapPerBurst+1)^(numBursts-1) — in practice much smaller after timing constraints prune infeasible combos.
+
+When multiple bursts have overlap, their prefixes are tightly coupled. E.g., if b2 has overlap=3 and b3 has overlap=2, b3's first 2 tiles must be in the covered set from b1+b2 combined. This coupling *narrows* the viable prefix sets — each additional overlap burst constrains the possibilities rather than expanding them.
+
+This coupling also means overlap prefix sets are built incrementally — b2's choices depend on b1's coverage, b3's on b1+b2, etc. This is a form of shallow backtracking over tiny domains (3-4 tiles per burst), much cheaper than the current solver's deep backtracking over full-length paths. There may also be related non-sequential analyses we can do — we should keep both framings in mind as we explore.
 
 ## The decomposition
 
@@ -63,16 +70,35 @@ Different overlap budgets produce different prefix set geometries. The total num
 
 4. **Match against timing entries**
    - Does each burst's required captures fit within what its prefix's trajectory can support?
-   - Arithmetic
+   - Some cases will be simple capacity checks, others may require more work
 
 5. **Extend suffixes**
    - Find actual full-length paths by extending each prefix along its trajectory
    - Since trajectories are independent, this is a per-burst subproblem — no cross-burst backtracking
    - Could be as simple as a greedy walk from the prefix tip
 
+**Why most suffixes are short:** Burst patterns use descending capture counts (e.g., [12, 7, 3, 2]). At prefix depth 3-4:
+
+| Burst | Length | Prefix | Suffix |
+|-------|--------|--------|--------|
+| B1    | 12     | 3-4    | 8-9 tiles |
+| B2    | 7      | 3-4    | 3-4 tiles |
+| B3    | 3      | 3      | 0 tiles |
+| B4    | 2      | 2      | 0 tiles |
+
+The shorter bursts are entirely within the prefix domain — fully resolved at the prefix level. Only B1 has a substantial suffix, and it's the first burst (overlap=0, heading into open territory with the most room). This means suffix independence mostly only matters for the longest burst, which is the easiest case.
+
 **Where the savings come from:** Cross-burst interaction is fully resolved at the prefix level. The current solver discovers the same prefix conflicts thousands of times across different suffixes. The prefix approach resolves conflicts once in the small domain, then extends independently.
 
-**Key assumption to validate:** suffixes truly don't interact. Once prefixes diverge, extending one burst's path doesn't block another's. If this fails, the whole decomposition breaks down. The experiments should test this directly.
+**Two separable claims:**
+1. *Prefix structure reduces the search space* — enumerating prefix sets and extending them visits fewer total states than the current solver. This holds even if suffixes interact somewhat.
+2. *Suffixes don't interact* — once prefixes are fixed, extending each burst is an independent subproblem. This gives the full independence win but isn't required for claim 1 to be valuable.
+
+The experiments should test both, but claim 1 alone would be a significant improvement.
+
+## Relationship to existing work
+
+L1 neighbor partitioning (already in the solver) is effectively a depth-1 prefix partition — it splits candidates by which neighbor they start through. The prefix structure theory can be seen as a generalization to deeper prefixes. That said, we want to approach this with a fresh perspective and an exploratory "see what we find" mindset, not as an incremental extension of L1. The ideas here are promising enough to warrant several sessions of open-ended exploration before worrying about solver integration.
 
 ## Open questions
 
