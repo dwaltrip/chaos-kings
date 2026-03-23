@@ -2,7 +2,8 @@
 // A "prefix at depth D" is a non-backtracking path of length D from the general
 // (general excluded — same convention as PathEntry).
 
-import { type FlatBoard } from '@/core-next/flat-board';
+import { Board, TileType, type FlatBoard } from '@/core-next/flat-board';
+import { fromBoardState } from '@/core-next/convert';
 
 import { genPathsDP } from '../custom-algo-1/gen-paths';
 import {
@@ -11,6 +12,7 @@ import {
   type PathEntriesByLen,
 } from '../custom-algo-1/path-search';
 import { getWalkableNeighbors } from '../utils/board-graph';
+import { makeBoard, type TestBoard } from '../test-boards';
 
 // ── Prefix enumeration ──
 
@@ -253,8 +255,131 @@ function groupPrefixesByNeighbor(
   });
 }
 
+// ── High-level helper: get prefix sets for a board ──
+
+const DEFAULT_MAX_PATH_LEN = 12;
+
+interface GetPrefixSetsOptions {
+  depth?: number; // prefix depth, default 4
+  maxSets?: number; // max sets to return, default 10
+  maxPathLen?: number; // for path generation, default 12
+}
+
+interface GetPrefixSetsResult {
+  sets: PrefixSetResult[];
+  count: number;
+  capped: boolean;
+  board: FlatBoard;
+  generalPos: number;
+}
+
+function getPrefixSets(
+  boardName: string,
+  overlaps: number[],
+  options: GetPrefixSetsOptions = {},
+): GetPrefixSetsResult {
+  const D = options.depth ?? 4;
+  const maxSets = options.maxSets ?? 10;
+  const maxPathLen = options.maxPathLen ?? DEFAULT_MAX_PATH_LEN;
+
+  const tb = makeBoard(boardName);
+  const board = fromBoardState(tb.board, 1);
+  const generalPos = Board.toIndex(board, tb.generalCoord.x, tb.generalCoord.y);
+
+  const { prefixesByDepth } = enumeratePrefixes(board, generalPos, D, maxPathLen);
+  const result = enumeratePrefixSets(prefixesByDepth, overlaps, D, maxSets);
+
+  return {
+    sets: result.sets,
+    count: result.count,
+    capped: result.capped,
+    board,
+    generalPos,
+  };
+}
+
+// ── Board visualization ──
+
+function tileXY(board: FlatBoard, tile: number): string {
+  const x = tile % board.width;
+  const y = Math.floor(tile / board.width);
+  return `(${x},${y})`;
+}
+
+// Format a prefix set as a board string with burst labels.
+// Each burst's tiles are labeled 1-9/A-Z. Tiles claimed by multiple bursts
+// are marked with '*'. General is 'G'. Mountains '#'. Walkable '.'.
+function formatPrefixSetBoard(
+  board: FlatBoard,
+  generalPos: number,
+  prefixSet: PrefixSetResult,
+  overlaps: number[],
+): string {
+  // Build tile → burst owner map. Track tiles claimed by multiple bursts.
+  const tileOwner = new Map<number, number>(); // tile → first burst index
+  const shared = new Set<number>();
+
+  for (let bi = 0; bi < prefixSet.prefixTiles.length; bi++) {
+    for (const tile of prefixSet.prefixTiles[bi]) {
+      if (tileOwner.has(tile)) {
+        shared.add(tile);
+      } else {
+        tileOwner.set(tile, bi);
+      }
+    }
+  }
+
+  const burstLabel = (bi: number): string => {
+    if (bi < 9) return String(bi + 1);
+    return String.fromCharCode(65 + bi - 9); // A, B, C...
+  };
+
+  const rows: string[] = [];
+  for (let y = 0; y < board.height; y++) {
+    const cells: string[] = [];
+    for (let x = 0; x < board.width; x++) {
+      const idx = y * board.width + x;
+      if (idx === generalPos) {
+        cells.push('G');
+      } else if (shared.has(idx)) {
+        cells.push('*');
+      } else if (tileOwner.has(idx)) {
+        cells.push(burstLabel(tileOwner.get(idx)!));
+      } else {
+        const type = board.types[idx];
+        cells.push(type === TileType.MOUNTAIN ? '#' : '.');
+      }
+    }
+    rows.push(cells.join(' '));
+  }
+
+  return rows.join('\n');
+}
+
+// Format a prefix set as path notation + board visualization.
+function formatPrefixSet(
+  board: FlatBoard,
+  generalPos: number,
+  prefixSet: PrefixSetResult,
+  overlaps: number[],
+): string {
+  const lines: string[] = [];
+
+  for (let bi = 0; bi < prefixSet.prefixTiles.length; bi++) {
+    const tiles = prefixSet.prefixTiles[bi];
+    const path = tiles.map((t) => tileXY(board, t)).join('→');
+    lines.push(`  B${bi + 1} (ovl=${overlaps[bi]}): ${path}`);
+  }
+
+  lines.push('');
+  lines.push(formatPrefixSetBoard(board, generalPos, prefixSet, overlaps));
+
+  return lines.join('\n');
+}
+
 export type {
   FanoutStats,
+  GetPrefixSetsResult,
   NeighborPrefixCounts,
   PrefixSetEnumResult,
   PrefixSetResult,
@@ -266,6 +391,9 @@ export {
   computeTipStats,
   enumeratePrefixes,
   enumeratePrefixSets,
+  formatPrefixSet,
+  formatPrefixSetBoard,
+  getPrefixSets,
   groupPrefixesByNeighbor,
   prefixKey,
 };
