@@ -1,23 +1,18 @@
 # Status
 
-Last updated: 2026-03-22 (session 3.22-6)
+Last updated: 2026-03-23 (session 3.23-1)
 
 ## Current state
 
-Deep phase analysis complete — three performance regimes identified across 45 boards. Board geometry near the general drives difficulty, not board size. 12 slow boards are the optimization targets. See `sessions/3.22-6-profiling-overview-post-bugfix.md` for the current baseline numbers (post-bugfix).
+Thread 7 (graph topology) analysis in progress. Built reusable graph topology infrastructure (`utils/board-graph.ts`) and ran two experiments across all 46 boards. Key result: **slow boards split into two distinct populations** — structurally constrained (high pocket density near general) and structurally open (topology-free, difficulty is purely combinatorial from degree-2). These likely need different optimization strategies. See `sessions/3.23-1-graph-topology-analysis.md` for full data.
 
-The solver handles most boards in <100ms. Hard boards fall into three regimes: infeasible-target waste (timing entry explosion), deep recursive search (~90% candidate waste), and path generation cost. See `findings/3.22-3-deep-phase-analysis.md` for the structural analysis (note: absolute times in that doc are pre-bugfix).
-
-**Session 3.22-6** established post-bugfix profiling baseline and spiked degree-based timing entry filtering (Thread 5). The filter kills 60-90% of entries but is strictly weaker than the in-search N feasibility check — no meaningful perf impact. See `findings/3.22-6-degree-filter.md`.
-
-**Session 3.22-5 fixed a bug in aggregate feasibility pruning.** `blankTilesWithinDist` heuristic massively underestimated available tiles, falsely pruning valid entries. pocket-2-11x11 now correctly finds 24 captures. Several boards got 2-4x slower as false prunes no longer mask infeasible-target waste. See `sessions/3.22-5-LOG.md`.
-
-**Session 3.22-4** attempted to prove that 24 captures is timing-infeasible on pocket-11x11, but the results are affected by the solver bug (fixed in 3.22-5). Naive pre-check approaches (#1 reachable tile count, #2 per-neighbor capacity) are dead — the binding constraint is timing, not tile availability.
+The solver handles most boards in <100ms. Hard boards fall into three regimes: infeasible-target waste, deep recursive search (~90% candidate waste), and path generation cost. See `findings/3.22-3-deep-phase-analysis.md` for the structural analysis (note: absolute times in that doc are pre-bugfix).
 
 Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for current direction and thread catalog.
 
 ## Completed threads
 
+- **Thread 7 — graph topology (analysis phase)** — see `sessions/3.23-1-graph-topology-analysis.md`. Built `utils/board-graph.ts` (adjacency, corridors, Tarjan, region decomposition). Slow simple boards have zero articulation points — difficulty is combinatorial. Realistic boards have dozens of cut vertices but mostly gate small pockets; several have non-trivial secondary regions (20-100 tiles). Local structure analysis: slow boards split into structurally constrained (95-100% pocket near general) vs structurally open (0-3% constrained) populations.
 - **Thread 5 — capture-target pre-check** — see `findings/thread-5-wrap-up.md`. Five approaches tried or analyzed across sessions 3.22-4 through 3.22-6. All dead. Infeasibility is path-level spatial incompatibility, not detectable by capacity-based pre-checks. Degree filter removed from solver.
 - **Deep phase analysis (threads 1 + 10, enhanced)** — see `findings/3.22-3-deep-phase-analysis.md` (note: absolute times are pre-bugfix). Three regimes: infeasible-target waste (thread 5 lever), deep recursive search (thread 10 lever), path gen (thread 3/13 lever). Timing entries explode combinatorially (678/grp at cap=24 → 3,858 at cap=23 → 8,401 at cap=22) — board-independent, config-determined. Board size is not the driver.
 - **Phase timing + scan waste (threads 1 + 10, initial)** — see `sessions/3.22-2-phase-timing-and-scan-waste.md`. Built profiling infrastructure. Preliminary data identified infeasible-target waste and candidate scan waste.
@@ -46,6 +41,8 @@ Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for cur
 - **L1 is optimal on degree-2 boards** — after burst-1 claims one neighbor, exactly one partition remains.
 - **Path masks are nearly unique** — dedup is not a lever.
 - **Board structure vs path structure** — two complementary lenses. Most powerful optimizations probably exploit both.
+- **Two populations of slow boards** — structurally constrained (tight-corner-1 at 95% pocket, tight-corner-2 at 100%) vs structurally open (corner-9x9 at 3%, corner-13x13 at 2%). Different optimization strategies likely needed.
+- **"Structural features within burst range" is the right analysis lens** — global topology (cut vertices across the whole board) is less informative than local structure within distance 12 of the general.
 
 ## Key docs
 
@@ -60,8 +57,11 @@ Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for cur
 
 ## What's next
 
-Thread 5 (capture-target pre-check) is spent — see `findings/thread-5-wrap-up.md`. Five approaches were tried or analyzed; none can skip infeasible targets. The fundamental issue: infeasibility on these boards is path-level spatial incompatibility (no compatible paths exist within timing+geometry constraints), not capacity (not enough tiles). Every pre-check tests capacity in some form, and capacity is never the binding constraint.
+Thread 7 graph topology analysis is in progress. Infrastructure is built, first two experiments complete. Open directions:
 
-The degree filter from session 3.22-6 has been removed from the solver (strictly weaker than the in-search N check, slight perf regression on some boards).
+- **Thread 8 (directional structure)** — BFS-based sector assignment from general's perspective. The degree-2 independent subproblems idea is concretely motivated by the topology data.
+- **Thread 9 (spatial path analysis)** — per-tile path inclusion counts, scarcity distribution. Bridges board structure and path structure.
+- **Expansion profile idea** — open-ended thought experiment about per-tile frontier growth rate as a measure of "dead-end-ness." Would need more brainstorming to make concretely useful.
+- **2-vertex cut sets** — not yet computed. Could reveal wider passages (2 tiles wide) gating larger regions than single cut vertices do.
 
 See `ROADMAP.md` for the full thread catalog (13 threads, sequentially numbered).
