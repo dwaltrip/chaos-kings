@@ -1,10 +1,13 @@
 # Status
 
-Last updated: 2026-03-23 (session 3.23-2)
+Last updated: 2026-03-23 (session 3.23-3)
 
 ## Current state
 
-Developing a **path prefix structure theory** — the idea that the solver's search space can be dramatically reduced by reasoning about the first 3-4 tiles of each burst (the "prefix") rather than full-length paths. Theory doc: `docs/PREFIX-STRUCTURE-THEORY.md`. Ready for first experiments to validate.
+**Path prefix structure — first experiments done, core predictions validated.** Prefix pools are small (≤96 at depth 4 even on degree-4 boards), fan-out narrowing is steep (~20-30x reduction per prefix), and most prefixes "open up" by depth 3-4. See `sessions/3.23-3-prefix-enumeration-results.md` for data and key insights, `sessions/3.23-3-next-directions.md` for ideas and next steps.
+
+Theory doc: `PREFIX-STRUCTURE-THEORY.md`.
+Reusable prefix analysis utilities in `research-spike-1/prefix-utils.ts`. 
 
 Thread 7 (graph topology) initial spike is complete. Built reusable graph topology infrastructure (`utils/board-graph.ts`) and ran two experiments across all 46 boards. Key result: **slow boards split into two distinct populations** — structurally constrained (high pocket density near general) and structurally open (topology-free, difficulty is purely combinatorial from degree-2). These likely need different optimization strategies. See `sessions/3.23-1-graph-topology-analysis.md` for full data.
 
@@ -49,6 +52,7 @@ Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for cur
 ## Key docs
 
 - `INTRO.md` — problem, model, and what the research is about
+- `BOARD-INFRA.md` — board loading, path generation, and utility infrastructure reference
 - `ROADMAP.md` — **primary planning document** — thread catalog, deep-dives, key framings, resolved threads
 - `EXPLORATION-SURVEY.md` — original idea catalog (4 themes, execution order)
 - `SURVEY-DOC-CRITICAL-REVIEW.md` — critical review (missing techniques, contrarian takes)
@@ -60,15 +64,8 @@ Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for cur
 
 ## What's next
 
-**Path prefix structure experiments** — validating the theory in `PREFIX-STRUCTURE-THEORY.md`. Exploratory mindset — several sessions of open-ended analysis before worrying about solver integration.
+**Prefix set enumeration** — the central validation experiment. For a given burst configuration (burst count + overlap assignments from timing entries), how many mutually compatible prefix sets exist? The theory conjectures tens to low hundreds. Indirect evidence is encouraging (small pools + tight constraints), but this needs direct measurement. See `sessions/3.23-3-next-directions.md` for detailed discussion.
 
-Next session experiments (priority order):
-1. **Prefix enumeration** — enumerate all non-backtracking paths from general at depths 1-4. Count per depth, per neighbor. Fan-out to full-length paths (how many length-8/10/12 paths share each prefix). End tile properties (degree, local structure — where does the prefix "open up"?).
-2. **Solution prefix spot-check** — map the solver's found solution onto the prefix data. Do the solution's bursts use prefixes from the enumerated pool? What are their properties?
-3. **Prefix compatibility** — how many prefix pairs at depth 3 are compatible (no shared tiles)? Structure of the compatibility graph.
-
-Other open directions (from thread 7 and roadmap, lower priority for now):
-- Thread 8 (directional structure), Thread 9 (spatial path analysis)
-- 2-vertex cut sets, expansion profile idea
+Also open: characterizing the prefix-suffix boundary (suffix zone capacity, per-prefix expansion profiles). Lower priority than prefix sets but quick to implement.
 
 See `ROADMAP.md` for the full thread catalog.

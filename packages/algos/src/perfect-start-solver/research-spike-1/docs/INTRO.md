@@ -21,7 +21,7 @@ The solver has a pipeline: generate all paths from the general (DP, up to length
 
 It works well: most boards solve in under 200ms. A few constrained boards (corner generals, narrow corridors) take seconds. The search is the bottleneck on hard boards — the solver tries many timing entries and path candidates before finding a compatible assignment.
 
-For implementation details, see `custom-algo-1/README.md`.
+For implementation details, see `custom-algo-1/README.md`. For the board loading pattern, path types, and utility infrastructure, see `BOARD-INFRA.md`.
 
 ## What this research is about
 
