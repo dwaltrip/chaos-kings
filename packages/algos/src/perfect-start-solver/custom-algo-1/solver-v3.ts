@@ -220,21 +220,11 @@ function buildTimingGroups(
   totalCaptures: number,
   config: TimingTableConfig,
   entriesByLen: PathEntriesByLen,
-  generalDegree: number,
 ): TimingGroup[] {
   const entries = buildTimingEntries(totalCaptures, config);
 
   const byB1 = new Map<number, EntryWithMoves[]>();
   for (const entry of entries) {
-    // TODO: Consider removing — this is strictly weaker than the N
-    // feasibility check in searchGrouped (which sees fewer available
-    // neighbors after B1 covers tiles). Kills 60-90% of entries but
-    // doesn't improve runtime since those entries were already caught
-    // by the in-search N check. See finding: 3.22-6-degree-filter.md.
-    let zeroOverlapBursts = 0;
-    for (const o of entry.overlaps) if (o === 0) zeroOverlapBursts++;
-    if (zeroOverlapBursts > generalDegree) continue;
-
     const moves = entry.captures.map((c, i) => c + entry.overlaps[i]);
     // filter: all required path lengths must exist
     if (!moves.every((m, i) => i === 0 || entriesByLen.has(m))) continue;
@@ -581,12 +571,7 @@ function solveV3(
     const prevFeasProfile =
       cfg.profile && stats.feasProfile ? { ...stats.feasProfile } : null;
 
-    const groups = buildTimingGroups(
-      captures,
-      timingConfig,
-      entriesByLen,
-      neighborInfos.length,
-    );
+    const groups = buildTimingGroups(captures, timingConfig, entriesByLen);
     const totalTimingEntries = cfg.profile
       ? groups.reduce((s, g) => s + g.entries.length, 0)
       : 0;

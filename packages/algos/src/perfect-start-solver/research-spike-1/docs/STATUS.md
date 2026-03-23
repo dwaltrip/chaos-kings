@@ -18,7 +18,7 @@ Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for cur
 
 ## Completed threads
 
-- **Degree-based timing entry filter (from thread 5)** — see `findings/3.22-6-degree-filter.md`. Filter entries where zero-overlap bursts > general's degree. Kills 60-90% of entries but strictly weaker than in-search N check — no perf impact. Kept with TODO.
+- **Thread 5 — capture-target pre-check** — see `findings/thread-5-wrap-up.md`. Five approaches tried or analyzed across sessions 3.22-4 through 3.22-6. All dead. Infeasibility is path-level spatial incompatibility, not detectable by capacity-based pre-checks. Degree filter removed from solver.
 - **Deep phase analysis (threads 1 + 10, enhanced)** — see `findings/3.22-3-deep-phase-analysis.md` (note: absolute times are pre-bugfix). Three regimes: infeasible-target waste (thread 5 lever), deep recursive search (thread 10 lever), path gen (thread 3/13 lever). Timing entries explode combinatorially (678/grp at cap=24 → 3,858 at cap=23 → 8,401 at cap=22) — board-independent, config-determined. Board size is not the driver.
 - **Phase timing + scan waste (threads 1 + 10, initial)** — see `sessions/3.22-2-phase-timing-and-scan-waste.md`. Built profiling infrastructure. Preliminary data identified infeasible-target waste and candidate scan waste.
 - **BigInt vs Uint32Array (thread 4)** — see `sessions/3.22-2-bigint-vs-uint32array.md`. No board-size cliff. U32 is 1.7-1.8x faster on hot-path at 625-900 bits. BigInt wins on union.
@@ -60,6 +60,8 @@ Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for cur
 
 ## What's next
 
-TBD. Thread 5 (capture-target pre-check) seemed like the highest-leverage optimization, but the path forward is unclear. Naive approaches are dead (reachable tile count, per-neighbor capacity), and the degree-based filter turned out to be strictly weaker than existing checks. Need a different angle for skipping infeasible targets cheaply.
+Thread 5 (capture-target pre-check) is spent — see `findings/thread-5-wrap-up.md`. Five approaches were tried or analyzed; none can skip infeasible targets. The fundamental issue: infeasibility on these boards is path-level spatial incompatibility (no compatible paths exist within timing+geometry constraints), not capacity (not enough tiles). Every pre-check tests capacity in some form, and capacity is never the binding constraint.
+
+The degree filter from session 3.22-6 has been removed from the solver (strictly weaker than the in-search N check, slight perf regression on some boards).
 
 See `ROADMAP.md` for the full thread catalog (13 threads, sequentially numbered).

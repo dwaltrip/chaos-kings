@@ -175,22 +175,15 @@ Benchmark core bitmask operations (overlap check, popcount, union, AND-NOT) with
 
 ---
 
-### 5. Capture-Target Pre-Check
+### 5. Capture-Target Pre-Check — SPENT
 
-**Pipeline phase:** Target selection. **Work type:** Algorithmic.
+**Pipeline phase:** Target selection. **Work type:** Algorithmic. **Status:** Spent — see `findings/thread-5-wrap-up.md`.
 
-Skip provably infeasible capture targets before entering the full search loop. The waste is identified: tight-corner boards exhaust targets 24 and 23 before solving at 22.
+Skip provably infeasible capture targets before entering the full search loop. 7 of 12 slow boards spend 66-99.6% of time on infeasible targets.
 
-**Approaches (cheap to expensive):**
-- Total reachable blanks < target → skip (cheapest, may not fire on 25x25 with 500+ tiles)
-- Run root-level feasibility on all timing entries for this target — if every entry fails at depth 0 (coveredMask = general only), skip
-- Per-neighbor capacity check at the target level — can the available neighbors collectively support this many captures?
+Five approaches were tried or analyzed across sessions 3.22-4 through 3.22-6: reachable tile count, per-neighbor capacity union, degree-based timing entry filter, root-level feasibility sweep, and improved distance approximation (which turned out to be a correctness bug). None can skip infeasible targets on degree-2 boards.
 
-**Effort:** Low for the cheap version (a few lines). Moderate for the root-feasibility version.
-
-**Assessment:** One of the most concrete, grounded optimizations available. The waste is identified, the mechanism is understood. Open-ended in approach — there are many angles. Best approach: 1-2 quick spikes early on (especially after thread 1 quantifies the waste), revisit with more sophistication later if needed.
-
-**Dependency:** Thread 1 (phase timing) tells us the magnitude of the waste.
+**Why it's spent:** Infeasibility on these boards is path-level spatial incompatibility — no compatible paths exist within timing+geometry constraints — not a capacity shortage. Every pre-check tests capacity in some form, and capacity is never the binding constraint. Detecting path-level incompatibility requires something close to actually doing the search.
 
 ---
 
@@ -206,7 +199,7 @@ Lighter-weight version of direction-aware feasibility (survey 3.1) that skips th
 
 **Effort:** Low — uses existing infrastructure, quick to prototype.
 
-**Assessment:** Quick spike candidate. May not fire often on current boards (similar concern as L3), but cheap to test and stacks with thread 5.
+**Assessment:** Quick spike candidate. May not fire often on current boards (similar concern as L3), but cheap to test. Originally positioned as stacking with thread 5 (target-level pre-check), but thread 5 is spent — the per-neighbor capacity angle faces the same fundamental limitation (infeasibility is path-level, not capacity-level). Thread 6 could still have independent value as an in-search pruning enhancement.
 
 ---
 
@@ -415,6 +408,7 @@ The current test suite has 29 simple boards (7x7-13x13) and 6 realistic boards (
 
 | Thread | Result | Key finding |
 |--------|--------|-------------|
+| **Thread 5 — Capture-target pre-check** | Spent | Five approaches tried/analyzed (sessions 3.22-4 through 3.22-6). Infeasibility is path-level spatial incompatibility, not capacity — no pre-check can detect it. Degree filter removed from solver. See `findings/thread-5-wrap-up.md`. |
 | **Path mask redundancy (1.3)** | Neutral | 1.2x compression — masks nearly unique. Non-backtracking paths on grids are ~1:1 with bitmasks. Killed the dedup line of work but produced useful neighbor distribution data. |
 | **Group ordering** | Negative | Fewest-candidates-first 3-8x worse. Longest-first is already good — long burst-1 front-loads coverage. Other orderings (interleaving, board-structure-informed) are conceivable but nothing concrete; likely to be subsumed by improvements from other threads. |
 | **Symmetry breaking** | Low priority | Thorough analysis. BFS territory comparison under reflection is the correct detection approach. But narrow applicability on realistic boards with random mountains. Most interesting follow-up: BFS territory comparison could be a cheap pre-check on boards where it does fire (see `findings/3.21-symmetry-breaking-analysis.md`). Solution-level symmetry (same-length bursts through different neighbors) is a narrow special case — see "Additional Ideas" section. |
