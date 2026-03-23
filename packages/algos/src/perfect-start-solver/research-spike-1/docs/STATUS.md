@@ -1,13 +1,16 @@
 # Status
 
-Last updated: 2026-03-23 (session 3.23-3)
+Last updated: 2026-03-23 (session 3.23-4)
 
 ## Current state
 
-**Path prefix structure — first experiments done, core predictions validated.** Prefix pools are small (≤96 at depth 4 even on degree-4 boards), fan-out narrowing is steep (~20-30x reduction per prefix), and most prefixes "open up" by depth 3-4. See `sessions/3.23-3-prefix-enumeration-results.md` for data and key insights, `sessions/3.23-3-next-directions.md` for ideas and next steps.
+**Prefix set enumeration done — per-pattern counts are moderate, most sets are geometrically self-defeating.** For a given overlap pattern, hard boards have median ~20-24 prefix sets at N=5, D=4. But on constrained boards, 78-100% of these have at least one dead tip (free=0 when accounting for all tiles in the set). The "real" count of viable sets is much smaller. Important caveat: short bursts fully within the prefix don't need free tips — dead-tip analysis needs burst-length awareness. See `sessions/3.23-4-prefix-set-initial-exploration.md` for full data.
+
+Prior session (3.23-3) validated the theory's core predictions: prefix pools are small (≤96 at D=4), fan-out narrowing is steep (~20-30x), most prefixes "open up" by D=3-4. See `sessions/3.23-3-prefix-enumeration-results.md`.
 
 Theory doc: `PREFIX-STRUCTURE-THEORY.md`.
-Reusable prefix analysis utilities in `research-spike-1/prefix-utils.ts`. 
+Reusable prefix utilities in `research-spike-1/prefix-utils.ts` (enumeration, prefix sets, visualization).
+CLI: `tools/show-prefix-sets.ts`. 
 
 Thread 7 (graph topology) initial spike is complete. Built reusable graph topology infrastructure (`utils/board-graph.ts`) and ran two experiments across all 46 boards. Key result: **slow boards split into two distinct populations** — structurally constrained (high pocket density near general) and structurally open (topology-free, difficulty is purely combinatorial from degree-2). These likely need different optimization strategies. See `sessions/3.23-1-graph-topology-analysis.md` for full data.
 
@@ -64,8 +67,11 @@ Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for cur
 
 ## What's next
 
-**Prefix set enumeration** — the central validation experiment. For a given burst configuration (burst count + overlap assignments from timing entries), how many mutually compatible prefix sets exist? The theory conjectures tens to low hundreds. Indirect evidence is encouraging (small pools + tight constraints), but this needs direct measurement. See `sessions/3.23-3-next-directions.md` for detailed discussion.
+Several open analyses building on the prefix set enumeration results. See `sessions/3.23-4-prefix-set-initial-exploration.md` for the full list.
 
-Also open: characterizing the prefix-suffix boundary (suffix zone capacity, per-prefix expansion profiles). Lower priority than prefix sets but quick to implement.
+- **Burst-length-aware dead-tip analysis** — short bursts fully within the prefix don't need free tips. Refining the dead-tip filter with burst-length awareness will give tighter viability counts.
+- **Prefix/suffix boundary** — per-prefix expansion profiles from tips. Does free≥2 actually open up or hit walls immediately?
+- **Unordered set analysis** — how much of the set count is permutation noise vs real geometric diversity?
+- **Candidate scoping** — for a viable prefix set + timing entry, how many full-length paths remain per burst?
 
 See `ROADMAP.md` for the full thread catalog.

@@ -22,7 +22,7 @@ function analyzeBoard(tb: TestBoard, patternsByN: PatternsByLen) {
   // For each N=4,5,6, enumerate all sets and check for dead tips
   console.log('## ' + tb.name);
 
-  for (const N of [4, 5]) {
+  for (const N of [4, 5, 6]) {
     const patterns = patternsByN.get(N) ?? [];
     let totalSets = 0;
     let deadTipCounts = 0;
