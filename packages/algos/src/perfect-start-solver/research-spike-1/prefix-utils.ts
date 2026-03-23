@@ -309,11 +309,13 @@ function tileXY(board: FlatBoard, tile: number): string {
 // Format a prefix set as a board string with burst labels.
 // Each burst's tiles are labeled 1-9/A-Z. Tiles claimed by multiple bursts
 // are marked with '*'. General is 'G'. Mountains '#'. Walkable '.'.
+// If crop is set, only show the sub-grid within crop tiles of the general.
 function formatPrefixSetBoard(
   board: FlatBoard,
   generalPos: number,
   prefixSet: PrefixSetResult,
   overlaps: number[],
+  crop?: number,
 ): string {
   // Build tile → burst owner map. Track tiles claimed by multiple bursts.
   const tileOwner = new Map<number, number>(); // tile → first burst index
@@ -334,10 +336,18 @@ function formatPrefixSetBoard(
     return String.fromCharCode(65 + bi - 9); // A, B, C...
   };
 
+  const gx = generalPos % board.width;
+  const gy = Math.floor(generalPos / board.width);
+
+  const xMin = crop != null ? Math.max(0, gx - crop) : 0;
+  const xMax = crop != null ? Math.min(board.width - 1, gx + crop) : board.width - 1;
+  const yMin = crop != null ? Math.max(0, gy - crop) : 0;
+  const yMax = crop != null ? Math.min(board.height - 1, gy + crop) : board.height - 1;
+
   const rows: string[] = [];
-  for (let y = 0; y < board.height; y++) {
+  for (let y = yMin; y <= yMax; y++) {
     const cells: string[] = [];
-    for (let x = 0; x < board.width; x++) {
+    for (let x = xMin; x <= xMax; x++) {
       const idx = y * board.width + x;
       if (idx === generalPos) {
         cells.push('G');
@@ -357,11 +367,13 @@ function formatPrefixSetBoard(
 }
 
 // Format a prefix set as path notation + board visualization.
+// If crop is set, only show the sub-grid within crop tiles of the general.
 function formatPrefixSet(
   board: FlatBoard,
   generalPos: number,
   prefixSet: PrefixSetResult,
   overlaps: number[],
+  crop?: number,
 ): string {
   const lines: string[] = [];
 
@@ -372,7 +384,7 @@ function formatPrefixSet(
   }
 
   lines.push('');
-  lines.push(formatPrefixSetBoard(board, generalPos, prefixSet, overlaps));
+  lines.push(formatPrefixSetBoard(board, generalPos, prefixSet, overlaps, crop));
 
   return lines.join('\n');
 }
