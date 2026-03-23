@@ -46,7 +46,7 @@ const DEFAULT_CONFIG: SolverConfig = {
   maxBurst: 12,
   maxBursts: 6,
   maxCaptures: 24,
-  minCaptures: 15,
+  minCaptures: 16,
   maxOverlapPerBurst: 3,
   profile: false,
 };

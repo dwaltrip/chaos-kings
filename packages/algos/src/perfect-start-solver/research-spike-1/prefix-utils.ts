@@ -146,6 +146,91 @@ function computeTipStats(
   };
 }
 
+// ── Prefix set enumeration ──
+
+// A prefix set is an ordered tuple of prefixes (one per burst slot) that
+// satisfies the overlap constraints defined by the overlap pattern.
+// Construction is sequential: burst i's prefix is checked against the
+// union of all prior bursts' prefix tiles.
+
+interface PrefixSetResult {
+  // Tile arrays for each prefix in the set, in burst order.
+  prefixTiles: number[][];
+  coveredMask: bigint;
+}
+
+interface PrefixSetEnumResult {
+  count: number;
+  sets: PrefixSetResult[];
+  capped: boolean; // true if enumeration stopped at maxSets
+}
+
+const DEFAULT_MAX_SETS = 10_000;
+
+// Enumerate all compatible prefix sets for a given overlap pattern.
+// Each burst's prefix depth is min(maxPrefixDepth, burst needs at least
+// overlap[i]+1 tiles to have a fresh divergence tile after the overlap).
+// In practice overlap <= maxOverlapPerBurst (3) < maxPrefixDepth (4),
+// so effective depth = maxPrefixDepth for all bursts.
+function enumeratePrefixSets(
+  prefixesByDepth: Map<number, PathEntry[]>,
+  overlaps: number[],
+  maxPrefixDepth: number,
+  maxSets: number = DEFAULT_MAX_SETS,
+): PrefixSetEnumResult {
+  const numBursts = overlaps.length;
+  const sets: PrefixSetResult[] = [];
+  let capped = false;
+
+  function search(burstIdx: number, coveredMask: bigint, assigned: number[][]): void {
+    if (capped) return;
+    if (burstIdx === numBursts) {
+      sets.push({ prefixTiles: [...assigned], coveredMask });
+      if (sets.length >= maxSets) capped = true;
+      return;
+    }
+
+    const overlap = overlaps[burstIdx];
+    // Prefix must be long enough to include the overlap plus at least one
+    // fresh tile. But depth can't exceed maxPrefixDepth.
+    const depth = Math.min(maxPrefixDepth, Math.max(overlap + 1, 1));
+    const candidates = prefixesByDepth.get(depth) ?? [];
+
+    for (const cand of candidates) {
+      if (capped) return;
+
+      // Check compatibility: first `overlap` tiles must be in coveredMask,
+      // remaining tiles must NOT be in coveredMask.
+      if (!prefixMatchesOverlap(cand.tiles, coveredMask, overlap)) continue;
+
+      assigned.push(cand.tiles);
+      search(burstIdx + 1, coveredMask | cand.mask, assigned);
+      assigned.pop();
+    }
+  }
+
+  search(0, 0n, []);
+  return { count: sets.length, sets, capped };
+}
+
+// Check that a prefix has exactly `overlap` contiguous leading tiles in
+// coveredMask, and all remaining tiles are NOT in coveredMask.
+function prefixMatchesOverlap(
+  tiles: number[],
+  coveredMask: bigint,
+  overlap: number,
+): boolean {
+  for (let i = 0; i < tiles.length; i++) {
+    const inCovered = (coveredMask & (1n << BigInt(tiles[i]))) !== 0n;
+    if (i < overlap) {
+      if (!inCovered) return false;
+    } else {
+      if (inCovered) return false;
+    }
+  }
+  return true;
+}
+
 // ── Per-neighbor grouping ──
 
 interface NeighborPrefixCounts {
@@ -168,12 +253,19 @@ function groupPrefixesByNeighbor(
   });
 }
 
-export type { FanoutStats, NeighborPrefixCounts, TipStats };
+export type {
+  FanoutStats,
+  NeighborPrefixCounts,
+  PrefixSetEnumResult,
+  PrefixSetResult,
+  TipStats,
+};
 export {
   buildFanoutMap,
   computeFanoutStats,
   computeTipStats,
   enumeratePrefixes,
+  enumeratePrefixSets,
   groupPrefixesByNeighbor,
   prefixKey,
 };
