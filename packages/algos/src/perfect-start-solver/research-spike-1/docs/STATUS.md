@@ -1,22 +1,25 @@
 # Status
 
-Last updated: 2026-03-22 (session 3.22-5)
+Last updated: 2026-03-22 (session 3.22-6)
 
 ## Current state
 
-Deep phase analysis complete — three performance regimes identified across 26 boards (including 9 new 30x30). Board geometry near the general drives difficulty, not board size. `slowSearch()` (13 boards) and `slowPathgen()` (3 boards) defined as optimization targets in `test-boards.ts`.
+Deep phase analysis complete — three performance regimes identified across 45 boards. Board geometry near the general drives difficulty, not board size. 12 slow boards are the optimization targets. See `sessions/3.22-6-profiling-overview-post-bugfix.md` for the current baseline numbers (post-bugfix).
 
-The solver handles most boards in <100ms. Hard boards fall into three regimes: infeasible-target waste (timing entry explosion), deep recursive search (~90% candidate waste), and path generation cost. See `findings/3.22-3-deep-phase-analysis.md` for the full breakdown.
+The solver handles most boards in <100ms. Hard boards fall into three regimes: infeasible-target waste (timing entry explosion), deep recursive search (~90% candidate waste), and path generation cost. See `findings/3.22-3-deep-phase-analysis.md` for the structural analysis (note: absolute times in that doc are pre-bugfix).
 
-**Session 3.22-5 fixed a bug in aggregate feasibility pruning.** `blankTilesWithinDist` used a heuristic (`beyondTiles = dist - maxDist`) for distances beyond the precomputed BFS range (`FEASIBILITY_MAX_DIST=4`). This massively underestimated available tiles on open boards (12 vs 36 actual at dist 8), causing `entryIsFeasibleAggregate` to falsely prune all cap=24 entries on pocket-2-11x11. Fix: precompute BFS masks to `maxBurst + maxOverlapPerBurst` (15) so exact lookups are always used. pocket-2-11x11 now correctly finds 24 captures. No regressions on other boards.
+**Session 3.22-6** established post-bugfix profiling baseline and spiked degree-based timing entry filtering (Thread 5). The filter kills 60-90% of entries but is strictly weaker than the in-search N feasibility check — no meaningful perf impact. See `findings/3.22-6-degree-filter.md`.
 
-**Session 3.22-4 investigated pocket-11x11 infeasibility.** Exhaustive search over hand-designed burst patterns confirmed 24 captures is genuinely timing-infeasible on pocket-11x11 (closest: 55 ticks, 5 over budget). Naive pre-check approaches (#1 reachable tile count, #2 per-neighbor capacity) are dead — the binding constraint is timing, not tile availability. Thread 5 needs smarter approaches.
+**Session 3.22-5 fixed a bug in aggregate feasibility pruning.** `blankTilesWithinDist` heuristic massively underestimated available tiles, falsely pruning valid entries. pocket-2-11x11 now correctly finds 24 captures. Several boards got 2-4x slower as false prunes no longer mask infeasible-target waste. See `sessions/3.22-5-LOG.md`.
+
+**Session 3.22-4** attempted to prove that 24 captures is timing-infeasible on pocket-11x11, but the results are affected by the solver bug (fixed in 3.22-5). Naive pre-check approaches (#1 reachable tile count, #2 per-neighbor capacity) are dead — the binding constraint is timing, not tile availability.
 
 Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for current direction and thread catalog.
 
 ## Completed threads
 
-- **Deep phase analysis (threads 1 + 10, enhanced)** — see `findings/3.22-3-deep-phase-analysis.md`. Three regimes: infeasible-target waste (thread 5 lever), deep recursive search (thread 10 lever), path gen (thread 3/13 lever). Timing entries explode combinatorially (678/grp at cap=24 → 3,858 at cap=23 → 8,401 at cap=22) — board-independent, config-determined. Board size is not the driver: corner-9x9 takes 5.8s while 30x30 boards solve in 8-55ms.
+- **Degree-based timing entry filter (from thread 5)** — see `findings/3.22-6-degree-filter.md`. Filter entries where zero-overlap bursts > general's degree. Kills 60-90% of entries but strictly weaker than in-search N check — no perf impact. Kept with TODO.
+- **Deep phase analysis (threads 1 + 10, enhanced)** — see `findings/3.22-3-deep-phase-analysis.md` (note: absolute times are pre-bugfix). Three regimes: infeasible-target waste (thread 5 lever), deep recursive search (thread 10 lever), path gen (thread 3/13 lever). Timing entries explode combinatorially (678/grp at cap=24 → 3,858 at cap=23 → 8,401 at cap=22) — board-independent, config-determined. Board size is not the driver.
 - **Phase timing + scan waste (threads 1 + 10, initial)** — see `sessions/3.22-2-phase-timing-and-scan-waste.md`. Built profiling infrastructure. Preliminary data identified infeasible-target waste and candidate scan waste.
 - **BigInt vs Uint32Array (thread 4)** — see `sessions/3.22-2-bigint-vs-uint32array.md`. No board-size cliff. U32 is 1.7-1.8x faster on hot-path at 625-900 bits. BigInt wins on union.
 - **Symmetry breaking analysis** — see `findings/3.21-symmetry-breaking-analysis.md`. BFS territory comparison under reflection is the correct approach, but local symmetry is rare on realistic boards. Deprioritized.
@@ -33,7 +36,7 @@ Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for cur
 - **Three distinct performance regimes** — infeasible-target waste, deep recursive search, path generation. Different boards need different optimizations. See finding doc for classification of all 13 slowSearch boards.
 - **Board geometry near the general drives difficulty, not board size** — corner-9x9 (81 tiles) = 5.8s; fairly-open-30x30 (900 tiles) = 55ms.
 - **Timing entry counts are board-independent** — same config → same entries/group at each capture target. 678/grp at cap=24, 3,858 at cap=23, 8,401 at cap=22. The board only determines which targets are feasible.
-- **Infeasible-target waste is the biggest single time sink** — 7 of 13 slowSearch boards spend 68-99% of time on infeasible targets. pocket-11x11 spends 99.2% of time on infeasible cap=24, then solves at cap=23 in 0.3ms.
+- **Infeasible-target waste is the biggest single time sink** — 6 of 12 slow boards spend 66-99% of time on infeasible targets (post-bugfix numbers). pocket-11x11 spends 99.6% on infeasible cap=24.
 - **Aggregate feasibility was over-pruning** — session 3.22-5 found `entryIsFeasibleAggregate` falsely pruned valid entries on pocket-2-11x11 due to a distance heuristic bug (now fixed). The session 3.22-4 experiment that "confirmed" pocket-11x11 infeasibility also had a bug (ascending sort on timing check). The fixed solver is now the authoritative source — pocket-11x11 still gets 23 after the fix, but via exhaustive solver search, not the flawed experiment.
 - **scattered-pockets-13x13 is NOT tile-count-limited** — has plenty of reachable tiles, geometry just makes them hard to capture within timing constraints. Simple "reachable tiles < target" pre-checks won't work on any current board.
 - **At 24 captures, max total overlap is 9 tiles** (with maxBursts=6, maxOverlapPerBurst=3). All 24-capture entries land at ticks 49-50 — zero timing slack.
@@ -57,6 +60,6 @@ Start with `INTRO.md` for problem/model context. Start with `ROADMAP.md` for cur
 
 ## What's next
 
-Next session: **Thread 5 — capture-target pre-check.** The highest-leverage optimization: 7 of 13 slowSearch boards spend 68-99% of time on infeasible targets. Naive approaches (reachable tile count, per-neighbor capacity union) are dead. Need smarter approaches — perhaps degree-based timing entry filtering, or root-level feasibility probes with better distance approximations. See `sessions/3.22-4-LOG.md` and the handoff doc for context.
+TBD. Thread 5 (capture-target pre-check) seemed like the highest-leverage optimization, but the path forward is unclear. Naive approaches are dead (reachable tile count, per-neighbor capacity), and the degree-based filter turned out to be strictly weaker than existing checks. Need a different angle for skipping infeasible targets cheaply.
 
 See `ROADMAP.md` for the full thread catalog (13 threads, sequentially numbered).

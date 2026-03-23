@@ -78,10 +78,10 @@ for (const testBoard of boards) {
   });
   runs.push({ name: testBoard.name, result });
 
-  printResult(result.solution, result.entriesChecked, result.elapsedMs, board);
+  printResult(result.solution, result.entriesChecked, result.elapsedMs);
   const st = result.stats;
   console.log(
-    `    stats: ${st.searchCalls.toLocaleString()} search calls, ` +
+    `  stats: ${st.searchCalls.toLocaleString()} search calls, ` +
       `${st.candidatesChecked.toLocaleString()} cands checked, ` +
       `${st.feasibilityChecks.toLocaleString()} feas checks, ` +
       `${st.feasibilityPrunes.toLocaleString()} feas prunes, ` +
@@ -106,7 +106,8 @@ for (const testBoard of boards) {
 // Summary table
 if (runs.length > 1) {
   const headers = ['Board', 'Caps', 'Time', 'Entries', 'Search', 'Cands', 'Feas prunes'];
-  const rows = runs.map((r) => {
+  const sorted = [...runs].sort((a, b) => a.result.elapsedMs - b.result.elapsedMs);
+  const rows = sorted.map((r) => {
     const s = r.result.solution;
     const st = r.result.stats;
     return [
@@ -123,40 +124,16 @@ if (runs.length > 1) {
   console.log(formatTable(headers, rows));
 }
 
-function printResult(
-  solution: any,
-  checked: number,
-  elapsedMs: number,
-  board: { width: number },
-) {
+function printResult(solution: any, checked: number, elapsedMs: number) {
   if (!solution) {
     console.log(`  No solution. Checked ${checked} entries in ${elapsedMs.toFixed(0)}ms`);
     return;
   }
 
   const s = solution;
+  const lastTick = s.burstInfos[s.burstInfos.length - 1].endTick;
+  const pattern = s.pattern.join(', ');
   console.log(
-    `  ${s.totalCaptured} captured, ${elapsedMs.toFixed(0)}ms, ${checked} entries`,
+    `  ${s.totalCaptured} captures | ${elapsedMs.toFixed(0)}ms | ${checked.toLocaleString()} entries | pattern: ${pattern} | last move: t=${lastTick}`,
   );
-  console.log(
-    `    Pattern: ${JSON.stringify(s.pattern)}, last move: t=${s.burstInfos[s.burstInfos.length - 1].endTick}`,
-  );
-
-  for (let i = 0; i < s.paths.length; i++) {
-    const p = s.paths[i];
-    const bi = s.burstInfos[i];
-    const spec = s.burstSpecs[i];
-    const coords = p.tiles.map((t: number) => {
-      const x = t % board.width;
-      const y = Math.floor(t / board.width);
-      return `(${x},${y})`;
-    });
-    const overlapStr =
-      spec.moves > spec.captures
-        ? ` (${spec.captures}cap+${spec.moves - spec.captures}ovlp)`
-        : '';
-    console.log(
-      `    b${i + 1} (${spec.moves}mv) t=${bi.startTick}-${bi.endTick}${overlapStr}: ${coords.join(' ')}`,
-    );
-  }
 }
