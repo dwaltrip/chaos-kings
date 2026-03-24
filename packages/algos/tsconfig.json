@@ -8,7 +8,8 @@
     "paths": {
       "@/*": ["src/*"],
       "@utils/*": ["../../packages/utils/*"],
-      "@core/*": ["../../packages/core/src/*"]
+      "@core/*": ["../../packages/core/src/*"],
+      "@core-next/*": ["src/core-next/*"]
     },
     "strict": true,
     "esModuleInterop": true,

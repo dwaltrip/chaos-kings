@@ -3,6 +3,7 @@ module.exports = {
   testEnvironment: 'node',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@core-next/(.*)$': '<rootDir>/src/core-next/$1',
     '^@core/(.*)$': '<rootDir>/../../packages/core/src/$1',
     '^@utils/(.*)$': '<rootDir>/../../packages/utils/$1',
   },

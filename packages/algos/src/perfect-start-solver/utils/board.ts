@@ -1,5 +1,5 @@
-import { Board, type FlatBoard } from '@/core-next/flat-board';
-import { fromBoardState } from '@/core-next/convert';
+import { Board, type FlatBoard } from '@core-next/flat-board';
+import { fromBoardState } from '@core-next/convert';
 
 import { makeBoard } from '../test-boards';
 
