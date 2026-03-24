@@ -12,6 +12,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '@utils': path.resolve(__dirname, '../../packages/utils'),
       '@core': path.resolve(__dirname, '../../packages/core/src'),
+      '@core-next': path.resolve(__dirname, '../../packages/algos/src/core-next'),
       '@algos': path.resolve(__dirname, '../../packages/algos/src'),
     },
   },

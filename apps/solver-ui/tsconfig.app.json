@@ -22,6 +22,7 @@
       "@/*": ["src/*"],
       "@utils/*": ["../../packages/utils/*"],
       "@core/*": ["../../packages/core/src/*"],
+      "@core-next/*": ["../../packages/algos/src/core-next/*"],
       "@algos/*": ["../../packages/algos/src/*"]
     },
 
