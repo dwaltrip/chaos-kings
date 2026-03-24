@@ -57,8 +57,10 @@ function expandOverlapCombos(
   }
 
   const maxOvl = burstIdx === 0 ? 0 : config.maxOverlapPerBurst;
+  // On manhattan grid, can only have 4 paths out of one sqquare with 0 overlap
+  const minOvl = overlaps.filter((x) => x === 0).length < 4 ? 0 : 1;
 
-  for (let ovl = 0; ovl <= maxOvl; ovl++) {
+  for (let ovl = minOvl; ovl <= maxOvl; ovl++) {
     const captures = pattern[burstIdx];
     const moves = captures + ovl;
 
