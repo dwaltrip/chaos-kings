@@ -89,7 +89,14 @@ function analyzeBoard(tb: TestBoard, groupsByN: GroupsByN) {
     let deadBurstAware = 0;
 
     for (const group of groups) {
-      const result = enumeratePrefixSets(prefixesByDepth, group.overlaps, D);
+      const result = enumeratePrefixSets(
+        prefixesByDepth,
+        group.overlaps,
+        D,
+        10_000,
+        // true,
+        false,
+      );
 
       for (const s of result.sets) {
         // Precompute which bursts have dead tips (once per set).

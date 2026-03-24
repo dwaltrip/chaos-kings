@@ -146,6 +146,8 @@ function analyzeBoard(
         overlaps,
         D,
         MAX_SETS_PER_PATTERN,
+        // true,
+        false,
       );
       results.push({ overlaps, count, capped });
     }
@@ -258,19 +260,20 @@ const outputDir = path.join(path.dirname(new URL(import.meta.url).pathname), 'ou
 for (const D of depths) {
   console.error(`\n=== Depth ${D} ===`);
   const allResults: BoardDepthResult[] = [];
-  const allDetailed: DetailedJSON[] = [];
+  // const allDetailed: DetailedJSON[] = [];
 
   for (const tb of boards) {
     console.error(`  ${tb.name}...`);
     const result = analyzeBoard(tb, D, patternsByN);
     allResults.push(result);
-    allDetailed.push(buildDetailedJSON(result));
+    // allDetailed.push(buildDetailedJSON(result));
   }
 
   // Write detailed JSON
-  const jsonPath = path.join(outputDir, `3.23-4-prefix-set-enum-D${D}.json`);
-  fs.writeFileSync(jsonPath, JSON.stringify(allDetailed, null, 2) + '\n');
-  console.error(`  Detailed output → ${path.basename(jsonPath)}`);
+  // const jsonPath = path.join(outputDir, `3.23-4-prefix-set-enum-D${D}.json`);
+  // const jsonPath = path.join(outputDir, `3.23-5-prefix-set-FD-enum-D${D}.json`);
+  // fs.writeFileSync(jsonPath, JSON.stringify(allDetailed, null, 2) + '\n');
+  // console.error(`  Detailed output → ${path.basename(jsonPath)}`);
 
   // Print summary
   console.log(`\n# Prefix Set Enumeration — D=${D}\n`);

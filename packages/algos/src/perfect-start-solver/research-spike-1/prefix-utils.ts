@@ -170,15 +170,15 @@ interface PrefixSetEnumResult {
 const DEFAULT_MAX_SETS = 10_000;
 
 // Enumerate all compatible prefix sets for a given overlap pattern.
-// Each burst's prefix depth is min(maxPrefixDepth, burst needs at least
-// overlap[i]+1 tiles to have a fresh divergence tile after the overlap).
-// In practice overlap <= maxOverlapPerBurst (3) < maxPrefixDepth (4),
-// so effective depth = maxPrefixDepth for all bursts.
+// Each burst's prefix depth is min(maxPrefixDepth, overlap[i]+1) by default,
+// giving minimal depth needed for the overlap check. Set useFullDepth=true
+// to use maxPrefixDepth for all bursts (stronger directional commitment).
 function enumeratePrefixSets(
   prefixesByDepth: Map<number, PathEntry[]>,
   overlaps: number[],
   maxPrefixDepth: number,
   maxSets: number = DEFAULT_MAX_SETS,
+  useFullDepth: boolean = false,
 ): PrefixSetEnumResult {
   const numBursts = overlaps.length;
   const sets: PrefixSetResult[] = [];
@@ -193,9 +193,21 @@ function enumeratePrefixSets(
     }
 
     const overlap = overlaps[burstIdx];
-    // Prefix must be long enough to include the overlap plus at least one
-    // fresh tile. But depth can't exceed maxPrefixDepth.
-    const depth = Math.min(maxPrefixDepth, Math.max(overlap + 1, 1));
+    // Minimum depth: overlap tiles + 1 fresh tile (overlap+1). This is the
+    // smallest prefix that can express the overlap constraint.
+    // Full depth: maxPrefixDepth for all bursts. More directional info, but
+    // many more sets to enumerate (especially for burst 0, which goes from
+    // ~4 neighbors to ~24 depth-4 prefixes on degree-2 boards).
+    //
+    // It's not yet clear which is more useful. Minimum depth keeps set counts
+    // small but leaves zero-overlap bursts almost unconstrained (depth=1).
+    // Full depth gives every burst a real directional commitment but inflates
+    // set counts. The right answer may depend on how we use the sets
+    // downstream (e.g., candidate scoping cares about per-burst constraint
+    // strength, while set-level filtering just needs compatibility).
+    const depth = useFullDepth
+      ? maxPrefixDepth
+      : Math.min(maxPrefixDepth, Math.max(overlap + 1, 1));
     const candidates = prefixesByDepth.get(depth) ?? [];
 
     for (const cand of candidates) {
