@@ -1,11 +1,28 @@
+import { invariant } from '@utils/assertions/invariant';
+
 function numStr(val: number, pad?: number) {
   return String(val).padStart(pad || 0);
 }
 
-function tickForGeneralArmy(army: number): number {
-  // works for starting conditions also: army=1 at t=0
-  // produce +1 eery even tick: t=2 -> army=2, t=4 -> army=3, etc
-  return (army - 1) * 2;
+function tickForInitialGeneralArmy(targetArmy: number): number {
+  return tickForGeneralArmy(0, 1, targetArmy);
 }
 
-export { numStr, tickForGeneralArmy };
+function tickForGeneralArmy(
+  currentTick: number,
+  currentArmy: number,
+  targetArmy: number,
+): number {
+  invariant(currentArmy <= targetArmy, 'currentArmy must be LTE to targetArmy');
+  if (currentArmy === targetArmy) {
+    return currentTick;
+  }
+  if (currentTick % 2 !== 0) {
+    currentTick += 1;
+    currentArmy += 1;
+  }
+  const armyNeeded = targetArmy - currentArmy;
+  return currentTick + armyNeeded * 2;
+}
+
+export { numStr, tickForInitialGeneralArmy, tickForGeneralArmy };

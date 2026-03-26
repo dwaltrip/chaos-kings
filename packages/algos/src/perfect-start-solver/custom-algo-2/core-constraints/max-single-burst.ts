@@ -1,10 +1,10 @@
 import { MAX_TICK } from './constants';
-import { numStr, tickForGeneralArmy } from './helpers';
+import { numStr, tickForInitialGeneralArmy } from './helpers';
 
 function maxSingleBurst(verbose: boolean = false) {
   // Leave 1 army behind -> size + 1
   // Each move takes 1 tick. We are doing `size` moves -> add `size` ticks.
-  const burstEndTick = (size: number) => tickForGeneralArmy(size + 1) + size;
+  const burstEndTick = (size: number) => tickForInitialGeneralArmy(size + 1) + size;
   let bestSize = -1;
   let bestEndTick = -1;
 
