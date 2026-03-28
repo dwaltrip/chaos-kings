@@ -4,19 +4,22 @@
 // that you can move to if you want.
 
 import { invariant } from '@utils/assertions/invariant';
-import { tickForGeneralArmy } from './helpers';
+import { numStr, tickForGeneralArmy } from './helpers';
 import { MAX_TICK } from './constants';
 import { maxSingleBurst } from './max-single-burst';
 
 interface BurstInfo {
   size: number;
-  startTick: number;
-  endTick: number;
+  firstMoveTick: number;
+}
+
+function lastMoveTick(burst: BurstInfo): number {
+  return burst.firstMoveTick + burst.size - 1;
 }
 
 type ReadOnlyBurstInfo = Readonly<BurstInfo>;
 
-const NULL_BURST_INFO: ReadOnlyBurstInfo = { size: 0, startTick: -1, endTick: -1 };
+const NULL_BURST_INFO: ReadOnlyBurstInfo = { size: 0, firstMoveTick: -1 };
 
 type BurstChain = BurstInfo[];
 
@@ -30,26 +33,40 @@ interface AbstractBursts {
   bursts: BurstChain;
 }
 
-function makeBurst(startTick: number, size: number): BurstInfo {
-  return { startTick, size, endTick: startTick + size };
+function makeBurst(firstMoveTick: number, size: number): BurstInfo {
+  return { firstMoveTick, size };
 }
 
 // start tick to end tick
 function countProductionTicks(start: number, end: number): number {
-  const diff = end - start;
+  // start: INCLUSIVE
+  //
+  const diff = end - start + 1;
   return start % 2 === 0 ? Math.floor(diff / 2) : Math.ceil(diff / 2);
 }
 
+function isProdTick(tick: number): boolean {
+  return tick % 2 == 0;
+}
+
+// This returns the `state` at the END of the burst
+// `returnValue.tick` = the tick of of the last move
 function doBurst({ tick, generalArmy }: AbstractGameState): AbstractGameState {
   const burst = generalArmy - 1;
-  const prodTicks = countProductionTicks(tick, tick + burst);
-  return { tick: tick + burst, generalArmy: 1 + prodTicks };
+  invariant(burst > 0, 'burst size must be larger than 0');
+  const prodTicks = countProductionTicks(tick + 1, tick + burst);
+  const res = { tick: tick + burst, generalArmy: 1 + prodTicks };
+  console.log(
+    `  [do-burst] t0=${tick} -> t1=${res.tick} | g0=${generalArmy} - g1=${res.generalArmy}`,
+  );
+  return res;
 }
 
 function waitForArmy(
   { tick, generalArmy }: AbstractGameState,
   target: number,
 ): AbstractGameState {
+  console.log(`  [waitForArmy] tick=${tick}, gen=${generalArmy}, target=${target}`);
   if (generalArmy === target) {
     return { tick, generalArmy };
   }
@@ -57,43 +74,67 @@ function waitForArmy(
   return { tick: endTick, generalArmy: target };
 }
 
-function calcSpareTicks(tick: number, army: number) {
+function calcSpareTicks(possibleMoveTick: number, army: number) {
   const excessArmy = army - 1;
-  const ticksRemaining = MAX_TICK - tick;
+  // we add 1, because we are considering moves ON `possibleMoveTick`
+  const ticksRemaining = MAX_TICK - possibleMoveTick + 1;
   return ticksRemaining - excessArmy;
 }
 
-function shouldStartMaxBurst(tick: number, army: number): boolean {
-  const isProdTick = tick % 2 === 0;
-  const spareTicks = calcSpareTicks(tick, army);
-  return spareTicks <= 1 || (spareTicks == 2 && isProdTick);
+function shouldStartMaxBurst(possibleMoveTick: number, army: number): boolean {
+  // possibleMoveTick
+  const isProducing = isProdTick(possibleMoveTick);
+  const spareTicks = calcSpareTicks(possibleMoveTick, army);
+  console.log(
+    `  [shouldStartMaxBurst(${possibleMoveTick}, ${army})]`,
+    `spareTicks: ${spareTicks} | isProducing: ${isProducing}`,
+  );
+  return spareTicks <= 1;
 }
 
+// The `tick` param here is the last tick BEFORE we can make a move.
+// The earliest possible `firstMoveTick` returned by `maxBurstBeforeMaxTick` is `tick + 1`.
+// `generalArmy` is assumed to be value at the END of `tick` (any production on `tick`
+//   is already accounted for).
 function maxBurstBeforeMaxTick({
   tick,
   generalArmy,
 }: AbstractGameState): ReadOnlyBurstInfo {
+  console.group(`--- maxBurstBeforeMaxTick --- tick=${tick}, gen=${generalArmy}`);
+  // start on the next tick
+  // let currTick = tick + 1;
   let currTick = tick;
   let currArmy = generalArmy;
 
-  while (currTick < MAX_TICK && !shouldStartMaxBurst(currTick, currArmy)) {
+  console.log('currTick:', currTick, '| currArmy:', currArmy, '(*)');
+  // while (currTick <= MAX_TICK && !shouldStartMaxBurst(currTick+1, currArmy)) {
+  while (currTick < MAX_TICK && !shouldStartMaxBurst(currTick + 1, currArmy)) {
     currTick++;
-
-    // don't produce on the "starting tick"
-    const isProdTick = currTick % 2 === 0;
-    if (isProdTick && currTick !== tick) {
+    if (isProdTick(currTick)) {
       currArmy++;
     }
+    console.log('currTick:', currTick, '| currArmy:', currArmy);
   }
 
   const burstSize = currArmy - 1;
   if (burstSize > 0) {
-    return {
+    const ret: BurstInfo = {
       size: burstSize,
-      startTick: currTick,
-      endTick: currTick + burstSize,
+      firstMoveTick: currTick + 1,
     };
+    console.log(
+      '[done] size:',
+      ret.size,
+      '| firstMoveTick:',
+      ret.firstMoveTick,
+      '| lastMoveTick:',
+      lastMoveTick(ret),
+    );
+    console.groupEnd();
+    return ret;
   } else {
+    console.log('[done] null');
+    console.groupEnd();
     return NULL_BURST_INFO;
   }
 }
@@ -113,6 +154,15 @@ function iterateAbstractMovePatterns() {
 }
 */
 
+function fmtAbstractBursts(ab: AbstractBursts): string {
+  const { state, bursts } = ab;
+  return [
+    `tick = ${numStr(state.tick, 2)}`,
+    `general = ${numStr(state.generalArmy, 2)}`,
+    `bursts = ${bursts.map((b) => b.size).join(',')}`,
+  ].join(' | ');
+}
+
 function countAbstractMovePatterns(): number {
   const start: AbstractBursts = {
     state: { tick: 0, generalArmy: 1 },
@@ -120,16 +170,26 @@ function countAbstractMovePatterns(): number {
   };
 
   function recurse(ab: AbstractBursts): number {
+    console.log(fmtAbstractBursts(ab));
     if (ab.state.tick > MAX_TICK) {
       return 0;
     }
+    if (ab.state.tick === MAX_TICK) {
+      return 1;
+    }
+
     const { state, bursts } = ab;
+    if (bursts.length > MAX_TICK) {
+      throw new Error('Uhhhh..........');
+    }
     const maxBurst = maxBurstBeforeMaxTick(state);
 
     // TODO: is this the correct base case?
-    if (maxBurst.size === 0) {
+    if (maxBurst.size <= 1) {
+      console.log(`  maxBurst (${maxBurst.size}) <= 1 (base case)`);
       return 1;
     }
+    console.log(`  maxBurst.size = ${maxBurst.size}`);
 
     let count = 0;
     let nextBurst: BurstInfo;
@@ -139,7 +199,11 @@ function countAbstractMovePatterns(): number {
     for (let size = 1; size <= maxBurst.size; size++) {
       nextBurst = makeBurst(state.tick, size);
       nextBursts = bursts.concat(nextBurst);
-      nextState = doBurst(waitForArmy(state, size + 1));
+      nextState = state;
+      if (nextBurst.firstMoveTick > state.tick) {
+        nextState = waitForArmy(nextState, size + 1);
+      }
+      nextState = doBurst(nextState);
       count += recurse({ state: nextState, bursts: nextBursts });
     }
     return count;
@@ -151,8 +215,10 @@ function countAbstractMovePatterns(): number {
 export type { AbstractGameState, BurstInfo };
 export {
   NULL_BURST_INFO,
+  lastMoveTick,
   maxBurstBeforeMaxTick,
   waitForArmy,
   doBurst,
+  shouldStartMaxBurst,
   countAbstractMovePatterns,
 };
