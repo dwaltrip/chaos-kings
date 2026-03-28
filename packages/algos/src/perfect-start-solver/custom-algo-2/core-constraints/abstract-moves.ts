@@ -31,36 +31,24 @@ function countProductionTicks(start: number, end: number): number {
   return start % 2 === 0 ? Math.floor(diff / 2) : Math.ceil(diff / 2);
 }
 
-function doBurst({
-  tick,
-  generalArmy,
-  bursts,
-}: AbstractGameStateWithButsts): [AbstractGameStateWithButsts, number] {
+function doBurst({ tick, generalArmy }: AbstractGameState): AbstractGameState {
   const burst = generalArmy - 1;
   const prodTicks = countProductionTicks(tick, tick + burst);
-  return [
-    {
-      tick: tick + burst,
-      generalArmy: 1 + prodTicks,
-      bursts: bursts.concat(burst),
-    },
-    burst,
-  ];
+  return { tick: tick + burst, generalArmy: 1 + prodTicks };
 }
 
 function waitForArmy(
-  { tick, generalArmy, bursts }: AbstractGameStateWithButsts,
+  { tick, generalArmy }: AbstractGameState,
   target: number,
-): AbstractGameStateWithButsts {
+): AbstractGameState {
   invariant(generalArmy <= target, 'target is less than general army');
   if (generalArmy === target) {
-    return { tick, generalArmy, bursts };
+    return { tick, generalArmy };
   }
   const endTick = tickForGeneralArmy(tick, generalArmy, generalArmy + target);
   return {
     tick: endTick,
     generalArmy: generalArmy + target,
-    bursts,
   };
 }
 
