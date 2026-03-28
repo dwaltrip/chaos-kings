@@ -4,7 +4,7 @@
 // that you can move to if you want.
 
 import { invariant } from '@utils/assertions/invariant';
-import { numStr, tickForGeneralArmy } from './helpers';
+import { tickForGeneralArmy } from './helpers';
 import { MAX_TICK } from './constants';
 import { maxSingleBurst } from './max-single-burst';
 
@@ -41,15 +41,11 @@ function waitForArmy(
   { tick, generalArmy }: AbstractGameState,
   target: number,
 ): AbstractGameState {
-  invariant(generalArmy <= target, 'target is less than general army');
   if (generalArmy === target) {
     return { tick, generalArmy };
   }
-  const endTick = tickForGeneralArmy(tick, generalArmy, generalArmy + target);
-  return {
-    tick: endTick,
-    generalArmy: generalArmy + target,
-  };
+  const endTick = tickForGeneralArmy(tick, generalArmy, target);
+  return { tick: endTick, generalArmy: target };
 }
 
 function calcSpareTicks(tick: number, army: number) {
@@ -112,4 +108,4 @@ function maxBurstBeforeMaxTick({ tick, generalArmy }: AbstractGameState): BurstI
 // }
 
 export type { AbstractGameState, BurstInfo };
-export { maxBurstBeforeMaxTick };
+export { maxBurstBeforeMaxTick, waitForArmy, doBurst };

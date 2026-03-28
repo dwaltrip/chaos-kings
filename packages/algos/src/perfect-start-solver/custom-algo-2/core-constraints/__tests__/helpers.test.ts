@@ -1,4 +1,6 @@
-import { BurstInfo, maxBurstBeforeMaxTick } from '../abstract-moves';
+import { tickForGeneralArmy } from '../helpers';
+import type { BurstInfo, AbstractGameState } from '../abstract-moves';
+import { maxBurstBeforeMaxTick, waitForArmy, doBurst } from '../abstract-moves';
 
 type TestCase_MaxBurstBeforeMaxTick = {
   state: { tick: number; generalArmy: number };
@@ -61,5 +63,42 @@ describe('maxBurstBeforeMaxTick', () => {
       { state: { tick: 41, generalArmy: 12 }, expected: burstInfo(11, 41, 52) },
     ];
     runTestCases(TEST_CASES);
+  });
+});
+
+describe('tickForGeneralArmy', () => {
+  test('starting army = 1', () => {
+    expect(tickForGeneralArmy(0, 1, 2)).toEqual(2);
+    expect(tickForGeneralArmy(1, 1, 2)).toEqual(2);
+    expect(tickForGeneralArmy(1, 1, 6)).toEqual(10);
+    expect(tickForGeneralArmy(10, 1, 6)).toEqual(20);
+  });
+
+  test('more cases', () => {
+    expect(tickForGeneralArmy(15, 5, 19)).toEqual(42);
+    expect(tickForGeneralArmy(36, 3, 9)).toEqual(48);
+    expect(tickForGeneralArmy(9, 11, 21)).toEqual(28);
+  });
+});
+
+function makeState(tick: number, generalArmy: number): AbstractGameState {
+  return { tick, generalArmy };
+}
+
+describe('waitForArmy', () => {
+  test('some basic tests', () => {
+    expect(waitForArmy(makeState(0, 1), 2)).toEqual(makeState(2, 2));
+    expect(waitForArmy(makeState(0, 5), 15)).toEqual(makeState(20, 15));
+    expect(waitForArmy(makeState(15, 3), 9)).toEqual(makeState(26, 9));
+    expect(waitForArmy(makeState(23, 8), 20)).toEqual(makeState(46, 20));
+  });
+});
+
+describe('doBurst', () => {
+  test('some basic tests', () => {
+    expect(doBurst(makeState(4, 3))).toEqual(makeState(6, 2));
+    expect(doBurst(makeState(3, 4))).toEqual(makeState(6, 3));
+    expect(doBurst(makeState(1, 10))).toEqual(makeState(10, 6));
+    expect(doBurst(makeState(33, 14))).toEqual(makeState(46, 8));
   });
 });
