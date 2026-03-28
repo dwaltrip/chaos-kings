@@ -1,6 +1,11 @@
 import { tickForGeneralArmy } from '../helpers';
 import type { BurstInfo, AbstractGameState } from '../abstract-moves';
-import { maxBurstBeforeMaxTick, waitForArmy, doBurst } from '../abstract-moves';
+import {
+  maxBurstBeforeMaxTick,
+  waitForArmy,
+  doBurst,
+  NULL_BURST_INFO,
+} from '../abstract-moves';
 
 type TestCase_MaxBurstBeforeMaxTick = {
   state: { tick: number; generalArmy: number };
@@ -61,6 +66,17 @@ describe('maxBurstBeforeMaxTick', () => {
       { state: { tick: 40, generalArmy: 6 }, expected: burstInfo(6, 42, 48) },
       { state: { tick: 41, generalArmy: 8 }, expected: burstInfo(8, 42, 50) },
       { state: { tick: 41, generalArmy: 12 }, expected: burstInfo(11, 41, 52) },
+    ];
+    runTestCases(TEST_CASES);
+  });
+
+  describe('handles 0 moves remaining', () => {
+    const TEST_CASES = [
+      { state: { tick: 48, generalArmy: 1 }, expected: NULL_BURST_INFO },
+      { state: { tick: 49, generalArmy: 1 }, expected: NULL_BURST_INFO },
+      { state: { tick: 50, generalArmy: 1 }, expected: NULL_BURST_INFO },
+      // should NOT be NULL_BURST_INFO
+      { state: { tick: 47, generalArmy: 1 }, expected: burstInfo(1, 48, 49) },
     ];
     runTestCases(TEST_CASES);
   });

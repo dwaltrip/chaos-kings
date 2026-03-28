@@ -4,24 +4,20 @@ function numStr(val: number, pad?: number) {
   return String(val).padStart(pad || 0);
 }
 
-function tickForInitialGeneralArmy(targetArmy: number): number {
-  return tickForGeneralArmy(0, 1, targetArmy);
+function tickForInitialGeneralArmy(target: number): number {
+  return tickForGeneralArmy(0, 1, target);
 }
 
-function tickForGeneralArmy(
-  currentTick: number,
-  currentArmy: number,
-  targetArmy: number,
-): number {
-  invariant(currentArmy <= targetArmy, 'currentArmy must be LTE to targetArmy');
-  if (currentArmy === targetArmy) {
+function tickForGeneralArmy(currentTick: number, army: number, target: number): number {
+  invariant(army <= target, `army (${army}) IS NOT <= target (${target})`);
+  if (army === target) {
     return currentTick;
   }
   if (currentTick % 2 !== 0) {
     currentTick += 1;
-    currentArmy += 1;
+    army += 1;
   }
-  const armyNeeded = targetArmy - currentArmy;
+  const armyNeeded = target - army;
   return currentTick + armyNeeded * 2;
 }
 
