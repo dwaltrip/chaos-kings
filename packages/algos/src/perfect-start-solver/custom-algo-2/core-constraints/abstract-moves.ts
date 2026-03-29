@@ -136,21 +136,6 @@ function maxBurstBeforeMaxTick({
   }
 }
 
-/*
-function iterateAbstractMovePatterns() {
-  const maxBurst = maxSingleBurst();
-  const state: AbstractGameState = { tick: 0, generalArmy: 1 };
-  for (let b1=1; b1 <= maxBurst.size; b1++) {
-
-    const afterBurst = doBurst(waitForArmy(state, b1+1))
-    const b2Max = maxBurstBeforeMaxTick(afterBurst).size;
-    for (let b2=0; b2<=b2Max; b2++) {
-
-    }
-  }
-}
-*/
-
 function fmtAbstractBursts(ab: AbstractBursts): string {
   const { state, bursts } = ab;
   return [
@@ -190,12 +175,16 @@ function countAbstractMovePatterns(): number {
     let nextBursts: BurstChain;
     let nextState: AbstractGameState;
 
-    for (let size = 1; size <= maxBurst.size; size++) {
-      nextState = state;
-      if (size >= nextState.generalArmy) {
-        nextState = waitForArmy(nextState, size + 1);
-      }
-      nextBurst = makeBurst(nextState.tick + 1, size);
+    // Iterate over target army, not burst size. Each burst uses the full army
+    // (generalArmy - 1 moves), so the target army determines the burst size.
+    // When generalArmy >= 2, the first iteration bursts immediately (no waiting).
+    const minTargetArmy = Math.max(2, state.generalArmy);
+    const maxTargetArmy = maxBurst.size + 1;
+
+    for (let targetArmy = minTargetArmy; targetArmy <= maxTargetArmy; targetArmy++) {
+      nextState = waitForArmy(state, targetArmy);
+      const burstSize = targetArmy - 1;
+      nextBurst = makeBurst(nextState.tick + 1, burstSize);
       nextBursts = bursts.concat(nextBurst);
       nextState = doBurst(nextState);
       count += recurse({ state: nextState, bursts: nextBursts });
