@@ -169,11 +169,10 @@ function countAbstractMovePatterns(cfg: AlgoConfig = DEFAULT_CONFIG): number {
 
     const { state, bursts } = ab;
     if (bursts.length > cfg.maxTick) {
-      throw new Error('Uhhhh... this should not happen');
+      throw new Error('This should not happen.');
     }
-    const maxBurst = maxBurstBeforeMaxTick(state, cfg);
 
-    // TODO: is this the correct base case?
+    const maxBurst = maxBurstBeforeMaxTick(state, cfg);
     if (maxBurst.size <= 1) {
       return 1;
     }
@@ -183,12 +182,13 @@ function countAbstractMovePatterns(cfg: AlgoConfig = DEFAULT_CONFIG): number {
     let nextBursts: BurstChain;
     let nextState: AbstractGameState;
 
-    // Iterate over target army, not burst size. Each burst uses the full army
-    // (generalArmy - 1 moves), so the target army determines the burst size.
-    // When generalArmy >= 2, the first iteration bursts immediately (no waiting).
+    // Need at least 2 army to make a move
     const minTargetArmy = Math.max(2, state.generalArmy);
     const maxTargetArmy = maxBurst.size + 1;
 
+    // Iterate over target army. Each burst uses the full army (generalArmy - 1 moves),
+    // so the target army determines the burst size.
+    // When generalArmy >= 2, the first iteration bursts immediately (no waiting).
     for (let targetArmy = minTargetArmy; targetArmy <= maxTargetArmy; targetArmy++) {
       nextState = waitForArmy(state, targetArmy);
       const burstSize = targetArmy - 1;

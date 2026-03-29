@@ -1,16 +1,15 @@
 import { tickForGeneralArmy } from '../helpers';
-import type { BurstInfo, AlgoConfig, AbstractGameState } from '../abstract-moves';
+import type { BurstInfo, AbstractGameState } from '../abstract-moves';
 import {
   DEFAULT_CONFIG,
   maxBurstBeforeMaxTick,
-  lastMoveTick,
   waitForArmy,
   doBurst,
   NULL_BURST_INFO,
   shouldStartMaxBurst,
   countProductionTicks,
 } from '../abstract-moves';
-import { compactConsoleLog } from '@/utils/tests/compact-console-log';
+// import { compactConsoleLog } from '@/utils/tests/compact-console-log';
 
 const cfg = DEFAULT_CONFIG;
 
