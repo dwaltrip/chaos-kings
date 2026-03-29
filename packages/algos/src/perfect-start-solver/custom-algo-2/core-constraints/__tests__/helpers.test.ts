@@ -23,12 +23,17 @@ const burstInfo = (size: number, firstMoveTick: number): BurstInfo => {
   return { size, firstMoveTick };
 };
 
+const fmtState = ({ tick, generalArmy }: AbstractGameState): string =>
+  `{ t=${tick}, g=${generalArmy} }`;
+const fmtBurst = ({ size, firstMoveTick }: BurstInfo): string =>
+  `{ s=${size}, t0=${firstMoveTick} }`;
+
 describe('maxBurstBeforeMaxTick', () => {
   function runTestCases(cases: TestCase_MaxBurstBeforeMaxTick[]) {
     let i = 0;
     for (let { state, expected } of cases) {
       i++;
-      test(`case ${i}`, () => {
+      test(`case ${i} - ${fmtState(state)} -> ${fmtBurst(expected)}`, () => {
         const res = maxBurstBeforeMaxTick(state, cfg);
         expect(res).toEqual(expected);
       });
@@ -37,12 +42,12 @@ describe('maxBurstBeforeMaxTick', () => {
 
   describe('with generalArmy=1', () => {
     const TEST_CASES = [
-      // { state: { tick: 40, generalArmy: 1 }, expected: burstInfo(3, 47) },
+      { state: { tick: 40, generalArmy: 1 }, expected: burstInfo(3, 47) },
       { state: { tick: 38, generalArmy: 1 }, expected: burstInfo(4, 47) },
-      // { state: { tick: 22, generalArmy: 1 }, expected: burstInfo(9, 41) },
-      // { state: { tick: 21, generalArmy: 1 }, expected: burstInfo(10, 41) },
-      // { state: { tick: 20, generalArmy: 1 }, expected: burstInfo(10, 41) },
-      // { state: { tick: 19, generalArmy: 1 }, expected: burstInfo(10, 39) },
+      { state: { tick: 22, generalArmy: 1 }, expected: burstInfo(9, 41) },
+      { state: { tick: 21, generalArmy: 1 }, expected: burstInfo(10, 41) },
+      { state: { tick: 20, generalArmy: 1 }, expected: burstInfo(10, 41) },
+      { state: { tick: 19, generalArmy: 1 }, expected: burstInfo(10, 39) },
     ];
     runTestCases(TEST_CASES);
   });
@@ -55,7 +60,7 @@ describe('maxBurstBeforeMaxTick', () => {
       { state: { tick: 20, generalArmy: 2 }, expected: burstInfo(10, 39) },
       { state: { tick: 19, generalArmy: 2 }, expected: burstInfo(11, 39) },
     ];
-    // runTestCases(TEST_CASES);
+    runTestCases(TEST_CASES);
   });
 
   describe('existing general army with a few ticks remaining', () => {
@@ -65,7 +70,7 @@ describe('maxBurstBeforeMaxTick', () => {
       { state: { tick: 47, generalArmy: 5 }, expected: burstInfo(4, 48) },
       { state: { tick: 47, generalArmy: 10 }, expected: burstInfo(9, 48) },
     ];
-    // runTestCases(TEST_CASES);
+    runTestCases(TEST_CASES);
   });
 
   describe('existing general army with more ticks remaining', () => {
@@ -74,7 +79,7 @@ describe('maxBurstBeforeMaxTick', () => {
       { state: { tick: 41, generalArmy: 8 }, expected: burstInfo(8, 43) },
       { state: { tick: 41, generalArmy: 12 }, expected: burstInfo(11, 42) },
     ];
-    // runTestCases(TEST_CASES);
+    runTestCases(TEST_CASES);
   });
 
   describe('handles 0 moves remaining', () => {
@@ -82,10 +87,10 @@ describe('maxBurstBeforeMaxTick', () => {
       { state: { tick: 48, generalArmy: 1 }, expected: NULL_BURST_INFO },
       { state: { tick: 49, generalArmy: 1 }, expected: NULL_BURST_INFO },
       { state: { tick: 50, generalArmy: 1 }, expected: NULL_BURST_INFO },
-      // should NOT be NULL_BURST_INFO
+      // This should NOT be NULL_BURST_INFO:
       { state: { tick: 47, generalArmy: 1 }, expected: burstInfo(1, 49) },
     ];
-    // runTestCases(TEST_CASES);
+    runTestCases(TEST_CASES);
   });
 });
 
@@ -171,7 +176,7 @@ describe('shouldStartMaxBurst', () => {
   describe('thorough tests with even firstMoveTick', () => {
     runTestCases([
       { firstMoveTick: 42, army: 10, expected: true },
-      { firstMoveTick: 42, army: 9, expected: false },
+      { firstMoveTick: 42, army: 9, expected: true },
       { firstMoveTick: 42, army: 8, expected: false },
       { firstMoveTick: 42, army: 7, expected: false },
     ]);

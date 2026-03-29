@@ -6,7 +6,6 @@
 import { invariant } from '@utils/assertions/invariant';
 import { numStr, tickForGeneralArmy } from './helpers';
 import { MAX_TICK } from './constants';
-import { maxSingleBurst } from './max-single-burst';
 
 interface AlgoConfig {
   maxTick: number;
@@ -95,21 +94,24 @@ function shouldStartMaxBurst(
   army: number,
   cfg: AlgoConfig,
 ): boolean {
-  // Returns false if there is a longer "complete" burst
-  // you can do by waitint more ticks before starting the burst.
-  // Returns true if there is NOT a longer "complete" burst.
-  // Bursts that finish after MAX_TICK are not complete bursts.
+  // Returns false if there IS a longer "complete" burst you can get by waiting.
+  // Returns true if there IS NOT a longer "complete" burst.
+  // Bursts that finish after MAX_TICK are not "complete" bursts.
   const isProducing = isProdTick(firstMoveTick);
   const spareTicks = calcSpareTicksIfBurstNow(firstMoveTick, army, cfg);
   if (isProducing) {
-    // only go if no spare ticks, otherwise should wait at least 1 tick
-    return spareTicks <= 0;
+    // if `firstMoveTick` is even, you need 2+ ticks for waiting to work:
+    //   spare tick 1 -> not moving on current tick collects production (+1 troop).
+    //   spare tick 2 -> needed for moving the additional troop you just produced.
+    // Less than 2 spare ticks means this is the best burst you can do.
+    return spareTicks < 2;
   } else {
-    // If `firstMoveTick` is odd, you should not wait unless you have 3+ sapre ticks.
-    // spare tick 1 -> used because you aren't moving on the current tick.
-    // spare tick 2 -> next tick, you produce, no movement (production is after movement)
-    // spare tick 3 -> needed for moving the additional troop you ust produced.
-    return spareTicks <= 2;
+    // If `firstMoveTick` is odd, you need 3+ ticks for waiting to work:
+    //   spare tick 1 -> used because you aren't moving on the current tick.
+    //   spare tick 2 -> next tick, you produce, no movement (production is after movement)
+    //   spare tick 3 -> needed for moving the additional troop you ust produced.
+    // Less than 3 spare ticks means this is the best burst you can do.
+    return spareTicks < 3;
   }
 }
 
@@ -133,11 +135,7 @@ function maxBurstBeforeMaxTick(
 
   const burstSize = currArmy - 1;
   if (burstSize > 0) {
-    const ret: BurstInfo = {
-      size: burstSize,
-      firstMoveTick: currTick + 1,
-    };
-    return ret;
+    return makeBurst(currTick + 1, burstSize);
   } else {
     return NULL_BURST_INFO;
   }
@@ -168,7 +166,7 @@ function countAbstractMovePatterns(cfg: AlgoConfig = DEFAULT_CONFIG): number {
 
     const { state, bursts } = ab;
     if (bursts.length > cfg.maxTick) {
-      throw new Error('Uhhhh..........');
+      throw new Error('Uhhhh... this should not happen');
     }
     const maxBurst = maxBurstBeforeMaxTick(state, cfg);
 
