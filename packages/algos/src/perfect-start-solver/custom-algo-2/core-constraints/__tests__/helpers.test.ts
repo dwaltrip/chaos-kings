@@ -21,8 +21,6 @@ const burstInfo = (size: number, firstMoveTick: number): BurstInfo => {
 };
 
 describe('maxBurstBeforeMaxTick', () => {
-  compactConsoleLog();
-
   function runTestCases(cases: TestCase_MaxBurstBeforeMaxTick[]) {
     let i = 0;
     for (let { state, expected } of cases) {
@@ -138,7 +136,7 @@ describe('shouldStartMaxBurst', () => {
 
   test('long bursts', () => {
     expect(shouldStartMaxBurst(29, 20)).toBe(false);
-    expect(shouldStartMaxBurst(30, 20)).toBe(true);
+    expect(shouldStartMaxBurst(30, 20)).toBe(false);
     expect(shouldStartMaxBurst(31, 20)).toBe(true);
 
     expect(shouldStartMaxBurst(35, 14)).toBe(false);
@@ -146,13 +144,29 @@ describe('shouldStartMaxBurst', () => {
     expect(shouldStartMaxBurst(37, 15)).toBe(true);
   });
 
-  // TODO: this should maybe be an error? this isn't an intended use case
+  test('thorough tests with even `firstMoveTick`', () => {
+    expect(shouldStartMaxBurst(42, 10)).toBe(true);
+    expect(shouldStartMaxBurst(42, 9)).toBe(false);
+    expect(shouldStartMaxBurst(42, 8)).toBe(false);
+    expect(shouldStartMaxBurst(42, 7)).toBe(false);
+  });
+
+  test('thorough tests with odd `firstMoveTick`', () => {
+    expect(shouldStartMaxBurst(45, 4)).toBe(false);
+    expect(shouldStartMaxBurst(45, 5)).toBe(true);
+    expect(shouldStartMaxBurst(45, 6)).toBe(true);
+    expect(shouldStartMaxBurst(45, 7)).toBe(true);
+  });
+
+  // TODO: Maybe this should be an error? It wasn't the intended use case.
   test('will not finish burst until after MAX_TICK', () => {
+    expect(shouldStartMaxBurst(42, 11)).toBe(true);
+    expect(shouldStartMaxBurst(45, 8)).toBe(true);
     expect(shouldStartMaxBurst(48, 4)).toBe(true);
   });
 });
 
-describe.only('countProductionTicks', () => {
+describe('countProductionTicks', () => {
   test('start = 1', () => {
     expect(countProductionTicks(1, 2)).toEqual(1);
     expect(countProductionTicks(1, 3)).toEqual(1);

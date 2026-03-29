@@ -81,22 +81,35 @@ function waitForArmy(
   return { tick: endTick, generalArmy: target };
 }
 
-function calcSpareTicks(possibleMoveTick: number, army: number) {
+function calcSpareTicksIfBurstNow(firstMoveTick: number, army: number) {
+  // Need to add 1 to incluede `firstMoveTick` itself
+  const ticksRemaining = MAX_TICK - firstMoveTick + 1;
   const excessArmy = army - 1;
-  // we add 1, because we are considering moves ON `possibleMoveTick`
-  const ticksRemaining = MAX_TICK - possibleMoveTick + 1;
   return ticksRemaining - excessArmy;
 }
 
-function shouldStartMaxBurst(possibleMoveTick: number, army: number): boolean {
-  // possibleMoveTick
-  const isProducing = isProdTick(possibleMoveTick);
-  const spareTicks = calcSpareTicks(possibleMoveTick, army);
+function shouldStartMaxBurst(firstMoveTick: number, army: number): boolean {
+  // Returns false if there is a longer "complete" burst
+  // you can do by waitint more ticks before starting the burst.
+  // Returns true if there is NOT a longer "complete" burst.
+  // Bursts that finish after MAX_TICK are not complete bursts.
+  const isProducing = isProdTick(firstMoveTick);
+  const spareTicks = calcSpareTicksIfBurstNow(firstMoveTick, army);
   console.log(
-    `  [shouldStartMaxBurst(${possibleMoveTick}, ${army})]`,
-    `spareTicks: ${spareTicks} | isProducing: ${isProducing}`,
+    `  [shouldStartMaxBurst(${firstMoveTick}, ${army})]`,
+    `spareTicks: ${spareTicks}`,
+    `| isProducing: ${isProducing}`,
   );
-  return spareTicks <= 1;
+  if (isProducing) {
+    // only go if no spare ticks, otherwise should wait at least 1 tick
+    return spareTicks <= 0;
+  } else {
+    // If `firstMoveTick` is odd, you should not wait unless you have 3+ sapre ticks.
+    // spare tick 1 -> used because you aren't moving on the current tick.
+    // spare tick 2 -> next tick, you produce, no movement (production is after movement)
+    // spare tick 3 -> needed for moving the additional troop you ust produced.
+    return spareTicks <= 2;
+  }
 }
 
 // The `tick` param here is the last tick BEFORE we can make a move.
