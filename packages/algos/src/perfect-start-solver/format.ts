@@ -90,4 +90,28 @@ function formatBoard(board: FlatBoard) {
   return parts.map((row) => row.join(' ')).join('\n');
 }
 
-export { alignColumns, coordStr, formatMove, formatTable, num, formatBoard };
+function fmtObj(obj: Record<string, any>) {
+  return (
+    '{ ' +
+    Object.entries(obj)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(', ') +
+    ' }'
+  );
+}
+
+function round(value: number, decimals: number) {
+  const pows_of_ten = Math.pow(10, decimals);
+  return Math.round(value * pows_of_ten) / pows_of_ten;
+}
+
+export {
+  alignColumns,
+  coordStr,
+  formatMove,
+  formatTable,
+  num,
+  formatBoard,
+  fmtObj,
+  round,
+};

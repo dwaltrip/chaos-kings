@@ -1,5 +1,5 @@
-import { MAX_TICK } from './constants';
-import { numStr, tickForInitialGeneralArmy } from './helpers';
+import { MAX_TICK } from '../constants';
+import { numStr, tickForInitialGeneralArmy } from '../helpers';
 
 function maxSingleBurst(verbose: boolean = false) {
   // Leave 1 army behind -> size + 1
