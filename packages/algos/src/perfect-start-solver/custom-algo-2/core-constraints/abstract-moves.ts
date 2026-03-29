@@ -134,11 +134,14 @@ function maxBurstBeforeMaxTick(
   }
 
   const burstSize = currArmy - 1;
-  if (burstSize > 0) {
-    return makeBurst(currTick + 1, burstSize);
-  } else {
+  if (burstSize <= 0) {
     return NULL_BURST_INFO;
   }
+  const burst = makeBurst(currTick + 1, burstSize);
+  if (lastMoveTick(burst) > cfg.maxTick) {
+    return NULL_BURST_INFO;
+  }
+  return burst;
 }
 
 function fmtAbstractBursts(ab: AbstractBursts): string {
@@ -200,7 +203,7 @@ function countAbstractMovePatterns(cfg: AlgoConfig = DEFAULT_CONFIG): number {
   return recurse(start);
 }
 
-export type { AbstractGameState, AlgoConfig, BurstInfo };
+export type { AbstractGameState, AbstractBursts, AlgoConfig, BurstChain, BurstInfo };
 export {
   DEFAULT_CONFIG,
   NULL_BURST_INFO,
@@ -208,6 +211,7 @@ export {
   maxBurstBeforeMaxTick,
   waitForArmy,
   doBurst,
+  makeBurst,
   shouldStartMaxBurst,
   countAbstractMovePatterns,
   countProductionTicks,

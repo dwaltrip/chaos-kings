@@ -67,8 +67,8 @@ describe('maxBurstBeforeMaxTick', () => {
     const TEST_CASES = [
       { state: { tick: 47, generalArmy: 3 }, expected: burstInfo(2, 48) },
       { state: { tick: 47, generalArmy: 4 }, expected: burstInfo(3, 48) },
-      { state: { tick: 47, generalArmy: 5 }, expected: burstInfo(4, 48) },
-      { state: { tick: 47, generalArmy: 10 }, expected: burstInfo(9, 48) },
+      { state: { tick: 47, generalArmy: 5 }, expected: NULL_BURST_INFO },
+      { state: { tick: 47, generalArmy: 10 }, expected: NULL_BURST_INFO },
     ];
     runTestCases(TEST_CASES);
   });
@@ -77,7 +77,7 @@ describe('maxBurstBeforeMaxTick', () => {
     const TEST_CASES = [
       { state: { tick: 40, generalArmy: 6 }, expected: burstInfo(6, 43) },
       { state: { tick: 41, generalArmy: 8 }, expected: burstInfo(8, 43) },
-      { state: { tick: 41, generalArmy: 12 }, expected: burstInfo(11, 42) },
+      { state: { tick: 41, generalArmy: 12 }, expected: NULL_BURST_INFO },
     ];
     runTestCases(TEST_CASES);
   });
