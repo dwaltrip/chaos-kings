@@ -1,6 +1,7 @@
 import { tickForGeneralArmy } from '../helpers';
-import type { BurstInfo, AbstractGameState } from '../abstract-moves';
+import type { BurstInfo, AlgoConfig, AbstractGameState } from '../abstract-moves';
 import {
+  DEFAULT_CONFIG,
   maxBurstBeforeMaxTick,
   lastMoveTick,
   waitForArmy,
@@ -10,6 +11,8 @@ import {
   countProductionTicks,
 } from '../abstract-moves';
 import { compactConsoleLog } from '@/utils/tests/compact-console-log';
+
+const cfg = DEFAULT_CONFIG;
 
 type TestCase_MaxBurstBeforeMaxTick = {
   state: { tick: number; generalArmy: number };
@@ -26,7 +29,7 @@ describe('maxBurstBeforeMaxTick', () => {
     for (let { state, expected } of cases) {
       i++;
       test(`case ${i}`, () => {
-        const res = maxBurstBeforeMaxTick(state);
+        const res = maxBurstBeforeMaxTick(state, cfg);
         expect(res).toEqual(expected);
       });
     }
@@ -123,46 +126,73 @@ describe('doBurst', () => {
   });
 });
 
+type TestCase_ShouldStartMaxBurst = {
+  firstMoveTick: number;
+  army: number;
+  expected: boolean;
+};
+
 describe('shouldStartMaxBurst', () => {
-  test('definining examples', () => {
-    expect(shouldStartMaxBurst(46, 4)).toBe(false);
-    expect(shouldStartMaxBurst(47, 4)).toBe(true);
+  function runTestCases(cases: TestCase_ShouldStartMaxBurst[]) {
+    let i = 0;
+    for (let { firstMoveTick, army, expected } of cases) {
+      i++;
+      test(`case ${i} - (${firstMoveTick}, ${army}) → ${expected}`, () => {
+        expect(shouldStartMaxBurst(firstMoveTick, army, cfg)).toBe(expected);
+      });
+    }
+  }
+
+  describe('defining examples', () => {
+    runTestCases([
+      { firstMoveTick: 46, army: 4, expected: false },
+      { firstMoveTick: 47, army: 4, expected: true },
+    ]);
   });
 
-  test('obviously should not', () => {
-    expect(shouldStartMaxBurst(40, 2)).toBe(false);
-    expect(shouldStartMaxBurst(30, 5)).toBe(false);
+  describe('obviously should not', () => {
+    runTestCases([
+      { firstMoveTick: 40, army: 2, expected: false },
+      { firstMoveTick: 30, army: 5, expected: false },
+    ]);
   });
 
-  test('long bursts', () => {
-    expect(shouldStartMaxBurst(29, 20)).toBe(false);
-    expect(shouldStartMaxBurst(30, 20)).toBe(false);
-    expect(shouldStartMaxBurst(31, 20)).toBe(true);
-
-    expect(shouldStartMaxBurst(35, 14)).toBe(false);
-    expect(shouldStartMaxBurst(36, 14)).toBe(false);
-    expect(shouldStartMaxBurst(37, 15)).toBe(true);
+  describe('long bursts', () => {
+    runTestCases([
+      { firstMoveTick: 29, army: 20, expected: false },
+      { firstMoveTick: 30, army: 20, expected: false },
+      { firstMoveTick: 31, army: 20, expected: true },
+      { firstMoveTick: 35, army: 14, expected: false },
+      { firstMoveTick: 36, army: 14, expected: false },
+      { firstMoveTick: 37, army: 15, expected: true },
+    ]);
   });
 
-  test('thorough tests with even `firstMoveTick`', () => {
-    expect(shouldStartMaxBurst(42, 10)).toBe(true);
-    expect(shouldStartMaxBurst(42, 9)).toBe(false);
-    expect(shouldStartMaxBurst(42, 8)).toBe(false);
-    expect(shouldStartMaxBurst(42, 7)).toBe(false);
+  describe('thorough tests with even firstMoveTick', () => {
+    runTestCases([
+      { firstMoveTick: 42, army: 10, expected: true },
+      { firstMoveTick: 42, army: 9, expected: false },
+      { firstMoveTick: 42, army: 8, expected: false },
+      { firstMoveTick: 42, army: 7, expected: false },
+    ]);
   });
 
-  test('thorough tests with odd `firstMoveTick`', () => {
-    expect(shouldStartMaxBurst(45, 4)).toBe(false);
-    expect(shouldStartMaxBurst(45, 5)).toBe(true);
-    expect(shouldStartMaxBurst(45, 6)).toBe(true);
-    expect(shouldStartMaxBurst(45, 7)).toBe(true);
+  describe('thorough tests with odd firstMoveTick', () => {
+    runTestCases([
+      { firstMoveTick: 45, army: 4, expected: false },
+      { firstMoveTick: 45, army: 5, expected: true },
+      { firstMoveTick: 45, army: 6, expected: true },
+      { firstMoveTick: 45, army: 7, expected: true },
+    ]);
   });
 
   // TODO: Maybe this should be an error? It wasn't the intended use case.
-  test('will not finish burst until after MAX_TICK', () => {
-    expect(shouldStartMaxBurst(42, 11)).toBe(true);
-    expect(shouldStartMaxBurst(45, 8)).toBe(true);
-    expect(shouldStartMaxBurst(48, 4)).toBe(true);
+  describe('will not finish burst until after MAX_TICK', () => {
+    runTestCases([
+      { firstMoveTick: 42, army: 11, expected: true },
+      { firstMoveTick: 45, army: 8, expected: true },
+      { firstMoveTick: 48, army: 4, expected: true },
+    ]);
   });
 });
 

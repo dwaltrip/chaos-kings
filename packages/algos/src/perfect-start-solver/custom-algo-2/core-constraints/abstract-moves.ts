@@ -8,6 +8,12 @@ import { numStr, tickForGeneralArmy } from './helpers';
 import { MAX_TICK } from './constants';
 import { maxSingleBurst } from './max-single-burst';
 
+interface AlgoConfig {
+  maxTick: number;
+}
+
+const DEFAULT_CONFIG: AlgoConfig = { maxTick: MAX_TICK };
+
 interface BurstInfo {
   size: number;
   firstMoveTick: number;
@@ -77,20 +83,24 @@ function waitForArmy(
   return { tick: endTick, generalArmy: target };
 }
 
-function calcSpareTicksIfBurstNow(firstMoveTick: number, army: number) {
+function calcSpareTicksIfBurstNow(firstMoveTick: number, army: number, cfg: AlgoConfig) {
   // Need to add 1 to incluede `firstMoveTick` itself
-  const ticksRemaining = MAX_TICK - firstMoveTick + 1;
+  const ticksRemaining = cfg.maxTick - firstMoveTick + 1;
   const excessArmy = army - 1;
   return ticksRemaining - excessArmy;
 }
 
-function shouldStartMaxBurst(firstMoveTick: number, army: number): boolean {
+function shouldStartMaxBurst(
+  firstMoveTick: number,
+  army: number,
+  cfg: AlgoConfig,
+): boolean {
   // Returns false if there is a longer "complete" burst
   // you can do by waitint more ticks before starting the burst.
   // Returns true if there is NOT a longer "complete" burst.
   // Bursts that finish after MAX_TICK are not complete bursts.
   const isProducing = isProdTick(firstMoveTick);
-  const spareTicks = calcSpareTicksIfBurstNow(firstMoveTick, army);
+  const spareTicks = calcSpareTicksIfBurstNow(firstMoveTick, army, cfg);
   if (isProducing) {
     // only go if no spare ticks, otherwise should wait at least 1 tick
     return spareTicks <= 0;
@@ -107,17 +117,14 @@ function shouldStartMaxBurst(firstMoveTick: number, army: number): boolean {
 // The earliest possible `firstMoveTick` returned by `maxBurstBeforeMaxTick` is `tick + 1`.
 // `generalArmy` is assumed to be value at the END of `tick` (any production on `tick`
 //   is already accounted for).
-function maxBurstBeforeMaxTick({
-  tick,
-  generalArmy,
-}: AbstractGameState): ReadOnlyBurstInfo {
-  // start on the next tick
-  // let currTick = tick + 1;
+function maxBurstBeforeMaxTick(
+  { tick, generalArmy }: AbstractGameState,
+  cfg: AlgoConfig,
+): ReadOnlyBurstInfo {
   let currTick = tick;
   let currArmy = generalArmy;
 
-  // while (currTick <= MAX_TICK && !shouldStartMaxBurst(currTick+1, currArmy)) {
-  while (currTick < MAX_TICK && !shouldStartMaxBurst(currTick + 1, currArmy)) {
+  while (currTick < cfg.maxTick && !shouldStartMaxBurst(currTick + 1, currArmy, cfg)) {
     currTick++;
     if (isProdTick(currTick)) {
       currArmy++;
@@ -145,25 +152,25 @@ function fmtAbstractBursts(ab: AbstractBursts): string {
   ].join(' | ');
 }
 
-function countAbstractMovePatterns(): number {
+function countAbstractMovePatterns(cfg: AlgoConfig = DEFAULT_CONFIG): number {
   const start: AbstractBursts = {
     state: { tick: 0, generalArmy: 1 },
     bursts: [],
   };
 
   function recurse(ab: AbstractBursts): number {
-    if (ab.state.tick > MAX_TICK) {
+    if (ab.state.tick > cfg.maxTick) {
       return 0;
     }
-    if (ab.state.tick === MAX_TICK) {
+    if (ab.state.tick === cfg.maxTick) {
       return 1;
     }
 
     const { state, bursts } = ab;
-    if (bursts.length > MAX_TICK) {
+    if (bursts.length > cfg.maxTick) {
       throw new Error('Uhhhh..........');
     }
-    const maxBurst = maxBurstBeforeMaxTick(state);
+    const maxBurst = maxBurstBeforeMaxTick(state, cfg);
 
     // TODO: is this the correct base case?
     if (maxBurst.size <= 1) {
@@ -195,8 +202,9 @@ function countAbstractMovePatterns(): number {
   return recurse(start);
 }
 
-export type { AbstractGameState, BurstInfo };
+export type { AbstractGameState, AlgoConfig, BurstInfo };
 export {
+  DEFAULT_CONFIG,
   NULL_BURST_INFO,
   lastMoveTick,
   maxBurstBeforeMaxTick,
