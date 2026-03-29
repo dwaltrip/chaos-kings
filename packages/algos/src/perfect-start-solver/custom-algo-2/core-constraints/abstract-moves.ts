@@ -56,24 +56,20 @@ function isProdTick(tick: number): boolean {
   return tick % 2 == 0;
 }
 
-// This returns the `state` at the END of the burst
-// `returnValue.tick` = the tick of of the last move
+// Returns `endState` for when burst is complete
+// E.g. `endState.tick === lastMoveTick(burst)`
 function doBurst({ tick, generalArmy }: AbstractGameState): AbstractGameState {
-  const burst = generalArmy - 1;
-  invariant(burst > 0, 'burst size must be larger than 0');
-  const prodTicks = countProductionTicks(tick + 1, tick + burst);
-  const res = { tick: tick + burst, generalArmy: 1 + prodTicks };
-  console.log(
-    `  [do-burst] t0=${tick} -> t1=${res.tick} | g0=${generalArmy} - g1=${res.generalArmy}`,
-  );
-  return res;
+  const size = generalArmy - 1;
+  invariant(size > 0, 'burst size must be larger than 0');
+  const newUnits = countProductionTicks(tick + 1, tick + size);
+  const endState = { tick: tick + size, generalArmy: 1 + newUnits };
+  return endState;
 }
 
 function waitForArmy(
   { tick, generalArmy }: AbstractGameState,
   target: number,
 ): AbstractGameState {
-  console.log(`  [waitForArmy] tick=${tick}, gen=${generalArmy}, target=${target}`);
   if (generalArmy === target) {
     return { tick, generalArmy };
   }
@@ -95,11 +91,6 @@ function shouldStartMaxBurst(firstMoveTick: number, army: number): boolean {
   // Bursts that finish after MAX_TICK are not complete bursts.
   const isProducing = isProdTick(firstMoveTick);
   const spareTicks = calcSpareTicksIfBurstNow(firstMoveTick, army);
-  console.log(
-    `  [shouldStartMaxBurst(${firstMoveTick}, ${army})]`,
-    `spareTicks: ${spareTicks}`,
-    `| isProducing: ${isProducing}`,
-  );
   if (isProducing) {
     // only go if no spare ticks, otherwise should wait at least 1 tick
     return spareTicks <= 0;
@@ -120,20 +111,17 @@ function maxBurstBeforeMaxTick({
   tick,
   generalArmy,
 }: AbstractGameState): ReadOnlyBurstInfo {
-  console.group(`--- maxBurstBeforeMaxTick --- tick=${tick}, gen=${generalArmy}`);
   // start on the next tick
   // let currTick = tick + 1;
   let currTick = tick;
   let currArmy = generalArmy;
 
-  console.log('currTick:', currTick, '| currArmy:', currArmy, '(*)');
   // while (currTick <= MAX_TICK && !shouldStartMaxBurst(currTick+1, currArmy)) {
   while (currTick < MAX_TICK && !shouldStartMaxBurst(currTick + 1, currArmy)) {
     currTick++;
     if (isProdTick(currTick)) {
       currArmy++;
     }
-    console.log('currTick:', currTick, '| currArmy:', currArmy);
   }
 
   const burstSize = currArmy - 1;
@@ -142,19 +130,8 @@ function maxBurstBeforeMaxTick({
       size: burstSize,
       firstMoveTick: currTick + 1,
     };
-    console.log(
-      '[done] size:',
-      ret.size,
-      '| firstMoveTick:',
-      ret.firstMoveTick,
-      '| lastMoveTick:',
-      lastMoveTick(ret),
-    );
-    console.groupEnd();
     return ret;
   } else {
-    console.log('[done] null');
-    console.groupEnd();
     return NULL_BURST_INFO;
   }
 }
@@ -179,7 +156,7 @@ function fmtAbstractBursts(ab: AbstractBursts): string {
   return [
     `tick = ${numStr(state.tick, 2)}`,
     `general = ${numStr(state.generalArmy, 2)}`,
-    `bursts = ${bursts.map((b) => b.size).join(',')}`,
+    `bursts = ${bursts.map((b) => b.size).join(',') || 'none'}`,
   ].join(' | ');
 }
 
@@ -190,7 +167,6 @@ function countAbstractMovePatterns(): number {
   };
 
   function recurse(ab: AbstractBursts): number {
-    console.log(fmtAbstractBursts(ab));
     if (ab.state.tick > MAX_TICK) {
       return 0;
     }
@@ -206,10 +182,8 @@ function countAbstractMovePatterns(): number {
 
     // TODO: is this the correct base case?
     if (maxBurst.size <= 1) {
-      console.log(`  maxBurst (${maxBurst.size}) <= 1 (base case)`);
       return 1;
     }
-    console.log(`  maxBurst.size = ${maxBurst.size}`);
 
     let count = 0;
     let nextBurst: BurstInfo;
@@ -217,12 +191,12 @@ function countAbstractMovePatterns(): number {
     let nextState: AbstractGameState;
 
     for (let size = 1; size <= maxBurst.size; size++) {
-      nextBurst = makeBurst(state.tick, size);
-      nextBursts = bursts.concat(nextBurst);
       nextState = state;
-      if (nextBurst.firstMoveTick > state.tick) {
+      if (size >= nextState.generalArmy) {
         nextState = waitForArmy(nextState, size + 1);
       }
+      nextBurst = makeBurst(nextState.tick + 1, size);
+      nextBursts = bursts.concat(nextBurst);
       nextState = doBurst(nextState);
       count += recurse({ state: nextState, bursts: nextBursts });
     }
