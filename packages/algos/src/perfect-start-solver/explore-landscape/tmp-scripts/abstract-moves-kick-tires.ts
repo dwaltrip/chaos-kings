@@ -1,7 +1,7 @@
-import { MAX_TICK } from '../perfect-start-solver/custom-algo-2/core-constraints/constants';
-import { countAbstractMovePatterns } from '../perfect-start-solver/custom-algo-2/core-constraints/abstract-moves';
-import { getAllAbstractMovePatterns } from '../perfect-start-solver/custom-algo-2/core-constraints/abstract-moves-v2';
-import { numStr } from '@/perfect-start-solver/custom-algo-2/core-constraints/helpers';
+import { MAX_TICK } from '../constants';
+import { numStr } from '../helpers';
+import { countAbstractMovePatterns } from '../abstract-moves';
+import { getAllAbstractMovePatterns } from '../abstract-moves-v2';
 
 function main() {
   console.group('--- Abstract Moves: kick the tires ---');
