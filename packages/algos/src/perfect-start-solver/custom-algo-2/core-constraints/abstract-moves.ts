@@ -37,12 +37,19 @@ function makeBurst(firstMoveTick: number, size: number): BurstInfo {
   return { firstMoveTick, size };
 }
 
-// start tick to end tick
+// Count of production ticks in the range: [start, end]
+// NOTE: Those are square brackets, not parens. Both `start` and `end` are inclusive!
 function countProductionTicks(start: number, end: number): number {
-  // start: INCLUSIVE
-  //
-  const diff = end - start + 1;
-  return start % 2 === 0 ? Math.floor(diff / 2) : Math.ceil(diff / 2);
+  invariant(start <= end, `start (${start}) must be <= to end (${end})`);
+  const diff = end - start;
+  if (start % 2 === 0) {
+    // No production on tick 0!
+    const prodForCurrentTick = start === 0 ? 0 : 1;
+    // If `start` is even, then Math.floor(diff) gives:
+    // The number of even ticks AFTER `start` (inclusive of `end`)
+    return prodForCurrentTick + Math.floor(diff / 2);
+  }
+  return Math.ceil(diff / 2);
 }
 
 function isProdTick(tick: number): boolean {
@@ -221,4 +228,5 @@ export {
   doBurst,
   shouldStartMaxBurst,
   countAbstractMovePatterns,
+  countProductionTicks,
 };

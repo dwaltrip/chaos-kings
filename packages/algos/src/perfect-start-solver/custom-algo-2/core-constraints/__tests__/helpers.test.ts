@@ -7,6 +7,7 @@ import {
   doBurst,
   NULL_BURST_INFO,
   shouldStartMaxBurst,
+  countProductionTicks,
 } from '../abstract-moves';
 import { compactConsoleLog } from '@/utils/tests/compact-console-log';
 
@@ -124,7 +125,7 @@ describe('doBurst', () => {
   });
 });
 
-describe.only('shouldStartMaxBurst', () => {
+describe('shouldStartMaxBurst', () => {
   test('definining examples', () => {
     expect(shouldStartMaxBurst(46, 4)).toBe(false);
     expect(shouldStartMaxBurst(47, 4)).toBe(true);
@@ -148,5 +149,41 @@ describe.only('shouldStartMaxBurst', () => {
   // TODO: this should maybe be an error? this isn't an intended use case
   test('will not finish burst until after MAX_TICK', () => {
     expect(shouldStartMaxBurst(48, 4)).toBe(true);
+  });
+});
+
+describe.only('countProductionTicks', () => {
+  test('start = 1', () => {
+    expect(countProductionTicks(1, 2)).toEqual(1);
+    expect(countProductionTicks(1, 3)).toEqual(1);
+    expect(countProductionTicks(1, 4)).toEqual(2);
+  });
+
+  test('start = 2', () => {
+    expect(countProductionTicks(2, 2)).toEqual(1);
+    expect(countProductionTicks(2, 3)).toEqual(1);
+    expect(countProductionTicks(2, 4)).toEqual(2);
+  });
+
+  test('more tests', () => {
+    expect(countProductionTicks(9, 15)).toEqual(3);
+    expect(countProductionTicks(9, 16)).toEqual(4);
+    expect(countProductionTicks(9, 17)).toEqual(4);
+    expect(countProductionTicks(9, 18)).toEqual(5);
+
+    expect(countProductionTicks(10, 15)).toEqual(3);
+    expect(countProductionTicks(10, 16)).toEqual(4);
+    expect(countProductionTicks(10, 17)).toEqual(4);
+    expect(countProductionTicks(10, 18)).toEqual(5);
+
+    expect(countProductionTicks(11, 15)).toEqual(2);
+    expect(countProductionTicks(11, 16)).toEqual(3);
+    expect(countProductionTicks(11, 17)).toEqual(3);
+    expect(countProductionTicks(11, 18)).toEqual(4);
+
+    expect(countProductionTicks(12, 15)).toEqual(2);
+    expect(countProductionTicks(12, 16)).toEqual(3);
+    expect(countProductionTicks(12, 17)).toEqual(3);
+    expect(countProductionTicks(12, 18)).toEqual(4);
   });
 });
