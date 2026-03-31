@@ -15,10 +15,13 @@
   Two chains are equivalent if they produce the same (tick, generalArmy, frontier).
 */
 
+import * as fs from 'fs';
+import * as path from 'path';
+
 import { countProductionTicks } from '../abstract-moves';
 import { tickForGeneralArmy } from '../helpers';
 import { MAX_TICK } from '../constants';
-import { alignColumns } from '@/utils/format';
+import { formatTable } from '@/utils/format';
 
 interface CorridorState {
   tick: number;
@@ -27,6 +30,11 @@ interface CorridorState {
 }
 
 type BurstSizeChain = number[];
+
+interface EquivalenceGroup {
+  state: CorridorState;
+  chains: BurstSizeChain[];
+}
 
 function corridorBurst(state: CorridorState, burstSize: number): CorridorState {
   const armyNeeded = burstSize + 1;
@@ -87,38 +95,100 @@ function exploreEquivalentBurstChains(maxTick: number = MAX_TICK) {
 
   recurse({ tick: 0, generalArmy: 1, frontier: 0 }, []);
 
-  const equivalentGroups: { state: CorridorState; chains: BurstSizeChain[] }[] = [];
+  // Build sorted equivalence groups (all groups, not just multi-chain)
+  const allGroups: EquivalenceGroup[] = [];
   for (const [key, chains] of classesByKey) {
-    if (chains.length > 1) {
-      const [tick, generalArmy, frontier] = key.split(',').map(Number);
-      equivalentGroups.push({ state: { tick, generalArmy, frontier }, chains });
-    }
+    const [tick, generalArmy, frontier] = key.split(',').map(Number);
+    allGroups.push({ state: { tick, generalArmy, frontier }, chains });
   }
-
-  equivalentGroups.sort(
+  allGroups.sort(
     (a, b) => a.state.frontier - b.state.frontier || a.state.tick - b.state.tick,
   );
 
-  const totalChains = [...classesByKey.values()].reduce((sum, c) => sum + c.length, 0);
-  console.log(`\n  Total chains: ${totalChains}`);
-  console.log(`  Unique end states: ${classesByKey.size}`);
-  console.log(`  States with equivalent chains: ${equivalentGroups.length}\n`);
+  const equivalentGroups = allGroups.filter((g) => g.chains.length > 1);
+  const totalChains = allGroups.reduce((sum, g) => sum + g.chains.length, 0);
 
-  for (const { state, chains } of equivalentGroups) {
-    const { tick, generalArmy, frontier } = state;
-    console.log(
-      `  frontier=${frontier}  tick=${tick}  army=${generalArmy}  (${chains.length} chains)`,
-    );
-    const rows = chains.map((c) => [`    [${c.join(', ')}]`]);
-    console.log(alignColumns(rows).join('\n'));
-  }
-  console.log('');
-
-  return {
-    totalChains,
-    uniqueEndStates: classesByKey.size,
-    equivalentGroups: equivalentGroups.length,
-  };
+  return { totalChains, allGroups, equivalentGroups };
 }
 
-export { exploreEquivalentBurstChains };
+// ---- Output helpers --------------------------------------------------------
+
+const OUTPUT_DIR = path.resolve(__dirname, '../output/q2');
+
+function fmtChain(chain: BurstSizeChain): string {
+  return `[${chain.join(', ')}]`;
+}
+
+function writeSummary(
+  totalChains: number,
+  allGroups: EquivalenceGroup[],
+  equivalentGroups: EquivalenceGroup[],
+) {
+  const lines: string[] = [
+    '# Equivalent Burst Chains',
+    '',
+    `Corridor Model (MAX_TICK=${MAX_TICK})`,
+    '\n---\n',
+    `Total chains:    ${totalChains}`,
+    `Unique states:   ${allGroups.length}`,
+    `  - with 1 chain:   ${allGroups.length - equivalentGroups.length}`,
+    `  - with 2+ chains: ${equivalentGroups.length}`,
+    '',
+  ];
+
+  const rows = equivalentGroups.map(({ state, chains }) => {
+    const shortest = chains.reduce((a, b) => (a.length <= b.length ? a : b));
+    const longest = chains.reduce((a, b) => (a.length >= b.length ? a : b));
+    return [
+      String(state.frontier),
+      String(state.tick),
+      String(state.generalArmy),
+      String(chains.length),
+      fmtChain(shortest),
+      fmtChain(longest),
+    ];
+  });
+  lines.push(
+    formatTable(['frontier', 'tick', 'army', 'chains', 'shortest', 'longest'], rows),
+  );
+
+  const outPath = path.join(OUTPUT_DIR, 'summary.md');
+  fs.writeFileSync(outPath, lines.join('\n') + '\n');
+  console.log(`  wrote ${outPath}`);
+}
+
+function writeFullData(allGroups: EquivalenceGroup[]) {
+  const data = allGroups.map(({ state, chains }) => ({
+    frontier: state.frontier,
+    tick: state.tick,
+    army: state.generalArmy,
+    chainCount: chains.length,
+    chains,
+  }));
+
+  const outPath = path.join(OUTPUT_DIR, 'full-data.json');
+  fs.writeFileSync(outPath, JSON.stringify(data, null, 2) + '\n');
+  console.log(`  wrote ${outPath}`);
+}
+
+// ---- Main ------------------------------------------------------------------
+
+function run() {
+  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+
+  const { totalChains, allGroups, equivalentGroups } = exploreEquivalentBurstChains();
+
+  console.log(`\n  Total chains: ${totalChains}`);
+  console.log(`  Unique states: ${allGroups.length}`);
+  console.log(`  States with equivalent chains: ${equivalentGroups.length}\n`);
+
+  writeSummary(totalChains, allGroups, equivalentGroups);
+  writeFullData(allGroups);
+  console.log('');
+}
+
+// Run directly: npx tsx src/perfect-start-solver/explore-landscape/questions/q2-equivalent-burst-chains-simple.ts
+const isMain = process.argv[1]?.endsWith('q2-equivalent-burst-chains-simple.ts');
+if (isMain) run();
+
+export { exploreEquivalentBurstChains, corridorBurst, run };

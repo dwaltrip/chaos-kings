@@ -253,6 +253,7 @@ type GameId = string & { readonly __brand: 'GameId' };
 - `tools/build-all.sh` - Build backend + frontend
 - `tools/test-all.sh` - Run all tests
 - `tools/dev-all.sh` - Start dev server (use this!)
+- `tools/run-from-algos.sh <path>` - Run `npx tsx <path>` from `packages/algos` (e.g. `tools/run-from-algos.sh src/some/script.ts`)
 
 ### Backend (`apps/backend`)
 - `npm run build` - Build TypeScript to JS (check for TS errors)
