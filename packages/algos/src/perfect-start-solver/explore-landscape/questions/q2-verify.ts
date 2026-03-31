@@ -15,6 +15,8 @@ import {
   exploreEquivalentBurstChains,
   corridorBurst,
 } from './q2-equivalent-burst-chains-simple';
+import { formatTable } from '@/utils/format';
+import { heading, bulletList, kv, hr, sections, codeBlock } from '@/utils/md';
 
 interface CorridorState {
   tick: number;
@@ -27,7 +29,6 @@ type Chain = number[];
 const INITIAL_STATE: CorridorState = { tick: 0, generalArmy: 1, frontier: 0 };
 const OUTPUT_DIR = path.resolve(__dirname, '../output/q2');
 
-// Run a full chain from initial state, return end state
 function runChain(chain: Chain): CorridorState {
   let state = INITIAL_STATE;
   for (const size of chain) {
@@ -36,15 +37,14 @@ function runChain(chain: Chain): CorridorState {
   return state;
 }
 
-function stateStr(s: CorridorState): string {
-  return `(tick=${s.tick}, army=${s.generalArmy}, frontier=${s.frontier})`;
-}
-
 function stateKey(s: CorridorState): string {
   return `${s.tick},${s.generalArmy},${s.frontier}`;
 }
 
-// Generate all compositions of n (ordered sequences of positive ints summing to n)
+function fmtState(s: CorridorState): string {
+  return `tick=${s.tick} army=${s.generalArmy} f=${s.frontier}`;
+}
+
 function compositions(n: number): Chain[] {
   if (n === 0) return [[]];
   if (n === 1) return [[1]];
@@ -57,7 +57,6 @@ function compositions(n: number): Chain[] {
   return result;
 }
 
-// Find the longest common suffix of a set of chains
 function longestCommonSuffix(chains: Chain[]): Chain {
   if (chains.length === 0) return [];
   const shortest = Math.min(...chains.map((c) => c.length));
@@ -73,26 +72,12 @@ function longestCommonSuffix(chains: Chain[]): Chain {
   return suffix;
 }
 
-function verify() {
-  const { allGroups } = exploreEquivalentBurstChains();
-  const lines: string[] = [];
+// ---- Part 1: Free threshold ------------------------------------------------
 
-  function log(s: string = '') {
-    lines.push(s);
-  }
-
-  log('# Verification: Free Prefix Theory');
-  log('');
-
-  // ---- Part 1: Find the "free threshold" ----
-  // For each N, check if all compositions of N produce the same state.
-
-  log('## Part 1: Free threshold');
-  log('');
-  log('For each N, do ALL compositions of N produce the same end state?');
-  log('');
-
+function verifyFreeThreshold(): string {
+  const rows: string[][] = [];
   let freeThreshold = 0;
+
   for (let n = 1; n <= 16; n++) {
     const comps = compositions(n);
     const states = new Map<string, number>();
@@ -104,38 +89,39 @@ function verify() {
     const allSame = states.size === 1;
     if (allSame) freeThreshold = n;
 
-    const stateList = [...states.entries()]
-      .map(([k, count]) => `${count}x → (${k})`)
-      .join(', ');
-    log(
-      `  N=${String(n).padStart(2)}: ${String(comps.length).padStart(5)} compositions → ${states.size} distinct state${states.size > 1 ? 's' : ' '}${allSame ? ' ✓ ALL SAME' : ''}  [${stateList}]`,
-    );
+    rows.push([String(n), String(comps.length), String(states.size), allSame ? '✓' : '']);
 
-    // Stop once compositions get huge
-    if (comps.length > 10000) {
-      log(`  (stopping — compositions too large)`);
-      break;
-    }
+    if (comps.length > 10000) break;
   }
-  log('');
-  log(`Free threshold: N ≤ ${freeThreshold} (all compositions equivalent)`);
-  log('');
 
-  // ---- Part 2: Group decomposition ----
-  // For each equivalence group, find common suffix and check prefix structure.
+  return sections(
+    heading('Part 1: Free Threshold'),
+    'Do ALL compositions of N produce the same end state?',
+    formatTable(['N', 'compositions', 'distinct states', 'all same?'], rows),
+    `**Result:** Free threshold is N ≤ ${freeThreshold}`,
+  );
+}
 
-  log('## Part 2: Group decomposition');
-  log('');
+// ---- Part 2: Group decomposition -------------------------------------------
 
-  // Build a lookup: stateKey → group
+interface DecompositionResult {
+  ok: number;
+  fail: number;
+  total: number;
+  mismatches: string[];
+}
+
+function verifyDecomposition(): { output: string; result: DecompositionResult } {
+  const { allGroups } = exploreEquivalentBurstChains();
+
   const groupByState = new Map<string, Chain[]>();
   for (const g of allGroups) {
     groupByState.set(stateKey(g.state), g.chains);
   }
 
   const multiGroups = allGroups.filter((g) => g.chains.length > 1);
-  let decompositionOk = 0;
-  let decompositionFail = 0;
+  const mismatches: string[] = [];
+  let ok = 0;
 
   for (const group of multiGroups) {
     const { state, chains } = group;
@@ -143,15 +129,11 @@ function verify() {
     const suffixSum = suffix.reduce((a, b) => a + b, 0);
     const prefixFrontier = state.frontier - suffixSum;
 
-    // Extract prefixes
     const prefixes = chains.map((c) => c.slice(0, c.length - suffix.length));
-
-    // All prefixes should produce the same state
     const prefixStates = new Set(prefixes.map((p) => stateKey(runChain(p))));
-
-    // Check: do the prefixes form a complete group at prefixFrontier?
     const prefixStateKey = stateKey(runChain(prefixes[0]));
     const expectedGroup = groupByState.get(prefixStateKey);
+
     const prefixesMatch =
       expectedGroup &&
       prefixStates.size === 1 &&
@@ -159,52 +141,94 @@ function verify() {
       expectedGroup.every((c) => prefixes.some((p) => p.join(',') === c.join(',')));
 
     if (prefixesMatch) {
-      decompositionOk++;
+      ok++;
     } else {
-      decompositionFail++;
-      log(
-        `  MISMATCH: frontier=${state.frontier} tick=${state.tick} army=${state.generalArmy}` +
-          `  suffix=[${suffix.join(',')}]  prefixFrontier=${prefixFrontier}` +
-          `  prefixStates=${prefixStates.size}  prefixes=${prefixes.length}` +
-          `  expectedGroup=${expectedGroup?.length ?? 'none'}`,
+      mismatches.push(
+        `f=${state.frontier} tick=${state.tick} army=${state.generalArmy}` +
+          ` — suffix=[${suffix.join(',')}] prefixN=${prefixFrontier}` +
+          ` — prefixStates=${prefixStates.size} prefixes=${prefixes.length}` +
+          ` expected=${expectedGroup?.length ?? 'none'}`,
       );
     }
   }
 
-  log(
-    `Decomposition check: ${decompositionOk} OK, ${decompositionFail} FAIL (of ${multiGroups.length} groups)`,
+  const result: DecompositionResult = {
+    ok,
+    fail: mismatches.length,
+    total: multiGroups.length,
+    mismatches,
+  };
+
+  const output = sections(
+    heading('Part 2: Group Decomposition'),
+    'For each group: find longest common suffix, check that prefixes form a complete group.',
+    bulletList([
+      kv('Passed', `${ok} / ${result.total}`),
+      kv('Failed', `${result.fail} / ${result.total}`),
+    ]),
+    mismatches.length > 0 ? sections('**Mismatches:**', bulletList(mismatches)) : '',
   );
-  log('');
 
-  // ---- Part 3: What does the suffix structure look like? ----
-  log('## Part 3: Suffix structure by frontier');
-  log('');
+  return { output, result };
+}
 
-  const byFrontier = new Map<number, typeof multiGroups>();
+// ---- Part 3: Suffix structure by frontier ----------------------------------
+
+function verifySuffixStructure(): string {
+  const { allGroups } = exploreEquivalentBurstChains();
+
+  const byFrontier = new Map<number, typeof allGroups>();
   for (const g of allGroups) {
     const f = g.state.frontier;
     if (!byFrontier.has(f)) byFrontier.set(f, []);
     byFrontier.get(f)!.push(g);
   }
 
+  const parts: string[] = [heading('Part 3: Suffix Structure by Frontier')];
+
   for (const [frontier, groups] of [...byFrontier].sort((a, b) => a[0] - b[0])) {
     if (frontier > 10) break;
-    log(`  frontier=${frontier}: ${groups.length} group${groups.length > 1 ? 's' : ''}`);
-    for (const g of groups) {
+
+    const rows = groups.map((g) => {
       const suffix = longestCommonSuffix(g.chains);
-      const prefixFrontier = g.state.frontier - suffix.reduce((a, b) => a + b, 0);
-      log(
-        `    tick=${String(g.state.tick).padStart(2)}  army=${g.state.generalArmy}` +
-          `  chains=${String(g.chains.length).padStart(3)}` +
-          `  suffix=[${suffix.join(', ')}]` +
-          `  prefixN=${prefixFrontier}`,
-      );
-    }
+      const prefixN = g.state.frontier - suffix.reduce((a, b) => a + b, 0);
+      return [
+        String(g.state.tick),
+        String(g.state.generalArmy),
+        String(g.chains.length),
+        suffix.length > 0 ? `[${suffix.join(', ')}]` : '(none)',
+        String(prefixN),
+      ];
+    });
+
+    parts.push(
+      `### frontier = ${frontier} (${groups.length} group${groups.length > 1 ? 's' : ''})`,
+    );
+    parts.push(formatTable(['tick', 'army', 'chains', 'suffix', 'prefixN'], rows));
   }
 
-  const outPath = path.join(OUTPUT_DIR, 'verification.md');
+  return parts.join('\n\n');
+}
+
+// ---- Main ------------------------------------------------------------------
+
+function verify() {
+  const part1 = verifyFreeThreshold();
+  const { output: part2 } = verifyDecomposition();
+  const part3 = verifySuffixStructure();
+
+  const doc = sections(
+    heading('Verification: Free Prefix Theory', 1),
+    part1,
+    hr(),
+    part2,
+    hr(),
+    part3,
+  );
+
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-  fs.writeFileSync(outPath, lines.join('\n') + '\n');
+  const outPath = path.join(OUTPUT_DIR, 'verification.md');
+  fs.writeFileSync(outPath, doc + '\n');
   console.log(`  wrote ${outPath}`);
 }
 
