@@ -22,6 +22,7 @@ import { countProductionTicks } from '../abstract-moves';
 import { tickForGeneralArmy } from '../helpers';
 import { MAX_TICK } from '../constants';
 import { formatTable } from '@/utils/format';
+import { writeJson } from '@/utils/json';
 
 interface CorridorState {
   tick: number;
@@ -167,7 +168,7 @@ function writeFullData(allGroups: EquivalenceGroup[]) {
   }));
 
   const outPath = path.join(OUTPUT_DIR, 'full-data.json');
-  fs.writeFileSync(outPath, JSON.stringify(data, null, 2) + '\n');
+  writeJson(outPath, data);
   console.log(`  wrote ${outPath}`);
 }
 

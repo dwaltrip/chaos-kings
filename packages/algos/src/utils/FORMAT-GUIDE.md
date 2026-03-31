@@ -33,6 +33,18 @@ import { codeBlock, bulletList, heading, kv, hr, sections } from '@/utils/md';
 | `hr()`                         | `\n---\n`                                       |
 | `sections(a, b, c)`           | Joins non-empty strings with blank lines        |
 
+### `@/utils/json.ts` — JSON output
+
+```ts
+import { writeJson } from '@/utils/json';
+```
+
+| Helper                    | Output                                                    |
+| ------------------------- | --------------------------------------------------------- |
+| `writeJson(path, data)`  | Write compact JSON via `fjson` (falls back to std JSON)   |
+
+Uses [fractured JSON](https://github.com/j-brooke/FracturedJson) for natural, compact formatting — arrays of small values stay on one line instead of expanding to one-per-line. Requires `fjson` CLI.
+
 ### `@/utils/format.ts` — Tables and alignment
 
 ```ts
