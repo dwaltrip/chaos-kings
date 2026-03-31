@@ -1,7 +1,11 @@
-import type { Coord } from '@core/types';
+import type { Coord, Direction } from '@core/types';
 
-import type { Move } from './types';
 import { FlatBoard, Board, TileType } from '@/core-next/flat-board';
+
+type Move = {
+  sourceCoord: Coord;
+  direction: Direction;
+} | null; // null = wait
 
 // Auto-pad columns so they align vertically.
 // Each row is an array of cell strings. Returns one joined string per row.
