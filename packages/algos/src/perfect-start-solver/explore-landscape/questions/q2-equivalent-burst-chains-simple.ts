@@ -1,44 +1,124 @@
 /*
+  Equivalent Burst Chains (simple corridor version)
 
-# Equivalent Burst Chains (simple version)
+  Model:
+  - 1xN corridor, general at x=0
+  - Each burst goes from x=0 to some depth (> current frontier)
+  - Re-traversals: moves through owned tiles (0..frontier), cost ticks but not army
+  - New tile captures: each costs 1 army
+  - Army needed = burstSize + 1 (captures + 1 left behind)
+  - Total moves per burst = frontier + burstSize
+  - After burst: generalArmy = 1 + production ticks during burst
 
-Board:
-
-* Single corridor with the general at the far left end (x=0)
-* Immediate neighbor of general is to the right, at x=1
-
-## Example
-
-These feel equivalent to me
-
-Chain A:
-
-+---------+------------+---------+-------------+---------+---------------+---------------+
-| Burst # | Ticks      | General | Path (x)    | Moves   | Re-traversals | New Tiles (x) |
-+=========+============+=========+=============+=========+===============+===============+
-| 1       | 3          | 2 / 1   | 1           | 1       | 0             | 1             |
-+---------+------------+---------+-------------+---------+---------------+---------------+
-| 2       | 5 -> 6     | 2 / 1   | 1, 2        | 2       | 1             | 2             |
-+---------+------------+---------+-------------+---------+---------------+---------------+
-| 3       | 7 -> 9     | 2 / 2   | 1, 2, 3     | 3       | 2             | 3             |
-+---------+------------+---------+-------------+---------+---------------+---------------+
-
-Chain B:
-
-+---------+------------+---------+-------------+---------+---------------+---------------+
-| Burst # | Ticks      | General | Path        | Moves   | Re-traversals | New Tiles (x) |
-+=========+============+=========+=============+=========+===============+===============+
-| 1       | 5 -> 6     | 3 / 1   | 1, 2        | 2       | 0             | 1, 2          |
-+---------+------------+---------+-------------+---------+---------------+---------------+
-| 2       | 7 -> 9     | 2 / 2   | 1, 2, 3     | 3       | 2             | 3             |
-+---------+------------+---------+-------------+---------+---------------+---------------+
-
+  A chain = sequence of burst sizes [s1, s2, ..., sn].
+  Frontier after chain = sum of all sizes.
+  Two chains are equivalent if they produce the same (tick, generalArmy, frontier).
 */
 
-// ----------------------------------------------------------------------------
+import { countProductionTicks } from '../abstract-moves';
+import { tickForGeneralArmy } from '../helpers';
+import { MAX_TICK } from '../constants';
+import { alignColumns } from '@/utils/format';
 
-function exploreEquivalentBurstChains() {
-  console.log('wip');
+interface CorridorState {
+  tick: number;
+  generalArmy: number;
+  frontier: number;
+}
+
+type BurstSizeChain = number[];
+
+function corridorBurst(state: CorridorState, burstSize: number): CorridorState {
+  const armyNeeded = burstSize + 1;
+
+  let readyTick = state.tick;
+  if (state.generalArmy < armyNeeded) {
+    readyTick = tickForGeneralArmy(state.tick, state.generalArmy, armyNeeded);
+  }
+
+  const totalMoves = state.frontier + burstSize;
+  const firstMoveTick = readyTick + 1;
+  const endTick = firstMoveTick + totalMoves - 1;
+  const newUnits = countProductionTicks(firstMoveTick, endTick);
+
+  return {
+    tick: endTick,
+    generalArmy: 1 + newUnits,
+    frontier: state.frontier + burstSize,
+  };
+}
+
+function exploreEquivalentBurstChains(maxTick: number = MAX_TICK) {
+  const classesByKey = new Map<string, BurstSizeChain[]>();
+
+  function stateKey(s: CorridorState): string {
+    return `${s.tick},${s.generalArmy},${s.frontier}`;
+  }
+
+  function recurse(state: CorridorState, chain: number[]): void {
+    if (chain.length > 0) {
+      const key = stateKey(state);
+      let group = classesByKey.get(key);
+      if (!group) {
+        group = [];
+        classesByKey.set(key, group);
+      }
+      group.push([...chain]);
+    }
+
+    for (let size = 1; size <= maxTick; size++) {
+      const armyNeeded = size + 1;
+
+      let readyTick = state.tick;
+      if (state.generalArmy < armyNeeded) {
+        readyTick = tickForGeneralArmy(state.tick, state.generalArmy, armyNeeded);
+      }
+      const totalMoves = state.frontier + size;
+      const endTick = readyTick + 1 + totalMoves - 1;
+
+      if (endTick > maxTick) break;
+
+      const nextState = corridorBurst(state, size);
+      chain.push(size);
+      recurse(nextState, chain);
+      chain.pop();
+    }
+  }
+
+  recurse({ tick: 0, generalArmy: 1, frontier: 0 }, []);
+
+  const equivalentGroups: { state: CorridorState; chains: BurstSizeChain[] }[] = [];
+  for (const [key, chains] of classesByKey) {
+    if (chains.length > 1) {
+      const [tick, generalArmy, frontier] = key.split(',').map(Number);
+      equivalentGroups.push({ state: { tick, generalArmy, frontier }, chains });
+    }
+  }
+
+  equivalentGroups.sort(
+    (a, b) => a.state.frontier - b.state.frontier || a.state.tick - b.state.tick,
+  );
+
+  const totalChains = [...classesByKey.values()].reduce((sum, c) => sum + c.length, 0);
+  console.log(`\n  Total chains: ${totalChains}`);
+  console.log(`  Unique end states: ${classesByKey.size}`);
+  console.log(`  States with equivalent chains: ${equivalentGroups.length}\n`);
+
+  for (const { state, chains } of equivalentGroups) {
+    const { tick, generalArmy, frontier } = state;
+    console.log(
+      `  frontier=${frontier}  tick=${tick}  army=${generalArmy}  (${chains.length} chains)`,
+    );
+    const rows = chains.map((c) => [`    [${c.join(', ')}]`]);
+    console.log(alignColumns(rows).join('\n'));
+  }
+  console.log('');
+
+  return {
+    totalChains,
+    uniqueEndStates: classesByKey.size,
+    equivalentGroups: equivalentGroups.length,
+  };
 }
 
 export { exploreEquivalentBurstChains };

@@ -1,7 +1,8 @@
 import { timeIt } from '@/utils/time-it';
-import { fmtObj, formatTable, round } from '../format';
+import { fmtObj, formatTable, round } from '@/utils/format';
 
 import { maxSingleBurst } from './questions/q1-max-single-burst';
+import { exploreEquivalentBurstChains } from './questions/q2-equivalent-burst-chains-simple';
 
 /*
   With max tick = 50 
@@ -26,7 +27,7 @@ const QUESTIONS = [
   {
     num: 2,
     description: 'equivalent burst chains (simple version)',
-    run: () => null,
+    run: () => exploreEquivalentBurstChains(),
   },
 ];
 
