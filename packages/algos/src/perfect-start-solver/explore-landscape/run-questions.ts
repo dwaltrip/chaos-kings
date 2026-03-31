@@ -11,6 +11,7 @@ import { maxSingleBurst } from './questions/q1-max-single-burst';
 */
 
 interface QuestionResult {
+  num: number;
   description: string;
   result: any;
   time: number; // in milliseconds
@@ -18,22 +19,29 @@ interface QuestionResult {
 
 const QUESTIONS = [
   {
+    num: 1,
     description: 'max single burst',
     run: () => maxSingleBurst(),
+  },
+  {
+    num: 2,
+    description: 'equivalent burst chains (simple version)',
+    run: () => null,
   },
 ];
 
 function runQuestions() {
-  const results: QuestionResult[] = QUESTIONS.map(({ description, run }) => {
+  const results: QuestionResult[] = QUESTIONS.map(({ num, description, run }) => {
     const { result, time } = timeIt(() => run());
-    return { description, result, time };
+    return { num, description, result, time };
   });
   console.log(
     formatTable(
-      ['Description', 'Result', 'Time'],
-      results.map(({ description, result, time }) => [
+      ['#', 'Description', 'Result', 'Time'],
+      results.map(({ num, description, result, time }, i) => [
+        `${num}`,
         description,
-        fmtObj(result),
+        result ? fmtObj(result) : '-',
         `${round(time, 2)} ms`,
       ]),
     ),

@@ -13,18 +13,25 @@ function main() {
 }
 
 function main2() {
-  const cfg = { maxTick: 13 };
-  console.log('--- COUNT:', countAbstractMovePatterns(cfg));
-  console.log();
+  const cfg = { maxTick: 20 };
+  const count = countAbstractMovePatterns(cfg);
 
   const results = getAllAbstractMovePatterns(cfg);
+  if (results.length !== count) {
+    console.error('uh oh... counts do not match!');
+  }
+
   results.forEach((res, i) => {
-    const label = `[${numStr(i + 1, 2)}]`;
-    console.log(label.padEnd(6) + res.map((b) => b.size).join(','));
-    console.log(
-      ''.padEnd(6) + res.map((b) => `${b.firstMoveTick},${b.size}`).join(' | '),
-    );
-    console.log();
+    const label = `[${numStr(i + 1, 3)}]`;
+    const burstLengths = res.map((b) => b.size).join(',');
+    const burstChainDetails = res
+      .map((b) => `${numStr(b.firstMoveTick, 2)},${numStr(b.size, 2)}`)
+      .join(' | ');
+
+    console.log(label.padEnd(6) + burstChainDetails);
+    // console.log(label.padEnd(6) + burstLengths);
+    // console.log(''.padEnd(6) + burstChainDetails);
+    // console.log();
   });
 }
 
