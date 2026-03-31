@@ -25,13 +25,13 @@ This confirms: the free threshold is a property of corridor re-traversal mechani
 
 Total frontier is never "free" — even N=1 gives 2 distinct states (L1 vs R1). On a real board, (leftF=3, rightF=1) and (leftF=1, rightF=3) are genuinely different positions. They cannot be assumed equivalent without careful analysis depending on board geometry and solver design.
 
-**Not tested:** whether the per-direction threshold holds independently of the other direction's frontier (e.g., is splitting within L still free at N≤3 when rightF is already large?). The model structure suggests yes — re-traversal cost only depends on that direction's frontier — but this was not verified computationally.
+**Caveat:** the N≤3 threshold was only tested from the initial state (tick=0, army=1), same as session 1. It has not been verified from arbitrary intermediate states. See [Appendix A](#appendix-a-free-threshold-starting-state-dependence) for details on what could break and how to test.
 
 ### 2. Direction ordering has conditional freedom
 
 **Established: order is free when both directions are unexplored.** When two bursts go to directions that both have frontier=0, order doesn't matter. Each burst sees zero re-traversal regardless of sequence, so the cost math is identical. Example: [L2, R2] and [R2, L2] both end at tick=10, army=2, leftF=2, rightF=2.
 
-**Established: order matters in general.** Traced [L1, R1, L2] (tick=11) vs [L1, L2, R1] (tick=10) — same frontier split (3,1), different end ticks. The cheap burst (R1, frontier_R=0, 1 move) benefits from being placed *after* the expensive burst (L2, frontier_L=1, 3 moves) because it piggybacks on army production accumulated during the longer burst. Placing it before wastes ticks waiting for army that could be spent on the expensive burst first.
+**Established: order matters in general.** Traced [L1, R1, L2] (tick=11) vs [L1, L2, R1] (tick=10) — same frontier split (3,1), different end ticks. The cheap burst (R1, frontier_R=0, 1 move) benefits from being placed *after* the expensive burst (L2, frontier_L=1, 3 moves): after L2 completes, the general already has enough army from production during those 3 moves to launch R1 immediately with no wait. Placing R1 before L2 consumes wait-for-army ticks that push the entire schedule later.
 
 **Hypothesis (untested):** there may be deeper conditional freedom beyond the new-path case — situations where order doesn't matter even with previously explored paths. Would need careful analysis.
 
@@ -52,7 +52,7 @@ Overall clean decomposition rate across ALL multi-chain groups:
 Two trends driving the decline:
 
 1. **"No common suffix" groups are the majority and growing** (47% → 51% → 64%). The suffix lens has nothing to grab onto for these groups.
-2. **Among groups that DO have a suffix**, the pass rate dropped from 93% (tick-20) to ~75% (tick-30/40) then stabilized. The failures (58 at tick-30, 122 at tick-40) are groups where chains share a suffix but prefixes don't form a clean equivalence group — a "converging suffix" phenomenon that was rare in single-sided (only 2 cases) but is much more common here.
+2. **Among groups that DO have a suffix**, the pass rate dropped from 93% (tick-20) to ~75% (tick-30/40) and leveled off around that range. The failures (58 at tick-30, 122 at tick-40) are groups where chains share a suffix but prefixes don't form a clean equivalence group — a "converging suffix" phenomenon that was rare in single-sided (only 2 cases) but is much more common here.
 
 **Hypothesis (untested):** normalizing direction reorderings at new-path boundaries *before* checking suffixes might recover some structure. Chains like [..., L2, R3] and [..., R3, L2] are equivalent when both directions were unexplored at that point, but they appear as different suffixes to the literal suffix matcher. This is distinct from L↔R state-level symmetry (~2x on state count).
 
@@ -71,7 +71,7 @@ The suffix lens may simply not be the right primary tool for understanding doubl
 
 If the two directions were fully independent, we'd expect double ≈ single². At tick-20/30 it's somewhat below. At tick-40/50, double **exceeds** single². This suggests cross-direction equivalences that don't reduce to per-direction structure alone — the new-path direction-ordering freedom is likely one source of these.
 
-Decomposing sources of collapse: L↔R symmetry contributes a clean ~2x to state count (every non-self-symmetric state has a mirror twin — perfect symmetry, 0 states without). The heavy lifting (~44x at tick-30) comes from burst-splitting equivalences + direction-interleaving equivalences.
+Decomposing sources of collapse: L↔R symmetry contributes a clean ~2x to state count (every non-self-symmetric state has a mirror twin — perfect symmetry, 0 states without). Since the model is perfectly L↔R symmetric, each mirror pair has the same number of chains, so this ~2x on state count translates directly to ~2x on reduction ratio. The remaining ~44x at tick-30 comes from burst-splitting equivalences + direction-interleaving equivalences.
 
 **For the solver:** redundancy grows faster than actual complexity at larger scales. Pruning equivalent chains becomes *more* powerful exactly where you need it most.
 
@@ -97,3 +97,30 @@ All paths relative to `explore-landscape/`:
 - `output/q3/summary-max-tick-{20,30,40}.md` — equivalence group tables with direction ordering + symmetry analysis
 - `output/q3/full-data-max-tick-{20,30,40}.json` — structured data with aggregate stats
 - `docs/sessions/session-2-notes.md` — this file
+
+---
+
+## Appendix A: Free threshold starting-state dependence
+
+The N≤3 free threshold (Finding #1) was tested only from the initial state (tick=0, army=1, frontier=0 in both directions). Session 1 flagged the same limitation for single-sided: "this is specifically about chains starting from the initial state. The same property does not necessarily hold when starting from an arbitrary intermediate state."
+
+In the double-sided model, this caveat becomes more relevant because the other direction's bursts naturally create varied starting states for each direction's splits.
+
+### What could break it
+
+The re-traversal *cost* for a direction depends only on that direction's frontier — this is independent. But two other factors are path-dependent:
+
+1. **Army availability.** The army level when you begin a split depends on the full chain history. A split that cancels perfectly from army=1 might not cancel from army=3, because wait-for-army timing shifts.
+
+2. **Tick parity.** Production happens on even ticks. Starting a split on an odd vs even tick changes which production ticks fall during each sub-burst. A split that exactly cancels from an even starting tick might not from an odd one.
+
+### How to test
+
+Run all compositions of N for a single direction from a variety of non-initial states:
+
+- Fix a starting state like (tick=10, army=2, leftF=0, rightF=5)
+- Run all compositions of N=1,2,3,4 going left only
+- Check: do all compositions of N still produce the same end state for N≤3?
+- Repeat across varied starting states (different tick parities, army levels, other-direction frontiers)
+
+If the threshold holds universally, it's a stronger result. If it depends on starting state, we need to characterize which states preserve it — that directly affects how a solver can use this pruning rule.
