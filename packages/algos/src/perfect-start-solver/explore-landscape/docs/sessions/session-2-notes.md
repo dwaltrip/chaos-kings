@@ -94,8 +94,10 @@ Decomposing sources of collapse: L↔R symmetry contributes a clean ~2x to state
 All paths relative to `explore-landscape/`:
 
 - `questions/q3-equivalent-burst-chains-double.ts` — enumeration + output generation
+- `questions/q3-verify.ts` — reproducible verification of session 2 findings
 - `output/q3/summary-max-tick-{20,30,40}.md` — equivalence group tables with direction ordering + symmetry analysis
 - `output/q3/full-data-max-tick-{20,30,40}.json` — structured data with aggregate stats
+- `output/q3/verification-max-tick-{N}.md` — verification output
 - `docs/sessions/session-2-notes.md` — this file
 
 ---
