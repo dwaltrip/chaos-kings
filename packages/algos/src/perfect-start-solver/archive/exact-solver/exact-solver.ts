@@ -8,8 +8,8 @@ import type { FlatMove } from '@/core-next/process-step';
 import { fromBoardState } from '@/core-next/convert';
 
 import { generateMoves, fingerprintState, flatMoveToMove } from './moves';
-import { runWithTiming } from './helpers';
-import type { Move } from './types';
+import { runWithTiming } from '../../helpers';
+import type { Move } from '../../types';
 
 interface ExactSolverConfig {
   maxTicks: number;

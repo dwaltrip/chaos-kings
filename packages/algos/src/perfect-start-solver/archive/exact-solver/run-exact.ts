@@ -1,6 +1,6 @@
-import { makeBoard } from './test-boards';
+import { makeBoard } from '../../test-boards';
 import { solveExact } from './exact-solver';
-import { formatMove } from './format';
+import { formatMove } from '@/utils/format';
 
 const boardName = process.argv[2] || 'open-7x7';
 const maxTicks = Number(process.argv[3]) || 50;

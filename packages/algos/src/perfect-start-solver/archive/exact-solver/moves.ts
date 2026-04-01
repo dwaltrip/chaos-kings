@@ -2,8 +2,8 @@ import { TileType, NO_OWNER, Board } from '@/core-next/flat-board';
 import type { FlatBoard } from '@/core-next/flat-board';
 import type { FlatMove } from '@/core-next/process-step';
 
-import { ALL_DIRECTIONS } from './helpers';
-import type { Move } from './types';
+import { ALL_DIRECTIONS } from '../../helpers';
+import type { Move } from '../../types';
 
 interface MoveGenState {
   board: FlatBoard;
