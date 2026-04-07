@@ -183,13 +183,14 @@ function run() {
   console.log(`  Unique states: ${allGroups.length}`);
   console.log(`  States with equivalent chains: ${equivalentGroups.length}\n`);
 
-  writeSummary(totalChains, allGroups, equivalentGroups);
-  writeFullData(allGroups);
-  console.log('');
+  // writeSummary(totalChains, allGroups, equivalentGroups);
+  // writeFullData(allGroups);
+  // console.log('');
 }
 
 // Run directly: npx tsx src/perfect-start-solver/explore-landscape/questions/q2-equivalent-burst-chains-simple.ts
 const isMain = process.argv[1]?.endsWith('q2-equivalent-burst-chains-simple.ts');
 if (isMain) run();
 
+export type { BurstSizeChain, CorridorState };
 export { exploreEquivalentBurstChains, corridorBurst, run };
