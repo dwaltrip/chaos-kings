@@ -1,3 +1,5 @@
+**NOTE: This session used a buggy burst model that allowed arbitrary burst sizes regardless of current army. The bug was found and fixed in session 3 (see `session-3-notes.md`). Some findings (free threshold N<=3, general equivalence collapse) held up; others (absolute numbers, suffix decomposition exceptions, state counts per frontier) were invalidated.**
+
 # Session 1: Equivalent Burst Chains in a 1xN Corridor
 
 ## Context

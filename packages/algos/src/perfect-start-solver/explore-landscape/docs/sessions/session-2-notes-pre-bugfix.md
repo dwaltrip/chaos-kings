@@ -1,3 +1,5 @@
+**NOTE: This session used a buggy burst model that allowed arbitrary burst sizes regardless of current army. The bug was found and fixed in session 3 (see `session-3-notes.md`). Some findings (free threshold, direction ordering freedom, L/R symmetry) held up; others (collapse exceeds single-squared, absolute numbers, suffix decomposition failure rates) were invalidated.**
+
 # Session 2: Equivalent Burst Chains in a Double-Sided Corridor
 
 ## Context
