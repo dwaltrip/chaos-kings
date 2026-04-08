@@ -16,6 +16,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { invariant } from '@utils/assertions/invariant';
 import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 
 import type { AlgoConfig } from '../abstract-moves';
@@ -49,14 +50,20 @@ interface EquivalenceGroup {
 function corridorBurstDouble(
   state: DoubleCorridorState,
   dir: Direction,
-  burstSize: number,
+  targetArmy: number,
 ): DoubleCorridorState {
-  const armyNeeded = burstSize + 1;
+  invariant(
+    targetArmy >= state.generalArmy,
+    `targetArmy (${targetArmy}) must be >= generalArmy (${state.generalArmy})`,
+  );
+  invariant(targetArmy >= 2, `targetArmy (${targetArmy}) must be >= 2`);
+
+  const burstSize = targetArmy - 1;
   const frontier = dir === 'L' ? state.leftFrontier : state.rightFrontier;
 
   let readyTick = state.tick;
-  if (state.generalArmy < armyNeeded) {
-    readyTick = tickForGeneralArmy(state.tick, state.generalArmy, armyNeeded);
+  if (state.generalArmy < targetArmy) {
+    readyTick = tickForGeneralArmy(state.tick, state.generalArmy, targetArmy);
   }
 
   const totalMoves = frontier + burstSize;
@@ -93,23 +100,25 @@ function exploreDoubleCorridor(cfg: AlgoConfig) {
       group.push([...chain]);
     }
 
+    const minTargetArmy = Math.max(2, state.generalArmy);
+
     for (const dir of DIRECTIONS) {
       const frontier = dir === 'L' ? state.leftFrontier : state.rightFrontier;
 
-      for (let size = 1; size <= cfg.maxTick; size++) {
-        const armyNeeded = size + 1;
+      for (let targetArmy = minTargetArmy; targetArmy <= cfg.maxTick; targetArmy++) {
+        const burstSize = targetArmy - 1;
 
         let readyTick = state.tick;
-        if (state.generalArmy < armyNeeded) {
-          readyTick = tickForGeneralArmy(state.tick, state.generalArmy, armyNeeded);
+        if (state.generalArmy < targetArmy) {
+          readyTick = tickForGeneralArmy(state.tick, state.generalArmy, targetArmy);
         }
-        const totalMoves = frontier + size;
+        const totalMoves = frontier + burstSize;
         const endTick = readyTick + 1 + totalMoves - 1;
 
         if (endTick > cfg.maxTick) break;
 
-        const nextState = corridorBurstDouble(state, dir, size);
-        chain.push({ dir, size });
+        const nextState = corridorBurstDouble(state, dir, targetArmy);
+        chain.push({ dir, size: burstSize });
         recurse(nextState, chain);
         chain.pop();
       }

@@ -29,10 +29,12 @@ type Chain = number[];
 const INITIAL_STATE: CorridorState = { tick: 0, generalArmy: 1, frontier: 0 };
 const OUTPUT_DIR = path.resolve(__dirname, '../output/q2');
 
-function runChain(chain: Chain): CorridorState {
+function runChain(chain: Chain): CorridorState | null {
   let state = INITIAL_STATE;
   for (const size of chain) {
-    state = corridorBurst(state, size);
+    const targetArmy = size + 1;
+    if (targetArmy < state.generalArmy) return null;
+    state = corridorBurst(state, targetArmy);
   }
   return state;
 }
@@ -81,15 +83,26 @@ function verifyFreeThreshold(): string {
   for (let n = 1; n <= 16; n++) {
     const comps = compositions(n);
     const states = new Map<string, number>();
+    let invalidCount = 0;
     for (const chain of comps) {
       const state = runChain(chain);
+      if (state === null) {
+        invalidCount++;
+        continue;
+      }
       const key = stateKey(state);
       states.set(key, (states.get(key) || 0) + 1);
     }
     const allSame = states.size === 1;
-    if (allSame) freeThreshold = n;
+    if (allSame && freeThreshold === n - 1) freeThreshold = n;
 
-    rows.push([String(n), String(comps.length), String(states.size), allSame ? '✓' : '']);
+    rows.push([
+      String(n),
+      String(comps.length),
+      String(invalidCount),
+      String(states.size),
+      allSame ? '✓' : '',
+    ]);
 
     if (comps.length > 10000) break;
   }
@@ -97,7 +110,7 @@ function verifyFreeThreshold(): string {
   return sections(
     heading('Part 1: Free Threshold'),
     'Do ALL compositions of N produce the same end state?',
-    formatTable(['N', 'compositions', 'distinct states', 'all same?'], rows),
+    formatTable(['N', 'compositions', 'invalid', 'distinct states', 'all same?'], rows),
     `**Result:** Free threshold is N ≤ ${freeThreshold}`,
   );
 }
@@ -130,8 +143,19 @@ function verifyDecomposition(): { output: string; result: DecompositionResult } 
     const prefixFrontier = state.frontier - suffixSum;
 
     const prefixes = chains.map((c) => c.slice(0, c.length - suffix.length));
-    const prefixStates = new Set(prefixes.map((p) => stateKey(runChain(p))));
-    const prefixStateKey = stateKey(runChain(prefixes[0]));
+    const prefixResults = prefixes.map((p) => runChain(p));
+    const hasInvalid = prefixResults.some((r) => r === null);
+
+    if (hasInvalid) {
+      mismatches.push(
+        `f=${state.frontier} tick=${state.tick} army=${state.generalArmy}` +
+          ` — suffix=[${suffix.join(',')}] — has invalid prefix chains`,
+      );
+      continue;
+    }
+
+    const prefixStates = new Set(prefixResults.map((p) => stateKey(p!)));
+    const prefixStateKey = stateKey(prefixResults[0]!);
     const expectedGroup = groupByState.get(prefixStateKey);
 
     const prefixesMatch =

@@ -54,9 +54,13 @@ const INITIAL_STATE: DoubleCorridorState = {
   rightFrontier: 0,
 };
 
-function runChain(steps: BurstStep[]): DoubleCorridorState {
+function runChain(steps: BurstStep[]): DoubleCorridorState | null {
   let state = INITIAL_STATE;
-  for (const s of steps) state = corridorBurstDouble(state, s.dir, s.size);
+  for (const s of steps) {
+    const targetArmy = s.size + 1;
+    if (targetArmy < state.generalArmy) return null;
+    state = corridorBurstDouble(state, s.dir, targetArmy);
+  }
   return state;
 }
 
@@ -94,33 +98,44 @@ function longestCommonSuffix(chains: BurstChain[]): BurstStep[] {
   return suffix;
 }
 
-// ---- Part 1: Free threshold ------------------------------------------------
+// ---- Part 1: State counts per (L, R) split --------------------------------
 
-function verifyFreeThreshold(): string {
-  const rows: string[][] = [];
-  let freeThreshold = 0;
+function verifyStateCountsByLR(cfg: AlgoConfig): string {
+  const { allGroups } = exploreDoubleCorridor(cfg);
 
-  for (let n = 1; n <= 8; n++) {
-    const comps = compositions(n);
-    const states = new Set(
-      comps.map((c) => {
-        const steps: BurstStep[] = c.map((s) => ({ dir: 'L' as Direction, size: s }));
-        return stateKey(runChain(steps));
-      }),
-    );
-    const allSame = states.size === 1;
-    if (allSame) freeThreshold = n;
-
-    rows.push([String(n), String(comps.length), String(states.size), allSame ? '✓' : '']);
-
-    if (comps.length > 10000) break;
+  const byLR = new Map<string, Set<string>>();
+  for (const g of allGroups) {
+    const lr = `${g.state.leftFrontier},${g.state.rightFrontier}`;
+    const tickArmy = `${g.state.tick},${g.state.generalArmy}`;
+    if (!byLR.has(lr)) byLR.set(lr, new Set());
+    byLR.get(lr)!.add(tickArmy);
   }
 
+  const entries = [...byLR].sort((a, b) => {
+    const [al, ar] = a[0].split(',').map(Number);
+    const [bl, br] = b[0].split(',').map(Number);
+    return al + ar - (bl + br) || al - bl;
+  });
+
+  const rows: string[][] = entries.map(([lr, states]) => {
+    const [l, r] = lr.split(',').map(Number);
+    return [String(l + r), lr, String(states.size), states.size === 1 ? '✓' : ''];
+  });
+
+  const singleStateCount = entries.filter(([, s]) => s.size === 1).length;
+  const multiStateCount = entries.filter(([, s]) => s.size > 1).length;
+  const maxStates = Math.max(...entries.map(([, s]) => s.size));
+
   return sections(
-    heading('Part 1: Free Threshold (per-direction, from initial state)'),
-    'All compositions of N going left only — do they produce the same state?',
-    formatTable(['N', 'compositions', 'distinct states', 'all same?'], rows),
-    `**Result:** Free threshold is N ≤ ${freeThreshold} (same as single-sided q2)`,
+    heading(`Part 1: Distinct States per (L, R) Split (maxTick=${cfg.maxTick})`),
+    'For each (L, R) frontier split, how many distinct (tick, army) end states exist?',
+    bulletList([
+      kv('Total L,R splits', entries.length),
+      kv('Splits with 1 state', singleStateCount),
+      kv('Splits with 2+ states', multiStateCount),
+      kv('Max states for any split', maxStates),
+    ]),
+    formatTable(['totalF', 'L,R', 'states', 'single?'], rows),
   );
 }
 
@@ -143,8 +158,16 @@ function verifySuffixDecomposition(cfg: AlgoConfig): string {
       continue;
     }
     const prefixes = group.chains.map((c) => c.slice(0, c.length - suffix.length));
-    const prefixStates = new Set(prefixes.map((p) => stateKey(runChain(p))));
-    const prefixStateKey = stateKey(runChain(prefixes[0]));
+    const prefixResults = prefixes.map((p) => runChain(p));
+    const hasInvalid = prefixResults.some((r) => r === null);
+
+    if (hasInvalid) {
+      fail++;
+      continue;
+    }
+
+    const prefixStates = new Set(prefixResults.map((p) => stateKey(p!)));
+    const prefixStateKey = stateKey(prefixResults[0]!);
     const expectedGroup = groupByState.get(prefixStateKey);
 
     if (
@@ -230,7 +253,7 @@ function verify(cfg: AlgoConfig) {
   const OUTPUT_DIR = path.resolve(__dirname, '../output/q3');
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
-  const part1 = verifyFreeThreshold();
+  const part1 = verifyStateCountsByLR(cfg);
   const part2 = verifySuffixDecomposition(cfg);
 
   const comparisonTicks = [20, 30];
