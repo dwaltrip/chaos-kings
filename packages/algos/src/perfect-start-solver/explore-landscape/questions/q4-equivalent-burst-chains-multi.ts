@@ -32,46 +32,6 @@ interface MultiCorridorState {
 type BurstStep = { dir: number; size: number };
 type BurstChain = BurstStep[];
 
-// ---- Core logic ------------------------------------------------------------
-
-function corridorBurstMulti(
-  state: MultiCorridorState,
-  dir: number,
-  targetArmy: number,
-): MultiCorridorState {
-  invariant(
-    targetArmy >= state.generalArmy,
-    `targetArmy (${targetArmy}) must be >= generalArmy (${state.generalArmy})`,
-  );
-  invariant(targetArmy >= 2, `targetArmy (${targetArmy}) must be >= 2`);
-  invariant(
-    dir >= 0 && dir < state.frontiers.length,
-    `dir (${dir}) out of range [0, ${state.frontiers.length})`,
-  );
-
-  const burstSize = targetArmy - 1;
-  const frontier = state.frontiers[dir];
-
-  let readyTick = state.tick;
-  if (state.generalArmy < targetArmy) {
-    readyTick = tickForGeneralArmy(state.tick, state.generalArmy, targetArmy);
-  }
-
-  const totalMoves = frontier + burstSize;
-  const firstMoveTick = readyTick + 1;
-  const endTick = firstMoveTick + totalMoves - 1;
-  const newUnits = countProductionTicks(firstMoveTick, endTick);
-
-  const newFrontiers = [...state.frontiers];
-  newFrontiers[dir] += burstSize;
-
-  return {
-    tick: endTick,
-    generalArmy: 1 + newUnits,
-    frontiers: newFrontiers,
-  };
-}
-
 // ---- Enumeration -----------------------------------------------------------
 
 function stateKey(s: MultiCorridorState): string {
@@ -79,20 +39,26 @@ function stateKey(s: MultiCorridorState): string {
 }
 
 function exploreMultiCorridor(numCorridors: number, cfg: AlgoConfig) {
-  const classesByKey = new Map<string, BurstChain[]>();
+  const countsByKey = new Map<string, number>();
+  let totalChains = 0;
 
-  function recurse(state: MultiCorridorState, chain: BurstStep[]): void {
-    if (chain.length > 0) {
+  // Single mutable state object — mutate-and-restore to avoid allocations
+  const state: MultiCorridorState = {
+    tick: 0,
+    generalArmy: 1,
+    frontiers: new Array(numCorridors).fill(0),
+  };
+
+  function recurse(depth: number): void {
+    if (depth > 0) {
       const key = stateKey(state);
-      let group = classesByKey.get(key);
-      if (!group) {
-        group = [];
-        classesByKey.set(key, group);
-      }
-      group.push([...chain]);
+      countsByKey.set(key, (countsByKey.get(key) || 0) + 1);
+      totalChains++;
     }
 
-    const minTargetArmy = Math.max(2, state.generalArmy);
+    const savedTick = state.tick;
+    const savedArmy = state.generalArmy;
+    const minTargetArmy = Math.max(2, savedArmy);
 
     for (let dir = 0; dir < numCorridors; dir++) {
       const frontier = state.frontiers[dir];
@@ -100,36 +66,39 @@ function exploreMultiCorridor(numCorridors: number, cfg: AlgoConfig) {
       for (let targetArmy = minTargetArmy; targetArmy <= cfg.maxTick; targetArmy++) {
         const burstSize = targetArmy - 1;
 
-        let readyTick = state.tick;
-        if (state.generalArmy < targetArmy) {
-          readyTick = tickForGeneralArmy(state.tick, state.generalArmy, targetArmy);
+        let readyTick = savedTick;
+        if (savedArmy < targetArmy) {
+          readyTick = tickForGeneralArmy(savedTick, savedArmy, targetArmy);
         }
         const totalMoves = frontier + burstSize;
-        const endTick = readyTick + 1 + totalMoves - 1;
+        const firstMoveTick = readyTick + 1;
+        const endTick = firstMoveTick + totalMoves - 1;
 
         if (endTick > cfg.maxTick) break;
 
-        const nextState = corridorBurstMulti(state, dir, targetArmy);
-        chain.push({ dir, size: burstSize });
-        recurse(nextState, chain);
-        chain.pop();
+        const newUnits = countProductionTicks(firstMoveTick, endTick);
+
+        // Mutate
+        state.tick = endTick;
+        state.generalArmy = 1 + newUnits;
+        state.frontiers[dir] += burstSize;
+
+        recurse(depth + 1);
+
+        // Restore
+        state.tick = savedTick;
+        state.generalArmy = savedArmy;
+        state.frontiers[dir] -= burstSize;
       }
     }
   }
 
-  const initialState: MultiCorridorState = {
-    tick: 0,
-    generalArmy: 1,
-    frontiers: new Array(numCorridors).fill(0),
-  };
-  recurse(initialState, []);
+  recurse(0);
 
-  const totalChains = Array.from(classesByKey.values()).reduce(
-    (sum, chains) => sum + chains.length,
-    0,
-  );
+  const uniqueStates = countsByKey.size;
+  const equivalentStates = Array.from(countsByKey.values()).filter((c) => c > 1).length;
 
-  return { totalChains, uniqueStates: classesByKey.size, classesByKey };
+  return { totalChains, uniqueStates, equivalentStates, countsByKey };
 }
 
 // ---- CLI + Main ------------------------------------------------------------
@@ -173,4 +142,4 @@ if (isMain) {
 }
 
 export type { MultiCorridorState, BurstStep, BurstChain };
-export { corridorBurstMulti, exploreMultiCorridor, stateKey };
+export { exploreMultiCorridor, stateKey };
