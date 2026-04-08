@@ -150,6 +150,7 @@ function exploreMultiCorridorStates(numCorridors: number, cfg: AlgoConfig) {
     equivalentStates,
     totalEdges: edges.length,
     pathCounts,
+    stateMap,
   };
 }
 
