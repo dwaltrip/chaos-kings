@@ -18,6 +18,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { invariant } from '@utils/assertions/invariant';
+
 import { countProductionTicks } from '../abstract-moves';
 import { tickForGeneralArmy } from '../helpers';
 import { MAX_TICK } from '../constants';
@@ -37,12 +39,18 @@ interface EquivalenceGroup {
   chains: BurstSizeChain[];
 }
 
-function corridorBurst(state: CorridorState, burstSize: number): CorridorState {
-  const armyNeeded = burstSize + 1;
+function corridorBurst(state: CorridorState, targetArmy: number): CorridorState {
+  invariant(
+    targetArmy >= state.generalArmy,
+    `targetArmy (${targetArmy}) must be >= generalArmy (${state.generalArmy})`,
+  );
+  invariant(targetArmy >= 2, `targetArmy (${targetArmy}) must be >= 2`);
+
+  const burstSize = targetArmy - 1;
 
   let readyTick = state.tick;
-  if (state.generalArmy < armyNeeded) {
-    readyTick = tickForGeneralArmy(state.tick, state.generalArmy, armyNeeded);
+  if (state.generalArmy < targetArmy) {
+    readyTick = tickForGeneralArmy(state.tick, state.generalArmy, targetArmy);
   }
 
   const totalMoves = state.frontier + burstSize;
@@ -75,20 +83,22 @@ function exploreEquivalentBurstChains(maxTick: number = MAX_TICK) {
       group.push([...chain]);
     }
 
-    for (let size = 1; size <= maxTick; size++) {
-      const armyNeeded = size + 1;
+    const minTargetArmy = Math.max(2, state.generalArmy);
+
+    for (let targetArmy = minTargetArmy; targetArmy <= maxTick; targetArmy++) {
+      const burstSize = targetArmy - 1;
 
       let readyTick = state.tick;
-      if (state.generalArmy < armyNeeded) {
-        readyTick = tickForGeneralArmy(state.tick, state.generalArmy, armyNeeded);
+      if (state.generalArmy < targetArmy) {
+        readyTick = tickForGeneralArmy(state.tick, state.generalArmy, targetArmy);
       }
-      const totalMoves = state.frontier + size;
+      const totalMoves = state.frontier + burstSize;
       const endTick = readyTick + 1 + totalMoves - 1;
 
       if (endTick > maxTick) break;
 
-      const nextState = corridorBurst(state, size);
-      chain.push(size);
+      const nextState = corridorBurst(state, targetArmy);
+      chain.push(burstSize);
       recurse(nextState, chain);
       chain.pop();
     }
@@ -183,9 +193,9 @@ function run() {
   console.log(`  Unique states: ${allGroups.length}`);
   console.log(`  States with equivalent chains: ${equivalentGroups.length}\n`);
 
-  // writeSummary(totalChains, allGroups, equivalentGroups);
-  // writeFullData(allGroups);
-  // console.log('');
+  writeSummary(totalChains, allGroups, equivalentGroups);
+  writeFullData(allGroups);
+  console.log('');
 }
 
 // Run directly: npx tsx src/perfect-start-solver/explore-landscape/questions/q2-equivalent-burst-chains-simple.ts

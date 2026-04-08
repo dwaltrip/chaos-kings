@@ -13,14 +13,14 @@ interface CorridorBurstInfo {
 function corridorCompleteBurstSequence(chain: BurstSizeChain): CorridorBurstInfo[] {
   const data: CorridorBurstInfo[] = [];
   let state: CorridorState = { tick: 0, generalArmy: 1, frontier: 0 };
-  chain.forEach((burst) => {
+  chain.forEach((burstSize) => {
+    const targetArmy = burstSize + 1;
     let prev = { ...state };
-    state = corridorBurst(state, burst);
+    state = corridorBurst(state, targetArmy);
     console.log('prev:', prev, '-- after:', state);
     data.push({
-      // state.tick is the last move tick in the burst.
-      startTick: state.tick - (burst - 1),
-      size: burst,
+      startTick: state.tick - (burstSize - 1),
+      size: burstSize,
       armyOnLastMoveTick: state.generalArmy,
     });
   });
