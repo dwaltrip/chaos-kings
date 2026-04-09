@@ -57,7 +57,7 @@ The two-phase approach separates discovery (any order is fine) from propagation 
 
 **Phase 1** discovers 15 states and 28 edges (vs 48 chains by brute force).
 
-**Phase 2** propagates counts. Here's how state `(10,2,[2,2])` accumulates 14 chains from 5 predecessors:
+**Phase 2** propagates counts. Here's how state `(10,2,[2,2])` accumulates 14 chains from 6 predecessors:
 
 ```
 (6,2,[2,0]) contributes 2
