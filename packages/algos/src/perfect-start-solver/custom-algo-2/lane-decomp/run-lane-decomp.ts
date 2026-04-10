@@ -38,7 +38,7 @@ const { opts } = parseTypedCommand(
     .requiredOption('--board <name>', 'Board name')
     .option(
       '--start <spec>',
-      'Start tile: "x,y" or tile index. Default: board center',
+      'Start tile: "x,y" or tile index. Default: general position from board file',
       '',
     )
     .option('--blob-paths <n>', 'Number of constituent random paths in the blob', '4')
@@ -58,20 +58,10 @@ const { opts } = parseTypedCommand(
     .option('--verbose', 'Show multiple decompositions', false),
 );
 
-const { flatBoard: board } = loadBoardCtx(opts.board);
+const { flatBoard: board, generalPos } = loadBoardCtx(opts.board);
 
 function parseStart(spec: string): number {
-  if (!spec) {
-    const cx = Math.floor(board.width / 2);
-    const cy = Math.floor(board.height / 2);
-    const idx = Board.toIndex(board, cx, cy);
-    if (Board.isPassable(board, idx)) return idx;
-    // Fall back to first passable tile.
-    for (let i = 0; i < board.width * board.height; i++) {
-      if (Board.isPassable(board, i)) return i;
-    }
-    throw new Error('no passable tile found');
-  }
+  if (!spec) return generalPos;
   if (spec.includes(',')) {
     const [xs, ys] = spec.split(',');
     return Board.toIndex(board, Number(xs), Number(ys));
