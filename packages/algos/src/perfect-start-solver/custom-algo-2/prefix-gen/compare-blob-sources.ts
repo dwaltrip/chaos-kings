@@ -27,7 +27,11 @@ import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 import { genBlob, mulberry32 } from '../lane-decomp/blob-gen';
 import { decompose } from '../lane-decomp/decompose';
 import type { Blob, LaneRequest } from '../lane-decomp/types';
-import { scoreStartingRegion } from '../../starting-region/tip-scorer';
+import {
+  DEFAULT_WEIGHTS,
+  scoreStartingRegion,
+  type TipScorerWeights,
+} from '../../starting-region/tip-scorer';
 import { buildStartingRegion } from '../../starting-region/build';
 import { loadBoardCtx } from '../../utils/board';
 
@@ -65,6 +69,9 @@ interface Options {
   maxOverlap: string;
   maxIterations: string;
   aggregator: string;
+  alpha: string;
+  beta: string;
+  variantLabel: string;
   output: string;
   boardFilter: string;
   verbose: boolean;
@@ -89,6 +96,17 @@ const { opts } = parseTypedCommand(
     .option('--max-iterations <n>', 'generator iteration cap per call', '500000')
     .option('--aggregator <mode>', 'sum | min | max', 'sum')
     .option(
+      '--alpha <n>',
+      'scorer: divergence multiplier',
+      String(DEFAULT_WEIGHTS.divergence),
+    )
+    .option(
+      '--beta <n>',
+      'scorer: articulation penalty',
+      String(DEFAULT_WEIGHTS.articulation),
+    )
+    .option('--variant-label <str>', 'label for this run (included in summary/csv)', '')
+    .option(
       '--output <dir>',
       'where to write CSV + summary (default: prefix-gen/output)',
       '',
@@ -112,6 +130,10 @@ const topK = Number(opts.topK);
 const maxIterations = Number(opts.maxIterations);
 const aggregator = opts.aggregator as 'sum' | 'min' | 'max';
 const userMaxOverlap = opts.maxOverlap ? Number(opts.maxOverlap) : null;
+const scorerWeights: TipScorerWeights = {
+  divergence: Number(opts.alpha),
+  articulation: Number(opts.beta),
+};
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -175,7 +197,7 @@ function generateGeneratedBlobs(
   prefixLen: number,
 ): BlobCell[] {
   const region = buildStartingRegion(board, general);
-  const tipScores = scoreStartingRegion(region);
+  const tipScores = scoreStartingRegion(region, scorerWeights);
 
   const lengths = new Array(K).fill(prefixLen);
   // Overlap budget default: enough to let tight-by-tube boards produce
@@ -327,10 +349,14 @@ function boardBestFeasibleAnyGen(cells: CellResult[]): boolean {
 
 function markdownSummary(results: CellResult[]): string {
   const lines: string[] = [];
-  lines.push(`# Compare blob sources — profile [${profile.join(',')}]`);
+  const variant = opts.variantLabel ? ` — ${opts.variantLabel}` : '';
+  lines.push(`# Compare blob sources — profile [${profile.join(',')}]${variant}`);
   lines.push('');
   lines.push(
     `Prefix-length sweep: ${prefixLengths.join(',')}   top-K per (board, L): ${topK}   aggregator: ${aggregator}`,
+  );
+  lines.push(
+    `Scorer weights: α(divergence)=${scorerWeights.divergence}  β(articulation)=${scorerWeights.articulation}`,
   );
   lines.push(`Random-walk config: session 2 reach-more (seeds ${SEEDS.join(',')})`);
   lines.push('');
