@@ -9,7 +9,7 @@ interface RenderBoardOptions {
 }
 
 function defaultChar(board: FlatBoard, idx: number): string {
-  return board.types[idx] === TileType.MOUNTAIN ? '#' : '.';
+  return board.types[idx] === TileType.MOUNTAIN ? '#' : '·';
 }
 
 function renderBoard(board: FlatBoard, options: RenderBoardOptions = {}): string {

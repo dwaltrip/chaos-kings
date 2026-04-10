@@ -1,7 +1,7 @@
 import { Board, TileType, type FlatBoard } from '@core-next/flat-board';
 
 import { bfsDistanceField } from '../utils/bfs-distance-field';
-import { getWalkableNeighbors, tarjanInSet } from '../utils/board-graph';
+import { getWalkableNeighbors, tarjan, tarjanInSet } from '../utils/board-graph';
 import { resolveCrop } from '../utils/crop-board';
 
 import type { StartingRegion, StartingRegionAnnotations } from './types';
@@ -50,33 +50,54 @@ function computeAnnotations(
   tiles: Set<number>,
 ): StartingRegionAnnotations {
   const outwardDivergence = new Map<number, number>();
-  const inwardCount = new Map<number, number>();
   const outwardRayDepth = new Map<number, number>();
 
   for (const tile of tiles) {
     const d = distance.get(tile)!;
     let outCount = 0;
-    let inCount = 0;
     for (const n of getWalkableNeighbors(board, tile)) {
       if (!tiles.has(n)) continue;
       const dn = distance.get(n)!;
       if (dn > d) outCount++;
-      else if (dn < d) inCount++;
     }
     outwardDivergence.set(tile, outCount);
-    inwardCount.set(tile, inCount);
     outwardRayDepth.set(tile, computeOutwardRayDepth(board, tile));
   }
 
-  const { articulationPoints, bridges } = tarjanInSet(board, tiles);
+  // Scoped Tarjan picks up both real chokes AND scoping artifacts
+  // (e.g. boundary fingers that would loop back with more BFS budget).
+  // Full-board Tarjan only flags real structural chokes. Intersecting
+  // the two filters out artifacts while preserving real chokes even
+  // when they happen to sit near the BFS boundary.
+  const scoped = tarjanInSet(board, tiles);
+  const full = tarjan(board);
+
+  const articulationPoints = new Set<number>();
+  for (const u of scoped.articulationPoints) {
+    if (full.articulationPoints.has(u)) articulationPoints.add(u);
+  }
+
+  const fullBridgeKeys = new Set<string>();
+  for (const [a, b] of full.bridges) {
+    fullBridgeKeys.add(bridgeKey(a, b));
+  }
+  const bridges: Array<[number, number]> = [];
+  for (const [a, b] of scoped.bridges) {
+    if (fullBridgeKeys.has(bridgeKey(a, b))) bridges.push([a, b]);
+  }
 
   return {
     outwardDivergence,
-    inwardCount,
     outwardRayDepth,
     articulationPoints,
     bridges,
+    rawArticulationCount: scoped.articulationPoints.size,
+    rawBridgeCount: scoped.bridges.length,
   };
+}
+
+function bridgeKey(a: number, b: number): string {
+  return a < b ? `${a}-${b}` : `${b}-${a}`;
 }
 
 // Max over 4 cardinal directions of the straight-ray depth from the

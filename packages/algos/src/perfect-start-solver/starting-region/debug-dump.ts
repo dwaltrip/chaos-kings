@@ -20,7 +20,18 @@ const BOARDS = [
 ];
 
 function main(): void {
-  for (const name of BOARDS) {
+  // Optional CLI arg: substring filter on board name. No arg → all boards.
+  // Example: `... debug-dump.ts tight-edge` runs tight-edge-with-chokes.
+  const filter = process.argv[2];
+  const boardsToRun = filter ? BOARDS.filter((name) => name.includes(filter)) : BOARDS;
+
+  if (boardsToRun.length === 0) {
+    console.error(`No board names match filter "${filter}".`);
+    console.error(`Available boards:\n  ${BOARDS.join('\n  ')}`);
+    process.exit(1);
+  }
+
+  for (const name of boardsToRun) {
     const { flatBoard, generalPos } = loadBoardCtx(name);
     const region = buildStartingRegion(flatBoard, generalPos);
     printBoardReport(name, flatBoard, region);
@@ -36,8 +47,8 @@ function printBoardReport(name: string, board: FlatBoard, region: StartingRegion
     `general: (${gx}, ${gy}) @ idx ${region.general}`,
     `region size: ${region.tiles.size} tiles (maxDepth=${region.maxDepth})`,
     `max distance observed: ${maxValue(region.distance)}`,
-    `articulation points: ${ann.articulationPoints.size}`,
-    `bridges: ${ann.bridges.length}`,
+    `articulation points: ${ann.articulationPoints.size} real / ${ann.rawArticulationCount} scoped (${ann.rawArticulationCount - ann.articulationPoints.size} filtered)`,
+    `bridges: ${ann.bridges.length} real / ${ann.rawBridgeCount} scoped (${ann.rawBridgeCount - ann.bridges.length} filtered)`,
   ];
   console.log(header.join('\n'));
 
@@ -54,14 +65,6 @@ function printBoardReport(name: string, board: FlatBoard, region: StartingRegion
     renderBoard(board, {
       crop: cropFromRegion(region),
       tileChar: (idx) => scalarChar(idx, region, ann.outwardDivergence),
-    }),
-  );
-
-  console.log('\n-- inward count --');
-  console.log(
-    renderBoard(board, {
-      crop: cropFromRegion(region),
-      tileChar: (idx) => scalarChar(idx, region, ann.inwardCount),
     }),
   );
 

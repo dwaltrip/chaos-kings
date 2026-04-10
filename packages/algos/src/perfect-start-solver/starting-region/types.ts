@@ -8,10 +8,6 @@ interface StartingRegionAnnotations {
   // Measures "how many forward directions this tile offers."
   outwardDivergence: Map<number, number>;
 
-  // Number of walkable neighbors (within the starting region) with d-1.
-  // Useful for choke / branching analysis.
-  inwardCount: Map<number, number>;
-
   // Max straight-ray depth from this tile over the 4 cardinal directions,
   // stopping at mountains or board edges. Mirrors the face-projection
   // convention (depth includes the starting tile itself). Does NOT stop
@@ -19,12 +15,20 @@ interface StartingRegionAnnotations {
   // geometry allows, so this reflects board openness from this tile.
   outwardRayDepth: Map<number, number>;
 
-  // Articulation points and bridges of the starting region's induced
-  // subgraph (computed via tarjanInSet — NOT the same as full-board
-  // articulation points, because removing a tile that disconnects the
-  // starting region may not disconnect the full board, and vice versa).
+  // Articulation points and bridges — filtered to real structural
+  // chokes by intersecting the scoped subgraph's Tarjan result with
+  // the full board's Tarjan result. A tile is kept iff it's an
+  // articulation point on BOTH the induced subgraph AND the full
+  // board. Scoping artifacts (e.g. boundary fingers that would loop
+  // back with more BFS budget) are filtered out.
   articulationPoints: Set<number>;
   bridges: Array<[number, number]>;
+
+  // Raw counts from the scoped Tarjan pass, before full-board
+  // filtering. Useful for reporting how many candidate chokes were
+  // dropped as scoping artifacts.
+  rawArticulationCount: number;
+  rawBridgeCount: number;
 }
 
 // BFS-bounded neighborhood of the general, plus topological annotations.
