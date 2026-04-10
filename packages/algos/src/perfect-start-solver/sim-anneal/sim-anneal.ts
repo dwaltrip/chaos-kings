@@ -9,7 +9,7 @@ import { processStep } from '@/core-next/process-step';
 import type { FlatMove } from '@/core-next/process-step';
 import { fromBoardState } from '@/core-next/convert';
 
-import { generateMoves } from '../moves';
+import { generateMoves } from './moves';
 
 import type { SASolution, SAConfig, SAResult } from './types';
 

@@ -1,5 +1,5 @@
-// Session 4.10-2 — evaluate face projection + greedy longest-path against
-// the exhaustive enumerator (oracle) on a fixed board / seed / profile matrix.
+// Evaluate face projection + greedy longest-path against the exhaustive
+// enumerator (oracle) on a fixed board / seed / profile matrix.
 //
 // Run:
 //   tools/run-from-algos.sh \
