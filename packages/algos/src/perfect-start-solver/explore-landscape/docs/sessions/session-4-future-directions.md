@@ -69,11 +69,12 @@ This is the most general approach but also the hardest. It requires understandin
 Decompose a real board into corridor-like lanes, then reuse the corridor state `(tick, army, frontier-per-lane)` directly. The lane overheads add constant per-burst costs; the corridor equivalence structure should survive.
 
 Criteria for a valid lane decomposition:
-- **Complete coverage** — every reachable tile belongs to some lane
-- **Non-overlapping** — each tile belongs to exactly one lane (so frontier-per-lane is well-defined)
-- **Dense near the general** — lanes should hug each other with minimal uncaptured gaps between them, especially near the general
+- **Non-overlapping** — each tile belongs to at most one lane (so frontier-per-lane is well-defined)
 - **Sequential** — each lane is a sequential path of tiles from an entry point outward (can turn and curve, doesn't need to be straight)
+- **Sufficient length** — each lane is long enough for the burst(s) assigned to it
 - **Computable overhead** — the per-burst traversal cost to reach each lane from the general is known
+
+Note: complete coverage is *not* required — only the bursts that extend into the mid-region need lanes, and those lanes don't need to tile the entire reachable space.
 
 The decomposition doesn't need to be unique. Multiple decompositions can be tried per board (like the different spine patterns on an open board), with the best result kept. As long as the number of reasonable decompositions is manageable and each can be evaluated quickly (the DAG traversal is sub-second), this is tractable.
 
