@@ -1,7 +1,7 @@
 import { Board, type FlatBoard } from '@core-next/flat-board';
 
-import { scoreStartingRegion, type TipScores } from '../starting-region/tip-scorer';
-import { buildStartingRegion } from '../starting-region/build';
+import { scoreStartingRegion, type TipScores } from '../../starting-region/tip-scorer';
+import { buildStartingRegion } from '../../starting-region/build';
 
 // Dumb prefix-set generator.
 //

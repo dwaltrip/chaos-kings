@@ -24,12 +24,12 @@ import * as path from 'path';
 import { type FlatBoard } from '@core-next/flat-board';
 import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 
-import { genBlob, mulberry32 } from '../custom-algo-2/lane-decomp/blob-gen';
-import { decompose } from '../custom-algo-2/lane-decomp/decompose';
-import type { Blob, LaneRequest } from '../custom-algo-2/lane-decomp/types';
-import { scoreStartingRegion } from '../starting-region/tip-scorer';
-import { buildStartingRegion } from '../starting-region/build';
-import { loadBoardCtx } from '../utils/board';
+import { genBlob, mulberry32 } from '../lane-decomp/blob-gen';
+import { decompose } from '../lane-decomp/decompose';
+import type { Blob, LaneRequest } from '../lane-decomp/types';
+import { scoreStartingRegion } from '../../starting-region/tip-scorer';
+import { buildStartingRegion } from '../../starting-region/build';
+import { loadBoardCtx } from '../../utils/board';
 
 import { generatePrefixSets, type PrefixSet } from './generate';
 

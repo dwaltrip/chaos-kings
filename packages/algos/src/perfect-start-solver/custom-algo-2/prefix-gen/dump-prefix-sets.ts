@@ -16,8 +16,8 @@
 import { Board, TileType, type FlatBoard } from '@core-next/flat-board';
 import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 
-import { loadBoardCtx } from '../utils/board';
-import { renderBoard } from '../utils/render-board';
+import { loadBoardCtx } from '../../utils/board';
+import { renderBoard } from '../../utils/render-board';
 
 import { generatePrefixSets, type PrefixSet, type ScoreAggregator } from './generate';
 
