@@ -2,7 +2,7 @@ import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 import { Board } from '@/core-next/flat-board';
 import { fromBoardState } from '@/core-next/convert';
 
-import { formatTable } from '../format';
+import { formatTable } from '@/utils/format';
 import { allBoards, simpleBoards, realisticBoards } from '../test-boards';
 import { solveV3, type SolverResult } from './solver-v3';
 

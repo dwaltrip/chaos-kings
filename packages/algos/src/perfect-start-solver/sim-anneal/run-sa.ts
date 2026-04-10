@@ -7,7 +7,7 @@ import { Board } from '@/core-next/flat-board';
 import type { FlatMove } from '@/core-next/process-step';
 
 import { makeBoard } from '../test-boards';
-import { formatTable } from '../format';
+import { formatTable } from '@/utils/format';
 
 import { runSA } from './sim-anneal';
 

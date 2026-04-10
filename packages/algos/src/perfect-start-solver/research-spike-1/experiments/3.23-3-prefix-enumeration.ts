@@ -16,7 +16,7 @@ import { fromBoardState } from '@/core-next/convert';
 
 import type { PathEntriesByLen, PathEntry } from '../../custom-algo-1/path-search';
 import { getWalkableNeighbors } from '../../utils/board-graph';
-import { formatTable } from '../../format';
+import { formatTable } from '@/utils/format';
 import {
   makeBoard,
   allBoards,

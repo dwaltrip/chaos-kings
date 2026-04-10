@@ -47,7 +47,7 @@ import {
   solveV3,
 } from '../../custom-algo-1/solver-v3';
 import { type TimingTableConfig } from '../../custom-algo-1/timing-table';
-import { formatTable } from '../../format';
+import { formatTable } from '@/utils/format';
 import { allBoards } from '../../test-boards';
 
 // Frozen at the value used when this experiment was run

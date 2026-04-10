@@ -21,7 +21,7 @@ import { fromBoardState } from '@/core-next/convert';
 
 import { buildTimingEntries } from '../../custom-algo-1/timing-table';
 import type { TimingTableConfig } from '../../custom-algo-1/timing-table';
-import { formatTable } from '../../format';
+import { formatTable } from '@/utils/format';
 import { makeBoard, type TestBoard } from '../../test-boards';
 import { enumeratePrefixes, enumeratePrefixSets } from '../prefix-utils';
 
@@ -255,7 +255,7 @@ for (const [N, patterns] of [...patternsByN.entries()].sort((a, b) => a[0] - b[0
   console.error(`  N=${N}: ${patterns.length} unique patterns`);
 }
 
-const outputDir = path.join(path.dirname(new URL(import.meta.url).pathname), 'output');
+const outputDir = path.join(__dirname, 'output');
 
 for (const D of depths) {
   console.error(`\n=== Depth ${D} ===`);

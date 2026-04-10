@@ -4,7 +4,7 @@
 //
 // Usage: npx tsx src/perfect-start-solver/research-spike-1/experiments/3.22-2-bigint-vs-uint32array.ts
 
-import { formatTable } from '../../format';
+import { formatTable } from '@/utils/format';
 
 // ── Uint32Array bitmask implementation ──
 

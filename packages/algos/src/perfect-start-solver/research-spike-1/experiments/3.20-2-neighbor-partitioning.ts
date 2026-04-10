@@ -9,7 +9,7 @@
 import { Board } from '@/core-next/flat-board';
 import { fromBoardState } from '@/core-next/convert';
 
-import { formatTable } from '../../format';
+import { formatTable } from '@/utils/format';
 
 import { popcount } from '../../custom-algo-1/bitmask';
 import { genPathsDP } from '../../custom-algo-1/gen-paths';

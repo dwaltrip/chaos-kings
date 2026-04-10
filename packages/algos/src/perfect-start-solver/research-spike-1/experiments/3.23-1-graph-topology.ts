@@ -14,7 +14,7 @@ import {
   getWalkableTiles,
   tarjan,
 } from '../../utils/board-graph';
-import { formatTable } from '../../format';
+import { formatTable } from '@/utils/format';
 import { solveV3 } from '../../custom-algo-1/solver-v3';
 import { simpleBoards, realisticBoards, type TestBoard } from '../../test-boards';
 

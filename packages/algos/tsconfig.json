@@ -23,6 +23,7 @@
   //   via @core/* path mappings.
   // And we make sure not "exclude" test files here as well
   "include": ["src/**/*.ts"],
+  "exclude": ["src/perfect-start-solver/archive"],
   "ts-node": {
     "require": ["tsconfig-paths/register"]
   }

@@ -6,7 +6,7 @@
 import { Board } from '@/core-next/flat-board';
 import { fromBoardState } from '@/core-next/convert';
 
-import { formatTable } from '../../format';
+import { formatTable } from '@/utils/format';
 import {
   solveV3,
   type SolverResult,

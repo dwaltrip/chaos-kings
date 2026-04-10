@@ -7,7 +7,7 @@ import { Board } from '@/core-next/flat-board';
 import { fromBoardState } from '@/core-next/convert';
 
 import { allBoards } from '../../test-boards';
-import { solveV2 } from '../solver-v2';
+import { solveV3 } from '../solver-v3';
 
 const boardName = process.argv[2] || 'all';
 const timeout = Number(process.argv[3] || '10000');
@@ -36,7 +36,7 @@ for (const testBoard of boards) {
     if (bestFound !== null) break;
 
     const t0 = performance.now();
-    const result = solveV2(board, generalPos, {
+    const result = solveV3(board, generalPos, {
       maxCaptures: cap,
       minCaptures: cap,
     });

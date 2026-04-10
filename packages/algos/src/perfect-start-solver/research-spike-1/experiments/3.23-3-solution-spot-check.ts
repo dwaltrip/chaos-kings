@@ -12,7 +12,7 @@ import { fromBoardState } from '@/core-next/convert';
 
 import { getWalkableNeighbors } from '../../utils/board-graph';
 import { solveV3 } from '../../custom-algo-1/solver-v3';
-import { formatTable } from '../../format';
+import { formatTable } from '@/utils/format';
 import {
   makeBoard,
   allBoards,
