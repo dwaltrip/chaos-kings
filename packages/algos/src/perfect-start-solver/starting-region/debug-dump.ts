@@ -4,6 +4,7 @@ import { loadBoardCtx } from '../utils/board';
 import { renderBoard } from '../utils/render-board';
 
 import { buildStartingRegion } from './build';
+import { scoreStartingRegion, topKTiles, type TipScores } from './tip-scorer';
 import type { StartingRegion } from './types';
 
 // The 7 boards from the session 2 matrix. Mirrors the lane-decomp
@@ -34,13 +35,21 @@ function main(): void {
   for (const name of boardsToRun) {
     const { flatBoard, generalPos } = loadBoardCtx(name);
     const region = buildStartingRegion(flatBoard, generalPos);
-    printBoardReport(name, flatBoard, region);
+    const scores = scoreStartingRegion(region);
+    printBoardReport(name, flatBoard, region, scores);
   }
 }
 
-function printBoardReport(name: string, board: FlatBoard, region: StartingRegion): void {
+function printBoardReport(
+  name: string,
+  board: FlatBoard,
+  region: StartingRegion,
+  scores: TipScores,
+): void {
   const { x: gx, y: gy } = Board.toXY(board, region.general);
   const ann = region.annotations;
+
+  const top = topKTiles(scores, 5);
 
   const header = [
     `=== ${name} ===`,
@@ -49,6 +58,8 @@ function printBoardReport(name: string, board: FlatBoard, region: StartingRegion
     `max distance observed: ${maxValue(region.distance)}`,
     `articulation points: ${ann.articulationPoints.size} real / ${ann.rawArticulationCount} scoped (${ann.rawArticulationCount - ann.articulationPoints.size} filtered)`,
     `bridges: ${ann.bridges.length} real / ${ann.rawBridgeCount} scoped (${ann.rawBridgeCount - ann.bridges.length} filtered)`,
+    `tip scores: min=${scores.min} max=${scores.max} mean=${scores.mean.toFixed(1)}`,
+    `top-5 tips: ${top.map((t) => `${xyStr(board, t.tile)}=${t.score}`).join('  ')}`,
   ];
   console.log(header.join('\n'));
 
@@ -81,6 +92,15 @@ function printBoardReport(name: string, board: FlatBoard, region: StartingRegion
     renderBoard(board, {
       crop: cropFromRegion(region),
       tileChar: (idx) => articulationChar(idx, region),
+    }),
+  );
+
+  console.log('\n-- tip score (bucketed, 0-9; * = top-5; ~ = negative) --');
+  const topSet = new Set(top.map((t) => t.tile));
+  console.log(
+    renderBoard(board, {
+      crop: cropFromRegion(region),
+      tileChar: (idx) => tipScoreChar(idx, region, scores, topSet),
     }),
   );
 
@@ -146,6 +166,31 @@ function articulationChar(idx: number, region: StartingRegion): string | null {
   if (!region.tiles.has(idx)) return null;
   if (region.annotations.articulationPoints.has(idx)) return '*';
   return '·';
+}
+
+// Bucket the scorer output into 0-9 based on the global min/max of the
+// region's tile scores. Top-5 tiles get '*'; negative scores get '~'.
+function tipScoreChar(
+  idx: number,
+  region: StartingRegion,
+  scores: TipScores,
+  topSet: Set<number>,
+): string | null {
+  if (idx === region.general) return 'G';
+  if (!region.tiles.has(idx)) return null;
+  if (topSet.has(idx)) return '*';
+  const s = scores.scores.get(idx);
+  if (s == null) return null;
+  if (s < 0) return '~';
+  const range = scores.max - scores.min;
+  if (range <= 0) return '5';
+  const bucket = Math.round(((s - scores.min) / range) * 9);
+  return String(Math.max(0, Math.min(9, bucket)));
+}
+
+function xyStr(board: FlatBoard, idx: number): string {
+  const { x, y } = Board.toXY(board, idx);
+  return `(${x},${y})`;
 }
 
 function maxValue(m: Map<number, number>): number {
