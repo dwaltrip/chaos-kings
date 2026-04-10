@@ -4,7 +4,7 @@ Next-gen solver candidate for the perfect-start problem. Replaces `custom-algo-1
 
 ## Status
 
-**Early exploration.** Components are being prototyped individually before being assembled into a working solver. Session 1 focuses on lane decomposition (see `lane-decomp/`).
+**Early exploration.** Components are being prototyped individually before being assembled into a working solver. Initial sessions are focusing on lane decomposition (see `lane-decomp/`).
 
 ## The hypothesis
 
@@ -18,11 +18,11 @@ Once the mid-region is decomposed into lanes, the remaining search is a paramete
 
 ## Key docs
 
-- [Session 4.09-1 — Formalizing solver ideas](../docs/sessions/4.09-1-brainstorm-for-formalizing-solver-ideas.md) — overall framework, 6 key questions.
-- [Session 4.09-2 — Burst segmentation analysis](../docs/sessions/4.09-2-burst-segmentation-analysis.md) — which bursts extend into the mid-region.
-- [Session 4.09-4 — Lane decomposition brainstorm](../docs/sessions/4.09-4-lane-decomposition-brainstorm.md) — approach catalog for the mid-region problem.
+- [4.09-1 — Formalizing solver ideas](../dev-notes/4.09-1-brainstorm-for-formalizing-solver-ideas.md) — overall framework, 6 key questions.
+- [4.09-2 — Burst segmentation analysis](../dev-notes/4.09-2-burst-segmentation-analysis.md) — which bursts extend into the mid-region.
+- [4.09-4 — Lane decomposition brainstorm](../dev-notes/4.09-4-lane-decomposition-brainstorm.md) — approach catalog for the mid-region problem.
 - [Session 4 future directions](../explore-landscape/docs/sessions/session-4-future-directions.md) — corridor-to-lane model, saved tiles.
 
 ## Subdirectories
 
-- `lane-decomp/` — mid-region lane decomposition prototype (session 1).
+- `lane-decomp/` — mid-region lane decomposition prototyping and investigations
