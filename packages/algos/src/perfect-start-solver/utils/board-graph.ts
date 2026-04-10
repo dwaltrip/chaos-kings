@@ -203,6 +203,64 @@ function tarjan(board: FlatBoard): TarjanResult {
   return { articulationPoints, bridges };
 }
 
+/**
+ * Scoped variant of Tarjan: runs on the subgraph induced by `tiles`.
+ * Tiles outside the set are treated as walls. Useful for analyzing
+ * starting regions or other subregions of interest, since articulation
+ * points in the full board are not the same as articulation points in
+ * an induced subgraph.
+ */
+function tarjanInSet(board: FlatBoard, tiles: Set<number>): TarjanResult {
+  const articulationPoints = new Set<number>();
+  const bridges: Array<[number, number]> = [];
+
+  const disc = new Map<number, number>();
+  const low = new Map<number, number>();
+  let timer = 0;
+
+  function dfs(u: number, parent: number): void {
+    disc.set(u, timer);
+    low.set(u, timer);
+    timer++;
+
+    let childCount = 0;
+    let isArticulation = false;
+
+    for (const v of getWalkableNeighbors(board, u)) {
+      if (!tiles.has(v)) continue;
+      if (!disc.has(v)) {
+        childCount++;
+        dfs(v, u);
+
+        const lowV = low.get(v)!;
+        const lowU = low.get(u)!;
+        if (lowV < lowU) low.set(u, lowV);
+
+        if (parent === -1 && childCount > 1) isArticulation = true;
+        if (parent !== -1 && lowV >= disc.get(u)!) isArticulation = true;
+
+        if (lowV > disc.get(u)!) {
+          bridges.push([u, v]);
+        }
+      } else if (v !== parent) {
+        const lowU = low.get(u)!;
+        const discV = disc.get(v)!;
+        if (discV < lowU) low.set(u, discV);
+      }
+    }
+
+    if (isArticulation) articulationPoints.add(u);
+  }
+
+  for (const tile of tiles) {
+    if (!disc.has(tile)) {
+      dfs(tile, -1);
+    }
+  }
+
+  return { articulationPoints, bridges };
+}
+
 // ── Region decomposition ──
 
 interface Region {
@@ -273,4 +331,5 @@ export {
   getWalkableNeighbors,
   getWalkableTiles,
   tarjan,
+  tarjanInSet,
 };
