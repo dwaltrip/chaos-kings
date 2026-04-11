@@ -37,14 +37,16 @@ import { loadBoardCtx } from '../../utils/board';
 
 import { generatePrefixSets, type PrefixSet } from './generate';
 
-// ── Matrix ────────────────────────────────────────────────────────────────
+// ── Board registry ────────────────────────────────────────────────────────
 
 interface BoardSpec {
   name: string;
   regime: 'tight-toy' | 'tight-realistic' | 'less-constrained';
 }
 
-const BOARDS: BoardSpec[] = [
+// Session 2 matrix — the original 7-board set. Default when --boards is
+// omitted, so session 4 runs remain reproducible.
+const SESSION2_MATRIX: BoardSpec[] = [
   { name: 'pocket-11x11', regime: 'tight-toy' },
   { name: 'scattered-pockets-13x13', regime: 'tight-toy' },
   { name: 'corner-13x13', regime: 'tight-toy' },
@@ -53,6 +55,29 @@ const BOARDS: BoardSpec[] = [
   { name: 'sparse-mtns-11x11', regime: 'less-constrained' },
   { name: '3.22-fairly-open', regime: 'less-constrained' },
 ];
+
+// Session 5 Stage A additions — candidates for harder-board headroom probe.
+// Most are tagged tight-realistic/tight-toy because the whole point is finding
+// boards where random-walk blobs fail at meaningful rates.
+const STAGE_A_ADDITIONS: BoardSpec[] = [
+  // Unswept tight 25x25
+  { name: '3.21-real-board-tight-corner-2', regime: 'tight-realistic' },
+  { name: '3.21-real-board-semi-enclosed-region', regime: 'tight-realistic' },
+  { name: '3.21-real-board-edge-choke-point', regime: 'tight-realistic' },
+  // Unswept tight 30x30
+  { name: '3.22-big-region-with-tight-choke', regime: 'tight-realistic' },
+  { name: '3.22-small-corner-pocket', regime: 'tight-realistic' },
+  { name: '3.22-semi-tight-near-corner', regime: 'tight-realistic' },
+  // Simple degenerate-geometry
+  { name: 'pocket-2-11x11', regime: 'tight-toy' },
+  { name: 'narrow-corridors-11x11', regime: 'tight-toy' },
+  { name: 'floating-corner-11x11', regime: 'tight-toy' },
+  { name: 'edge-pocket-9x9', regime: 'tight-toy' },
+  { name: 'edge-pocket-2-9x9', regime: 'tight-toy' },
+  { name: 'island-11x11', regime: 'tight-toy' },
+];
+
+const BOARD_REGISTRY: BoardSpec[] = [...SESSION2_MATRIX, ...STAGE_A_ADDITIONS];
 
 // Session 2 "reach-more" random-walk blob configs, by regime.
 const BLOB_TOY = { pathCount: 5, maxLen: 6, minLen: 3, maxOverlap: 0 };
@@ -73,7 +98,9 @@ interface Options {
   beta: string;
   variantLabel: string;
   output: string;
+  boards: string;
   boardFilter: string;
+  rwOnly: boolean;
   verbose: boolean;
 }
 
@@ -111,7 +138,13 @@ const { opts } = parseTypedCommand(
       'where to write CSV + summary (default: prefix-gen/output)',
       '',
     )
+    .option(
+      '--boards <list>',
+      'csv of board names, "all" for full registry, omitted for session-2 matrix',
+      '',
+    )
     .option('--board-filter <substring>', 'only run boards whose name contains this', '')
+    .option('--rw-only', 'skip generator; only run random-walk blobs', false)
     .option('--verbose', 'print per-cell details while running', false),
 );
 
@@ -134,6 +167,30 @@ const scorerWeights: TipScorerWeights = {
   divergence: Number(opts.alpha),
   articulation: Number(opts.beta),
 };
+
+function resolveBoards(): BoardSpec[] {
+  const arg = opts.boards.trim();
+  if (!arg) return SESSION2_MATRIX;
+  if (arg === 'all') return BOARD_REGISTRY;
+  const requested = arg
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const resolved: BoardSpec[] = [];
+  const missing: string[] = [];
+  for (const name of requested) {
+    const spec = BOARD_REGISTRY.find((b) => b.name === name);
+    if (spec) resolved.push(spec);
+    else missing.push(name);
+  }
+  if (missing.length > 0) {
+    console.error(`unknown boards in --boards: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+  return resolved;
+}
+
+const BOARDS: BoardSpec[] = resolveBoards();
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -277,15 +334,18 @@ function runMatrix(): CellResult[] {
 
     const rwCells = generateRandomWalkBlobs(spec, board, generalPos);
     const genCells: BlobCell[] = [];
-    for (const L of prefixLengths) {
-      genCells.push(...generateGeneratedBlobs(board, generalPos, L));
+    if (!opts.rwOnly) {
+      for (const L of prefixLengths) {
+        genCells.push(...generateGeneratedBlobs(board, generalPos, L));
+      }
     }
     const genDedup = dedupByMask(genCells);
 
     if (opts.verbose) {
-      console.log(
-        `-- ${spec.name} -- rw=${rwCells.length} gen=${genCells.length} (dedup→${genDedup.length})`,
-      );
+      const genStr = opts.rwOnly
+        ? 'gen=skipped'
+        : `gen=${genCells.length} (dedup→${genDedup.length})`;
+      console.log(`-- ${spec.name} -- rw=${rwCells.length} ${genStr}`);
     }
 
     for (const cell of rwCells) {
@@ -350,15 +410,21 @@ function boardBestFeasibleAnyGen(cells: CellResult[]): boolean {
 function markdownSummary(results: CellResult[]): string {
   const lines: string[] = [];
   const variant = opts.variantLabel ? ` — ${opts.variantLabel}` : '';
-  lines.push(`# Compare blob sources — profile [${profile.join(',')}]${variant}`);
+  const titleMode = opts.rwOnly ? ' (rw-only baseline probe)' : '';
+  lines.push(
+    `# Compare blob sources — profile [${profile.join(',')}]${variant}${titleMode}`,
+  );
   lines.push('');
-  lines.push(
-    `Prefix-length sweep: ${prefixLengths.join(',')}   top-K per (board, L): ${topK}   aggregator: ${aggregator}`,
-  );
-  lines.push(
-    `Scorer weights: α(divergence)=${scorerWeights.divergence}  β(articulation)=${scorerWeights.articulation}`,
-  );
+  if (!opts.rwOnly) {
+    lines.push(
+      `Prefix-length sweep: ${prefixLengths.join(',')}   top-K per (board, L): ${topK}   aggregator: ${aggregator}`,
+    );
+    lines.push(
+      `Scorer weights: α(divergence)=${scorerWeights.divergence}  β(articulation)=${scorerWeights.articulation}`,
+    );
+  }
   lines.push(`Random-walk config: session 2 reach-more (seeds ${SEEDS.join(',')})`);
+  lines.push(`Boards: ${BOARDS.length} (${BOARDS.map((b) => b.name).join(', ')})`);
   lines.push('');
 
   // Overall by source
@@ -370,6 +436,45 @@ function markdownSummary(results: CellResult[]): string {
     lines.push(`| ${s.source} | ${s.cells} | ${fmtRate(s.feasible, s.cells)} |`);
   }
   lines.push('');
+
+  if (opts.rwOnly) {
+    // rw-only mode: focus on per-board rw feasibility, sorted to surface
+    // the candidate "hard set" at the top.
+    lines.push('## Per board — random-walk feasibility (sorted, hardest first)');
+    lines.push('');
+    lines.push('| board | regime | rw feasible | rw any✓ |');
+    lines.push('|---|---|---|---|');
+    const rows = BOARDS.map((spec) => {
+      const cells = results.filter(
+        (c) => c.board === spec.name && c.source === 'random-walk',
+      );
+      const feas = cells.filter((c) => c.oracleFeasible).length;
+      return { spec, cells, feas };
+    }).filter((r) => r.cells.length > 0);
+    rows.sort((a, b) => a.feas - b.feas || a.spec.name.localeCompare(b.spec.name));
+    for (const r of rows) {
+      const any = r.feas > 0 ? '✓' : '✗';
+      lines.push(
+        `| ${r.spec.name} | ${r.spec.regime} | ${fmtRate(r.feas, r.cells.length)} | ${any} |`,
+      );
+    }
+    lines.push('');
+
+    // Candidate hard set: rw feasibility ≤ 50%.
+    lines.push('## Candidate hard set (rw feasibility ≤ 50%)');
+    lines.push('');
+    const hard = rows.filter((r) => r.feas * 2 <= r.cells.length);
+    if (hard.length === 0) {
+      lines.push('(none — all boards too easy at this profile)');
+    } else {
+      for (const r of hard) {
+        lines.push(`- ${r.spec.name} (${r.feas}/${r.cells.length})`);
+      }
+    }
+    lines.push('');
+
+    return lines.join('\n');
+  }
 
   // Per board: "any feasible blob?" per source
   lines.push('## Per board — any feasible blob from this source?');
