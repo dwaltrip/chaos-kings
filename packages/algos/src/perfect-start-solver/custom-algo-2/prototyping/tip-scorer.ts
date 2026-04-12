@@ -1,4 +1,6 @@
-import type { StartingRegion } from './types';
+import type { StartingRegion } from '../../starting-region/types';
+
+import type { CustomAnnotations } from './annotations';
 
 // Per-tile "lane-entry quality" scorer (v1).
 //
@@ -7,34 +9,23 @@ import type { StartingRegion } from './types';
 // length can be constructed. This scorer is the per-tile layer both the prefix
 // generator and the lane-decomposition heuristics consume.
 //
-// v1 is deliberately a dumb linear combination of the existing starting-region
-// annotations. The intent is NOT to produce a final scorer — it's to produce the
+// v1 is deliberately a dumb linear combination of the existing annotation
+// signals. The intent is NOT to produce a final scorer — it's to produce the
 // simplest plausible signal we can wire end-to-end, so that downstream pressure
 // (comparison runs, eyeballed heatmaps) tells us which ingredients matter.
 //
 // Formula:
-//   score(tile) = rayDepth
-//               + α * divergence
-//               − β * (isArticulation ? 1 : 0)
-//
-// Dead-end nooks (§6 loose end from session 3) naturally dissolve here: they
-// have low divergence AND low rayDepth, so their score is already small before
-// the AP penalty lands. The AP penalty exists to push genuine choke tiles below
-// otherwise-comparable open tiles.
+//   score(tile) = rayDepth + α * divergence
 
 interface TipScorerWeights {
   // Multiplier on outwardDivergence. Range of divergence is 0..3 in the
   // starting region, so α=2 gives it roughly half the weight of rayDepth for
   // a typical depth of ~10.
   divergence: number;
-  // Subtractive penalty applied when the tile is a filtered articulation
-  // point. β=3 knocks APs down enough to matter without dominating depth.
-  articulation: number;
 }
 
 const DEFAULT_WEIGHTS: TipScorerWeights = {
   divergence: 2,
-  articulation: 3,
 };
 
 interface TipScores {
@@ -49,18 +40,17 @@ interface TipScores {
 
 function scoreTile(
   tile: number,
-  region: StartingRegion,
+  annotations: CustomAnnotations,
   weights: TipScorerWeights,
 ): number {
-  const ann = region.annotations;
-  const depth = ann.outwardRayDepth.get(tile) ?? 0;
-  const div = ann.outwardDivergence.get(tile) ?? 0;
-  const ap = ann.articulationPoints.has(tile) ? 1 : 0;
-  return depth + weights.divergence * div - weights.articulation * ap;
+  const depth = annotations.outwardRayDepth.get(tile) ?? 0;
+  const div = annotations.outwardDivergence.get(tile) ?? 0;
+  return depth + weights.divergence * div;
 }
 
 function scoreStartingRegion(
   region: StartingRegion,
+  annotations: CustomAnnotations,
   weights: TipScorerWeights = DEFAULT_WEIGHTS,
 ): TipScores {
   const scores = new Map<number, number>();
@@ -68,7 +58,7 @@ function scoreStartingRegion(
   let min = Infinity;
   let max = -Infinity;
   for (const tile of region.tiles) {
-    const s = scoreTile(tile, region, weights);
+    const s = scoreTile(tile, annotations, weights);
     scores.set(tile, s);
     sum += s;
     if (s < min) min = s;

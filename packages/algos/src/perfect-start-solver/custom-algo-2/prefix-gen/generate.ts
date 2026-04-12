@@ -1,7 +1,9 @@
 import { Board, type FlatBoard } from '@core-next/flat-board';
 
-import { scoreStartingRegion, type TipScores } from '../../starting-region/tip-scorer';
 import { buildStartingRegion } from '../../starting-region/build';
+
+import { computeCustomAnnotations } from '../prototyping/annotations';
+import { scoreStartingRegion, type TipScores } from '../prototyping/tip-scorer';
 
 // Dumb prefix-set generator.
 //
@@ -229,8 +231,12 @@ function generatePrefixSets(options: GenerateOptions): GenerateResult {
 
   // Ensure we have tip scores. If not supplied, build the starting region
   // with defaults and score it.
-  const tipScores =
-    options.tipScores ?? scoreStartingRegion(buildStartingRegion(board, general));
+  let tipScores = options.tipScores;
+  if (!tipScores) {
+    const region = buildStartingRegion(board, general);
+    const annotations = computeCustomAnnotations(region, board);
+    tipScores = scoreStartingRegion(region, annotations);
+  }
 
   // Per-burst candidate path lists. Because multiple bursts may share the
   // same length, we can deduplicate enumeration by length.

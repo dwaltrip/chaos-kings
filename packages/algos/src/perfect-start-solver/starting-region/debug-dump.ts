@@ -3,8 +3,17 @@ import { Board, type FlatBoard } from '@core-next/flat-board';
 import { loadBoardCtx } from '../utils/board';
 import { renderBoard } from '../utils/render-board';
 
+import {
+  computeCustomAnnotations,
+  type CustomAnnotations,
+} from '../custom-algo-2/prototyping/annotations';
+import {
+  scoreStartingRegion,
+  topKTiles,
+  type TipScores,
+} from '../custom-algo-2/prototyping/tip-scorer';
+
 import { buildStartingRegion } from './build';
-import { scoreStartingRegion, topKTiles, type TipScores } from './tip-scorer';
 import type { StartingRegion } from './types';
 
 // The 7 boards from the session 2 matrix. Mirrors the lane-decomp
@@ -35,8 +44,9 @@ function main(): void {
   for (const name of boardsToRun) {
     const { flatBoard, generalPos } = loadBoardCtx(name);
     const region = buildStartingRegion(flatBoard, generalPos);
-    const scores = scoreStartingRegion(region);
-    printBoardReport(name, flatBoard, region, scores);
+    const annotations = computeCustomAnnotations(region, flatBoard);
+    const scores = scoreStartingRegion(region, annotations);
+    printBoardReport(name, flatBoard, region, annotations, scores);
   }
 }
 
@@ -44,10 +54,10 @@ function printBoardReport(
   name: string,
   board: FlatBoard,
   region: StartingRegion,
+  ann: CustomAnnotations,
   scores: TipScores,
 ): void {
   const { x: gx, y: gy } = Board.toXY(board, region.general);
-  const ann = region.annotations;
 
   const top = topKTiles(scores, 5);
 
@@ -91,7 +101,7 @@ function printBoardReport(
   console.log(
     renderBoard(board, {
       crop: cropFromRegion(region),
-      tileChar: (idx) => articulationChar(idx, region),
+      tileChar: (idx) => articulationChar(idx, region, ann),
     }),
   );
 
@@ -161,10 +171,14 @@ function rayDepthChar(
   return '+';
 }
 
-function articulationChar(idx: number, region: StartingRegion): string | null {
+function articulationChar(
+  idx: number,
+  region: StartingRegion,
+  ann: CustomAnnotations,
+): string | null {
   if (idx === region.general) return 'G';
   if (!region.tiles.has(idx)) return null;
-  if (region.annotations.articulationPoints.has(idx)) return '*';
+  if (ann.articulationPoints.has(idx)) return '*';
   return '·';
 }
 

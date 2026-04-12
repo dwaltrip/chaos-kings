@@ -27,13 +27,15 @@ import { createTypedCommand, parseTypedCommand } from '@utils/typed-command';
 import { genBlob, mulberry32 } from '../lane-decomp/blob-gen';
 import { decompose } from '../lane-decomp/decompose';
 import type { Blob, LaneRequest } from '../lane-decomp/types';
+import { buildStartingRegion } from '../../starting-region/build';
+import { loadBoardCtx } from '../../utils/board';
+
+import { computeCustomAnnotations } from '../prototyping/annotations';
 import {
   DEFAULT_WEIGHTS,
   scoreStartingRegion,
   type TipScorerWeights,
-} from '../../starting-region/tip-scorer';
-import { buildStartingRegion } from '../../starting-region/build';
-import { loadBoardCtx } from '../../utils/board';
+} from '../prototyping/tip-scorer';
 
 import { generatePrefixSets, type PrefixSet } from './generate';
 
@@ -95,7 +97,6 @@ interface Options {
   maxIterations: string;
   aggregator: string;
   alpha: string;
-  beta: string;
   variantLabel: string;
   output: string;
   boards: string;
@@ -126,11 +127,6 @@ const { opts } = parseTypedCommand(
       '--alpha <n>',
       'scorer: divergence multiplier',
       String(DEFAULT_WEIGHTS.divergence),
-    )
-    .option(
-      '--beta <n>',
-      'scorer: articulation penalty',
-      String(DEFAULT_WEIGHTS.articulation),
     )
     .option('--variant-label <str>', 'label for this run (included in summary/csv)', '')
     .option(
@@ -165,7 +161,6 @@ const aggregator = opts.aggregator as 'sum' | 'min' | 'max';
 const userMaxOverlap = opts.maxOverlap ? Number(opts.maxOverlap) : null;
 const scorerWeights: TipScorerWeights = {
   divergence: Number(opts.alpha),
-  articulation: Number(opts.beta),
 };
 
 function resolveBoards(): BoardSpec[] {
@@ -254,7 +249,8 @@ function generateGeneratedBlobs(
   prefixLen: number,
 ): BlobCell[] {
   const region = buildStartingRegion(board, general);
-  const tipScores = scoreStartingRegion(region, scorerWeights);
+  const annotations = computeCustomAnnotations(region, board);
+  const tipScores = scoreStartingRegion(region, annotations, scorerWeights);
 
   const lengths = new Array(K).fill(prefixLen);
   // Overlap budget default: enough to let tight-by-tube boards produce
@@ -419,9 +415,7 @@ function markdownSummary(results: CellResult[]): string {
     lines.push(
       `Prefix-length sweep: ${prefixLengths.join(',')}   top-K per (board, L): ${topK}   aggregator: ${aggregator}`,
     );
-    lines.push(
-      `Scorer weights: α(divergence)=${scorerWeights.divergence}  β(articulation)=${scorerWeights.articulation}`,
-    );
+    lines.push(`Scorer weights: α(divergence)=${scorerWeights.divergence}`);
   }
   lines.push(`Random-walk config: session 2 reach-more (seeds ${SEEDS.join(',')})`);
   lines.push(`Boards: ${BOARDS.length} (${BOARDS.map((b) => b.name).join(', ')})`);
