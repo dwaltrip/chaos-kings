@@ -1,7 +1,7 @@
 // Run the lane-decomposition prototype on a single test board.
 //
 // Usage:
-//   tools/run-from-algos.sh src/perfect-start-solver/custom-algo-2/lane-decomp/run-lane-decomp.ts \
+//   tools/run-from-algos.sh lane-decomp/run-lane-decomp.ts \
 //     --board corner-9x9 --start 4,4 --blob-paths 4 --blob-max-len 4 --blob-min-len 2 \
 //     --seed 1 --lanes 6,4,3 --max-decomps 100
 
@@ -19,17 +19,34 @@ import type { Decomposition, LaneRequest } from './types';
 interface Options {
   board: string;
   start: string;
-  blobPaths: string;
-  blobMaxLen: string;
-  blobMinLen: string;
-  blobOverlap: string;
-  seed: string;
+  blobPaths: number;
+  blobMaxLen: number;
+  blobMinLen: number;
+  blobOverlap: number;
+  seed: number;
   lanes: string;
-  maxDecomps: string;
+  maxDecomps: number;
   verbose: boolean;
 }
 
-const { opts } = parseTypedCommand(
+function parseInteger(s: string) {
+  return Number(s);
+}
+
+const {
+  opts: {
+    board: boardName,
+    start: startTile,
+    blobPaths,
+    blobMaxLen,
+    blobMinLen,
+    blobOverlap,
+    seed,
+    lanes,
+    maxDecomps,
+    verbose,
+  },
+} = parseTypedCommand(
   createTypedCommand<Options>()
     .name('run-lane-decomp')
     .description(
@@ -41,24 +58,35 @@ const { opts } = parseTypedCommand(
       'Start tile: "x,y" or tile index. Default: general position from board file',
       '',
     )
-    .option('--blob-paths <n>', 'Number of constituent random paths in the blob', '4')
-    .option('--blob-max-len <n>', 'Longest constituent path length', '4')
-    .option('--blob-min-len <n>', 'Shortest constituent path length', '2')
+    .option(
+      '--blob-paths <n>',
+      'Number of constituent random paths in the blob',
+      parseInteger,
+      4,
+    )
+    .option('--blob-max-len <n>', 'Longest constituent path length', parseInteger, 4)
+    .option('--blob-min-len <n>', 'Shortest constituent path length', parseInteger, 2)
     .option(
       '--blob-overlap <n>',
       'Per-path overlap budget (tiles a path may re-traverse)',
-      '0',
+      parseInteger,
+      0,
     )
-    .option('--seed <n>', 'PRNG seed for blob generation', '1')
+    .option('--seed <n>', 'PRNG seed for blob generation', parseInteger, 1)
     .requiredOption(
       '--lanes <list>',
       'Comma-separated lane lengths (descending), e.g. 6,4,3',
     )
-    .option('--max-decomps <n>', 'Cap on decompositions reported', '100')
+    .option<number>(
+      '--max-decomps <n>',
+      'Cap on decompositions reported',
+      parseInteger,
+      100,
+    )
     .option('--verbose', 'Show multiple decompositions', false),
 );
 
-const { flatBoard: board, generalPos } = loadBoardCtx(opts.board);
+const { flatBoard: board, generalPos } = loadBoardCtx(boardName);
 
 function parseStart(spec: string): number {
   if (!spec) return generalPos;
@@ -69,27 +97,26 @@ function parseStart(spec: string): number {
   return Number(spec);
 }
 
-const start = parseStart(opts.start);
+const start = parseStart(startTile);
 if (!Board.isPassable(board, start)) {
   console.error(`start tile ${start} is not passable`);
   process.exit(1);
 }
 
-const rng = mulberry32(Number(opts.seed));
+const rng = mulberry32(Number(seed));
 const blob = genBlob({
   board,
   start,
-  pathCount: Number(opts.blobPaths),
-  maxLen: Number(opts.blobMaxLen),
-  minLen: Number(opts.blobMinLen),
-  maxOverlap: Number(opts.blobOverlap),
+  pathCount: blobPaths,
+  maxLen: blobMaxLen,
+  minLen: blobMinLen,
+  maxOverlap: blobOverlap,
   rng,
 });
 
-const requests: LaneRequest[] = opts.lanes
+const requests: LaneRequest[] = lanes
   .split(',')
   .map((s) => ({ length: Number(s.trim()) }));
-const maxDecomps = Number(opts.maxDecomps);
 
 const result = decompose({ board, blob, requests, maxDecomps });
 
@@ -131,12 +158,18 @@ function cropTilesFor(decomp: Decomposition | null): number[] {
   return tiles;
 }
 
-console.log(`board: ${opts.board}  (${board.width}x${board.height})`);
-console.log(
-  `start: ${start}  (${start % board.width},${Math.floor(start / board.width)})  seed=${opts.seed}`,
+const spacer = '  ';
+const logWithSpacer = (...args: string[]) => console.log(args.join(spacer));
+
+logWithSpacer(`board: ${board}`, `(${board.width}x${board.height})`);
+logWithSpacer(
+  `start: ${start}`,
+  `(${start % board.width},${Math.floor(start / board.width)})`,
+  `seed=${seed}`,
 );
-console.log(
-  `blob: ${blob.tiles.size} tiles  (paths=${opts.blobPaths}, max=${opts.blobMaxLen}, min=${opts.blobMinLen}, overlap=${opts.blobOverlap})`,
+logWithSpacer(
+  `blob: ${blob.tiles.size} tiles`,
+  `(paths=${blobPaths}, max=${blobMaxLen}, min=${blobMinLen}, overlap=${blobOverlap})`,
 );
 console.log();
 
@@ -157,15 +190,16 @@ for (const [len, n] of result.stats.candidatesByLength) {
   candStrs.push(`L${len}=${n}`);
 }
 console.log(`candidate lanes per length: ${candStrs.join('  ')}`);
-console.log(
-  `decompositions: ${result.decompositions.length}${result.capped ? ' (capped)' : ''}  in ${result.stats.elapsedMs}ms`,
+logWithSpacer(
+  `decompositions: ${result.decompositions.length}${result.capped ? ' (capped)' : ''}`,
+  `in ${result.stats.elapsedMs}ms`,
 );
 console.log();
 
 if (result.decompositions.length === 0) {
   console.log('(no valid decomposition found)');
 } else {
-  const showN = opts.verbose ? Math.min(5, result.decompositions.length) : 1;
+  const showN = verbose ? Math.min(5, result.decompositions.length) : 1;
   for (let i = 0; i < showN; i++) {
     const decomp = result.decompositions[i];
     console.log(`# Decomposition ${i + 1}`);

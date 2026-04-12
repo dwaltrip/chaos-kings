@@ -15,7 +15,7 @@
 // and a short summary of wins / losses / ties.
 //
 // Usage:
-//   tools/run-from-algos.sh packages/algos/src/perfect-start-solver/prefix-gen/compare-blob-sources.ts \
+//   tools/run-from-algos.sh prefix-gen/compare-blob-sources.ts \
 //     --profile 5,3 --prefix-lengths 2,3,4,5,6 --top-k 5
 
 import * as fs from 'fs';

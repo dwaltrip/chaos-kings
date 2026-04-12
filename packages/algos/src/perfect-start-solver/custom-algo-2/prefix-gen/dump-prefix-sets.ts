@@ -6,7 +6,7 @@
 // tight-loop tool for doing that.
 //
 // Examples:
-//   tools/run-from-algos.sh packages/algos/src/perfect-start-solver/prefix-gen/dump-prefix-sets.ts \
+//   tools/run-from-algos.sh prefix-gen/dump-prefix-sets.ts \
 //     --board pocket-11x11 --prefix-lengths 4,4 --max-overlap 1 --top-k 5
 //
 //   ... --board 3.21-real-board-tight-corner-1 --prefix-lengths 5,5 --max-overlap 2 --top-k 3

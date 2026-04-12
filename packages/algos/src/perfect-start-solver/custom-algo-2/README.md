@@ -19,9 +19,10 @@ Once the mid-region is decomposed into lanes, the remaining search is a paramete
 ## Key docs
 
 - [4.09-1 — Formalizing solver ideas](../dev-notes/4.09-1-brainstorm-for-formalizing-solver-ideas.md) — overall framework, 6 key questions.
-- [4.09-2 — Burst segmentation analysis](../dev-notes/4.09-2-burst-segmentation-analysis.md) — which bursts extend into the mid-region.
+- [4.10-6 - Prefix paths and Lane decomp reframed](../dev-notes/4.10-6-prefix-sets-and-lanes-reframed.md) - important conceptual reframe: the two ideas of "prefix-paths" and "lane-decomposition" are intertwined and inform each other.
 - [4.09-4 — Lane decomposition brainstorm](../dev-notes/4.09-4-lane-decomposition-brainstorm.md) — approach catalog for the mid-region problem.
-- [Session 4 future directions](../explore-landscape/docs/sessions/session-4-future-directions.md) — corridor-to-lane model, saved tiles.
+- [Session 4 future directions](../explore-landscape/docs/sessions/session-4-future-directions.md) — learnings from previous "simplifiied corridors" model, inspiring lane-decomp idea
+- [4.09-2 — Burst segmentation analysis](../dev-notes/4.09-2-burst-segmentation-analysis.md) — Investigating burst lengths, and which ones may extend into possible "mid-region"
 
 ## Subdirectories
 
