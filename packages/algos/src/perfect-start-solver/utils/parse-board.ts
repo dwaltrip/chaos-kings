@@ -16,12 +16,33 @@ interface TestBoard {
 // }
 
 // Parse a text grid into a TestBoard.
-// Legend: . = blank, M = mountain, G = general (player 0)
-// Rows separated by newlines; leading/trailing blank lines stripped.
+// Supports two formats:
+//   Old (packed):  .G.MMM..    (. = blank, M = mountain)
+//   New (spaced):  · G · # # # · ·   (· = blank, # = mountain)
+// Legend: G = general (player 0). Rows separated by newlines.
 function parseBoard(name: string, text: string): TestBoard {
   const lines = text.split('\n').filter((l) => l.trim().length > 0);
   const height = lines.length;
-  const width = lines[0].length;
+
+  // Detect format: new format uses middle-dot (·) or hash (#)
+  const isSpaced = lines[0].includes('·') || lines[0].includes('#');
+
+  const parsedRows: string[][] = lines.map((line) => {
+    if (isSpaced) {
+      return line.split(' ').filter((tok) => tok.length > 0);
+    }
+    return line.split('');
+  });
+
+  const width = parsedRows[0].length;
+  for (let y = 0; y < height; y++) {
+    if (parsedRows[y].length !== width) {
+      throw new Error(
+        `Board "${name}": row length mismatch — ` +
+          `row 0 has ${width} cols, row ${y} has ${parsedRows[y].length} cols`,
+      );
+    }
+  }
 
   let generalCoord: Coord | null = null;
   const grid: Square[][] = [];
@@ -29,13 +50,13 @@ function parseBoard(name: string, text: string): TestBoard {
   for (let y = 0; y < height; y++) {
     const row: Square[] = [];
     for (let x = 0; x < width; x++) {
-      const ch = lines[y][x];
+      const ch = parsedRows[y][x];
       const coord = { x, y };
 
       if (ch === 'G') {
         generalCoord = coord;
         row.push({ type: SquareType.GENERAL, coord, playerIndex: 0, units: 1 });
-      } else if (ch === 'M') {
+      } else if (ch === 'M' || ch === '#') {
         row.push({ type: SquareType.MOUNTAIN, coord });
       } else {
         row.push({ type: SquareType.BLANK, coord });
