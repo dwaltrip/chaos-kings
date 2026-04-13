@@ -128,9 +128,9 @@ TargetProfile { captures, timingTableMs, searchMs, groupCount, burst1Entries,
 
 ## Performance
 
-Realistic 25×25 boards: 4 of 6 solve in 11-52ms (path gen dominates). Two tight-corner boards: 1.1s and 6.9s (search dominates, 95-99% of time on infeasible capture targets).
+Realistic boards (25×25 / 30×30, terrain-generated): 12 of 15 solve at 24 captures in 7–83ms (path gen dominates). Three constrained boards take 470ms–1.1s (search dominates, most time spent on infeasible capture targets before descending).
 
-Synthetic corner boards (7×7 to 13×13) solve at 24 captures in 1.9-6.2s; search dominates with ~90% inner-loop scan waste.
+Synthetic corner boards (7×7 to 13×13) solve at 24 captures in 0.9–3.3s; search dominates with high inner-loop scan waste.
 
 ### Optimization history (corner-9×9)
 
@@ -141,6 +141,8 @@ Synthetic corner boards (7×7 to 13×13) solve at 24 captures in 1.9-6.2s; searc
 | + feasibility pruning | 25s |
 | + neighbor bottleneck pruning | 1.5s |
 | + L1 neighbor partitioning | ~1.1s (1.3-1.4x speedup) |
+
+*A later bug fix corrected over-eager feasibility pruning, bringing corner-9×9 to ~3s currently.*
 
 ## CLI usage
 
