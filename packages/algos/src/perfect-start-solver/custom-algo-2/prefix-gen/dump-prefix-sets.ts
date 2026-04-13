@@ -55,12 +55,12 @@ const { opts } = parseTypedCommand(
 );
 
 const prefixLengths = opts.prefixLengths.split(',').map((s) => Number(s.trim()));
-if (prefixLengths.some((n) => !Number.isFinite(n) || n < 2)) {
+if (prefixLengths.some((n) => !Number.isFinite(n) || n < 1)) {
   console.error(`bad --prefix-lengths: ${opts.prefixLengths}`);
   process.exit(1);
 }
 const K = prefixLengths.length;
-const maxOverlap = opts.maxOverlap ? Number(opts.maxOverlap) : K - 1;
+const maxOverlap = opts.maxOverlap ? Number(opts.maxOverlap) : 0;
 const topK = Number(opts.topK);
 const maxIterations = Number(opts.maxIterations);
 const aggregator = opts.aggregator as ScoreAggregator;
@@ -110,7 +110,7 @@ const { flatBoard: board, generalPos } = loadBoardCtx(opts.board);
 console.log(`=== ${opts.board} ===`);
 console.log(
   `general: ${xy(board, generalPos)}  K=${K}  prefixLengths=[${prefixLengths.join(',')}]  ` +
-    `maxOverlap=${maxOverlap} (min=${K - 1})  agg=${aggregator}`,
+    `maxOverlap=${maxOverlap}  agg=${aggregator}`,
 );
 
 const result = generatePrefixSets({

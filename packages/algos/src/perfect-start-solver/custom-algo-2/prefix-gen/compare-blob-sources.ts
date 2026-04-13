@@ -151,7 +151,7 @@ if (profile.some((n) => !Number.isFinite(n) || n < 1)) {
 }
 const K = profile.length;
 const prefixLengths = opts.prefixLengths.split(',').map((s) => Number(s.trim()));
-if (prefixLengths.some((n) => !Number.isFinite(n) || n < 2)) {
+if (prefixLengths.some((n) => !Number.isFinite(n) || n < 1)) {
   console.error(`bad --prefix-lengths: ${opts.prefixLengths}`);
   process.exit(1);
 }
@@ -253,16 +253,11 @@ function generateGeneratedBlobs(
   const tipScores = scoreStartingRegion(region, annotations, scorerWeights);
 
   const lengths = new Array(K).fill(prefixLen);
-  // Overlap budget default: enough to let tight-by-tube boards produce
-  // results on their degenerate geometries. A degree-2 general with 3
-  // bursts needs overlap ≈ prefixLen per re-used direction. Setting the
-  // default to (K-1) * (prefixLen - 1) allows any burst to fully overlap
-  // any other burst's prefix up to length - 1 (excluding the tip). This
-  // is generous — the scoring pressure + heap dedup by union mask is what
-  // separates quality prefix-sets from degenerate ones.
-  const autoMaxOverlap = (K - 1) * (prefixLen - 1);
+  // Overlap budget default: generous enough for tight geometries.
+  // (K-1) * prefixLen allows any burst to fully overlap another's prefix.
+  const autoMaxOverlap = (K - 1) * prefixLen;
   const maxOverlap = userMaxOverlap ?? autoMaxOverlap;
-  if (maxOverlap < K - 1) return [];
+  if (maxOverlap < 0) return [];
 
   const result = generatePrefixSets({
     board,

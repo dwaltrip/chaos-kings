@@ -5,40 +5,33 @@ import { buildStartingRegion } from '../../starting-region/build';
 import { computeCustomAnnotations } from '../prototyping/annotations';
 import { scoreStartingRegion, type TipScores } from '../prototyping/tip-scorer';
 
-// Dumb prefix-set generator.
+// Prefix-set generator.
 //
-// A "prefix" is a non-backtracking path starting at the general, of some
-// length L. Tiles are ordered [general, step1, step2, …, tip]. The last tile
-// is the "tip" where the downstream lane begins.
+// A "prefix" is a non-backtracking path starting from a neighbor of the
+// general, of some length L. The general is excluded from the path — it's
+// the implicit origin but not counted in path lengths, masks, or overlap.
+// Tiles are ordered [neighbor, step2, …, tip]. The last tile is the "tip"
+// where the downstream lane begins.
 //
 // A "prefix-set" is K prefixes — one per burst in a profile — that together
-// constitute the opening of a round. All prefixes share the general as their
-// first tile.
+// constitute the opening of a round.
 //
 // Overlap is defined as:
 //   overlap = (sum of path lengths) - |union of tiles across the set|
 //
-// NOTE: The general is always shared by all K paths, which forces a minimum
-// overlap of (K - 1) for any valid prefix-set. Callers should set
-// maxOverlap >= K - 1 for any results; setting it to exactly K - 1 means
-// "no sharing beyond the forced general".
+// Since the general is excluded, the minimum overlap for K paths is 0
+// (all paths diverge immediately from distinct neighbors).
 //
-// Generation algorithm: DFS enumerate all length-L paths from the general
-// per burst (reusing the lane enum-paths helper shape), then enumerate
-// ordered K-tuples with overlap filtering and early termination by the
-// maxIterations cap. Scoring is aggregate over the tip scores of each prefix;
-// default aggregate is 'sum'. Top-K results are returned.
-//
-// This is intentionally simple. It's not trying to be smart about the
-// combinatorics — for prefix length L ≤ 6 and ≤3 bursts, the raw enumeration
-// is cheap on the boards we care about. The point is to close the
-// scorer → generator → harness loop end to end before investing in anything
-// cleverer.
+// Generation algorithm: DFS enumerate all length-L paths from the general's
+// neighbors per burst, then enumerate ordered K-tuples with overlap
+// filtering and early termination by the maxIterations cap. Scoring is
+// aggregate over the tip scores of each prefix; default aggregate is 'sum'.
+// Top-K results are returned.
 
 interface PrefixPath {
-  // Ordered tiles, starting with the general and ending at the tip.
+  // Ordered tiles from general's neighbor to tip (general excluded).
   tiles: number[];
-  // Bitmask of tiles for fast overlap checks.
+  // Bitmask of tiles for fast overlap checks (general excluded).
   mask: bigint;
   tip: number;
   // Score of the tip tile under the supplied scorer.
@@ -46,12 +39,12 @@ interface PrefixPath {
 }
 
 interface PrefixSet {
-  // K prefixes in burst order. All share tiles[0] = general.
+  // K prefixes (general excluded from all paths/masks).
   prefixes: PrefixPath[];
-  // Union of tiles across the set.
+  // Union of tiles across the set (general excluded).
   unionTiles: Set<number>;
   unionMask: bigint;
-  // (sum path lengths) - |union|. Minimum value is K-1 (forced general share).
+  // (sum path lengths) - |union|. Minimum value is 0.
   overlap: number;
   // Aggregate of the tip scores under the configured aggregator.
   aggregateScore: number;
@@ -64,11 +57,10 @@ type ScoreAggregator = 'sum' | 'min' | 'max';
 interface GenerateOptions {
   board: FlatBoard;
   general: number;
-  // Length of each burst's prefix (tiles in the path including the general).
-  // Pass a number[] of length K (one per burst). Must all be >= 2.
+  // Length of each burst's prefix (tiles in the path, general excluded).
+  // Pass a number[] of length K (one per burst). Must all be >= 1.
   prefixLengths: number[];
-  // Maximum (sum lengths - |union|). Must be >= prefixLengths.length - 1 to
-  // allow for the forced general sharing.
+  // Maximum (sum lengths - |union|). Must be >= 0.
   maxOverlap: number;
   // Number of top-scoring prefix-sets to keep.
   topK: number;
@@ -93,19 +85,18 @@ interface GenerateResult {
 }
 
 // Enumerate all non-backtracking paths of exactly `length` tiles starting
-// at `start` on walkable tiles. The starting tile is always included as the
-// first tile of the path.
-function enumeratePathsFromStart(
+// from walkable neighbors of `general`. The general is excluded from the
+// path, mask, and length. Each path is [neighbor, step2, …, tip].
+function enumeratePathsFromGeneral(
   board: FlatBoard,
-  start: number,
+  general: number,
   length: number,
 ): PrefixPath[] {
   if (length < 1) return [];
-  if (!Board.isPassable(board, start)) return [];
   const results: PrefixPath[] = [];
   const path: number[] = new Array(length);
-  path[0] = start;
-  const startBit = 1n << BigInt(start);
+  // Block the general so paths can't revisit it.
+  const generalBit = 1n << BigInt(general);
 
   function dfs(depth: number, mask: bigint): void {
     if (depth === length) {
@@ -114,7 +105,7 @@ function enumeratePathsFromStart(
         tiles,
         mask,
         tip: tiles[tiles.length - 1],
-        tipScore: 0, // filled in later once we know the scorer
+        tipScore: 0,
       });
       return;
     }
@@ -135,7 +126,21 @@ function enumeratePathsFromStart(
     }
   }
 
-  dfs(1, startBit);
+  // Start DFS from each walkable neighbor of the general.
+  const startNeighbors = [
+    Board.neighborUp(board, general),
+    Board.neighborDown(board, general),
+    Board.neighborLeft(board, general),
+    Board.neighborRight(board, general),
+  ];
+  for (const n of startNeighbors) {
+    if (n < 0) continue;
+    if (!Board.isPassable(board, n)) continue;
+    const bit = 1n << BigInt(n);
+    path[0] = n;
+    dfs(1, generalBit | bit);
+  }
+
   return results;
 }
 
@@ -217,14 +222,10 @@ function generatePrefixSets(options: GenerateOptions): GenerateResult {
     throw new Error('prefixLengths must be non-empty');
   }
   for (const L of prefixLengths) {
-    if (L < 2) throw new Error(`prefix length must be >= 2, got ${L}`);
+    if (L < 1) throw new Error(`prefix length must be >= 1, got ${L}`);
   }
-  const minOverlap = K - 1;
-  if (maxOverlap < minOverlap) {
-    throw new Error(
-      `maxOverlap=${maxOverlap} is below the forced minimum of ${minOverlap} ` +
-        `(K=${K} prefixes all share the general)`,
-    );
+  if (maxOverlap < 0) {
+    throw new Error(`maxOverlap=${maxOverlap} must be >= 0`);
   }
 
   const t0 = Date.now();
@@ -243,7 +244,7 @@ function generatePrefixSets(options: GenerateOptions): GenerateResult {
   const uniqueLengths = new Set(prefixLengths);
   const pathsByLength = new Map<number, PrefixPath[]>();
   for (const L of uniqueLengths) {
-    const paths = enumeratePathsFromStart(board, general, L);
+    const paths = enumeratePathsFromGeneral(board, general, L);
     for (const p of paths) {
       p.tipScore = tipScores.scores.get(p.tip) ?? 0;
     }
@@ -339,4 +340,4 @@ function generatePrefixSets(options: GenerateOptions): GenerateResult {
 }
 
 export type { GenerateOptions, GenerateResult, PrefixPath, PrefixSet, ScoreAggregator };
-export { enumeratePathsFromStart, generatePrefixSets };
+export { enumeratePathsFromGeneral, generatePrefixSets };
