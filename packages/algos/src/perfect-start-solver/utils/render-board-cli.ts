@@ -10,8 +10,7 @@
 //     list rendered with a distinct 1/2/3… label; useful for prefix sets)
 //
 // Examples:
-//   tools/run-from-algos.sh packages/algos/src/perfect-start-solver/utils/render-board-cli.ts \
-//     --board pocket-11x11
+//   tools/run-from-algos.sh render-board-cli.ts --board pocket-11x11
 //
 //   ... --board 3.21-real-board-tight-corner-1 --crop-radius 8
 //

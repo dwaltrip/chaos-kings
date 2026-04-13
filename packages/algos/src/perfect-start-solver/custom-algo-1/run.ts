@@ -4,7 +4,7 @@ import { fromBoardState } from '@/core-next/convert';
 
 import { formatTable } from '@/utils/format';
 import { allBoards, simpleBoards, realisticBoards, slowSearch } from '../test-boards';
-import { solveV3, type SolverResult } from './solver-v3';
+import { solveV3, type SolverResult, type Solution } from './solver-v3';
 
 interface RunOptions {
   board: string;
@@ -125,7 +125,7 @@ if (runs.length > 1) {
   console.log(formatTable(headers, rows));
 }
 
-function printResult(solution: any, checked: number, elapsedMs: number) {
+function printResult(solution: Solution | null, checked: number, elapsedMs: number) {
   if (!solution) {
     console.log(`  No solution. Checked ${checked} entries in ${elapsedMs.toFixed(0)}ms`);
     return;
@@ -134,7 +134,16 @@ function printResult(solution: any, checked: number, elapsedMs: number) {
   const s = solution;
   const lastTick = s.burstInfos[s.burstInfos.length - 1].endTick;
   const pattern = s.pattern.join(', ');
-  console.log(
-    `  ${s.totalCaptured} captures | ${elapsedMs.toFixed(0)}ms | ${checked.toLocaleString()} entries | pattern: ${pattern} | last move: t=${lastTick}`,
-  );
+  const totalOverlap = s.overlaps.reduce((a, b) => a + b, 0);
+  const overlapStr =
+    totalOverlap === 0 ? 'none' : `${s.overlaps.join(', ')} (${totalOverlap} total)`;
+  const parts = [
+    `${s.totalCaptured} captures`,
+    `${elapsedMs.toFixed(0)}ms`,
+    `${checked.toLocaleString()} entries`,
+    `pattern: ${pattern}`,
+    `overlap: ${overlapStr}`,
+    `last move: t=${lastTick}`,
+  ];
+  console.log(`  ${parts.join(' | ')}`);
 }

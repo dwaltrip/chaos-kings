@@ -1,6 +1,6 @@
 // Check timing for a burst pattern.
-// Usage: npx tsx check-burst-timing.ts "10,8,4,2"
-//        npx tsx check-burst-timing.ts "12,6,4,2" --overlap "0,1,0,0"
+// Usage: tools/run-from-algos.sh check-burst-timing.ts "10,8,4,2"
+//        tools/run-from-algos.sh check-burst-timing.ts "12,6,4,2" --overlap "0,1,0,0"
 
 import { getBurstInfosFromSpecs, type BurstSpec } from '../get-burst-info';
 

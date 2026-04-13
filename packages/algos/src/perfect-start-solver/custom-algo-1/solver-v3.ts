@@ -24,6 +24,7 @@ const DIRECTIONS = [Direction.LEFT, Direction.UP, Direction.RIGHT, Direction.DOW
 
 interface Solution {
   pattern: number[];
+  overlaps: number[];
   burstSpecs: BurstSpec[];
   burstInfos: BurstInfo[];
   paths: PathEntry[];
@@ -392,6 +393,7 @@ function buildSolution(
   for (const p of paths) coveredMask |= p.mask;
   return {
     pattern: entry.captures,
+    overlaps: entry.overlaps,
     burstSpecs,
     burstInfos: getBurstInfosFromSpecs(burstSpecs, maxTicks)!,
     paths,
