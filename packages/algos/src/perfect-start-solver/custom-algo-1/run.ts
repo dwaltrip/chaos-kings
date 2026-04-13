@@ -3,7 +3,7 @@ import { Board } from '@/core-next/flat-board';
 import { fromBoardState } from '@/core-next/convert';
 
 import { formatTable } from '@/utils/format';
-import { allBoards, simpleBoards, realisticBoards } from '../test-boards';
+import { allBoards, simpleBoards, realisticBoards, slowSearch } from '../test-boards';
 import { solveV3, type SolverResult } from './solver-v3';
 
 interface RunOptions {
@@ -35,6 +35,7 @@ const BOARD_GROUP_KEYWORDS: Record<string, () => ReturnType<typeof allBoards>> =
   all: allBoards,
   simple: simpleBoards,
   realistic: realisticBoards,
+  slowSearch: slowSearch,
 };
 
 function resolveBoards(input: string) {
