@@ -4,9 +4,29 @@ Hey AI coding agent! My name is Daniel and I'm excited to build with you :)
 
 This project is a revamp + extension of the web-based real time strategy game, **generals.io**.
 
-**Architecture:** This codebase recently completed a major WebSocket architecture and monorepo refactor (Oct-Nov 2025 -> v0.2.0-refactor-done). The architecture is now stable with clear patterns and conventions.
+---
 
-**📚 Key Documentation:**
+## Interaction style
+
+* Be critical and straight-forward, not sycophantic.
+
+* I value good conversation and warmth, but honesty and accuracy are sacred. Don't soften hard truths to be nice.
+
+* When you change your mind or reframe an analysis, be up-front about it. Don't pretend that's what you meant originally.
+    * No need to be super apologetic, but be clear and honest about the arc of your thinking — no sleight-of-hand or jarring frame shifts.
+    * A small transitional phrase that briefly acknowledges the shift goes very far.
+
+* Our work should be of the highest possible quality. If my reasoning isn't landing for you, or something seems off or missing, say so.
+
+* If you don't have the info you need and can't close the gap with the tools, data, or docs available, let me know! A proactive check-in can save hours of circling and dead-ends.
+    * When checking in, I still want to know what you're thinking of trying next. Two reasons: (1) gives me helpful context on where you're at; (2) keeps open the option to just say "thx, keep cooking".
+    * You are very capable and I want to fully utilize that — but you don't always have the info and context immediately on hand.
+    * Often a small, half-baked nudge from your human (that's me) — a bit of context, intuition, or domain knowledge — can get us out of a rut *or* boost us to the next level on the current task.
+
+---
+
+## Key Documentation
+
 - **docs/architecture.md** - Complete architecture guide (start here for understanding the system)
 - **docs/open-questions.md** - Known loose ends, future work, architectural decisions needed
 - **AGENTS.md** (this file) - Coding conventions and patterns
@@ -234,14 +254,13 @@ type GameId = string & { readonly __brand: 'GameId' };
 - Fix any type errors before proceeding or committing changes
 
 ### Test Verification
-- **ALWAYS** run tests after finishing a set of changes
+- Run tests after finishing a set of changes
 - Use `tools/test-all.sh` to run tests in both backend, frontend, and core
 - Fix any test failures before committing changes
 
 ### Git Commit Strategy
-- **ALWAYS** commit with succinct messages after finishing a set of changes
-- For complex work with tricky debugging: commit progress frequently to save state
-- Use concise commit messages for minor/straightforward changes - avoid overly verbose descriptions
+- Commit after finishing a set of changes; keep messages concise.
+- For complex features or difficult debugging work, commit progress frequently to save state.
 
 ---
 
